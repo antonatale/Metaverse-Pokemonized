@@ -1,0 +1,10 @@
+/* The game's styles, in the order of the old single <style> block (the cascade depends on it). */
+@import './reset.css';
+@import './tokens.css';
+@import './base.css';
+@import './home.css';
+@import './battle.css';
+@import './sheets.css';
+@import './story.css';
+@import './responsive.css';
+@import './sprites.css';

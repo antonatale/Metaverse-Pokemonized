@@ -1,11 +1,3 @@
-/* Order matters: same cascade as the old single <style> block. */
+/* Embedded fonts first, then the game. The google-fonts build links app.css instead (see vite.config.ts). */
 @import './fonts.css';
-@import './reset.css';
-@import './tokens.css';
-@import './base.css';
-@import './home.css';
-@import './battle.css';
-@import './sheets.css';
-@import './story.css';
-@import './responsive.css';
-@import './sprites.css';
+@import './app.css';

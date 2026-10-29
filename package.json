@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:all": "vitest run && playwright test",
     "golden": "tsx tools/golden.mjs",
-    "sim": "tsx tools/sim.ts"
+    "sim": "tsx tools/sim.ts",
+    "build:google-fonts": "tsc --noEmit && vite build --mode google-fonts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
