@@ -1,0 +1,8 @@
+/* ---------- the sound switch ---------- */
+.snd { display: inline-grid; place-items: center; padding: 4px 7px; line-height: 0; }
+.snd .ico { width: 20px; height: 20px; pointer-events: none; }
+.snd[aria-pressed="false"] { color: var(--muted); }
+.masthead { position: relative; }
+.snd-home { position: absolute; top: 0; right: 0; box-shadow: 3px 3px 0 var(--shadow); }
+.tb-right { display: flex; align-items: center; gap: 6px; }
+.whud .snd { box-shadow: 3px 3px 0 var(--shadow); }

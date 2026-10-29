@@ -17,7 +17,7 @@ Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrat
 | `npm test` | Vitest: golden di motore, ritratti e mappa, dati, controllo delle mappe |
 | `npm run test:parity` | Playwright: confronto pixel per pixel con `legacy/index.html` (finché esiste) |
 | `npm run test:parity:dist` | lo stesso confronto sul file singolo di `dist/` aperto da disco |
-| `npm run test:all` | Vitest + Playwright |
+| `npm run test:all` | Vitest + Playwright (parità e audio) |
 | `npm run sim` | simulatore di bilanciamento (vedi sotto) |
 | `npm run golden` | rigenera i golden dal vecchio file; `-- --from-current` li rigenera dal codice attuale |
 
@@ -55,7 +55,16 @@ src/
                            badges.ts: spille e icone degli oggetti
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
     world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, anteprima della home, mappa intera
+  audio/                   musica ed effetti sintetizzati con la Web Audio API (nessun file audio)
+    context.ts             AudioContext creato al primo tocco o tasto, bus musica/effetti, acceso/spento
+                           (chiave lotte-tra-amici:audio:v1), pausa quando la scheda non è visibile
+    tracks.ts              i brani in notazione da tracker: home, world, battle, boss, victory, defeat
+    music.ts               sequencer: programma le note in anticipo sull'orologio audio, dissolvenze tra brani
+    sfx.ts                 gli effetti (colpi, cure, KO, striscioni, passi, spille, clic…)
+    cues.ts                quale suono va con quale evento del motore; blip della macchina da scrivere
+    synth.ts               strumenti: oscillatori con inviluppo, rumore filtrato, batteria
   ui/
+    sound.ts               l'interruttore audio (home, barra della lotta, HUD della storia) e il clic dei pulsanti
     common.ts              colori dei tipi, ritratti, le sezioni della pagina, scelte del giocatore (view)
     home.ts                home (scheda del personaggio, boss, tipi, libretto) e foglio "Nuova sfida"
     battle-screen.ts       schermo di lotta: riproduce gli eventi del motore, passaggio del telefono, risultato, scheda
@@ -79,6 +88,16 @@ tools/
 - **Lotta:** `ui/battle-screen.ts` chiede al motore gli eventi (`say`, `line`, `expr`, `anim`, `hp`, `sync`, `end`) e li riproduce uno dopo l'altro con una catena di Promise. Il contatore `flow` annulla le riproduzioni vecchie. Le fasi sono `intro → begin → select → busy → begin … → over`. Non c'è un game loop.
 - **Storia:** ha un ciclo `requestAnimationFrame` in `ui/story-screen.ts`: `update(now)` (movimento) e poi `drawWorld(now)` (disegno). Il disegno legge soltanto lo stato della storia.
 - **Comunicazione tra i moduli:** import diretti. Le variabili condivise vivono nel modulo che le modifica e gli altri le leggono come binding live; dove serve modificarle da fuori ci sono dei setter (`setMap`, `resetProgress`, `halt`, `invalidate`).
+
+## Audio
+
+- **Tutto sintetizzato:** musica ed effetti nascono da oscillatori e rumore, quindi il file singolo resta leggero.
+- **Accensione:** l'audio parte acceso, ma il browser lo lascia partire solo dopo il primo tocco o tasto. L'interruttore lo spegne, e la scelta resta in `lotte-tra-amici:audio:v1`; i salvataggi del gioco non si toccano.
+- **Musica per schermata:** `home` (avvio, ritorno alla home), `world` (apertura della storia), `battle`/`boss` (inizio lotta), `victory`/`defeat` (risultato, una volta sola).
+- **Effetti della lotta:** escono da `cueBattle(ev)`, chiamato per ogni evento riprodotto in `ui/battle-screen.ts`. Il motore non sa niente del suono.
+- **Mai `Math.random` nell'audio:** il seme delle lotte nasce da `Math.random`, e un suono non deve cambiare una lotta. Per le piccole variazioni c'è `wobble()` in `synth.ts`.
+- **Nuovo brano:** aggiungilo in `tracks.ts`, con battute da 16 passi (il test unitario le controlla). `tests/e2e/audio.spec.ts` lo renderizza offline e controlla che non sia muto e non distorca.
+- **Test di parità:** nascondono l'interruttore (`.snd`), l'unico elemento nuovo sullo schermo rispetto al vecchio gioco.
 
 ## Convenzioni
 
@@ -132,7 +151,7 @@ tools/
 
 - **CSP della cornice:** script esterni solo da cdnjs, jsdelivr o unpkg; fogli di stile solo da Google Fonts; niente immagini esterne. Il resto deve essere inline o generato in codice, e Phaser va benissimo incorporato nel bundle singlefile.
 - **Font:** dopo la prima pubblicazione va verificato che i font incorporati (`@font-face` con URL `data:`) si carichino davvero nella cornice. Se no, pubblica `dist-google-fonts/index.html`.
-- **Limite della pagina:** 16 MB. Oggi il file è di circa 410 KB.
+- **Limite della pagina:** 16 MB. Oggi il file è di circa 430 KB.
 - **Origine nuova:** un nuovo Artifact è una nuova origine, quindi salvataggi e libretto ripartono vuoti.
 
 ## Verso Phaser

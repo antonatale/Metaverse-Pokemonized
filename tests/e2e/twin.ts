@@ -56,6 +56,14 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
       for (const k of Object.keys(storage)) localStorage.setItem(k, storage[k]);
     }
   }, { seed: o.seed ?? 7, storage: o.storage || null });
+  /* the sound switch is the only new thing on screen: hide it, so everything else is compared with the old game */
+  await page.addInitScript(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const st = document.createElement('style');
+      st.textContent = '.snd { display: none !important; }';
+      document.head.appendChild(st);
+    });
+  });
   if (o.hot) await page.addInitScript(() => {
     const W = window as unknown as Record<string, unknown>;
     W.claude = { hot: {

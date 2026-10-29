@@ -2,6 +2,7 @@ import type { Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
 import { DV, M, key, blocked, setMap } from './maps';
 import { reduced } from '../ui/dom';
+import { sfx } from '../audio';
 import { root, dialog, running, useDoor, renderPlace, renderHud } from '../ui/story-screen';
 
 /* Walking on the map, one tile at a time: a tap turns, holding walks; doors and warps take you elsewhere. */
@@ -29,6 +30,7 @@ function tryStep(d: Dir, now: number): boolean {
   }
   lastBump = '';
   mover = { fx: st.x, fy: st.y, tx: nx, ty: ny, t0: now };
+  sfx('step');
   parity ^= 1;
   return true;
 }
@@ -54,6 +56,7 @@ function arrived(): boolean {
 function warp(to: string, x: number, y: number, dir?: Dir) {
   busy = true; held = null; walking = false;
   root.classList.add('fade');
+  sfx('door');
   setTimeout(function () {
     st.map = to; st.x = x; st.y = y; if (dir) st.dir = dir;
     setMap(to); save(); renderHud();

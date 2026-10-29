@@ -13,6 +13,8 @@ import { press, release, update, halt, mover, busy } from '../story/movement';
 import { resize, invalidate, drawWorld, preview, overview } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
+import { soundButton } from './sound';
+import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
@@ -32,7 +34,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wbadges" id="wbadges"></span><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
@@ -144,7 +146,7 @@ function show() {
   d.typing = true; dlgTxt.textContent = '';
   (function step() {
     if (dialog !== d || !d.typing) return;
-    n += 2; dlgTxt.textContent = full.slice(0, n);
+    n += 2; dlgTxt.textContent = full.slice(0, n); typeBlip(!!d.who);
     if (n >= full.length) d.finish(); else typeTimer = setTimeout(step, 20);
   })();
 }
@@ -178,6 +180,7 @@ function interact() {
 }
 /* one of Antonio's lost things: picked up for good */
 function pickUp(it: LostItem) {
+  sfx('pickup');
   st.found[it.id] = true; save();
   var left = allItems().length - foundItems().length;
   say(['Hai ritrovato ' + ITEMS[it.move].name + '!', it.text,
@@ -249,6 +252,7 @@ export function afterBattle(res: { covo: string; won: boolean; quit: boolean }) 
   else say(cv0.lose, cv0.leader);
 }
 function award(cv0: Covo) {
+  sfx('badge');
   var b = cv0.badge, L = C[cv0.leader];
   sheet('<div class="award" role="dialog" aria-modal="true" aria-labelledby="aw-t" style="--tc:' + tc(cv0.leader) + '">' +
     '<div class="award-badge">' + badgeSVG({ color: b.color, mark: b.mark }, 104) + '</div>' +
@@ -328,6 +332,7 @@ function open(quiet?: boolean) {
   setScreen('world');
   setMap(st.map);
   resize(); renderHud();
+  music('world');
   var go = function () {
     invalidate(); start();
     if (!quiet && !st.seen.intro) intro();

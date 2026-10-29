@@ -11,6 +11,7 @@ import { ico } from './icons';
 import { tc, typeTag, kindTag, face, bust, home, overlay, view, closeOverlay } from './common';
 import { startBattle } from './battle-screen';
 import { WORLD } from './story-screen';
+import { soundButton } from './sound';
 
 /* The home page, a page of a squared exercise book: story card, roster, the chosen friend's card,
    the boss, the type cycle, the libretto. And the setup sheet for a new battle. */
@@ -22,7 +23,7 @@ export function renderHome() {
   var h = '';
   h += '<header class="masthead"><div class="eyebrow">6 amici · 1 boss</div>' +
     '<h1 id="title"><span class="hl">Lotte</span> tra Amici</h1>' +
-    '<p>Lotta a turni con le persone che contano. Ognuno ha il suo tipo, le sue mosse e i suoi difetti.</p></header>';
+    '<p>Lotta a turni con le persone che contano. Ognuno ha il suo tipo, le sue mosse e i suoi difetti.</p>' + soundButton('snd-home') + '</header>';
   if (WORLD) h += '<section aria-labelledby="s-t"><h2 class="sec-title" id="s-t">Storia <small>Prima tappa: Formia</small></h2><div class="card story" id="story"></div></section>';
   h += '<section aria-labelledby="r-t"><h2 class="sec-title" id="r-t">Personaggi <small>Tocca per vedere la scheda</small></h2><div class="roster">';
   ROSTER.forEach(function (id) {

@@ -6,10 +6,15 @@ import { WORLD, installStoryKeys } from './ui/story-screen';
 import { UI, S, resumeBattle, installBattleKeys } from './ui/battle-screen';
 import { view, type View } from './ui/common';
 import { renderHome } from './ui/home';
+import { installAudio, music } from './audio';
+import { installSoundButtons } from './ui/sound';
 
 /* the story's keys first: they stop the keys that belong to the map before the battle screen sees them */
 installStoryKeys();
 installBattleKeys();
+/* sound starts with the first tap or key press; every button clicks */
+installAudio();
+installSoundButtons();
 
 /* the automated playtests drive the game through these, as they did with the old single file */
 const G = window as unknown as Record<string, unknown>;
@@ -35,6 +40,7 @@ function start(data?: HotData) {
   }
   SPR.install();
   renderHome();
+  music('home');
   if (data.v === 2 && data.view && data.view.screen === 'battle' && data.battle && data.battle.v === 2) resumeBattle(data.battle);
   else if (data.v === 2 && data.view && data.view.screen === 'world' && WORLD) WORLD.open(true);
 }

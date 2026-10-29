@@ -1,6 +1,6 @@
 # Lotte tra Amici
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia per le strade di Formia. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
+Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia per le strade di Formia. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
 
 ## Come avviarlo
 

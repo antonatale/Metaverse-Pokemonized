@@ -9,6 +9,8 @@ import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeO
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner } from './effects';
 import { WORLD } from './story-screen';
+import { soundButton } from './sound';
+import { music, cueBattle, typeBlip } from '../audio';
 
 /* The battle screen. It knows no rules: it asks the engine for events, labels and chips, and plays them back. */
 
@@ -34,7 +36,7 @@ function renderShell() {
   battle.innerHTML =
     '<div class="topbar"><button class="tb-btn" type="button" id="quit">Esci</button>' +
     '<div class="clock" id="clock">' + (S.boss ? ico('clock') + '<span id="clock-t">2:00</span>' : '') + '<span class="turn" id="turn-t">Turno 1</span></div>' +
-    '<button class="tb-btn" type="button" id="info">Scheda</button></div>' +
+    '<div class="tb-right">' + soundButton() + '<button class="tb-btn" type="button" id="info">Scheda</button></div></div>' +
     '<div class="arena" id="arena">' + boxHtml(1) +
     '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk') + '</div></div></div>' +
     '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk') + '</div></div></div>' + boxHtml(0) + '</div>' +
@@ -128,7 +130,7 @@ function say(text: string, who?: number | null): Promise<void> {
     }
     function step() {
       if (!typing) return;
-      n += 2; tEl.textContent = full.slice(0, n);
+      n += 2; tEl.textContent = full.slice(0, n); typeBlip(who != null);
       if (n >= full.length) finish(); else tt = setTimeout(step, 22);
     }
     mine = function () { if (typing) { clearTimeout(tt); finish(); } else done(); };
@@ -215,6 +217,7 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
   }
 }
 function stepEvent(ev: BattleEvent): Promise<unknown> {
+  cueBattle(ev);
   switch (ev.k) {
     case 'say': return say(ev.text);
     case 'line': return say(ev.text, ev.who);
@@ -300,6 +303,7 @@ function showResult() {
     } else if (r === 'win') { bump(S.sides[S.winner!].id, 'w'); bump(S.sides[1 - S.winner!].id, 'l'); }
     saveRecord(); renderLibretto();
   }
+  music(r === 'win' && (S.winner === 0 || S.mode === 'pvp') ? 'victory' : 'defeat');
   var star: string, stamp: string, sub = '', first: [number, string | undefined] | null, second: [number, string | undefined] | null;
   if (S.boss) {
     star = A.id;
@@ -384,6 +388,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   document.body.classList.add('in-battle');
   window.scrollTo(0, 0);
   renderShell();
+  music(S.boss ? 'boss' : 'battle');
   uiHp = [S.sides[0].hp, S.sides[1].hp];
   shown.revealed = [true, S.mode === 'pvp' || S.sides[1].id !== 'esame' || S.sides[1].revealed];
   setHp(0, uiHp[0]); setHp(1, uiHp[1]);
@@ -392,6 +397,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   runFlow();
 }
 export function goHome() {
+  music('home');
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
