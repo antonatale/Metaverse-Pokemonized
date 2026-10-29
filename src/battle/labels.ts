@@ -1,0 +1,73 @@
+import { TUNE } from '../data/tuning';
+import { ITEMS } from '../data/items';
+import type { BattleState, Chip, MoveLabel, Snap } from './types';
+import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn } from './state';
+import { movePower } from './damage';
+
+/* What the UI shows, decided here so the UI never needs to know the rules:
+   the status chips under each name, and the label of every move button. */
+
+export function snap(s: BattleState): Snap {
+  return { k: 'sync', turn: s.turn, maxTurns: s.maxTurns, boss: s.boss, chips: [chips(s, 0), chips(s, 1)], revealed: [s.sides[0].revealed, s.sides[1].revealed], ph: [zenOn(s, s.sides[0]), zenOn(s, s.sides[1])] };
+}
+function chips(s: BattleState, i: number): Chip[] {
+  const x = s.sides[i], out: Chip[] = [];
+  function add(c: string, ic: string, t: string, d?: string) { out.push({ c: c, i: ic, t: t, d: d || t }); }
+  if (x.lock) { const it = ITEMS[x.lock.move], left = x.lock.until - s.turn + 1; add('bad', it.icon, left <= 1 ? '1 turno' : left + ' turni', it.short); }
+  if (x.boost) add('info', 'spark', 'IA +50%');
+  if (x.id === 'antonio') { if (x.tee) add('white', 'cert', x.tee + '/3', 'Certificati bianchi'); add('stage', 'plane', ['Formia', 'Torino', 'AMERICA'][x.lv], 'Tappa del viaggio'); }
+  if (x.skip) add('bad', x.skip.why === 'robot' ? 'robot' : 'mute', x.skip.why === 'robot' ? 'Robot a terra' : 'Perde il turno');
+  if (x.conf > 0) add('bad', 'swirl', 'Confuso');
+  if (x.encore && x.encore.until >= s.turn) add('bad', 'loop', 'Manipolato', 'Deve ripetere ' + mv(x, x.encore.move)!.name);
+  if (hasMod(s, x, 'atkUp')) add('up', 'up', 'Attacco +30%');
+  if (hasMod(s, x, 'atkDown')) add('down', 'down', 'Attacco −25%');
+  if (hasMod(s, x, 'defUp')) add('up', 'shield', 'Difesa +25%');
+  if (hasMod(s, x, 'defDown')) add('down', 'down', 'Difesa −20%');
+  if (hasMod(s, x, 'guard')) add('up', 'shield', 'Danni −30%');
+  if (x.away) add('info', 'plane', 'A Copenhagen');
+  if (x.charge) add('info', 'plane', 'Di ritorno');
+  if (personaOn(s, x)) add('info', 'mic', 'Nel personaggio');
+  if (x.id === 'costanzo' && x.lastAtk && x.atkStreak > 0) add('white', 'mic', 'Fissa ' + ((x.atkStreak - 1) % 3 + 1) + '/3', 'Fissa su ' + mv(x, x.lastAtk)!.name);
+  if (x.id === 'forchetta' && !x.sturdy) add('white', 'shield', 'Resiste 1 volta');
+  if (x.id === 'zendavid') { if (x.anx) add('down', 'pulse', 'Ansia ' + x.anx + '/3'); if (zenOn(s, x)) add('up', 'music', 'Cuffie'); }
+  if (x.id === 'valentin') add('white', 'heart', '+' + TUNE.regen + ' PS a turno');
+  return out;
+}
+
+/* ---------- labels for the move buttons ---------- */
+export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
+  const me = s.sides[i], m = mv(me, id)!, lock = me.lock && me.lock.move === id;
+  const av = available(s, i), out: MoveLabel = { id: id, name: m.name, kind: m.kind, locked: av.indexOf(id) < 0, sub: '', icon: null, dots: null };
+  if (lock) { const it = ITEMS[id], left = me.lock!.until - s.turn + 1; out.icon = it.icon; out.sub = it.short + ' · ' + (left <= 1 ? '1 turno' : left + ' turni'); return out; }
+  if (out.locked && me.encore && me.encore.until >= s.turn) { out.sub = 'Manipolato: non può'; out.icon = 'loop'; return out; }
+  if (m.uses && (me.uses[id] || 0) >= m.uses) { out.icon = 'x'; out.sub = 'Usi finiti'; return out; }
+  switch (id) {
+    case 'diagnosi': out.icon = 'scan'; out.sub = 'Difesa −20%, rivela'; break;
+    case 'certificati': out.icon = 'cert'; out.sub = me.hp >= me.max ? 'PS al massimo' : 'Cura ' + Math.min(Math.round((TUNE.healBase + TUNE.healPer * me.tee) * (me.boost ? 1.5 : 1)), me.max - me.hp) + ' PS'; break;
+    case 'simtoreal': out.icon = 'robot'; out.sub = 'Fortissimo · rischio 30%'; break;
+    case 'america': out.dots = [0, 1, 2].map(function (k) { return k <= me.lv; }); out.sub = 'Tappa ' + (me.lv + 1) + ': ' + ['Formia', 'Torino', 'AMERICA'][me.lv]; break;
+    case 'comizio': out.icon = 'mic'; out.sub = 'Danno medio'; break;
+    case 'personaggismo': out.icon = 'mic'; out.sub = personaOn(s, me) ? 'Già nel personaggio' : 'Diventa tipo ' + beaterOf(ch(s.sides[1 - i]).type); break;
+    case 'bidet': out.icon = 'drop'; out.sub = 'Cura 25 PS, pulisce'; break;
+    case 'daje': out.icon = 'flag'; out.sub = 'Forte · 80% di colpire'; break;
+    case 'analisi': out.icon = 'chart'; out.sub = 'Critico 25%'; break;
+    case 'volpino': out.icon = 'wing'; out.sub = 'Attacca per primo'; break;
+    case 'palestra': out.icon = 'up'; out.sub = hasMod(s, me, 'atkUp') ? 'Già carico' : 'Attacco +30%'; break;
+    case 'cucinato': out.icon = 'flame'; out.sub = 'Potenza ' + movePower(me, m); break;
+    case 'weee': out.icon = 'spark'; out.sub = 'Danno medio · confonde'; break;
+    case 'manipolazione': out.icon = 'loop'; out.sub = 'Lo obbliga a ripetere'; break;
+    case 'copenhagen': out.icon = 'plane'; out.sub = 'Sparisce, poi colpisce'; break;
+    case 'king': out.icon = 'shield'; out.sub = 'Danni subiti −30%'; break;
+    case 'servizio': out.icon = 'ball'; out.sub = 'Critico 25%'; break;
+    case 'pitstop': out.icon = 'wrench'; out.sub = 'Cura 20, Difesa +25%'; break;
+    case 'criptico': out.icon = 'swirl'; out.sub = 'Confonde per 2 turni'; break;
+    case 'formia': out.icon = 'heart'; out.sub = 'Recupera il 40% del danno'; break;
+    case 'abbaia': out.icon = 'paw'; out.sub = 'Attacco avversario −25%'; break;
+    /* the chance is 0.45 (the balance was simulated with it): if this is ever fixed, fix the label, not the chance */
+    case 'battuta': out.icon = 'mic'; out.sub = '40% di far ridere'; break;
+    case 'zen': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Cuffie già in testa' : 'Cuffie, cura 20'; break;
+    case 'stronger': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Forte · +20% cuffie' : 'Danno alto'; break;
+  }
+  if (m.uses) out.left = m.uses - (me.uses[id] || 0);
+  return out;
+}

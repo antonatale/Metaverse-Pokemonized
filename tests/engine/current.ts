@@ -1,4 +1,4 @@
 /* The engine under test: whatever src/ currently ships. */
-import '../../src/_monolith/02-engine.js';
+import { ENGINE } from '../../src/battle';
 
-export const E = (globalThis as unknown as { ENGINE: unknown }).ENGINE;
+export const E = ENGINE;
