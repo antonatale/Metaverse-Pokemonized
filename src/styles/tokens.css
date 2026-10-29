@@ -1,0 +1,71 @@
+/* Layout: one notebook column. The home page scrolls like a page of a squared exercise book:
+   story card, roster, the chosen friend's card, the boss, the type cycle, the record.
+   The battle fills exactly one screen: arena, dialogue strip, 2x2 move pad.
+   The story map fills the screen too: canvas underneath, place and pins on top, dialogue above
+   the touch pad (the pad hides where there is a mouse and a keyboard). */
+:root {
+  --paper: #f7f6f0;      /* quaderno a quadretti */
+  --grid: #d5dfee;
+  --margin: #e8877c;
+  --ink: #1f2c6e;        /* biro blu */
+  --text: #1b1f2e;
+  --muted: #5a6276;
+  --card: #ffffff;
+  --line: #1f2c6e;
+  --track: #e4e7ef;
+  --red: #c8372d;        /* penna rossa */
+  --good: #2c9a55;
+  --warn: #d99a12;
+  --on-hl: #1b1f2e;
+  --shadow: rgba(31, 44, 110, .18);
+  --btn: #c8372d;
+  --on-btn: #ffffff;
+  --t-calma: #8fd0f6;    /* evidenziatori */
+  --t-caos: #ffa35a;
+  --t-cervello: #bba0ff;
+  --t-chiacchiera: #ffe45c;
+  --t-cuore: #ff8fc1;
+  --t-none: #dde1ea;
+  --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-hand: "Patrick Hand", "Chalkboard SE", "Comic Sans MS", cursive;
+  /* the city maps: ballpoint on squared paper, coloured with highlighters */
+  --m-paper: #f7f6f0; --m-grid: #d5dfee; --m-ink: #1f2c6e; --m-label: #1b1f2e; --m-shadow: rgba(31, 44, 110, .16);
+  --m-grass: #cdeab4; --m-grass2: #9fcf86; --m-path: #f1e6cc; --m-path2: #d8c6a0; --m-road: #dde0e8; --m-road2: #b9bfcc;
+  --m-sand: #f8e9b0; --m-sand2: #e2c97a; --m-sea: #a7d8f2; --m-sea2: #79bde6; --m-foam: #ffffff;
+  --m-wood: #d9a874; --m-wood2: #b58552; --m-stone: #e4dfd2; --m-stone2: #c4bca9; --m-wall: #fffaf0; --m-clay: #e8916a; --m-line: #ffffff;
+  --m-roof-a: #ff9a8b; --m-roof-b: #9ec5ff; --m-roof-c: #ffd166; --m-roof-d: #c3a6ff;
+  --m-leaf: #86cf7f; --m-leaf2: #5aa860; --m-trunk: #b98a5e; --m-hedge: #77c07a; --m-flower-a: #ff8fc1; --m-flower-b: #ffd166;
+  --m-hill: #bcd8a0; --m-hill2: #93ba7c; --m-rock: #ddd6c8; --m-rock2: #b2a893; --m-olive: #aec69c; --m-track: #ea8f72; --m-far: #d6deee; --m-far2: #b0bed9;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1e2a26; --grid: #2b3934; --margin: #9c4f48; --ink: #e9efe7; --text: #eef2ec; --muted: #a9b5ae;
+    --card: #26332f; --line: #dbe4dc; --track: #36443f; --red: #ff7d70; --good: #4cc27a; --warn: #f0b93a;
+    --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
+    --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-none: #c9d0cc;
+    --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
+    --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
+    --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;
+    --m-wood: #6e5238; --m-wood2: #8a6a48; --m-stone: #4e4b45; --m-stone2: #6b675e; --m-wall: #6a6459; --m-clay: #a85f44; --m-line: #e9efe7;
+    --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
+    --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
+    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1e2a26; --grid: #2b3934; --margin: #9c4f48; --ink: #e9efe7; --text: #eef2ec; --muted: #a9b5ae;
+  --card: #26332f; --line: #dbe4dc; --track: #36443f; --red: #ff7d70; --good: #4cc27a; --warn: #f0b93a;
+  --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
+  --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-none: #c9d0cc;
+  --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
+  --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
+  --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;
+  --m-wood: #6e5238; --m-wood2: #8a6a48; --m-stone: #4e4b45; --m-stone2: #6b675e; --m-wall: #6a6459; --m-clay: #a85f44; --m-line: #e9efe7;
+  --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
+  --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
+    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+  color-scheme: dark;
+}
+

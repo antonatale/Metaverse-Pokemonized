@@ -1,0 +1,11 @@
+/* Order matters: same cascade as the old single <style> block. */
+@import './fonts.css';
+@import './reset.css';
+@import './tokens.css';
+@import './base.css';
+@import './home.css';
+@import './battle.css';
+@import './sheets.css';
+@import './story.css';
+@import './responsive.css';
+@import './sprites.css';
