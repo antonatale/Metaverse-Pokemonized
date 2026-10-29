@@ -12,14 +12,14 @@ import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, person
 import { press, release, update, halt, mover, busy } from '../story/movement';
 import { resize, invalidate, drawWorld, preview, overview } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
+import { setScreen } from './common';
+import { startBattle, goHome } from './battle-screen';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
    enters the covi and challenges his friends; battles run on the battle screen. */
 
 interface DialogOpt { label: string; fn: (() => void) | null }
 interface Dialog { lines: string[]; i: number; who?: string | null; opts?: DialogOpt[] | null; done?: () => void; typing: boolean; showingOpts: boolean; finish?: () => void }
-/** the battle screen, still an old script on window for now */
-const UI = () => (window as unknown as { UI: { startBattle(cfg: unknown): void; goHome(): void; setScreen?(s: string): void } }).UI;
 function tc(id: string) { return 'var(--t-' + C[id as CharId].type.toLowerCase() + ')'; }
 
 /* ---------- DOM ---------- */
@@ -94,17 +94,19 @@ export function renderHud() {
 
 const KEYMAP: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
 function overlayOpen() { var o = $('overlay'); return !!(o && !o.hidden); }
-/* registered before ui.js, so stopping here keeps the battle keys out of the map */
-document.addEventListener('keydown', function (e) {
-  if (!running || overlayOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
-  var d = KEYMAP[e.key];
-  if (d) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) press(d); return; }
-  if (e.key === 'Enter' || e.key === ' ' || e.key === 'e' || e.key === 'E' || e.key === 'z' || e.key === 'Z') {
-    if (dialog && dialog.showingOpts) return;          /* the focused option button takes it */
-    e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) interact();
-  } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
-});
-document.addEventListener('keyup', function (e) { var d = KEYMAP[e.key]; if (d) release(d); });
+/** the map's keys: registered before the battle's (main.ts), so stopping here keeps the battle keys out of the map */
+export function installStoryKeys() {
+  document.addEventListener('keydown', function (e) {
+    if (!running || overlayOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
+    var d = KEYMAP[e.key];
+    if (d) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) press(d); return; }
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'e' || e.key === 'E' || e.key === 'z' || e.key === 'Z') {
+      if (dialog && dialog.showingOpts) return;          /* the focused option button takes it */
+      e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) interact();
+    } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
+  });
+  document.addEventListener('keyup', function (e) { var d = KEYMAP[e.key]; if (d) release(d); });
+}
 
 /* ---------- talking ---------- */
 export let dialog: Dialog | null = null;
@@ -208,7 +210,7 @@ function leaderTalk(id: string) {
 function challenge(id: string) {
   var cv0 = COVI[id], squad = st.squad.filter(function (x) { return x !== cv0.leader; });
   var safe = foundItems().map(function (it) { return it.move; });
-  var go = function (who: FriendId) { hide(); UI().startBattle({ a: who, b: cv0.leader, mode: 'cpu', story: { covo: id }, safe: safe }); };
+  var go = function (who: FriendId) { hide(); startBattle({ a: who, b: cv0.leader, mode: 'cpu', story: { covo: id }, safe: safe }); };
   if (squad.length <= 1) go(squad[0] || 'antonio'); else pickFighter(squad, cv0, go);
 }
 function sheet(html: string, cls?: string) {
@@ -284,7 +286,7 @@ function openMenu() {
     '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
     '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
   $('wm-x').addEventListener('click', closeSheet);
-  $('wm-home').addEventListener('click', function () { closeSheet(); hide(); UI().goHome(); });
+  $('wm-home').addEventListener('click', function () { closeSheet(); hide(); goHome(); });
   var r = $('wm-reset'), armed = false;
   r.addEventListener('click', function () {
     if (!armed) { armed = true; r.textContent = 'Tocca ancora: cancella spille, compagnia e oggetti'; r.classList.add('danger'); return; }
@@ -323,7 +325,7 @@ function open(quiet?: boolean) {
   document.body.classList.remove('in-battle'); document.body.classList.add('in-world');
   root.hidden = false;
   window.scrollTo(0, 0);
-  if (UI() && UI().setScreen) UI().setScreen!('world');
+  setScreen('world');
   setMap(st.map);
   resize(); renderHud();
   var go = function () {

@@ -186,6 +186,29 @@ for (const dark of [false, true]) {
   });
 }
 
+/* the claude.ai artifact's hot reload: an open battle survives an update of the page */
+test('hot reload keeps an open battle', async ({ browser }) => {
+  await twin(browser, 'hot', { seed: 21, hot: true }, async (r) => {
+    const p = r.page;
+    await p.click('.slot[data-id="forchetta"]');
+    await p.click('#go');
+    await p.click('#su-go');
+    for (let k = 0; k < 2; k++) {
+      await toPrompt(p);
+      const id = await p.evaluate(() => window.UI._debug.suggest());
+      await p.click('#pad .mv[data-id="' + id + '"]');
+    }
+    await toPrompt(p);
+    await r.shot('before');
+    await p.evaluate(() => sessionStorage.setItem('__hot', JSON.stringify((window as unknown as { __snap(): unknown }).__snap())));
+    await p.reload();
+    await p.clock.runFor(1000);
+    await toPrompt(p);
+    await r.shot('after');
+    await fight(r, 'rest', 1);
+  });
+});
+
 /* saves written by the old game load the same way in the new one */
 const OLD_SAVE = {
   'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 30, y: 25, dir: 'left', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: { piazza: true }, seen: { intro: true, formia2: true }, found: { appunti: true, caricabatterie: true } }),

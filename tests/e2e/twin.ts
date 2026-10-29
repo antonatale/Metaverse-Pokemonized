@@ -23,6 +23,8 @@ export interface TwinOpts {
   seed?: number;
   storage?: Record<string, string>;
   touch?: boolean;
+  /** a fake window.claude.hot, as in a claude.ai artifact: ready() hands back what was stored in sessionStorage */
+  hot?: boolean;
 }
 
 async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
@@ -54,6 +56,13 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
       for (const k of Object.keys(storage)) localStorage.setItem(k, storage[k]);
     }
   }, { seed: o.seed ?? 7, storage: o.storage || null });
+  if (o.hot) await page.addInitScript(() => {
+    const W = window as unknown as Record<string, unknown>;
+    W.claude = { hot: {
+      snapshot(fn: () => unknown) { W.__snap = fn; },
+      ready(cb: (d?: unknown) => void) { const d = sessionStorage.getItem('__hot'); cb(d ? JSON.parse(d) : undefined); }
+    } };
+  });
   await page.clock.install({ time: T0 });
   await page.goto(url);
   await page.evaluate(async () => {
