@@ -65,7 +65,42 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   const run: Run = {
     page, shots: [], data: [],
     async shot(name, so = {}) {
-      const png = so.selector ? await page.locator(so.selector).screenshot({ animations: 'disabled' }) : await page.screenshot({ fullPage: !!so.fullPage, animations: 'disabled' });
+      /* the old page gets its fonts from Google, and a face can still be on its way: wait for every one */
+      for (let k = 0; k < 100; k++) {
+        const ok = await page.evaluate(() => document.fonts.status === 'loaded' && Array.from(document.fonts).every((f) => f.status !== 'loading'));
+        if (ok) break;
+        await page.waitForTimeout(50);
+      }
+      /* Chrome sometimes keeps `ch` lengths measured with the fallback font after a late web font arrives
+         (the old page, whose fonts come over the network, under load): restyle everything once fonts are in */
+      await page.evaluate(() => {
+        const st = document.createElement('style');
+        st.textContent = '* { font-family: serif !important; }';
+        document.head.appendChild(st);
+        void document.documentElement.offsetHeight;
+        st.remove();
+        void document.documentElement.offsetHeight;
+      });
+      await page.clock.runFor(50);
+      let png: Buffer;
+      if (so.selector) png = await page.locator(so.selector).screenshot({ animations: 'disabled' });
+      else if (so.fullPage) {
+        /* Playwright's fullPage resizes while it captures, and under load it sometimes catches the page mid-resize:
+           measure the page, make the window that tall, then take a plain screenshot */
+        const vp = page.viewportSize()!;
+        const h = await page.evaluate(() => document.documentElement.scrollHeight);
+        await page.setViewportSize({ width: vp.width, height: h });
+        await page.clock.runFor(100);
+        const h2 = await page.evaluate(() => document.documentElement.scrollHeight);
+        run.keep(name + ' height', h2);
+        if (process.env.PARITY_DEBUG) run.keep(name + ' layout', await page.evaluate(() => ({
+          blocks: Array.from(document.querySelectorAll('#home > *, #home section > *, #card > *')).map((e) => e.tagName + '.' + e.className + ' ' + (e as HTMLElement).offsetHeight),
+          fonts: Array.from(document.fonts).map((f) => f.family + ' ' + f.weight + ' ' + f.status).filter((x) => !x.endsWith('unloaded'))
+        })));
+        png = await page.screenshot({ animations: 'disabled' });
+        await page.setViewportSize(vp);
+        await page.clock.runFor(100);
+      } else png = await page.screenshot({ animations: 'disabled' });
       run.shots.push({ name, png });
     },
     keep(name, value) { run.data.push({ name, value }); }
@@ -75,17 +110,16 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
 
 function diff(name: string, a: Buffer, b: Buffer): number {
   const A = PNG.sync.read(a), B = PNG.sync.read(b);
-  if (A.width !== B.width || A.height !== B.height) return -1;
-  const D = new PNG({ width: A.width, height: A.height });
-  const n = pixelmatch(A.data, B.data, D.data, A.width, A.height, { threshold: 0, includeAA: true });
-  if (n > 0) {
-    const dir = path.join('test-results', 'parity');
+  const dir = path.join('test-results', 'parity'), f = name.replace(/[^a-z0-9-]+/gi, '_');
+  const keep = () => {
     fs.mkdirSync(dir, { recursive: true });
-    const f = name.replace(/[^a-z0-9-]+/gi, '_');
     fs.writeFileSync(path.join(dir, f + '-old.png'), a);
     fs.writeFileSync(path.join(dir, f + '-new.png'), b);
-    fs.writeFileSync(path.join(dir, f + '-diff.png'), PNG.sync.write(D));
-  }
+  };
+  if (A.width !== B.width || A.height !== B.height) { keep(); console.log(name + ': old ' + A.width + '×' + A.height + ', new ' + B.width + '×' + B.height); return -1; }
+  const D = new PNG({ width: A.width, height: A.height });
+  const n = pixelmatch(A.data, B.data, D.data, A.width, A.height, { threshold: 0, includeAA: true });
+  if (n > 0) { keep(); fs.writeFileSync(path.join(dir, f + '-diff.png'), PNG.sync.write(D)); }
   return n;
 }
 
