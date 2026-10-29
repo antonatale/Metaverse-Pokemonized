@@ -1,3 +1,5 @@
+import { LEGEND } from '../data/maps';
+
 /* World art: everything on the map is drawn in code with canvas 2D, once, then reused.
    Style: a map drawn in ballpoint on squared paper, coloured with highlighters.
    Map colours come from CSS tokens (--m-*), so the map follows light and dark mode;
@@ -59,23 +61,7 @@
     return P;
   }
 
-  /* ---------- ground: what each map character is made of ---------- */
-  var LEGEND = {
-    '.': { g: 'grass' }, 'f': { g: 'grass', deco: 'flowers' }, ',': { g: 'path' }, '=': { g: 'road' }, ':': { g: 'sand' },
-    '~': { g: 'sea', solid: true }, 'w': { g: 'pier' }, '_': { g: 'stone' }, 'c': { g: 'clay' }, 'F': { g: 'floor' }, 'D': { g: 'floor', deco: 'mat' },
-    'x': { g: 'wall', solid: true }, 'r': { g: 'rail', solid: true },
-    'T': { g: 'grass', obj: 'tree', solid: true }, 'p': { g: 'path', obj: 'palm', solid: true }, 'P': { g: 'sand', obj: 'palm', solid: true },
-    '#': { g: 'grass', deco: 'hedge', solid: true }, 'b': { g: 'path', deco: 'bench', solid: true }, 'l': { g: 'path', obj: 'lamp', solid: true },
-    'u': { g: 'sand', obj: 'umbrella', solid: true }, 'o': { g: 'sea', obj: 'boat', solid: true }, 'q': { g: 'path', deco: 'railing', solid: true },
-    's': { g: 'stone', deco: 'stage', solid: true }, 'm': { g: 'stone', deco: 'stage', obj: 'mic', solid: true },
-    'n': { g: 'clay', deco: 'net', solid: true, reach: true }, 'k': { g: 'floor', deco: 'counter', solid: true, reach: true },
-    /* Formia, second edition: mountains, olive trees, cypresses, steps, cobbles, the old polygonal walls, rocks in the sea */
-    'M': { g: 'hill', solid: true }, 'O': { g: 'grass', obj: 'olive', solid: true }, 'C': { g: 'grass', obj: 'cypress', solid: true },
-    'H': { g: 'steps' }, 'v': { g: 'paving' }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
-    'z': { g: 'road', deco: 'zebra' }, 'G': { g: 'far', solid: true }, 'B': { g: 'stone', deco: 'bench', solid: true },
-    'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true },
-    'Q': { g: 'hill', obj: 'tree', solid: true }, 'J': { g: 'hill', obj: 'cypress', solid: true }
-  };
+  /* ---------- ground: what each map character is made of (see data/maps/legend.ts) ---------- */
   var GROUP = { grass: 'g', path: 'p', road: 'r', sand: 's', sea: 'w', pier: 'd', stone: 'st', steps: 'st', clay: 'c', floor: 'f', wall: 'x', rail: 'rl',
     hill: 'h', paving: 'pv', mura: 'mu', far: 'fr' };
 

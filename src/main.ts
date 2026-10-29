@@ -3,6 +3,6 @@
 import './_monolith/01-sprites.js';
 import './_monolith/02-engine.js';
 import './_monolith/03-world-art.js';
-import './_monolith/04-world-maps.js';
+import './_monolith/04-world-maps';
 import './_monolith/05-world.js';
 import './_monolith/06-ui.js';
