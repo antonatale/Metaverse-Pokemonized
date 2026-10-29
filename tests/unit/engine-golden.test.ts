@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import golden from '../fixtures/engine-golden.json';
-import { scenarios, digest, transcript, staticFacts } from '../engine/scenarios.mjs';
-import { legacyEngine } from '../engine/legacy.mjs';
-import { E } from '../engine/current';
+import { scenarios, digest, transcript, staticFacts } from '../golden/scenarios.mjs';
+import { legacyEngine } from '../golden/legacy.mjs';
+import { E } from '../golden/engine';
 
-/* The engine must say exactly what the original said, battle by battle (see tools/golden-engine.mjs). */
+/* The engine must say exactly what the original said, battle by battle (see tools/golden.mjs). */
 describe('battle engine, against the original', () => {
   it('has the same data and pure helpers', () => {
     expect(createHash('sha256').update(JSON.stringify(staticFacts(E))).digest('hex').slice(0, 24)).toBe(golden.facts);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { legacyGlobals, legacyLiteral, legacyScript, LEGACY } from '../engine/legacy.mjs';
+import { legacyGlobals, legacyLiteral, legacyScript, LEGACY } from '../golden/legacy.mjs';
 import fs from 'node:fs';
 import { MAPS, LEGEND } from '../../src/data/maps';
 import { COVI } from '../../src/data/covi';

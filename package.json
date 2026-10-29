@@ -12,7 +12,7 @@
     "test:parity:dist": "vite build && PARITY_NEW=file://$PWD/dist/index.html playwright test",
     "test": "vitest run",
     "test:all": "vitest run && playwright test",
-    "golden": "node tools/golden-engine.mjs",
+    "golden": "node tools/golden.mjs",
     "sim": "tsx tools/sim.ts"
   },
   "devDependencies": {
