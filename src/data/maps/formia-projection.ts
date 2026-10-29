@@ -1,6 +1,7 @@
 /* From real coordinates to tiles of the Formia map. North is up. Rows are 0.00034° of latitude (about 38 m).
    Columns are piecewise: the places that matter to Antonio get room (Vindicio, the centre, Via Amendola),
-   the stretches in between are squeezed. Keep this in step with the map: places are placed through it. */
+   the stretches in between are squeezed. tools/formia/build.ts draws the ground through it, and
+   src/data/maps/formia.ts places people, signs and things through it. */
 
 /** longitude → column, by anchors */
 export const X_ANCHORS: [number, number][] = [

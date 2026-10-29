@@ -158,7 +158,7 @@ test('story: circolo and menu', async ({ browser }) => {
     await p.click('#go-story');
     await until(p, () => window.WORLD._debug.pos().dialog);
     await talkThrough(p);
-    await goTo(p, 'door', 'circolo');
+    await goTo(p, 'door', 'tennis');
     await walk(p, ['up']);
     await p.clock.runFor(600);
     await r.shot('inside');

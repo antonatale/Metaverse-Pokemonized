@@ -59,12 +59,13 @@ function prep(def, LEGEND) {
 
 const T = 32;
 /** how far above its footprint each kind of thing is drawn, as in the story module */
-const UP = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
+const UP0 = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
   church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
   lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4 };
 const UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'];
 
 export function canvasDigests(ART, MAPS, LEGEND) {
+  const UP = ART.HEIGHT || UP0;
   const KEYS = ['paper', 'grid', 'ink', 'grass', 'grass2', 'path', 'path2', 'road', 'road2', 'sand', 'sand2', 'sea', 'sea2', 'foam', 'wood', 'wood2', 'stone', 'stone2',
     'roof-a', 'roof-b', 'roof-c', 'roof-d', 'wall', 'leaf', 'leaf2', 'trunk', 'clay', 'line', 'hedge', 'flower-a', 'flower-b', 'shadow', 'label',
     'hill', 'hill2', 'rock', 'rock2', 'olive', 'track', 'far', 'far2'];

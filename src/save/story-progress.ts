@@ -15,7 +15,7 @@ export interface StoryProgress {
   squad: FriendId[];
   /** covi beaten */
   beaten: Record<string, boolean>;
-  /** one-off things already seen: intro, formia2 (the save was moved to the redrawn Formia) */
+  /** one-off things already seen: intro, formia2 and formia3 (the save was moved to a redrawn Formia) */
   seen: Record<string, boolean>;
   /** lost things picked up */
   found: Record<string, boolean>;
@@ -30,10 +30,11 @@ function load(): StoryProgress {
     var v = JSON.parse(window.localStorage.getItem(KEY) || 'null');
     if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
       v.found = v.found || {};
-      if (v.map === 'formia' && !v.seen.formia2) {   /* Formia was redrawn: start again from home, keep pins and squad */
+      /* Formia was redrawn (formia2), then redrawn as the real town (formia3): start again from home, keep pins, squad and found things */
+      if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3)) {
         var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
       }
-      v.seen.formia2 = true;
+      v.seen.formia2 = true; v.seen.formia3 = true;
       return v;
     }
   } catch (e) { /* storage unavailable */ }

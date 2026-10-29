@@ -317,8 +317,8 @@ function hide() { stop(); if (dialog) closeDialog(function () {}); if (root) roo
 
 function intro() {
   st.seen.intro = true; save();
-  say(['Formia, casa. Da qui parte il viaggio: Formia, poi Torino, poi Chicago.',
-    'In città ci sono due covi: la Piazza del Comizio di Costanzo e il Circolo Tennis di Forchetta.',
+  say(['Formia, casa: Parco la Fontana, in via Amendola. Da qui parte il viaggio: Formia, poi Torino, poi Chicago.',
+    'In città ci sono due covi: Costanzo fa comizi in piazza della Vittoria, Forchetta gioca nei campi coperti del Bruno Zauli.',
     'Sfida gli amici nei loro covi: chi batti ti dà la sua spilla ed entra nella compagnia.',
     'E occhio: Antonio ha perso quattro cose in giro per Formia. Ritrovale e nelle lotte non le perderà più.']);
 }

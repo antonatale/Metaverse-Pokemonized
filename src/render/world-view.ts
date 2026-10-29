@@ -1,6 +1,6 @@
 import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
-import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson, type Palette, type Sprite, type PersonLook } from './canvas';
+import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
@@ -24,9 +24,7 @@ var DPR = dpr(), Z = 1, VS = DPR, RS = DPR, P = null as unknown as Palette, them
 var cache: { map: string | null; theme: string; chunks: Record<string, HTMLCanvasElement>; order: string[]; items: SceneItem[] } = { map: null, theme: '', chunks: {}, order: [], items: [] };
 var walkers: Record<string, Walker> = {}, sprites: Record<string, Sprite> = {};
 /* how far above its footprint each kind of thing is drawn */
-const UP: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
-  church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
-  lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4 };
+const UP = HEIGHT;
 var UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'];
 function themeKey() { return getComputedStyle(document.documentElement).getPropertyValue('--m-paper').trim() + '|' + RS; }
 /* the tall still things of a map, sorted by their bottom edge (the ground is painted in pieces, see chunk) */
@@ -179,7 +177,7 @@ export function drawWorld(now: number) {
   });
 }
 
-/* a still picture of Formia for the home page: the square, Mola and the seafront */
+/* a still picture of Formia for the home page, around Antonio: wherever he is in town, or at home */
 export function preview(el: HTMLElement | null) {
   if (!el) return;
   previewEl = el;
@@ -188,7 +186,8 @@ export function preview(el: HTMLElement | null) {
   var c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
   c0.width = Math.round(W * s); c0.height = Math.round(H * s);
   c0.setAttribute('aria-hidden', 'true');
-  var sw = W / k, sh = H / k, fx = 23 * T, fy = 23.4 * T;
+  var me0 = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1] };
+  var sw = W / k, sh = H / k, fx = (me0.x + 0.5) * T, fy = (me0.y + 1.5) * T;
   var sx = Math.max(0, Math.min(mw - sw, fx - sw / 2)), sy = Math.max(0, Math.min(mh - sh, fy - sh / 2));
   var rx = Math.floor(sx / T), ry = Math.floor(sy / T), rect = { x: rx, y: ry, w: Math.min(m.w, Math.ceil((sx + sw) / T)) - rx, h: Math.min(m.h, Math.ceil((sy + sh) / T)) - ry };
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);

@@ -6,15 +6,15 @@ import { LEGEND } from '../../data/maps';
 import { T, hash } from './draw';
 import { palette } from './palette';
 import { paintGround } from './ground';
-import { paintObject } from './objects';
+import { paintObject, HEIGHT } from './objects';
 import { walker, PEOPLE, townsperson } from './walkers';
 import { badgeSVG, itemSVG } from '../svg/badges';
 
-export { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson };
+export { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson, HEIGHT };
 export type { Palette } from './palette';
 export type { GroundMap, Rect } from './ground';
 export type { ObjOpts, Sprite } from './objects';
 export type { PersonLook } from './walkers';
 
 /** the whole module as one object, with the same names the old window.WORLD_ART had */
-export const WORLD_ART = { T, LEGEND, palette, paintGround, paintObject, walker, PEOPLE, townsperson, badgeSVG, itemSVG, hash };
+export const WORLD_ART = { T, LEGEND, palette, paintGround, paintObject, walker, PEOPLE, townsperson, badgeSVG, itemSVG, hash, HEIGHT };

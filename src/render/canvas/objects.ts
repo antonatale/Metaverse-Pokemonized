@@ -19,6 +19,10 @@ type ObjFn = (c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) => void;
 interface BuildingLook { roof: string; windows: number; awning?: string; sign?: string }
 
 /* ---------- tall objects: drawn sorted by their bottom edge, so people walk behind them ---------- */
+/** how far above its footprint each kind of thing is drawn, in px (1 tile when missing) */
+export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
+  church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
+  lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.1, pub: T * 0.75 };
 export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts): Sprite {
   opt = opt || {};
   var w = (opt.w || 1) * T, h = (opt.h || 1) * T, up = opt.up == null ? T : opt.up;
@@ -34,6 +38,18 @@ const OBJ: Record<string, ObjFn> = {
     blobs(c, [[9, 4, 9], [23, 4, 9], [16, -6, 11]], P.leaf, P.ink, 1.7);
     c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(6, 11); c.quadraticCurveTo(16, 15, 26, 11); c.stroke();
     c.fillStyle = P.leaf2; circle(c, 12, 0, 2.2); c.fill(); circle(c, 21, 5, 2.4); c.fill(); circle(c, 16, -9, 2); c.fill();
+  },
+  /* the umbrella pine of the Pineta di Vindicio: a tall bare trunk, a flat dark crown */
+  pine: function (c, w, h, P) {
+    ell(c, 16, 29, 9, 3); c.fillStyle = P.shadow; c.fill();
+    c.beginPath(); c.moveTo(14, 29); c.quadraticCurveTo(13, 6, 16.5, -15); c.lineTo(19.5, -15); c.quadraticCurveTo(16, 6, 18.5, 29); c.closePath();
+    fillStroke(c, P.trunk, P.ink, 1.5);
+    c.strokeStyle = P.ink; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(18, -11); c.lineTo(11, -18); c.moveTo(18, -12); c.lineTo(25, -19); c.stroke();
+    blobs(c, [[6, -24, 6], [12, -27, 7], [20, -27, 7], [26, -24, 6], [16, -21, 7]], P.leaf2, P.ink, 1.6);
+    c.fillStyle = P.leaf; c.globalAlpha = 0.8;
+    [[10, -28], [20, -29], [25, -24], [7, -23], [15, -24]].forEach(function (d) { ell(c, d[0], d[1], 3.4, 1.8); c.fill(); });
+    c.globalAlpha = 1;
   },
   olive: function (c, w, h, P) {
     ell(c, 16, 28, 10, 3.4); c.fillStyle = P.shadow; c.fill();
@@ -316,6 +332,52 @@ const OBJ: Record<string, ObjFn> = {
       circle(c, 16.5, 12, 3.6); c.strokeStyle = '#ffd166'; c.lineWidth = 1.2; c.stroke();
       c.fillStyle = '#ffd166'; c.fillRect(12, 18, 9, 1.4);
     }
+  },
+  /* a palazzina, the apartment blocks of Formia (Antonio's is Parco la Fontana): flat roof, floors of balconies */
+  condo: function (c, w, h, P, o) {
+    var top = -T * 1.05, dx = (o.doorX! - o.x!) * T;
+    ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+    rr(c, 3, top, w - 6, h - top - 2, 2); fillStroke(c, P.wall, P.ink, 1.8);
+    rr(c, 0, top - 5, w, 8, 2); fillStroke(c, P.stone2, P.ink, 1.6);
+    c.fillStyle = o.roof || P['roof-b']; c.globalAlpha = 0.35; c.fillRect(4, top + 3, w - 8, 5); c.globalAlpha = 1;
+    var floors = Math.max(2, Math.floor((h - T - top - 8) / 21));
+    for (var f = 0; f < floors; f++) {
+      var wy = top + 12 + f * 21;
+      for (var x = 9; x + 14 <= w - 9; x += 19) {
+        rr(c, x, wy, 14, 11, 2); fillStroke(c, '#bfe3ff', P.ink, 1.2);
+        c.strokeStyle = P.ink; c.lineWidth = 1.1;
+        c.beginPath(); c.moveTo(x - 3, wy + 14); c.lineTo(x + 17, wy + 14); c.moveTo(x - 3, wy + 14); c.lineTo(x - 3, wy + 18); c.moveTo(x + 17, wy + 14); c.lineTo(x + 17, wy + 18); c.stroke();
+        if ((x + f) % 3 === 0) { c.fillStyle = P['flower-a']; circle(c, x + 2, wy + 13, 1.8); c.fill(); }
+      }
+    }
+    rr(c, dx + 5, h - T + 1, T - 10, T - 3, 3); fillStroke(c, '#bfe3ff', P.ink, 1.5);
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(dx + T / 2, h - T + 2); c.lineTo(dx + T / 2, h - 2); c.stroke();
+    rr(c, dx + 2, h - T - 4, T - 4, 4, 1); fillStroke(c, P.stone2, P.ink, 1);
+    if (o.label) plaque(c, P, o.label, w / 2, top + 1, w - 10, 13);
+  },
+  /* a birreria (Morgana in via Tullia): dark wood, warm windows, string lights, a mug on the sign */
+  pub: function (c, w, h, P, o) {
+    var wallTop = T * 0.45, dx = (o.doorX! - o.x!) * T;
+    ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+    rr(c, 3, wallTop, w - 6, h - wallTop - 2, 3); fillStroke(c, P.wood2, P.ink, 1.8);
+    c.strokeStyle = P.wood; c.lineWidth = 1.2;
+    for (var y = wallTop + 8; y < h - 4; y += 7) { c.beginPath(); c.moveTo(5, y); c.lineTo(w - 5, y); c.stroke(); }
+    rr(c, -1, wallTop - 10, w + 2, 12, 2); fillStroke(c, P.wood, P.ink, 1.7);
+    [[10, wallTop + 12], [w - 10 - 30, wallTop + 12]].forEach(function (q) {
+      if (Math.abs(q[0] + 15 - (dx + T / 2)) < 24) return;
+      rr(c, q[0], q[1], 30, 20, 3); fillStroke(c, '#ffd98a', P.ink, 1.4);
+      c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(q[0] + 15, q[1]); c.lineTo(q[0] + 15, q[1] + 20); c.stroke();
+    });
+    rr(c, dx + 6, h - T + 1, T - 12, T - 3, 3); fillStroke(c, P.wood, P.ink, 1.5);
+    circle(c, dx + T - 10, h - T / 2 + 2, 1.4); c.fillStyle = P.ink; c.fill();
+    c.strokeStyle = P.ink; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(2, wallTop - 12); for (var k = 0; k <= 8; k++) c.quadraticCurveTo(k * w / 8 - w / 16, wallTop - 6, k * w / 8, wallTop - 12); c.stroke();
+    for (k = 0; k < 8; k++) { circle(c, k * w / 8 + w / 16, wallTop - 8.5, 1.8); c.fillStyle = k % 2 ? '#ffe9a8' : '#ffb36b'; c.fill(); }
+    if (o.label) plaque(c, P, o.label, w / 2 - 6, wallTop - 4, w - 24, 14);
+    var mx = w - 16, my = wallTop - 10;
+    rr(c, mx - 6, my - 7, 11, 13, 2); fillStroke(c, '#ffd166', P.ink, 1.3);
+    rr(c, mx - 7, my - 9, 13, 4, 2); fillStroke(c, '#fffdf6', P.ink, 1.1);
+    c.beginPath(); c.arc(mx + 6, my - 1, 3.4, -Math.PI / 2, Math.PI / 2); c.strokeStyle = P.ink; c.lineWidth = 1.3; c.stroke();
   },
   house: function (c, w, h, P, o) { building(c, w, h, P, o, { roof: o.roof || P['roof-a'], windows: 2 }); },
   shop: function (c, w, h, P, o) { building(c, w, h, P, o, { roof: o.roof || P['roof-c'], windows: 1, awning: o.awning || '#ff8fc1' }); },

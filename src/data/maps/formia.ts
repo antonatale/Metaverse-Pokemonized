@@ -1,170 +1,184 @@
-import type { MapDef } from './types';
+import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign } from './types';
+import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES } from './formia-ground';
+import { PLACES } from './formia-places';
+import { tile, W, H } from './formia-projection';
 
-/* Formia: west (Gaeta) on the left, east (Gianola) on the right, the Aurunci mountains at the top,
-   the gulf at the bottom. One character per tile (see legend.ts), objects on top; coordinates are tiles. */
+/* Formia as it is: the ground comes from OpenStreetMap (tools/formia/build.ts), every place is where it really is
+   (formia-places.ts). Antonio lives here, in Parco la Fontana in via Giovanni Amendola: the map is his town,
+   with his friends' hangouts (the Eclipse at Vindicio, the pineta, Morgana in Mola) and the town around. */
+
+const at = (id: string) => { const p = FORMIA_AT[id]; if (!p) throw new Error('Formia: ' + id + ' was not placed'); return p; };
+const spot = (id: string): [number, number] => { const s = FORMIA_SPOT[id]; if (!s) throw new Error('Formia: spot ' + id + ' was not placed'); return s; };
+const door = (id: string): [number, number] => at(id).door!;
+const kindOf = (id: string) => PLACES.find((p) => p.id === id)!.kind;
+function building(id: string, o: Partial<Building>): Building {
+  const p = at(id);
+  return { id, kind: kindOf(id), x: p.x, y: p.y, w: p.w, h: p.h, door: door(id), ...o };
+}
+function object(id: string, o: Partial<MapObject> = {}): MapObject {
+  const p = at(id);
+  return { kind: kindOf(id), x: p.x, y: p.y, w: p.w, h: p.h, ...o };
+}
+function sign(id: string, text: string[]): Sign { const [x, y] = spot(id); return { x, y, text }; }
+function npc(id: string, o: Omit<Npc, 'id' | 'x' | 'y'>): Npc { const [x, y] = spot(id); return { id, x, y, ...o }; }
+function text(lat: number, lon: number, t: string, size: number, alpha?: number): GroundObject {
+  const [x, y] = tile(lat, lon);
+  return { kind: 'text', x, y, text: t, size, alpha };
+}
+
+/* ---------- the town around: what you hear at a closed door ---------- */
+const DOORS = [
+  ['Il portone è chiuso.'],
+  ['Dalla finestra arriva profumo di sugo. È domenica, da qualche parte.'],
+  ['Sul citofono c\'è scritto solo «Bussare forte».'],
+  ['Si sente la radio: danno la partita del Formia.'],
+  ['Qualcuno sta guardando le qualifiche di Formula 1.'],
+  ['Ci sono i panni stesi ad asciugare.'],
+  ['Un cane abbaia da dietro il cancello.'],
+  ['Il portone è chiuso. Dal balcone qualcuno annaffia i gerani.']
+];
+const SHOPS: [string, string[]][] = [
+  ['TABACCHI', ['Tabacchi. Gratta e vinci in vetrina.']],
+  ['FARMACIA', ['Farmacia. La croce verde lampeggia.']],
+  ['PESCHERIA', ['Pescheria. Alici, calamari, e una spigola enorme.']],
+  ['ALIMENTARI', ['Alimentari. Mozzarella di bufala e olive di Gaeta.']],
+  ['EDICOLA', ['Edicola. Il giornale di oggi parla del porto.']],
+  ['PIZZERIA', ['Pizzeria. Il forno a legna è già acceso.']]
+];
+const ROOFS = ['#ff9a8b', '#9ec5ff', '#ffd166', '#c3a6ff', '#ff9a8b', '#ffd166'];
+const AWNINGS = ['#ff8fc1', '#8fd0f6', '#ffd166', '#57c968'];
+const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
+  const base = { id: 'casa-' + k, kind: h.kind, x: h.x, y: h.y, w: h.w, h: h.h, door: h.door, roof: ROOFS[h.v % ROOFS.length] };
+  if (h.kind === 'shop') { const s = SHOPS[h.v % SHOPS.length]; return { ...base, label: s[0], awning: AWNINGS[h.v % AWNINGS.length], msg: s[1] }; }
+  return { ...base, msg: DOORS[h.v % DOORS.length] };
+});
+
+const buildings: Building[] = [
+  building('casa', { label: 'PARCO LA FONTANA', msg: ['Casa: Parco la Fontana, via Giovanni Amendola 1.', 'Le chiavi? In tasca. Per una volta.'] }),
+  building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
+  building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Dentro si allenano i velocisti. Si entra solo con il tesserino.'] }),
+  building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
+  building('morgana', { label: 'MORGANA', msg: ['Birreria Morgana, in via Tullia.', 'La sera è qui che ci si ritrova.'] }),
+  building('chiesa-mola', { msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, nel borgo di Mola.'] }),
+  building('gelati', { label: 'GELATI', awning: '#8fd0f6', roof: '#c3a6ff', msg: ['Gelateria. Due gusti? Limone e fragola, il classico.'] }),
+  building('bar', { msg: ['Il bar è pieno: c\'è la partita.'] }),
+  building('biglietti', { label: 'BIGLIETTI', msg: ['Biglietti per Ponza e Ventotene: traghetti e aliscafi.', 'Per oggi niente gite.'] }),
+  building('stazione', { gate: 'torino' }),
+  building('comune', { label: 'COMUNE · MUSEO', msg: ['Comune di Formia. In un\'ala c\'è il Museo archeologico nazionale, con le statue romane trovate in città.', 'Oggi è chiuso.'] }),
+  building('forno', { label: 'FORNO', awning: '#ffd166', roof: '#ff9a8b', msg: ['Profumo di tiella: di polpo, di scarola, di cipolle.'] }),
+  building('erasmo', { msg: ['Chiesa di Sant\'Erasmo, il patrono di Formia.', 'Dentro è fresco e silenzioso.'] }),
+  building('eclipse', { label: 'ECLIPSE', msg: ['Eclipse beach, il lido di Nicola Spadea.', 'Lettini, ombrelloni e musica fino al tramonto.'] }),
+  building('scogliera', { label: 'LA SCOGLIERA', msg: ['Lido La Scogliera, in fondo a Vindicio.'] }),
+  building('oriente', { label: 'ORIENTE', msg: ['Lido Oriente, sulla spiaggia di Gianola.'] })
+].concat(houses);
+
+const objects: MapObject[] = [
+  object('fontana'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'),
+  object('traghetto', { bob: true })
+].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })));
+
+const pz = at('piazza'), cam = at('campo-amendola');
+const groundObjects: GroundObject[] = [
+  { kind: 'banner', x: pz.x + 2, y: pz.y + 1, w: 6, text: 'COMIZIO' },
+  { kind: 'court', x: cam.x, y: cam.y, w: cam.w, h: cam.h },
+  text(41.2700, 13.5740, 'Monti Aurunci', 19),
+  text(41.2462, 13.5700, 'Pineta di Vindicio', 17, 0.7),
+  text(41.2470, 13.5905, 'Vindicio', 20, 0.6),
+  text(41.2470, 13.6050, 'Golfo di Gaeta', 26, 0.5),
+  text(41.2604, 13.6000, 'Castellone', 17, 0.7),
+  text(41.2610, 13.6150, 'Mola', 18, 0.7),
+  text(41.2651, 13.6420, 'via Amendola', 15, 0.7),
+  text(41.2590, 13.6620, 'Gianola', 18, 0.7),
+  text(41.2533, 13.5780, 'verso Gaeta', 15, 0.6)
+];
+
+const signs: Sign[] = [
+  sign('sign-casa', ['Parco la Fontana, via Giovanni Amendola 1.', 'Casa di Antonio.']),
+  sign('sign-stazione', ['Stazione di Formia-Gaeta. Treni per Roma e per Napoli.']),
+  sign('sign-comune', ['Palazzo comunale, in via Vitruvio. Nell\'ala del museo ci sono le statue romane trovate a Formia.']),
+  sign('sign-piazza', ['Piazza della Vittoria.', 'Oggi c\'è il comizio di Costanzo, Er Politico.']),
+  sign('sign-erasmo', ['Chiesa di Sant\'Erasmo, a Castellone.']),
+  sign('sign-castellone', ['Torre di Castellone: ottagonale, del Trecento.', 'Castellone è il borgo alto, nato sopra l\'antica città romana.']),
+  sign('sign-cisternone', ['Largo Sant\'Anna. Qui sotto c\'è il Cisternone romano, una cisterna enorme di epoca imperiale.']),
+  sign('sign-mola', ['Torre di Mola: la torre rotonda del castello angioino, del Duecento.']),
+  sign('sign-morgana', ['Birreria Morgana, via Tullia.', 'La sera ci si vede qui.']),
+  sign('sign-porto', ['Porto di Formia, molo Azzurra. Traghetti e aliscafi per Ponza e Ventotene.']),
+  sign('sign-tomba', ['Tomba di Cicerone.', 'Secondo la tradizione qui riposa Marco Tullio Cicerone, ucciso a Formia nel 43 avanti Cristo.']),
+  sign('sign-vindicio', ['Lungomare di Vindicio.', 'D\'estate qui c\'è tutta Formia.']),
+  sign('sign-pineta', ['Pineta di Vindicio.', 'Pini domestici e ombra, anche ad agosto.']),
+  sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Qui si allenava Pietro Mennea.']),
+  sign('sign-gianola', ['Parco di Gianola.', 'Sul promontorio ci sono i resti della villa romana di Mamurra.']),
+  sign('sign-caposele', ['Porticciolo di Caposele.'])
+];
+
+const npcs: Npc[] = [
+  npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza' }),
+  npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
+  npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
+  npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),
+  npc('folla4', { name: 'Dalla folla', seed: 14, dir: 'right', lines: ['Io sono venuto solo per la difesa del bidet.'] }),
+  npc('nicola', { name: 'Nicola Spadea', seed: 81, dir: 'down', lines: ['Benvenuti all\'Eclipse!', 'Antonio, il solito lettino in prima fila?'] }),
+  npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', lines: ['Weee! Antonio, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
+  npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
+  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
+  npc('oste', { name: 'Al bancone', seed: 82, dir: 'down', lines: ['Due birre? Sedetevi, arrivano subito.'] }),
+  npc('vicina', { name: 'Vicina di casa', seed: 15, dir: 'left', lines: ['Antonio! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
+  npc('capotreno', { name: 'Capotreno', seed: 21, dir: 'down', gate: 'torino' }),
+  npc('turista', { name: 'Turista', seed: 22, dir: 'left', lines: ['Dicono che Cicerone parlasse tantissimo.', 'Ho conosciuto uno in piazza che lo batte.'] }),
+  npc('anziano', { name: 'Signore di Castellone', seed: 23, dir: 'down', lines: ['Da quassù si vede tutto il golfo, fino a Gaeta.', 'Io a Castellone ci sono nato. Pure mio nonno.'] }),
+  npc('fornaia', { name: 'Fornaia', seed: 24, dir: 'down', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'La facciamo come a Gaeta. Anzi, meglio. Ma non diteglielo.'] }),
+  npc('tifoso', { name: 'Tifoso', seed: 51, dir: 'up', lines: ['Il bar è pieno, c\'è la partita. Io guardo da qui.'] }),
+  npc('gelataio', { name: 'Gelataio', seed: 52, dir: 'down', lines: ['Limone, fragola, nocciola.', 'A luglio il cono si scioglie in un attimo.'] }),
+  npc('marinaio', { name: 'Marinaio', seed: 32, dir: 'right', lines: ['Questo va a Ponza e a Ventotene.', 'Tu però prima finisci quello che hai cominciato in città.'] }),
+  npc('velocista', { name: 'Velocista', seed: 61, dir: 'down', lines: ['Qui si allenava Pietro Mennea.', 'Io intanto faccio dieci giri. Poi vediamo.'] }),
+  npc('tennista', { name: 'Tennista', seed: 26, dir: 'down', lines: ['Forchetta? È dentro, nel campo coperto. Fuori non gioca mai.'] }),
+  npc('cestista', { name: 'Cestista', seed: 62, dir: 'down', lines: ['Stasera al Palamendola c\'è la partita. Vieni?'] }),
+  npc('bagnino', { name: 'Bagnino', seed: 43, dir: 'down', lines: ['Bandiera verde: si può fare il bagno.'] }),
+  npc('bambino', { name: 'Bambino', seed: 42, dir: 'left', lines: ['Ho perso il secchiello.', 'Pure tu perdi sempre le cose?'] }),
+  npc('guardaparco', { name: 'Guardaparco', seed: 44, dir: 'right', lines: ['Nel parco di Gianola c\'è anche un porticciolo romano.', 'Sott\'acqua è bellissimo.'] }),
+  npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', lines: ['Oggi il mare è calmo.', 'Giornata buona per Ponza. O per una lotta.'] })
+];
+
+const item = (id: string, move: string, pron: string, t: string): LostItem => { const [x, y] = spot(id); return { id, move, x, y, pron, text: t }; };
+const items: LostItem[] = [
+  item('caricabatterie', 'simtoreal', 'lo', 'Era su una panchina della stazione.'),
+  item('appunti', 'diagnosi', 'li', 'Erano sui gradini di Sant\'Erasmo.'),
+  item('passaporto', 'america', 'lo', 'Era ai piedi della Tomba di Cicerone.'),
+  item('portafoglio', 'certificati', 'lo', 'Era sotto un ombrellone dell\'Eclipse.')
+];
+
+/** neighbourhoods, for the place name in the corner: the first that contains Antonio wins */
+const clip = (name: string, x0: number, y0: number, x1: number, y1: number): Area => {
+  const x = Math.max(0, x0), y = Math.max(0, y0);
+  return { name, x, y, w: Math.min(W - 1, x1) - x + 1, h: Math.min(H - 1, y1) - y + 1 };
+};
+const box = (name: string, la0: number, lo0: number, la1: number, lo1: number): Area => {
+  const [x0, y0] = tile(la0, lo0), [x1, y1] = tile(la1, lo1);
+  return clip(name, Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1));
+};
+const near = (name: string, id: string, m: number): Area => { const p = at(id); return clip(name, p.x - m, p.y - m, p.x + p.w - 1 + m, p.y + p.h - 1 + m); };
+const areas: Area[] = [
+  near('Parco la Fontana', 'casa', 3), near('Eclipse beach', 'eclipse-spiaggia', 2), near('Birreria Morgana', 'morgana', 2),
+  near('Piazza della Vittoria', 'piazza', 2), near('Stazione', 'stazione', 3), near('Bruno Zauli', 'zauli', 5),
+  box('Pineta di Vindicio', 41.2515, 13.5660, 41.2420, 13.5790),
+  box('Tomba di Cicerone', 41.2535, 13.5730, 41.2500, 13.5820),
+  box('Vindicio', 41.2520, 13.5790, 41.2420, 13.5960),
+  box('Caposele', 41.2530, 13.5940, 41.2480, 13.6010),
+  box('Castellone', 41.2600, 13.5950, 41.2530, 13.6040),
+  box('Centro', 41.2600, 13.6030, 41.2520, 13.6100),
+  box('Mola', 41.2640, 13.6100, 41.2540, 13.6205),
+  box('Parco Gramsci', 41.2650, 13.6205, 41.2580, 13.6270),
+  box('Via Amendola', 41.2660, 13.6340, 41.2580, 13.6480),
+  box('Gianola', 41.2680, 13.6480, 41.2420, 13.6800),
+  box('Acqualonga', 41.2705, 13.6205, 41.2640, 13.6340)
+];
+
+const st = spot('start');
 export const formia: MapDef = {
   name: 'Formia',
-  rows: [
-    'MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM',
-    'MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM',
-    'MMMMMMMMMMMMMMMMMW_____________WMMMMMMMMMMMMMMMM',
-    'MMMMMMMMMMMMMMMMMW_____________WMMMMMMMMMMMMMMMM',
-    '.O.....O...f.O...W_____________W..O.....O...f.O.',
-    '..f.O.....O....OMW_____________WM..f.O.....O....',
-    'rrrrrrrrrrrrrrrrrW____________BWrrrrrrrrrrrrrrrr',
-    '..............C..W_____________W..........cccccc',
-    'T..............TTWL___________LWT.........cccccc',
-    '.T...............WWWWWWW_WWWWWWW..........nnnnnn',
-    '..L_B________B_L..O...f.H...O....f........cccccc',
-    '..______________....O...H.f...O..........fcccccc',
-    '=========z==============z=============z=========',
-    '=========z==============z=============z=========',
-    'C...Cv............v........v....v....v.....T....',
-    '.....v............v........v....v....v......T...',
-    '.....v............v........v....v....v........T.',
-    '.....vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv..........',
-    'C...CvvvvvvYvvvvvvvvvYvvvvvvvvvYvvvvvv..........',
-    '.............############_____________..........',
-    '......T....T.#_ssssmsss_#_____________..........',
-    '..f....f.....#__________#_____________..........',
-    'C...........f#__________#_____________..........',
-    '............._________________________..........',
-    '...f......f..#__________#___________L_..........',
-    '.f....T....T.#L________L#_____________..........',
-    '........f....#####__#####_L___________.......QMM',
-    ',,p,,,l,b,,p,,,l,,,,,,,l,b,p,,,l,,,,p,,,l,p,,MMM',
-    ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MMQ',
-    'qqqqqqqqqqqqq,,,,,,,,,,,,qqqqqqqqqqqqqHHqqqqqMMM',
-    'RRRRRRRRRRRRR____________RRRRRRRRRRRRP::::::MMQM',
-    '~~~~~~~~~~~~~~~~~__~~~~o~~~~~~~~~~~~~:::::::QMMQ',
-    '~~~~~~~~~~o~~~~~~__~~~~~~~~~~~~~~~~~~:u:::::MMMM',
-    '~~~~~o~~~~~~~~~o~__~~~~~~~~~o~~~~~~~~:::u::uMQMJ',
-    '~~~~~~~~~~~~~~~~~__~~~~~~~~~~~~~~~~~~:::::::MMQM',
-    'GGGGGG~~~~~~~~~~~__~~~~~~~~~~~~~~o~~~~~~~~~~QMMM',
-    'GGGGGGGG~~~~~~o~~__~~~~~~~~~~~~~~~~~~~~~~~~~MMMQ',
-    'GGGGGGGGG~~~~~~~~__~~o~~~~~~~~o~~~~~~~~~~~~~MQMM',
-    'GGGGGGGGG~~~~~~~~__~~~~~~~~~~~~~~~~~~~~~o~~~JMQM',
-    'GGGGGGGGG~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MMMM'
-  ],
-  buildings: [
-    { id: 'casa', kind: 'house', x: 6, y: 14, w: 5, h: 3, door: [8, 16], label: 'CASA', msg: ['Casa tua. Prima di rientrare, un paio di spille.'] },
-    { id: 'portone', kind: 'house', x: 11, y: 14, w: 3, h: 3, door: [12, 16], roof: '#9ec5ff', msg: ['Il portone è chiuso.'] },
-    { id: 'forno', kind: 'shop', x: 14, y: 14, w: 4, h: 3, door: [16, 16], label: 'FORNO', awning: '#ffd166', roof: '#ff9a8b', msg: ['Profumo di tiella: di polpo, di scarola, di cipolle.'] },
-    { id: 'museo', kind: 'palazzo', x: 19, y: 14, w: 8, h: 3, door: [22, 16], label: 'MUSEO', msg: ['Comune di Formia. In un\'ala c\'è il Museo archeologico nazionale, con le statue romane trovate in città.', 'Oggi è chiuso.'] },
-    { id: 'gelati', kind: 'shop', x: 28, y: 14, w: 4, h: 3, door: [29, 16], label: 'GELATI', awning: '#8fd0f6', roof: '#c3a6ff', msg: ['Due gusti? Limone e fragola, il classico.'] },
-    { id: 'bar', kind: 'bar', x: 33, y: 14, w: 4, h: 3, door: [34, 16], msg: ['Il bar è pieno: c\'è la partita.'] },
-    { id: 'coni', kind: 'coni', x: 38, y: 14, w: 5, h: 3, door: [40, 16], label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Dentro si allenano i velocisti. Si entra solo con il tesserino.'] },
-    { id: 'stazione', kind: 'station', x: 4, y: 7, w: 10, h: 3, door: [8, 9], gate: 'torino' },
-    { id: 'erasmo', kind: 'church', x: 18, y: 2, w: 4, h: 3, door: [20, 4], msg: ['Chiesa di Sant\'Erasmo, il patrono di Formia.'] },
-    { id: 'casa-c1', kind: 'house', x: 22, y: 2, w: 3, h: 3, door: [23, 4], roof: '#c3a6ff', msg: ['Da dentro arriva profumo di sugo. È domenica, da qualche parte.'] },
-    { id: 'casa-c2', kind: 'house', x: 28, y: 2, w: 3, h: 3, door: [29, 4], roof: '#ffd166', msg: ['Il portone è chiuso. Sul campanello c\'è scritto solo «Bussare forte».'] },
-    { id: 'casa-e1', kind: 'house', x: 33, y: 7, w: 3, h: 3, door: [34, 9], roof: '#ff9a8b', msg: ['Dalla finestra si sente il rombo della Formula 1. Qualcuno sta guardando le qualifiche.'] },
-    { id: 'circolo', kind: 'circolo', x: 36, y: 7, w: 6, h: 3, door: [38, 9], to: 'circolo', tx: 5, ty: 11, tdir: 'up' },
-    { id: 'chiesa-mola', kind: 'church', x: 25, y: 19, w: 5, h: 4, door: [27, 22], msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, nel borgo di Mola.'] },
-    { id: 'casa-m1', kind: 'house', x: 31, y: 19, w: 3, h: 3, door: [32, 21], roof: '#9ec5ff', msg: ['Ci sono le reti dei pescatori stese ad asciugare.'] },
-    { id: 'casa-m2', kind: 'house', x: 34, y: 19, w: 3, h: 3, door: [35, 21], roof: '#ffd166', msg: ['Il portone è chiuso.'] },
-    { id: 'biglietti', kind: 'kiosk', x: 13, y: 29, w: 2, h: 2, door: [14, 30], label: 'BIGLIETTI', msg: ['Biglietti per Ponza e Ventotene: traghetti e aliscafi.', 'Per oggi niente gite: prima le spille.'] },
-    { id: 'lido', kind: 'lido', x: 40, y: 30, w: 4, h: 2, door: [41, 31], label: 'LIDO', msg: ['Ombrelloni e lettini. A ottobre si sta da re.'] }
-  ],
-  objects: [
-    { kind: 'tomb', x: 1, y: 15, w: 3, h: 3 },
-    { kind: 'tower', x: 33, y: 24, w: 2, h: 3 },
-    { kind: 'octagon', x: 26, y: 2, w: 2, h: 2 },
-    { kind: 'clocktower', x: 23, y: 8, w: 3, h: 2, open: [[1, 0], [1, 1]] },
-    { kind: 'fountain', x: 27, y: 6, w: 2, h: 2 },
-    { kind: 'fountain', x: 8, y: 22, w: 2, h: 2 },
-    { kind: 'tunnel', x: 16, y: 5, w: 1, h: 2 },
-    { kind: 'tunnel', x: 32, y: 5, w: 1, h: 2 },
-    { kind: 'ferry', x: 19, y: 32, w: 5, h: 3, bob: true },
-    { kind: 'car', x: 2, y: 11, w: 2, h: 1, color: '#e86a5c' },
-    { kind: 'car', x: 14, y: 11, w: 2, h: 1, color: '#5b8fd9' },
-    { kind: 'car', x: 44, y: 12, w: 2, h: 1, color: '#f2c14e' },
-    { kind: 'lifeguard', x: 37, y: 33, w: 1, h: 1 },
-    { kind: 'ruins', x: 45, y: 27, w: 2, h: 2 }
-  ],
-  groundObjects: [
-    { kind: 'peaks', x: 0, y: 0, w: 17, h: 4 },
-    { kind: 'peaks', x: 17, y: 0, w: 15, h: 2 },
-    { kind: 'peaks', x: 32, y: 0, w: 16, h: 4, village: [6.2, 2.2] },
-    { kind: 'text', x: 2.6, y: 0.2, text: 'Monti Aurunci', size: 19 },
-    { kind: 'text', x: 39.6, y: 3.2, text: 'Maranola', size: 15, alpha: 0.7 },
-    { kind: 'text', x: 18.2, y: 9, text: 'Castellone', size: 16, alpha: 0.75 },
-    { kind: 'court', x: 42, y: 7, w: 6, h: 5 },
-    { kind: 'banner', x: 15, y: 19, w: 8, text: 'COMIZIO' },
-    { kind: 'track', x: 38, y: 18, w: 10, h: 8 },
-    { kind: 'gaeta', x: 0, y: 35, w: 9, h: 5 },
-    { kind: 'text', x: 11.2, y: 12.5, text: 'Via Appia', size: 17 },
-    { kind: 'text', x: 28.6, y: 12.5, text: 'Via Appia', size: 17 },
-    { kind: 'text', x: 22.2, y: 17.5, text: 'Via Vitruvio', size: 16 },
-    { kind: 'text', x: 33.4, y: 23.5, text: 'Mola', size: 17 },
-    { kind: 'text', x: 3.4, y: 28, text: 'Lungomare', size: 16 },
-    { kind: 'text', x: 21, y: 36.6, text: 'Golfo di Gaeta', size: 24, alpha: 0.5 },
-    { kind: 'text', x: 37.6, y: 36, text: 'Vindicio', size: 18, alpha: 0.55 },
-    { kind: 'text', x: 44.3, y: 38.5, text: 'Gianola', size: 15, alpha: 0.7 }
-  ],
-  signs: [
-    { x: 11, y: 10, text: ['Stazione di Formia-Gaeta. Treni per Roma e per Napoli.', 'Sotto questo piazzale c\'è un anfiteatro romano del I secolo.'] },
-    { x: 1, y: 11, text: ['Via Appia. Di qua si va a Itri, Fondi e Roma.'] },
-    { x: 47, y: 14, text: ['Via Appia. Di qua si va a Scauri, Minturno e Napoli.'] },
-    { x: 2, y: 18, text: ['Tomba di Cicerone.', 'Secondo la tradizione qui riposa Marco Tullio Cicerone, ucciso a Formia nel 43 avanti Cristo.'] },
-    { x: 18, y: 6, text: ['Largo Sant\'Anna. Qui sotto c\'è il Cisternone romano, una cisterna enorme di epoca imperiale.'] },
-    { x: 22, y: 8, text: ['Castellone: il borgo alto, nato sopra l\'acropoli romana.', 'Le mura di pietre poligonali hanno più di duemila anni.'] },
-    { x: 25, y: 4, text: ['Torre di Castellone: ottagonale, del Trecento.', 'Delle dodici torri del borgo ne restano due.'] },
-    { x: 26, y: 8, text: ['Porta degli Spagnoli, con la Torre dell\'Orologio e il suo orologio di maiolica del Settecento.'] },
-    { x: 20, y: 27, text: ['Piazza del Comizio.', 'Covo di Costanzo, Er Politico.'] },
-    { x: 37, y: 10, text: ['Circolo Tennis.', 'Covo di Forchetta.'] },
-    { x: 43, y: 17, text: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Qui si allenava Pietro Mennea.'] },
-    { x: 35, y: 26, text: ['Torre di Mola: la torre rotonda del castello angioino, del Duecento. È alta 27 metri.'] },
-    { x: 16, y: 30, text: ['Porto di Formia. Traghetti e aliscafi per Ponza e Ventotene.'] },
-    { x: 37, y: 27, text: ['Spiaggia di Vindicio.'] },
-    { x: 44, y: 27, text: ['Parco di Gianola.', 'Sul promontorio ci sono i resti della villa romana di Mamurra.'] },
-    { x: 1, y: 27, text: ['Di fronte c\'è Gaeta. Da qui si vede tutto il golfo.'] }
-  ],
-  npcs: [
-    { id: 'costanzo', person: 'costanzo', x: 19, y: 21, dir: 'down', covo: 'piazza' },
-    { id: 'folla1', name: 'Dalla folla', seed: 11, x: 16, y: 23, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] },
-    { id: 'folla2', name: 'Dalla folla', seed: 12, x: 21, y: 23, dir: 'up', lines: ['Daje!'] },
-    { id: 'folla3', name: 'Dalla folla', seed: 13, x: 22, y: 24, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] },
-    { id: 'folla4', name: 'Dalla folla', seed: 14, x: 15, y: 21, dir: 'right', lines: ['Io sono venuto solo per la difesa del bidet.'] },
-    { id: 'vicina', name: 'Vicina di casa', seed: 15, x: 10, y: 17, dir: 'left', lines: ['Antonio! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] },
-    { id: 'capotreno', name: 'Capotreno', seed: 21, x: 9, y: 10, dir: 'down', gate: 'torino' },
-    { id: 'turista', name: 'Turista', seed: 22, x: 4, y: 19, dir: 'left', lines: ['Dicono che Cicerone parlasse tantissimo.', 'Ho conosciuto uno in piazza che lo batte.'] },
-    { id: 'anziano', name: 'Signore di Castellone', seed: 23, x: 26, y: 7, dir: 'down', lines: ['Da quassù si vede tutto il golfo, fino a Gaeta.', 'Io qui ci sono nato. Pure mio nonno.'] },
-    { id: 'fornaia', name: 'Fornaia', seed: 24, x: 17, y: 17, dir: 'down', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'La facciamo come a Gaeta. Anzi, meglio. Ma non diteglielo.'] },
-    { id: 'passante', name: 'Passante', seed: 25, x: 25, y: 18, dir: 'left', lines: ['Sto cercando parcheggio da mezz\'ora.'] },
-    { id: 'tifoso', name: 'Tifoso', seed: 51, x: 35, y: 17, dir: 'up', lines: ['Il bar è pieno, c\'è la partita. Io guardo da qui.'] },
-    { id: 'tennista1', name: 'Tennista', seed: 26, x: 44, y: 8, dir: 'down', lines: ['Forchetta? È dentro, nel campo coperto. Fuori non gioca mai.'] },
-    { id: 'tennista2', name: 'Tennista', seed: 27, x: 45, y: 10, dir: 'up', lines: ['Quindici a zero. Anzi, trenta. Anzi, rifacciamo.'] },
-    { id: 'corridore', name: 'Velocista', seed: 61, x: 39, y: 21, dir: 'down', lines: ['Qui si allenava Pietro Mennea.', 'Io intanto faccio dieci giri. Poi vediamo.'] },
-    { id: 'ragazza', name: 'Ragazza di Mola', seed: 28, x: 30, y: 24, dir: 'down', lines: ['La sera il lungomare si riempie: tra i due porticcioli ci sono tutti i locali.'] },
-    { id: 'pescatore', name: 'Pescatore', seed: 31, x: 17, y: 38, dir: 'down', lines: ['Oggi il mare è calmo.', 'Giornata buona per Ponza. O per una lotta.'] },
-    { id: 'marinaio', name: 'Marinaio', seed: 32, x: 18, y: 31, dir: 'right', lines: ['Questo va a Ponza e a Ventotene.', 'Tu però prima finisci quello che hai cominciato in città.'] },
-    { id: 'bagnante', name: 'Bagnante', seed: 41, x: 39, y: 34, dir: 'down', lines: ['Vindicio a ottobre è tutta nostra.'] },
-    { id: 'bambino', name: 'Bambino', seed: 42, x: 43, y: 34, dir: 'left', lines: ['Ho perso il secchiello.', 'Pure tu perdi sempre le cose?'] },
-    { id: 'bagnino', name: 'Bagnino', seed: 43, x: 38, y: 33, dir: 'down', lines: ['Bandiera verde: si può fare il bagno.'] },
-    { id: 'guardaparco', name: 'Guardaparco', seed: 44, x: 43, y: 26, dir: 'right', lines: ['Nel parco di Gianola c\'è anche un porticciolo romano.', 'Sott\'acqua è bellissimo.'] }
-  ],
-  /* the four things Antonio lost around town: found ones are never lost again in the story battles */
-  items: [
-    { id: 'caricabatterie', move: 'simtoreal', x: 5, y: 10, pron: 'lo', text: 'Era su una panchina della stazione.' },
-    { id: 'appunti', move: 'diagnosi', x: 21, y: 5, pron: 'li', text: 'Erano sui gradini di Sant\'Erasmo.' },
-    { id: 'passaporto', move: 'america', x: 1, y: 19, pron: 'lo', text: 'Era ai piedi della Tomba di Cicerone.' },
-    { id: 'portafoglio', move: 'certificati', x: 42, y: 32, pron: 'lo', text: 'Era sotto un ombrellone di Vindicio.' }
-  ],
-  /* neighbourhoods, for the place name in the corner */
-  areas: [
-    { name: 'Castellone', x: 17, y: 2, w: 15, h: 8 },
-    { name: 'Stazione', x: 0, y: 7, w: 17, h: 5 },
-    { name: 'Circolo Tennis', x: 32, y: 4, w: 16, h: 8 },
-    { name: 'Via Appia', x: 0, y: 12, w: 48, h: 2 },
-    { name: 'Tomba di Cicerone', x: 0, y: 14, w: 5, h: 13 },
-    { name: 'Via Vitruvio', x: 5, y: 14, w: 33, h: 5 },
-    { name: 'Piazza del Comizio', x: 13, y: 19, w: 12, h: 8 },
-    { name: 'Mola', x: 25, y: 19, w: 13, h: 8 },
-    { name: 'Centro olimpico', x: 38, y: 14, w: 10, h: 13 },
-    { name: 'Lungomare', x: 0, y: 27, w: 45, h: 3 },
-    { name: 'Porto', x: 13, y: 30, w: 12, h: 10 },
-    { name: 'Vindicio', x: 37, y: 30, w: 8, h: 6 }
-  ],
-  start: [8, 17, 'down']
+  rows: FORMIA_ROWS,
+  buildings, objects, groundObjects, signs, npcs, items, areas,
+  start: [st[0], st[1], 'down']
 };
+/** where Antonio's scooter is parked, for the quick rides around town */
+export const SCOOTER: [number, number] = spot('motorino');
