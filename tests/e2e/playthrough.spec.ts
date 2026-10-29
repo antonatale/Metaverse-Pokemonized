@@ -1,7 +1,8 @@
 import { test, type Page } from '@playwright/test';
-import { twin, until, toPrompt, battleOver, walk, type Run } from './twin';
+import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
-/* the old and the new game must look and behave the same: same screens, same battles, same saves */
+/* Whole games played to the end: home, battles against the computer, the exam, two players, the story, saves.
+   Each must finish without errors; the saves they leave are checked where it matters. */
 
 declare global {
   interface Window {
@@ -60,7 +61,7 @@ async function talkThrough(p: Page, max = 12) {
 
 for (const dark of [false, true]) {
   test('home ' + (dark ? 'dark' : 'light'), async ({ browser }) => {
-    await twin(browser, 'home-' + (dark ? 'dark' : 'light'), { dark }, async (r) => {
+    await play(browser, 'home-' + (dark ? 'dark' : 'light'), { dark }, async (r) => {
       await r.shot('full', { fullPage: true });
       await r.page.click('.slot[data-id="valentin"]');
       await r.page.click('#card .expr[data-x="cool"]');
@@ -76,13 +77,13 @@ for (const dark of [false, true]) {
   });
 }
 test('home desktop', async ({ browser }) => {
-  await twin(browser, 'home-desktop', { viewport: { width: 1280, height: 900 } }, async (r) => { await r.shot('full', { fullPage: true }); });
+  await play(browser, 'home-desktop', { viewport: { width: 1280, height: 900 } }, async (r) => { await r.shot('full', { fullPage: true }); });
 });
 
 const MATCHES: [string, string, number][] = [['antonio', 'costanzo', 11], ['andrea', 'valentin', 23], ['forchetta', 'zendavid', 5], ['valentin', 'antonio', 99], ['costanzo', 'forchetta', 3]];
 for (const [a, b, seed] of MATCHES) {
   test('battle ' + a + ' vs ' + b, async ({ browser }) => {
-    await twin(browser, 'battle-' + a + '-' + b, { seed }, async (r) => {
+    await play(browser, 'battle-' + a + '-' + b, { seed }, async (r) => {
       const p = r.page;
       await p.click('.slot[data-id="' + a + '"]');
       await p.click('#go');
@@ -96,7 +97,7 @@ for (const [a, b, seed] of MATCHES) {
   });
 }
 test('boss', async ({ browser }) => {
-  await twin(browser, 'boss', { seed: 42, dark: true }, async (r) => {
+  await play(browser, 'boss', { seed: 42, dark: true }, async (r) => {
     await r.page.click('.slot[data-id="antonio"]');
     await r.page.click('#go-exam');
     await toPrompt(r.page);
@@ -109,7 +110,7 @@ test('boss', async ({ browser }) => {
   });
 });
 test('two players', async ({ browser }) => {
-  await twin(browser, 'pvp', { seed: 8 }, async (r) => {
+  await play(browser, 'pvp', { seed: 8 }, async (r) => {
     await r.page.click('#go');
     await r.page.click('.seg button[data-m="pvp"]');
     await r.page.click('.pick[data-k="p2"][data-id="andrea"]');
@@ -119,7 +120,7 @@ test('two players', async ({ browser }) => {
 });
 
 test('story', async ({ browser }) => {
-  await twin(browser, 'story', { seed: 3 }, async (r) => {
+  await play(browser, 'story', { seed: 3 }, async (r) => {
     const p = r.page;
     await p.click('#go-story');
     await until(p, () => window.WORLD._debug.pos().dialog);
@@ -152,7 +153,7 @@ test('story', async ({ browser }) => {
   });
 });
 test('story: circolo and menu', async ({ browser }) => {
-  await twin(browser, 'circolo', { seed: 4, dark: true, viewport: { width: 1280, height: 800 } }, async (r) => {
+  await play(browser, 'circolo', { seed: 4, dark: true, viewport: { width: 1280, height: 800 } }, async (r) => {
     const p = r.page;
     await p.click('#go-story');
     await until(p, () => window.WORLD._debug.pos().dialog);
@@ -173,7 +174,7 @@ test('story: circolo and menu', async ({ browser }) => {
   });
 });
 test('story on a phone with the touch pad', async ({ browser }) => {
-  await twin(browser, 'touch', { seed: 5, touch: true }, async (r) => {
+  await play(browser, 'touch', { seed: 5, touch: true }, async (r) => {
     await r.page.click('#go-story');
     await until(r.page, () => window.WORLD._debug.pos().dialog);
     await r.shot('pad');
@@ -182,13 +183,13 @@ test('story on a phone with the touch pad', async ({ browser }) => {
 
 for (const dark of [false, true]) {
   test('maps overview ' + (dark ? 'dark' : 'light'), async ({ browser }) => {
-    await twin(browser, 'maps-' + (dark ? 'dark' : 'light'), { dark }, async (r) => { await overview(r, 'formia'); await overview(r, 'circolo'); });
+    await play(browser, 'maps-' + (dark ? 'dark' : 'light'), { dark }, async (r) => { await overview(r, 'formia'); await overview(r, 'circolo'); });
   });
 }
 
 /* the claude.ai artifact's hot reload: an open battle survives an update of the page */
 test('hot reload keeps an open battle', async ({ browser }) => {
-  await twin(browser, 'hot', { seed: 21, hot: true }, async (r) => {
+  await play(browser, 'hot', { seed: 21, hot: true }, async (r) => {
     const p = r.page;
     await p.click('.slot[data-id="forchetta"]');
     await p.click('#go');
@@ -209,21 +210,21 @@ test('hot reload keeps an open battle', async ({ browser }) => {
   });
 });
 
-/* saves written by the old game load the same way in the new one */
+/* saves in the format of the old single-file game still load */
 const OLD_SAVE = {
   'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 30, y: 25, dir: 'left', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: { piazza: true }, seen: { intro: true, formia2: true }, found: { appunti: true, caricabatterie: true } }),
   'lotte-tra-amici:libretto:v2': JSON.stringify({ v: 2, chars: { antonio: { w: 3, l: 1 }, valentin: { w: 0, l: 2 } }, exam: { antonio: { p: 1, f: 2, best: 27, lode: false } } })
 };
 const PRE_FORMIA2 = { 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 3, y: 3, dir: 'up', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true }, found: {} }) };
 test('old saves', async ({ browser }) => {
-  await twin(browser, 'saves', { storage: OLD_SAVE }, async (r) => {
+  await play(browser, 'saves', { storage: OLD_SAVE }, async (r) => {
     await r.shot('home', { fullPage: true });
     await r.page.click('#go-story');
     await r.page.clock.runFor(1500);
     await r.shot('world');
     await saves(r, 'saves');
   });
-  await twin(browser, 'saves-migration', { storage: PRE_FORMIA2 }, async (r) => {
+  await play(browser, 'saves-migration', { storage: PRE_FORMIA2 }, async (r) => {
     await r.page.click('#go-story');
     await r.page.clock.runFor(1500);
     await r.shot('world');

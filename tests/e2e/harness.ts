@@ -1,12 +1,11 @@
 import { expect, type Browser, type Page } from '@playwright/test';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/* Runs the same scenario on the old single-file game and on the new one, and compares what they show. */
-export const OLD = '/legacy/index.html';
-export const NEW = process.env.PARITY_NEW || '/';
+/* Plays a scenario on the game, the way a player would, with a fake clock and a seeded Math.random:
+   it must get to the end without a single error. With SHOTS=1 the checkpoints are saved in test-results/shots.
+   (Until the migration was confirmed these runs were compared pixel by pixel with the old single-file game.) */
+export const URL = process.env.GAME_URL || '/';
 const T0 = new Date('2026-03-14T10:00:00Z').getTime();
 
 export interface Run {
@@ -40,7 +39,7 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   const page = await ctx.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g(oogleapis|static)\.com|favicon/.test(m.text())) errors.push('console: ' + m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.addInitScript(({ seed, storage }) => {
     let a = seed >>> 0;
     Math.random = function () {
@@ -56,14 +55,6 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
       for (const k of Object.keys(storage)) localStorage.setItem(k, storage[k]);
     }
   }, { seed: o.seed ?? 7, storage: o.storage || null });
-  /* the sound switch is the only new thing on screen: hide it, so everything else is compared with the old game */
-  await page.addInitScript(() => {
-    document.addEventListener('DOMContentLoaded', () => {
-      const st = document.createElement('style');
-      st.textContent = '.snd { display: none !important; }';
-      document.head.appendChild(st);
-    });
-  });
   if (o.hot) await page.addInitScript(() => {
     const W = window as unknown as Record<string, unknown>;
     W.claude = { hot: {
@@ -85,42 +76,16 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   const run: Run = {
     page, shots: [], data: [],
     async shot(name, so = {}) {
-      /* the old page gets its fonts from Google, and a face can still be on its way: wait for every one */
+      /* a late font changes the layout: wait for every one */
       for (let k = 0; k < 100; k++) {
         const ok = await page.evaluate(() => document.fonts.status === 'loaded' && Array.from(document.fonts).every((f) => f.status !== 'loading'));
         if (ok) break;
         await page.waitForTimeout(50);
       }
-      /* Chrome sometimes keeps `ch` lengths measured with the fallback font after a late web font arrives
-         (the old page, whose fonts come over the network, under load): restyle everything once fonts are in */
-      await page.evaluate(() => {
-        const st = document.createElement('style');
-        st.textContent = '* { font-family: serif !important; }';
-        document.head.appendChild(st);
-        void document.documentElement.offsetHeight;
-        st.remove();
-        void document.documentElement.offsetHeight;
-      });
       await page.clock.runFor(50);
       let png: Buffer;
       if (so.selector) png = await page.locator(so.selector).screenshot({ animations: 'disabled' });
-      else if (so.fullPage) {
-        /* Playwright's fullPage resizes while it captures, and under load it sometimes catches the page mid-resize:
-           measure the page, make the window that tall, then take a plain screenshot */
-        const vp = page.viewportSize()!;
-        const h = await page.evaluate(() => document.documentElement.scrollHeight);
-        await page.setViewportSize({ width: vp.width, height: h });
-        await page.clock.runFor(100);
-        const h2 = await page.evaluate(() => document.documentElement.scrollHeight);
-        run.keep(name + ' height', h2);
-        if (process.env.PARITY_DEBUG) run.keep(name + ' layout', await page.evaluate(() => ({
-          blocks: Array.from(document.querySelectorAll('#home > *, #home section > *, #card > *')).map((e) => e.tagName + '.' + e.className + ' ' + (e as HTMLElement).offsetHeight),
-          fonts: Array.from(document.fonts).map((f) => f.family + ' ' + f.weight + ' ' + f.status).filter((x) => !x.endsWith('unloaded'))
-        })));
-        png = await page.screenshot({ animations: 'disabled' });
-        await page.setViewportSize(vp);
-        await page.clock.runFor(100);
-      } else png = await page.screenshot({ animations: 'disabled' });
+      else png = await page.screenshot({ fullPage: !!so.fullPage, animations: 'disabled' });
       run.shots.push({ name, png });
     },
     keep(name, value) { run.data.push({ name, value }); }
@@ -129,44 +94,18 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   return run;
 }
 
-function diff(name: string, a: Buffer, b: Buffer): number {
-  const A = PNG.sync.read(a), B = PNG.sync.read(b);
-  const dir = path.join('test-results', 'parity'), f = name.replace(/[^a-z0-9-]+/gi, '_');
-  const keep = () => {
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, f + '-old.png'), a);
-    fs.writeFileSync(path.join(dir, f + '-new.png'), b);
-  };
-  if (A.width !== B.width || A.height !== B.height) { keep(); console.log(name + ': old ' + A.width + '×' + A.height + ', new ' + B.width + '×' + B.height); return -1; }
-  const D = new PNG({ width: A.width, height: A.height });
-  const n = pixelmatch(A.data, B.data, D.data, A.width, A.height, { threshold: 0, includeAA: true });
-  if (n > 0) { keep(); fs.writeFileSync(path.join(dir, f + '-diff.png'), PNG.sync.write(D)); }
-  return n;
-}
-
-export async function twin(browser: Browser, title: string, o: TwinOpts, scenario: (r: Run) => Promise<void>) {
-  const runs: Run[] = [];
-  for (const url of [OLD, NEW]) {
-    const r = await open(browser, url, o);
-    await scenario(r);
-    r.keep('errors', (r as Run & { errors: string[] }).errors);
-    runs.push(r);
-    await r.page.context().close();
-  }
-  const [a, b] = runs;
-  expect(b.shots.map(s => s.name), title + ': same checkpoints').toEqual(a.shots.map(s => s.name));
-  expect(b.data, title + ': same data').toEqual(a.data);
-  if (process.env.PARITY_SAVE) {   /* keep every checkpoint of the new game, to look at */
+export async function play(browser: Browser, title: string, o: TwinOpts, scenario: (r: Run) => Promise<void>) {
+  const r = await open(browser, URL, o);
+  await scenario(r);
+  const errors = (r as Run & { errors: string[] }).errors;
+  await r.page.context().close();
+  if (process.env.SHOTS) {
     const dir = path.join('test-results', 'shots');
     fs.mkdirSync(dir, { recursive: true });
-    b.shots.forEach(s => fs.writeFileSync(path.join(dir, (title + '-' + s.name).replace(/[^a-z0-9-]+/gi, '_') + '.png'), s.png));
+    r.shots.forEach(s => fs.writeFileSync(path.join(dir, (title + '-' + s.name).replace(/[^a-z0-9-]+/gi, '_') + '.png'), s.png));
   }
-  const bad: string[] = [];
-  a.shots.forEach((s, k) => {
-    const n = diff(title + '-' + s.name, s.png, b.shots[k].png);
-    if (n !== 0) bad.push(s.name + (n < 0 ? ' (different size)' : ' (' + n + ' px)'));
-  });
-  expect(bad, title + ': screenshots that differ (see test-results/parity)').toEqual([]);
+  expect(errors, title + ': errors on the page').toEqual([]);
+  return r;
 }
 
 /* ---------- helpers that only use what a player can see, plus the games' own _debug hooks ---------- */

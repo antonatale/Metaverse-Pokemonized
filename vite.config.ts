@@ -28,7 +28,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [viteSingleFile(), ...(mode === 'google-fonts' ? [fontsFromGoogle()] : [])],
   build: {
     outDir: mode === 'google-fonts' ? 'dist-google-fonts' : 'dist',
-    /* only the new game: legacy/index.html is served in dev for comparison, never built */
     rollupOptions: { input: 'index.html' }
   },
   test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' }

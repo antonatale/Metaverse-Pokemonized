@@ -27,11 +27,11 @@ Se la pagina deve girare dove i font incorporati non si caricano (per esempio co
 
 ```sh
 npm test               # motore, ritratti, mappa, dati e controllo delle mappe
-npm run test:parity    # confronto pixel per pixel con la vecchia versione (legacy/index.html)
+npm run test:e2e       # partite intere giocate fino in fondo, e l'audio
 npm run sim            # percentuali di vittoria di tutte le coppie, per il bilanciamento
 ```
 
-La prima volta, per i test di parità serve anche `npx playwright install chromium`.
+La prima volta, per i test end-to-end serve anche `npx playwright install chromium`.
 
 ## Note
 

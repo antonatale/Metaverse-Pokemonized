@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/* Parity tests: every scenario runs on the old single-file game (/legacy/) and on the new build,
-   with a fake clock and seeded Math.random, and the screenshots must match. */
+/* End-to-end: whole games played with a fake clock and a seeded Math.random (playthrough.spec.ts),
+   and the sound (audio.spec.ts). */
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 120_000,

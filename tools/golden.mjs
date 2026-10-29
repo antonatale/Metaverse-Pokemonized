@@ -3,10 +3,9 @@
      tests/fixtures/sprites-golden.json   every SVG string the portrait module hands out
      tests/fixtures/canvas-golden.json    every canvas call the map art makes
 
-     npm run golden                      from the ORIGINAL game, the scripts inside legacy/index.html
-     npm run golden -- --from-current    from the code in src/, after a deliberate change (a balance
-                                         number, a new move, a redrawn sprite): check the change first
-                                         (npm run sim, npm run dev), then re-baseline on purpose */
+   They were first recorded from the original single-file game; npm run golden re-baselines them from the code
+   in src/, after a deliberate change (a balance number, a new move, a redrawn map): check the change first
+   (npm run sim, npm run dev), then re-baseline on purpose and commit the change and the new golden files together. */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,24 +13,13 @@ import { createHash } from 'node:crypto';
 import { scenarios, digest, staticFacts } from '../tests/golden/scenarios.mjs';
 import { spriteDigests } from '../tests/golden/sprites.mjs';
 import { canvasDigests } from '../tests/golden/canvas.mjs';
-import { legacyEngine, legacyGlobals } from '../tests/golden/legacy.mjs';
 import { MAPS, LEGEND } from '../src/data/maps';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const current = process.argv.includes('--from-current');
-let E, SPR, ART, from;
-if (current) {
-  E = (await import('../src/battle')).ENGINE;
-  SPR = (await import('../src/render/svg')).SPR;
-  ART = (await import('../src/render/canvas')).WORLD_ART;
-  from = 'the code in src/';
-} else {
-  E = legacyEngine();
-  if (!E) { console.error('legacy/index.html is gone: use npm run golden -- --from-current'); process.exit(1); }
-  SPR = legacyGlobals('/* Sprites v2').SPR;
-  ART = legacyGlobals('/* World art:').WORLD_ART;
-  from = 'legacy/index.html';
-}
+const E = (await import('../src/battle')).ENGINE;
+const SPR = (await import('../src/render/svg')).SPR;
+const ART = (await import('../src/render/canvas')).WORLD_ART;
+const from = 'the code in src/ (first recorded from the original single-file game)';
 const write = (name, data) => {
   fs.mkdirSync(path.join(root, 'tests/fixtures'), { recursive: true });
   fs.writeFileSync(path.join(root, 'tests/fixtures', name), JSON.stringify(data, null, 1) + '\n');

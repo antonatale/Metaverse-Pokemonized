@@ -15,17 +15,16 @@ Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrat
 | `npm run preview` | serve `dist/` |
 | `npm run typecheck` | solo `tsc --noEmit` |
 | `npm test` | Vitest: golden di motore, ritratti e mappa, dati, controllo delle mappe |
-| `npm run test:parity` | Playwright: confronto pixel per pixel con `legacy/index.html` (finché esiste) |
-| `npm run test:parity:dist` | lo stesso confronto sul file singolo di `dist/` aperto da disco |
-| `npm run test:all` | Vitest + Playwright (parità e audio) |
+| `npm run test:e2e` | Playwright: partite intere giocate fino in fondo, senza errori, e l'audio |
+| `npm run test:e2e:dist` | le stesse partite sul file singolo di `dist/` aperto da disco |
+| `npm run test:all` | Vitest + Playwright |
 | `npm run sim` | simulatore di bilanciamento (vedi sotto) |
-| `npm run golden` | rigenera i golden dal vecchio file; `-- --from-current` li rigenera dal codice attuale |
+| `npm run golden` | rigenera i golden dal codice attuale, dopo un cambio voluto |
 
 ## Dove si trova ogni parte
 
 ```
 index.html                 guscio della pagina: le quattro sezioni (home, battle, world, overlay)
-legacy/index.html          il vecchio gioco in un file, solo per confronto; da eliminare dopo la verifica
 src/
   main.ts                  avvio: listener della tastiera (prima la mappa, poi la lotta), window.WORLD/UI per i
                            playtest, gancio window.claude.hot per l'aggiornamento a caldo dell'Artifact
@@ -97,7 +96,6 @@ tools/
 - **Effetti della lotta:** escono da `cueBattle(ev)`, chiamato per ogni evento riprodotto in `ui/battle-screen.ts`. Il motore non sa niente del suono.
 - **Mai `Math.random` nell'audio:** il seme delle lotte nasce da `Math.random`, e un suono non deve cambiare una lotta. Per le piccole variazioni c'è `wobble()` in `synth.ts`.
 - **Nuovo brano:** aggiungilo in `tracks.ts`, con battute da 16 passi (il test unitario le controlla). `tests/e2e/audio.spec.ts` lo renderizza offline e controlla che non sia muto e non distorca.
-- **Test di parità:** nascondono l'interruttore (`.snd`), l'unico elemento nuovo sullo schermo rispetto al vecchio gioco.
 
 ## Convenzioni
 
@@ -123,7 +121,7 @@ tools/
 - **Vantaggio di tipo:** conta il tipo del **personaggio**, non quello della mossa. Ciclo Calma → Caos → Cervello → Chiacchiera → Cuore → Calma. Chi ha il vantaggio fa ×1,12 (`TUNE.se`) e subisce ×0,9 (`TUNE.nve`).
 - **Mosse con `uses` limitati:** servono a evitare lotte infinite a colpi di cure. Non vanno tolti.
 - **Battuta:** l'etichetta dice "40% di far ridere", ma la probabilità è 0,45 e il bilanciamento è stato simulato con 0,45. Se si corregge, va corretta l'etichetta (`battle/labels.ts`), non la probabilità.
-- **Prima di cambiare un numero**, prova con `npm run sim -- '{"antonio":{"atk":95}}'`. Gli override riguardano statistiche, mosse (`{"zendavid":{"moves":{"battuta":{"chance":0.4}}}}`) e `TUNE`. Poi modifica `src/data/`, controlla, e rigenera i golden apposta con `npm run golden -- --from-current`.
+- **Prima di cambiare un numero**, prova con `npm run sim -- '{"antonio":{"atk":95}}'`. Gli override riguardano statistiche, mosse (`{"zendavid":{"moves":{"battuta":{"chance":0.4}}}}`) e `TUNE`. Poi modifica `src/data/`, controlla, e rigenera i golden apposta con `npm run golden`.
 
 ## Test
 
@@ -134,10 +132,10 @@ tools/
 
   Se fallisce un golden e non volevi cambiare nulla, hai cambiato il comportamento.
 - **Mappe** (`tests/unit/maps.test.ts`): controlla righe tutte della stessa lunghezza, caratteri noti, persone, cartelli, oggetti e porte raggiungibili, warp e porte su caselle libere, covi e cancelli coerenti.
-- **Parità visiva** (`npm run test:parity`, finché esiste `legacy/index.html`):
-  - ogni scenario gira sul vecchio e sul nuovo con orologio finto di Playwright, `Math.random` con seme e movimento ridotto;
-  - screenshot, salvataggi ed errori della console devono coincidere;
-  - con `PARITY_SAVE=1` salva le schermate in `test-results/shots`; le differenze finiscono in `test-results/parity`.
+- **Partite intere** (`npm run test:e2e`): home, lotte contro il computer, Esame, due giocatori, storia (oggetti, covo, circolo, menu), croce touch, salvataggi nel vecchio formato, aggiornamento a caldo.
+  - Girano con orologio finto di Playwright, `Math.random` con seme e movimento ridotto, e devono arrivare in fondo senza un errore.
+  - Con `SHOTS=1` salvano le schermate in `test-results/shots`.
+  - Fino alla conferma della migrazione gli stessi scenari erano confrontati pixel per pixel con il vecchio gioco in un file (`legacy/index.html`, ora eliminato; resta nella storia di git).
 
 ## Aggiungere una città
 

@@ -8,19 +8,17 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:parity": "playwright test",
-    "test:parity:dist": "vite build && PARITY_NEW=file://$PWD/dist/index.html playwright test",
     "test": "vitest run",
     "test:all": "vitest run && playwright test",
     "golden": "tsx tools/golden.mjs",
     "sim": "tsx tools/sim.ts",
-    "build:google-fonts": "tsc --noEmit && vite build --mode google-fonts"
+    "build:google-fonts": "tsc --noEmit && vite build --mode google-fonts",
+    "test:e2e": "playwright test",
+    "test:e2e:dist": "vite build && GAME_URL=file://$PWD/dist/index.html playwright test tests/e2e/playthrough.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@types/pngjs": "^6.0.5",
-    "pixelmatch": "^8.0.0",
-    "pngjs": "^7.0.0",
+    "@types/node": "^26.6.6",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
