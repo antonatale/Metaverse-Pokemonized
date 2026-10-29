@@ -4,6 +4,7 @@ import { COVI } from '../../src/data/covi';
 import { GATES } from '../../src/data/gates';
 import { CHARS } from '../../src/data/characters';
 import { ITEMS } from '../../src/data/items';
+import { prepare, blocked } from '../../src/story/maps';
 
 /* The map checker (it used to be tools/check-maps.js): rows of the same length, known characters,
    and every person, sign, door and lost thing reachable on foot from the start of the story. */
@@ -13,18 +14,10 @@ const DV: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1
 const DIRS = Object.keys(DV) as Dir[];
 const W = (m: MapDef) => m.rows[0].length, H = (m: MapDef) => m.rows.length;
 
-/** which tiles block, the same rules the story mode uses */
+/** which tiles block: the story mode's own rules (walls, buildings, objects, signs, people, lost things) */
 function solidity(m: MapDef) {
-  const w = W(m), h = H(m), solid = new Uint8Array(w * h);
-  const set = (x: number, y: number, v: number) => { solid[y * w + x] = v; };
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if ((LEGEND[m.rows[y][x]] || LEGEND['.']).solid) set(x, y, 1);
-  const fill = (o: { x: number; y: number; w: number; h: number }) => { for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) set(x, y, 1); };
-  (m.buildings || []).forEach((b) => { fill(b); if (b.to) set(b.door[0], b.door[1], 0); });
-  (m.objects || []).forEach((o) => { fill(o); (o.open || []).forEach((c) => set(o.x + c[0], o.y + c[1], 0)); });
-  (m.signs || []).forEach((s) => set(s.x, s.y, 1));
-  (m.npcs || []).forEach((n) => set(n.x, n.y, 1));
-  (m.items || []).forEach((it) => set(it.x, it.y, 1));
-  return (x: number, y: number) => x < 0 || y < 0 || x >= w || y >= h || solid[y * w + x] === 1;
+  const id = Object.keys(MAPS).find((k) => MAPS[k] === m)!, pm = prepare(id);
+  return (x: number, y: number) => blocked(pm, x, y);
 }
 
 /** every tile you can stand on, across maps, walking from the start of Formia through doors and warps */

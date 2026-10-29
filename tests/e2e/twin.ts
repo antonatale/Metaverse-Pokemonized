@@ -36,6 +36,9 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
     baseURL: 'http://localhost:5173'
   });
   const page = await ctx.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g(oogleapis|static)\.com|favicon/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.addInitScript(({ seed, storage }) => {
     let a = seed >>> 0;
     Math.random = function () {
@@ -105,6 +108,7 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
     },
     keep(name, value) { run.data.push({ name, value }); }
   };
+  (run as Run & { errors: string[] }).errors = errors;
   return run;
 }
 
@@ -128,6 +132,7 @@ export async function twin(browser: Browser, title: string, o: TwinOpts, scenari
   for (const url of [OLD, NEW]) {
     const r = await open(browser, url, o);
     await scenario(r);
+    r.keep('errors', (r as Run & { errors: string[] }).errors);
     runs.push(r);
     await r.page.context().close();
   }

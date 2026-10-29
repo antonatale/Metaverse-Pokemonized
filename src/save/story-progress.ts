@@ -1,0 +1,45 @@
+import { MAPS } from '../data/maps';
+import type { Dir } from '../data/maps/types';
+import type { FriendId } from '../data/characters';
+
+/* Saved progress of the story, on this device only. Same key and same format as the old single-file game,
+   so old saves keep working; localStorage can be missing or throw (private windows, sandboxed frames). */
+export const KEY = 'lotte-tra-amici:storia:v1';
+export interface StoryProgress {
+  v: 1;
+  map: string;
+  x: number; y: number; dir: Dir;
+  /** pin ids won */
+  badges: string[];
+  /** friends you can send into battle */
+  squad: FriendId[];
+  /** covi beaten */
+  beaten: Record<string, boolean>;
+  /** one-off things already seen: intro, formia2 (the save was moved to the redrawn Formia) */
+  seen: Record<string, boolean>;
+  /** lost things picked up */
+  found: Record<string, boolean>;
+}
+
+export function blank(): StoryProgress {
+  var m = MAPS.formia;
+  return { v: 1, map: 'formia', x: m.start[0], y: m.start[1], dir: m.start[2], badges: [], squad: ['antonio'], beaten: {}, seen: {}, found: {} };
+}
+function load(): StoryProgress {
+  try {
+    var v = JSON.parse(window.localStorage.getItem(KEY) || 'null');
+    if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
+      v.found = v.found || {};
+      if (v.map === 'formia' && !v.seen.formia2) {   /* Formia was redrawn: start again from home, keep pins and squad */
+        var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
+      }
+      v.seen.formia2 = true;
+      return v;
+    }
+  } catch (e) { /* storage unavailable */ }
+  return blank();
+}
+export function save() { try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* ignore */ } }
+export let st = load();
+/** starts the story again from scratch (the caller saves) */
+export function resetProgress() { st = blank(); }
