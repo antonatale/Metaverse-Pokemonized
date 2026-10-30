@@ -55,7 +55,7 @@ export interface GroundObject {
 }
 /** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter),
     plates are the street-name plates at the corners */
-export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean }
+export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean; sleep?: boolean }
 export interface Npc {
   id: string;
   x: number; y: number;

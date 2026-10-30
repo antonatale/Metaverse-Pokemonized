@@ -20,7 +20,7 @@ import { checkRun, cancelRun } from './run';
 import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
 import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
-import { DAY_MODES, dayMode, setDayMode, sunTimes, type DayMode } from '../story/daytime';
+import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -216,10 +216,25 @@ function interact() {
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
   var a = M.at[key(x, y)];
-  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else say(a.s.text); }
+  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else say(a.s.text); }
   else if (a && a.kind === 'door') useDoor(a.b);
 }
 /* one of Antonio's lost things: picked up for good */
+/* ---------- the bed at home: at night, sleep until the morning; by day, a nap until the evening ---------- */
+function sleep(s: Sign) {
+  var night = darkness(new Date()) > 0.3;
+  say(s.text.concat([night ? 'Si è fatto tardi. Dormi fino a domattina?' : 'Fuori c\'è il sole. Un pisolino fino a stasera?']), null, [
+    { label: night ? 'Dormo fino a domattina' : 'Pisolino fino a stasera', fn: function () {
+      root.classList.add('sleep');
+      say(['Zzz…'], null, null, function () {
+        setDayMode(night ? 'giorno' : 'notte');
+        root.classList.remove('sleep');
+        say(night ? ['Buongiorno! Dalla finestra entra il sole: a Formia è mattina.', 'Fuori i lampioni sono spenti.'] : ['Si è fatta sera.', 'Fuori si accendono i lampioni.']);
+      });
+    } },
+    { label: 'Non ho sonno', fn: null }
+  ]);
+}
 /* ---------- the scooter: from one of its parking spots to another ---------- */
 function ride(s: Sign) {
   var here = RIDES.find(function (r) { return r.at[0] === s.x && r.at[1] === s.y; });
@@ -329,7 +344,7 @@ function award(cv0: Covo) {
 /* ---------- menu ---------- */
 /** what the hour of Formia follows: the sun of today, or the choice in the menu */
 function hourHint() {
-  if (dayMode !== 'auto') return 'L\'ora resta questa finché non la cambi. A casa, da Morgana e al circolo le luci sono sempre accese.';
+  if (dayMode !== 'auto') return 'L\'ora resta questa finché non la cambi qui, o dormendo nel letto di casa. Dentro casa, da Morgana e al circolo le luci sono sempre accese.';
   var t = sunTimes(new Date()), hm = function (h: number) { var m = Math.round(h * 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
   return 'Come fuori: oggi a Formia il sole sorge alle ' + hm(t[0]) + ' e tramonta alle ' + hm(t[1]) + '. Di sera si accendono i lampioni.';
 }

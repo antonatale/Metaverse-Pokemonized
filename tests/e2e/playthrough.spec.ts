@@ -341,6 +341,19 @@ test('home and the scooter', async ({ browser }) => {
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     r.keep('desk', await p.evaluate(() => window.WORLD._debug.pos().text));
     await talkThrough(p);
+    /* the bed: at eleven in the morning, a nap until the evening, and the night comes */
+    await goTo(p, 'sign', 'Il letto');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Pisolino fino a stasera');
+    await talkThrough(p);
+    r.keep('slept', await p.evaluate(() => localStorage.getItem('lotte-tra-amici:ora:v1')));
+    await goTo(p, 'sign', 'Il letto');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Dormo fino a domattina');
+    await talkThrough(p);
+    r.keep('woke', await p.evaluate(() => localStorage.getItem('lotte-tra-amici:ora:v1')));
     /* to the door mat, and out */
     await walk(p, (await p.evaluate(() => window.WORLD._debug.route(5, 6))) || []);
     await walk(p, ['down']);
@@ -362,6 +375,8 @@ test('home and the scooter', async ({ browser }) => {
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
   expect(get('inside')).toBe('casa');
   expect(get('desk')).toContain('paper');
+  expect(get('slept')).toBe('notte');
+  expect(get('woke')).toBe('giorno');
   expect(get('out')).toBe('formia');
   expect(get('rode to')).toBe('Eclipse beach');
   expect(get('back')).toBe('Parco la Fontana');

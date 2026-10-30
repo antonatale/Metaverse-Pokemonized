@@ -206,7 +206,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato da Lavezzi (limone e caffè sono i primi gusti, come nel 1870). Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
 - **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
-- **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
+- **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno). Nel letto si dorme fino a domattina, o si fa un pisolino fino a sera (vedi Giorno e notte).
 - **Morgana:** la porta su via Abate Tosti porta in `morgana.ts`: bancone, tavoli, palco con il microfono. Il quiz lo propone l'oste dietro il bancone; Costanzo, quando è in compagnia, sta a un tavolo. Il giro di Formia punta alla porta da fuori e all'oste da dentro.
 - **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
 - **Cartelli:** quelli dei posti principali dicono anche da che parte sono gli altri (← Vindicio · Mola →).
@@ -215,6 +215,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **L'ora di Formia** (`story/daytime.ts`): di base è quella di fuori, dall'orologio del dispositivo. Alba e tramonto sono quelli veri di Formia per quel giorno, calcolati da latitudine, longitudine, equazione del tempo e ora legale (il 30 ottobre: 6:38 e 17:00). Il buio cresce da un quarto d'ora prima del tramonto a un'ora dopo, e al contrario all'alba.
 - **Dal menu** ("Ora del giorno") si sceglie Come fuori, Giorno, Tramonto o Notte. La scelta sta in `lotte-tra-amici:ora:v1`, sempre in `try/catch`; i salvataggi non si toccano.
+- **Il letto di casa** (cartello `sleep` in `casa.ts`, `sleep()` in `ui/story-screen.ts`): quando è buio si dorme fino a domattina e l'ora diventa Giorno; di giorno si fa un pisolino fino a stasera e diventa Notte. Lo schermo sfuma nel colore della notte.
 - **Come si disegna** (`drawNight` in `render/world-view.ts`): un foglio di notte (`--m-night`) a un terzo della risoluzione, con buchi sfumati dove c'è luce e una tinta calda (`--m-lamp`) nelle pozze; poi la lampadina di ogni lampione. Al tramonto c'è una velatura arancio (`--m-dusk`). Fanno luce:
   - i lampioni;
   - le porte dei posti (più larga dove c'è vita: Morgana, il bar, Lavezzi, la stazione, l'Eclipse) e di un terzo delle case;
