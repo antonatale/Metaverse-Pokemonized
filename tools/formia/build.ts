@@ -445,6 +445,9 @@ for (const s of SPOTS) {
   });
   if (!found) misses.push(s.id + ' near ' + tx + ',' + ty);
 }
+/* a tree just below someone would hide him behind its crown */
+const UNDER: Record<string, string> = { T: '.', i: '.', O: '.', P: ':', I: ':', p: ',', Q: 'M', J: 'M' };
+for (const [x, y] of Object.values(spots)) for (let d = 1; d <= 2; d++) { const g = get(x, y + d); if (UNDER[g]) set(x, y + d, UNDER[g]); }
 /* footpaths through the pineta and up to the Tomba di Cicerone, from the people and signs there to the street */
 for (const id of ['zendavid', 'sign-pineta', 'motorino-pineta', 'sign-tomba', 'turista']) {
   const sp = spots[id];
@@ -484,16 +487,19 @@ for (const far of [0, 3]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++
   for (let a = y; a < y + h; a++) for (let b = x; b < x + w; b++) set(b, a, '.');
 }
 /* ---------- 11. the centre is paved: pavements along its streets ---------- */
-const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 58, y0: 30, x1: 118, y1: 52 }];
+const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 56, y0: 28, x1: 118, y1: 60 }];
 for (const z of URBAN) {
   const pave: XY[] = [];
   for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
-    if (!/[.f]/.test(get(x, y)) || foot[y][x]) continue;
+    if (!/[.f]/.test(get(x, y)) || (foot[y][x] && !spotted[y][x])) continue;
     let near = false;
     for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (/[=z]/.test(get(x + b, y + a))) near = true;
     if (near) pave.push([x, y]);
   }
   for (const [x, y] of pave) set(x, y, '_');
+  /* the scraps of grass left between quays, streets and pavements are paved too */
+  const inZ = (x: number, y: number) => x >= z.x0 && x < z.x1 && y >= z.y0 && y < z.y1;
+  for (const c of components((x, y) => inZ(x, y) && /[.f]/.test(get(x, y)))) if (c.length <= 6) for (const [x, y] of c) set(x, y, '_');
 }
 /* ---------- 12. the countryside: olive groves and a few trees where the town thins out ---------- */
 const nearStreet = (x: number, y: number) => N4.some(([a, b]) => /[=v,r_]/.test(get(x + a, y + b)));
