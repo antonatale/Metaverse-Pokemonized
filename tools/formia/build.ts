@@ -449,6 +449,20 @@ for (const far of [0, 2]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++
   for (let a = y - 1; a <= y + h; a++) for (let b = x - 1; b <= x + w; b++) if (inside(b, a)) reserved[a][b] = true;
   for (let a = y; a < y + h; a++) for (let b = x; b < x + w; b++) set(b, a, '.');
 }
+/* tree-lined roads: the Appia out of town, the lungomare of Vindicio, the road along the bay to Gianola */
+const AVENUES: { x0: number; y0: number; x1: number; y1: number; every: number }[] = [
+  { x0: 0, y0: 47, x1: 40, y1: 51, every: 3 }, { x0: 16, y0: 50, x1: 22, y1: 82, every: 3 }, { x0: 99, y0: 25, x1: 165, y1: 30, every: 3 }
+];
+for (const a of AVENUES) for (let y = a.y0; y < a.y1; y++) for (let x = a.x0; x < a.x1; x++) {
+  if (get(x, y) !== '.' || !free(x, y) || foot[y][x] || pathed[y][x]) continue;
+  if (!N4.some(([dx, dy]) => get(x + dx, y + dy) === '=')) continue;
+  if ((x + y) % a.every === 0) set(x, y, 'T');
+}
+/* zebra crossings where the streets of the centre meet Via Vitruvio and the Appia */
+for (const [x, rows] of [[55, [36, 37]], [65, [36, 37]], [69, [36, 37]], [83, [36, 37]], [53, [48, 49]], [65, [48, 49]]] as [number, number[]][]) {
+  for (const y of rows) if (get(x, y) === '=') set(x, y, 'z');
+}
+
 /* ---------- 11. the centre is paved: pavements along its streets, no scraps of grass between them ---------- */
 const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 57, y0: 33, x1: 100, y1: 52 }];
 for (const z of URBAN) {
