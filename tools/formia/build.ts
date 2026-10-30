@@ -245,6 +245,7 @@ for (const r of osm.rail) if (r.tunnel) for (const e of [r.pts[0], r.pts[r.pts.l
 /* ---------- 8. the town around: houses in every neighbourhood, where there is room ---------- */
 const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[] }[] = [
   { x0: 26, y0: 44, x1: 56, y1: 62, kinds: ['house', 'house', 'condo'] },          /* Vindicio, above the lungomare */
+  { x0: 22, y0: 48, x1: 56, y1: 66, kinds: ['house', 'house', 'house'] },          /* Vindicio, more of it */
   { x0: 44, y0: 6, x1: 112, y1: 34, kinds: ['house', 'condo', 'house'] },          /* north of the railway: Rio Fresco, Acqualonga */
   { x0: 52, y0: 34, x1: 76, y1: 58, kinds: ['house', 'house', 'shop'] },           /* Castellone */
   { x0: 74, y0: 26, x1: 116, y1: 48, kinds: ['house', 'condo', 'shop', 'house'] }, /* the centre and Mola */
@@ -264,6 +265,13 @@ for (const z of TOWN) for (let y = z.y0; y < z.y1; y += 3) for (let x = z.x0; x 
   houses.push({ kind, x: xx, y: yy, w, h, door: [dx, yy + h - 1], v: Math.floor(noise(x, y, 17) * 1000) });
   for (let a = yy - 1; a <= yy + h; a++) for (let b = xx - 1; b <= xx + w; b++) if (inside(b, a)) reserved[a][b] = true;
   for (let a = yy; a < yy + h; a++) for (let b = xx; b < xx + w; b++) set(b, a, '.');
+}
+/* ---------- 9. the countryside: olive groves and a few trees where the town thins out ---------- */
+const nearStreet = (x: number, y: number) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => /[=v,r]/.test(get(x + a, y + b)));
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  if (get(x, y) !== '.' || !free(x, y) || nearStreet(x, y)) continue;
+  const n = noise(x, y, 18), grove = noise(Math.floor(x / 6), Math.floor(y / 5), 19) < 0.45;
+  if (grove && n < 0.16) set(x, y, 'O'); else if (n < 0.025) set(x, y, 'T');
 }
 if (misses.length) console.log('NOT PLACED:', misses.join(' | '));
 
