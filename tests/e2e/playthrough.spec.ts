@@ -480,11 +480,14 @@ test('creatures of Formia', async ({ browser }) => {
     r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
     await p.click('#st-go'); await p.clock.runFor(800);
     await talkThrough(p, 20);
+    /* the one caught walks behind Antonio from now on */
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    if (await p.locator('[data-lead="c2"]').count()) { await p.click('[data-lead="c2"]'); await p.clock.runFor(300); }
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
-  const sc = second.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; money: number; bag: Record<string, number> };
+  const sc = second.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; money: number; bag: Record<string, number>; lead?: string };
   expect(sc.money).toBeLessThan(120);
   expect(sc.bag.retino2).toBeLessThan(3);
-  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']);
+  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']); expect(sc.lead).toBe('c2'); }
   else expect(sc.mons.length).toBe(1);
 });

@@ -34,6 +34,8 @@ export interface StoryProgress {
   bag?: Record<string, number>;
   /** his creatures, in the order he got them; the first is the one he started with */
   mons?: { uid: string; sp: SpeciesId }[];
+  /** the creature that walks behind him on the map (his first one when missing) */
+  lead?: string;
 }
 
 export function blank(): StoryProgress {

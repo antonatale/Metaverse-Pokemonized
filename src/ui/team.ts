@@ -4,7 +4,7 @@ import { fighter } from '../data/fighters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, type ItemId, type SkillId } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, type Growth } from '../story/growth';
+import { team, level, idOf, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, type Growth } from '../story/growth';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
@@ -124,10 +124,11 @@ export function teamHtml(): string {
   return '<div class="pickrow"><h3>Squadra</h3><ul class="team">' + team().map(function (key) {
     var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
     if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
-    else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') : 'Amico';
+    else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
     return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(c.name) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
       '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
       (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
+      (mon && leadCreature() !== key ? '<button class="btn small" type="button" data-lead="' + key + '">Dietro di me</button>' : '') +
       (has('caffe') ? '<button class="btn small" type="button" data-caffe="' + key + '">Caffè</button>' : '') + '</li>';
   }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') + '</div>' +
     '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella', 'caffe'] as ItemId[]).map(function (it) {
@@ -135,6 +136,9 @@ export function teamHtml(): string {
     }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone; il caffè al bar di Mola.</p></div>';
 }
 export function wireTeam(reopen: () => void) {
+  each(document.querySelectorAll('[data-lead]'), function (b) {
+    b.addEventListener('click', function () { setLead(b.getAttribute('data-lead')!); save(); closeSheet(); reopen(); });
+  });
   each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
   each(document.querySelectorAll('[data-caffe]'), function (b) {
     b.addEventListener('click', function () {

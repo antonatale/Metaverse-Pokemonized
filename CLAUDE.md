@@ -234,6 +234,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **La prima creatura** si sceglie dal guardaparco di Gianola (`starter: true` sull'Npc): è la prima tappa del giro.
   - **Le selvatiche** sono Npc con `wild` (specie e livelli) e saltellano sulla mappa. Dopo una lotta vinta o una cattura spariscono per due minuti (`wildGone` in `story/maps.ts`).
   - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
+  - **Chi ti segue:** la creatura principale (`st.lead`, altrimenti la prima) cammina un passo dietro Antonio su tutte le mappe, anche dentro, e prende la casella che lui ha appena lasciato (`follower` in `render/world-view.ts`). Dopo una porta, un warp o il motorino si rimette dietro di lui. È solo disegno: non blocca il passo e non si parla con lei. Nel menu, Squadra → «Dietro di me», si sceglie chi segue.
 - **Economia:**
   - **Gli euro** (`st.money`, nell'HUD) si guadagnano battendo creature (3 + livello), vincendo un covo la prima volta (80) e con le attività (scambi, risposte giuste, metri di planata).
   - **I negozi** (`SHOPS`): reti e retini dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).

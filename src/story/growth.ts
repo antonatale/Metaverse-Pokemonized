@@ -93,6 +93,13 @@ export function keepBag(b: Record<string, number> | undefined) {
   ['retino', 'retino2', 'tiella'].forEach(function (k) { st.bag![k] = Math.max(0, b[k] || 0); });
 }
 
+/** the creature that walks behind Antonio on the map: the one he picked, or his first */
+export function leadCreature(): string | null {
+  var ms = st.mons || [];
+  if (st.lead && ms.some(function (m) { return m.uid === st.lead; })) return st.lead;
+  return ms.length ? ms[0].uid : null;
+}
+export function setLead(uid: string) { st.lead = uid; }
 /** a new creature for Antonio, at a level: the one he starts with, or one he has caught */
 export function addCreature(sp: SpeciesId, lv: number): string {
   st.mons = st.mons || [];

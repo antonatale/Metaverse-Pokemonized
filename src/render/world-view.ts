@@ -2,7 +2,8 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, type PreparedMap } from '../story/maps';
+import { leadCreature, idOf } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { heading } from '../story/goals';
@@ -93,6 +94,24 @@ function creatureImage(sp: SpeciesId): HTMLImageElement | null {
     return null;
   }
   return m.ok ? m.img : null;
+}
+/* Antonio's creature walks behind him: at each of his steps it moves to the tile he has just left. After a door,
+   a warp or a scooter ride it is put behind him again */
+var fol: { map: string; x: number; y: number; fx: number; fy: number; t0: number } | null = null, folStep = -1;
+function placeBehind() {
+  var v = DV[st.dir], around: [number, number][] = [[st.x - v[0], st.y - v[1]], [st.x, st.y + 1], [st.x - 1, st.y], [st.x + 1, st.y], [st.x, st.y - 1]];
+  var at = around.filter(function (c) { return !blocked(M, c[0], c[1]) && !M.at[key(c[0], c[1])]; })[0] || [st.x, st.y];
+  fol = { map: M.id, x: at[0], y: at[1], fx: at[0], fy: at[1], t0: 0 };
+}
+function follower(now: number): Drawn | null {
+  var uid = leadCreature(), img = uid ? creatureImage(idOf(uid) as SpeciesId) : null;
+  if (!img) return null;
+  if (!fol || fol.map !== M.id || (!mover && Math.abs(fol.x - st.x) + Math.abs(fol.y - st.y) > 2)) placeBehind();
+  var f = fol!;
+  if (mover && mover.t0 !== folStep) { folStep = mover.t0; f.fx = f.x; f.fy = f.y; f.x = mover.fx; f.y = mover.fy; f.t0 = mover.t0; }
+  var t = Math.min(1, (now - f.t0) / STEP), hop = reduced || t >= 1 ? 0 : Math.sin(t * Math.PI) * 3;
+  /* just behind Antonio when they are on the same row */
+  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img };
 }
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
@@ -310,6 +329,8 @@ export function drawWorld(now: number) {
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
   people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
+  var fw = follower(now);
+  if (fw) people.push(fw);
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
