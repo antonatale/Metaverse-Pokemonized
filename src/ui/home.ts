@@ -115,7 +115,7 @@ export function renderStory() {
   var sm = WORLD.summary();
   var got = sm.badges.filter(function (b) { return b.earned; }).length;
   el.innerHTML = '<div class="story-map" id="story-map"></div><div class="block">' +
-    '<p>Gira Formia vista dall\'alto, ritrova le cose che Antonio ha perso in giro ed entra nei covi degli amici: chi batti ti dà la sua spilla ed entra nella compagnia.</p>' +
+    '<p>La tua Formia vista dall\'alto: da casa, a Parco la Fontana, all\'Eclipse di Vindicio, dalla pineta a Morgana. Ritrova le cose che Antonio ha perso in giro ed entra nei covi degli amici: chi batti ti dà la sua spilla ed entra nella compagnia.</p>' +
     '<div class="story-row"><span class="story-badges" role="img" aria-label="Spille: ' + got + ' su ' + sm.badges.length + '">' +
     sm.badges.map(function (b) { return '<span title="' + esc(b.name) + '">' + badgeSVG(b, 30) + '</span>'; }).join('') + '</span>' +
     (sm.squad.length > 1 ? '<span class="story-squad">Compagnia: ' + esc(sm.squad.map(function (id) { return C[id].name; }).join(', ')) + '</span>' : '') +
