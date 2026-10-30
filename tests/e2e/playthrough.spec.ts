@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 /* Whole games played to the end: home, battles against the computer, the exam, two players, the story, saves.
@@ -6,7 +6,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 declare global {
   interface Window {
-    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean }; overview(id: string, s: number): string }; state(): unknown };
+    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string }; overview(id: string, s: number): string }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -230,4 +230,75 @@ test('old saves', async ({ browser }) => {
     await r.shot('world');
     await saves(r, 'saves');
   });
+});
+
+/* the things to do around Formia, each in its real place */
+async function choose(p: Page, label: string) {
+  await p.locator('#wopts button', { hasText: label }).first().click();
+  await p.clock.runFor(300);
+}
+async function talkTo(p: Page, id: string) {
+  await goTo(p, 'npc', id);
+  await p.keyboard.press('Enter'); await p.clock.runFor(200);
+  await talkThrough(p);
+}
+test('activities around Formia', async ({ browser }) => {
+  const r = await play(browser, 'activities', { seed: 9 }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    await talkThrough(p);
+    /* the pineta: a run with Zendavid, left to time out */
+    await talkTo(p, 'zendavid');
+    await choose(p, 'Corri tra i pini');
+    await talkThrough(p);
+    await until(p, () => !document.getElementById('wrun')!.hidden);
+    await r.shot('run');
+    await p.clock.runFor(61_000);
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    r.keep('run', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await talkThrough(p);
+    /* the Eclipse: beach volley with Valentin, one good hit, then the ball drops */
+    await talkTo(p, 'valentin');
+    await choose(p, 'Gioca a beach volley');
+    /* the ball starts on Valentin's side: after about 1.3 s it is in the green zone (choose() already let 0.3 s go) */
+    await p.clock.runFor(1000);
+    await p.keyboard.press(' ');
+    await p.clock.runFor(100);
+    r.keep('volley', await p.textContent('#mg-s'));
+    await r.shot('volley');
+    await p.clock.runFor(6000);
+    r.keep('volley end', await p.textContent('#mg-s'));
+    await p.click('#mg-x');
+    await p.clock.runFor(300);
+    await talkThrough(p);
+    /* a lettino from Nicola */
+    await talkTo(p, 'nicola');
+    await choose(p, 'Prendi un lettino');
+    await talkThrough(p);
+    await talkThrough(p);
+    /* Morgana: a drink and the quiz, always the first answer */
+    await talkTo(p, 'oste');
+    await choose(p, 'Siediti al tavolo');
+    await choose(p, 'Una rossa');
+    await talkThrough(p);
+    for (let q = 0; q < 5; q++) { await choose(p, ''); await talkThrough(p); }
+    /* a gelato on the lungomare */
+    await talkTo(p, 'gelataio');
+    await choose(p, 'Prendi un gelato');
+    await choose(p, '');
+    await choose(p, '');
+    await talkThrough(p);
+    await p.keyboard.press('m'); await p.clock.runFor(200);
+    await r.shot('diary');
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const d = r.data, get = (n: string) => d.find((x) => x.name === n)!.value as string;
+  expect(get('run')).toContain('Tempo scaduto');
+  expect(get('volley')).toContain('Scambi: 1');
+  expect(get('volley end')).toContain('Fine: 1 scambio');
+  const st = get('state') as unknown as { done: Record<string, number>; best: Record<string, number> };
+  expect(st.done).toEqual({ corsa: 1, volley: 1, lettino: 1, quiz: 1, gelato: 1 });
+  expect(st.best.volley).toBe(1);
+  expect(st.best.quiz).toBeGreaterThanOrEqual(0);
 });

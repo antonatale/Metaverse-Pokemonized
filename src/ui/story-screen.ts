@@ -13,6 +13,9 @@ import { press, release, update, halt, mover, busy } from '../story/movement';
 import { resize, invalidate, drawWorld, preview, overview } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
+import { offerActivity } from './activities';
+import { checkRun, cancelRun } from './run';
+import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -20,7 +23,7 @@ import { startBattle, goHome } from './battle-screen';
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
    enters the covi and challenges his friends; battles run on the battle screen. */
 
-interface DialogOpt { label: string; fn: (() => void) | null }
+export interface DialogOpt { label: string; fn: (() => void) | null }
 interface Dialog { lines: string[]; i: number; who?: string | null; opts?: DialogOpt[] | null; done?: () => void; typing: boolean; showingOpts: boolean; finish?: () => void }
 function tc(id: string) { return 'var(--t-' + C[id as CharId].type.toLowerCase() + ')'; }
 
@@ -34,7 +37,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
@@ -113,7 +116,7 @@ export function installStoryKeys() {
 /* ---------- talking ---------- */
 export let dialog: Dialog | null = null;
 let typeTimer: ReturnType<typeof setTimeout> | undefined;
-function say(lines: string | string[], who?: string | null, opts?: DialogOpt[] | null, done?: () => void) {
+export function say(lines: string | string[], who?: string | null, opts?: DialogOpt[] | null, done?: () => void) {
   halt();
   dialog = { lines: ([] as string[]).concat(lines), i: 0, who: who, opts: opts, done: done, typing: false, showingOpts: false };
   show();
@@ -192,6 +195,7 @@ function talkTo(p: Person) {
   var n = p.n;
   if (n.covo) leaderTalk(n.covo);
   else if (n.gate) gateTalk(n.gate, n.name);
+  else if (n.activity) offerActivity(n);
   else say(n.lines || ['…'], n.name);
 }
 export function useDoor(b: Building) {
@@ -216,13 +220,13 @@ function challenge(id: string) {
   var go = function (who: FriendId) { hide(); startBattle({ a: who, b: cv0.leader, mode: 'cpu', story: { covo: id }, safe: safe }); };
   if (squad.length <= 1) go(squad[0] || 'antonio'); else pickFighter(squad, cv0, go);
 }
-function sheet(html: string, cls?: string) {
+export function sheet(html: string, cls?: string) {
   var o = $('overlay');
   o.className = 'overlay' + (cls ? ' ' + cls : ''); o.innerHTML = html; o.hidden = false;
   halt();
   return o;
 }
-function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
+export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
 function face(id: string) { return SPR.person(id, 'smirk', '', SPR.thumb(id)); }
 function pickFighter(squad: FriendId[], cv0: Covo, go: (who: FriendId) => void) {
   var L = C[cv0.leader], best = beaterOf(L.type);
@@ -286,6 +290,11 @@ function openMenu() {
       return '<li class="' + (got ? 'got' : '') + '">' + itemSVG(ITEMS[it.move].icon, got, 40) + '<span><b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b><small>' +
         esc(got ? it.text + ' Nelle lotte della Storia non si perde più.' : 'Perso da qualche parte in città.') + '</small></span></li>';
     }).join('') + '</ul></div>' +
+    '<div class="pickrow"><h3>Diario di Formia</h3><ul class="wbadge-list diary">' + ACTIVITIES.map(function (a) {
+      var n = timesDone(a.id), b = bestOf(a.id);
+      return '<li class="' + (n ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + (n ? n + '×' : '·') + '</span><span><b>' + esc(a.name) + '</b><small>' +
+        esc(a.where + (n ? ' · fatto ' + (n === 1 ? 'una volta' : n + ' volte') + (b != null && a.score ? ' · record ' + a.score(b) : '') : ' · ancora da fare')) + '</small></span></li>';
+    }).join('') + '</ul></div>' +
     '<p class="hint">I progressi della storia restano su questo dispositivo.</p>' +
     '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
     '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
@@ -309,11 +318,12 @@ function frame(now: number) {
   if (!running) return;
   raf = requestAnimationFrame(frame);
   update(now);
+  checkRun(now);
   drawWorld(now);
 }
 function start() { if (running) return; running = true; raf = requestAnimationFrame(frame); }
 function stop() { running = false; cancelAnimationFrame(raf); halt(); }
-function hide() { stop(); if (dialog) closeDialog(function () {}); if (root) root.hidden = true; document.body.classList.remove('in-world'); }
+function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); if (root) root.hidden = true; document.body.classList.remove('in-world'); }
 
 function intro() {
   st.seen.intro = true; save();

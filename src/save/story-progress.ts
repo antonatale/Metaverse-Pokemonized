@@ -19,6 +19,9 @@ export interface StoryProgress {
   seen: Record<string, boolean>;
   /** lost things picked up */
   found: Record<string, boolean>;
+  /** things done around town (activities.ts): how many times, and the best score */
+  done?: Record<string, number>;
+  best?: Record<string, number>;
 }
 
 export function blank(): StoryProgress {
@@ -29,7 +32,7 @@ function load(): StoryProgress {
   try {
     var v = JSON.parse(window.localStorage.getItem(KEY) || 'null');
     if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
-      v.found = v.found || {};
+      v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
       /* Formia was redrawn (formia2), then redrawn as the real town (formia3): start again from home, keep pins, squad and found things */
       if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3)) {
         var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];

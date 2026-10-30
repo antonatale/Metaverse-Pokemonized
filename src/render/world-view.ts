@@ -4,6 +4,7 @@ import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson
 import { st } from '../save/story-progress';
 import { M, prepare, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
+import { run } from '../story/run';
 import { reduced } from '../ui/dom';
 import { root, cv, ctx } from '../ui/story-screen';
 
@@ -167,6 +168,14 @@ export function drawWorld(now: number) {
     ctx.beginPath(); ctx.moveTo(gx, gy - r * 1.8); ctx.lineTo(gx + r * 0.5, gy - r * 0.5); ctx.lineTo(gx + r * 1.8, gy); ctx.lineTo(gx + r * 0.5, gy + r * 0.5);
     ctx.lineTo(gx, gy + r * 1.8); ctx.lineTo(gx - r * 0.5, gy + r * 0.5); ctx.lineTo(gx - r * 1.8, gy); ctx.lineTo(gx - r * 0.5, gy - r * 0.5); ctx.closePath();
     ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+  });
+  /* the flags of a run in the pineta */
+  if (run) run.flags.forEach(function (f, k) {
+    if (run!.got[k]) return;
+    var fx = f[0] * T + 12, fy = f[1] * T + 28, wave = reduced ? 0 : Math.sin(now / 180 + k) * 2;
+    ctx.strokeStyle = '#1c2340'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - 26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(fx + 1, fy - 26); ctx.quadraticCurveTo(fx + 8, fy - 24 + wave, fx + 14, fy - 21); ctx.lineTo(fx + 1, fy - 15); ctx.closePath();
+    ctx.fillStyle = '#e8473a'; ctx.fill(); ctx.lineWidth = 1.4; ctx.stroke();
   });
   M.gulls.forEach(function (gl) {
     var t1 = reduced ? gl.ph : gl.ph + now * gl.sp, x = gl.x + Math.cos(t1) * gl.r, y = gl.y + Math.sin(t1) * gl.r * 0.55;

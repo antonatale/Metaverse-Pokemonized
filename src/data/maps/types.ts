@@ -66,6 +66,8 @@ export interface Npc {
   lines?: string[];
   /** talks about a city exit */
   gate?: string;
+  /** offers something to do together (see story/activities.ts) */
+  activity?: string;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {
