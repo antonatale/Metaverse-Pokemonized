@@ -276,6 +276,13 @@ const DECO: Record<string, DecoFn> = {
     rr(c, X + 9, Y + 14, T - 18, 12, 2); c.fillStyle = towel; c.fill();
     c.fillStyle = '#ffffff'; c.globalAlpha = 0.7; c.fillRect(X + 9, Y + 18, T - 18, 2); c.globalAlpha = 1;
   },
+  /* fishing nets spread out to dry on the quay of Mola, with their floats */
+  nets: function (c, X, Y, P, x, y) {
+    c.strokeStyle = P.ink; c.globalAlpha = 0.45; c.lineWidth = 0.8;
+    for (var k = 0; k < 6; k++) { c.beginPath(); c.moveTo(X + 3 + k * 5, Y + 5); c.lineTo(X + 1 + k * 5, Y + 27); c.stroke(); c.beginPath(); c.moveTo(X + 3, Y + 5 + k * 4); c.lineTo(X + 29, Y + 7 + k * 4); c.stroke(); }
+    c.globalAlpha = 1;
+    for (k = 0; k < 4; k++) { circle(c, X + 6 + k * 7, Y + 5 + hash(x, y, 210 + k) * 3, 2); fillStroke(c, k % 2 ? '#ff8a3c' : '#ffd166', P.ink, 0.9); }
+  },
   /* a pub table seen from above: four stools, the round top, two mugs */
   table: function (c, X, Y, P) {
     [[5, 5], [T - 5, 5], [5, T - 5], [T - 5, T - 5]].forEach(function (q) { circle(c, X + q[0], Y + q[1], 3.6); fillStroke(c, P.wood2, P.ink, 1.2); });
@@ -367,6 +374,33 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.beginPath(); c.moveTo(X + W / 2, Y + 2); c.lineTo(X + W / 2, Y + lane * 2 - 2); c.stroke();
     c.fillStyle = P.ink; c.font = '12px "Patrick Hand", "Comic Sans MS", cursive'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.globalAlpha = 0.55; c.fillText('100 m', X + W / 2, Y + H - lane); c.globalAlpha = 1;
+  },
+  /* a hill village seen from far (Maranola, up in the Aurunci): houses in tiers and a bell tower */
+  village: function (c, o, P) {
+    var X = o.x * T, Y = o.y * T;
+    for (var h = 0; h < 10; h++) {
+      var hx = X + 8 + (h % 5) * 22 + hash(h, 1, 220) * 6, hy = Y + 12 + Math.floor(h / 5) * 26 - (h % 5 === 2 ? 8 : 0);
+      rr(c, hx, hy, 18, 14, 2); fillStroke(c, h % 3 ? P.wall : P['wall-b'], P.ink, 1.2);
+      poly(c, [[hx - 2, hy + 2], [hx + 9, hy - 6], [hx + 20, hy + 2]]); fillStroke(c, P['roof-a'], P.ink, 1.2);
+      c.fillStyle = '#20263a'; c.fillRect(hx + 7, hy + 6, 4, 6);
+    }
+    var bx = X + 58, by = Y + 2;
+    rr(c, bx, by, 10, 30, 1); fillStroke(c, P.stone, P.ink, 1.3);
+    poly(c, [[bx - 1, by + 1], [bx + 5, by - 9], [bx + 11, by + 1]]); fillStroke(c, P['roof-a'], P.ink, 1.2);
+    c.fillStyle = '#20263a'; rr(c, bx + 3, by + 6, 4, 6, 2); c.fill();
+  },
+  /* the Roman theatre of Castellone: the half circle of the cavea, its rows of seats, the houses built into it */
+  cavea: function (c, o, P) {
+    var cx = (o.x + o.w! / 2) * T, cy = (o.y + o.h!) * T - 4, R = Math.min(o.w! * T / 2, o.h! * T) - 2;
+    c.lineCap = 'butt';
+    for (var k = 0; k < 4; k++) {
+      c.beginPath(); c.arc(cx, cy, R - k * 10, Math.PI, 0); c.strokeStyle = k % 2 ? P.stone : P.stone2; c.lineWidth = 9; c.stroke();
+    }
+    c.beginPath(); c.arc(cx, cy, R + 4, Math.PI, 0); c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
+    c.beginPath(); c.arc(cx, cy, R - 36, Math.PI, 0); c.lineWidth = 1.2; c.stroke();
+    c.lineWidth = 1; c.globalAlpha = 0.5;
+    for (var a = 1; a < 6; a++) { var ang = Math.PI + a * Math.PI / 6; c.beginPath(); c.moveTo(cx + Math.cos(ang) * (R - 36), cy + Math.sin(ang) * (R - 36)); c.lineTo(cx + Math.cos(ang) * (R + 4), cy + Math.sin(ang) * (R + 4)); c.stroke(); }
+    c.globalAlpha = 1; c.lineCap = 'round';
   },
   /* a name written on the map in ballpoint */
   text: function (c, o, P) {

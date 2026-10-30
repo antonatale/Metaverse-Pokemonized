@@ -26,5 +26,7 @@ export const LEGEND: Record<string, Ground> = {
   'h': { g: 'sand', deco: 'lounger', solid: true }, 'g': { g: 'sand', obj: 'gazebo', solid: true }, 'S': { g: 'sand', obj: 'board', solid: true },
   'V': { g: 'sea', obj: 'windsurf', solid: true }, 'y': { g: 'sea', deco: 'buoy', solid: true },
   /* inside Morgana: a wooden table with its chairs */
-  't': { g: 'floor', deco: 'table', solid: true }
+  't': { g: 'floor', deco: 'table', solid: true },
+  /* the quay of Mola: nets spread out to dry (you can walk over them) */
+  'e': { g: 'stone', deco: 'nets' }
 };

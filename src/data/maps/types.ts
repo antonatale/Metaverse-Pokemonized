@@ -53,8 +53,9 @@ export interface GroundObject {
   /** a hill village inside a range of peaks, in tiles from its corner */
   village?: [number, number];
 }
-/** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter) */
-export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean }
+/** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter),
+    plates are the street-name plates at the corners */
+export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean }
 export interface Npc {
   id: string;
   x: number; y: number;
@@ -89,8 +90,8 @@ export interface LostItem {
   pron: string;
   text: string;
 }
-/** a neighbourhood, for the place name in the corner */
-export interface Area { name: string; x: number; y: number; w: number; h: number }
+/** a neighbourhood, for the place name in the corner; its note says what it is, the first time Antonio walks in */
+export interface Area { name: string; x: number; y: number; w: number; h: number; note?: string }
 export interface Warp { x: number; y: number; to: string; tx: number; ty: number; tdir: Dir }
 
 export interface MapDef {

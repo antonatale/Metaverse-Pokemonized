@@ -380,6 +380,15 @@ for (const id of ['scogliera', 'oriente']) {
 }
 for (const [x, y] of tunnels) { reserved[y][x] = true; reserved[y + 1][x] = true; foot[y][x] = true; }
 
+/* the Porticciolo romano of Gianola: the stone tanks of Mamurra's fishpond in the sea, joined to the beach */
+{
+  const POND = ['_______', '_~~_~~_', '_~~_~~_', '___~___'], px = 147, py = 60;
+  POND.forEach((line, dy) => [...line].forEach((ch, dx) => { const x = px + dx, y = py + dy; if (!inside(x, y) || !sea[y][x]) return; set(x, y, ch); sea[y][x] = ch === '~'; }));
+  for (let x = px + 7; x < W && sea[py + 1][x]; x++) { set(x, py + 1, '_'); sea[py + 1][x] = false; }
+}
+/* Maranola, up in the Aurunci: no trees where its houses are drawn */
+for (let y = 0; y < 4; y++) for (let x = 71; x < 80; x++) if (/[QJ]/.test(get(x, y))) set(x, y, 'M');
+
 /* ---------- 9. people, signs and things, by their places ---------- */
 const spots: Record<string, [number, number]> = {};
 const STAND: Record<string, RegExp> = { land: /[.f_v,]/, sand: /[:]/, any: /[.f_v,:]/, sea: /~/ };
@@ -422,18 +431,25 @@ for (let y = 40; y < 58; y++) for (let x = 76; x < 104; x++) {
 }
 
 /* ---------- 10. the town around: houses along the streets of every neighbourhood ---------- */
+/* each neighbourhood has its own houses: the old stone houses of the borghi (Castellone, Mola), the villas of
+   Vindicio, the palazzine of via Amendola, shops along via Vitruvio */
 const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
-  { x0: 19, y0: 34, x1: 40, y1: 62, kinds: ['house', 'house', 'condo'], every: 0.6 },           /* Vindicio */
-  { x0: 40, y0: 4, x1: 99, y1: 22, kinds: ['house', 'condo', 'house'], every: 0.5 },            /* Penitro, Rio Fresco */
-  { x0: 40, y0: 22, x1: 99, y1: 50, kinds: ['house', 'condo', 'shop', 'house'], every: 0.85 },  /* Castellone and the centre */
+  { x0: 40, y0: 30, x1: 66, y1: 50, kinds: ['borgo', 'borgo', 'borgo', 'shop'], every: 0.9 },   /* Castellone */
+  { x0: 84, y0: 22, x1: 112, y1: 41, kinds: ['borgo', 'borgo', 'shop', 'borgo'], every: 0.9 },  /* Mola */
+  { x0: 19, y0: 34, x1: 40, y1: 62, kinds: ['villa', 'villa', 'house'], every: 0.6 },           /* Vindicio */
+  { x0: 40, y0: 4, x1: 99, y1: 22, kinds: ['house', 'condo', 'house'], every: 0.5 },            /* Rio Fresco */
+  { x0: 40, y0: 22, x1: 99, y1: 50, kinds: ['house', 'condo', 'shop', 'shop'], every: 0.85 },   /* the centre */
   { x0: 99, y0: 13, x1: 165, y1: 27, kinds: ['condo', 'house', 'condo'], every: 0.65 },         /* Santo Janni, Via Amendola */
-  { x0: 148, y0: 29, x1: 165, y1: 56, kinds: ['house', 'house'], every: 0.55 }                  /* Gianola */
+  { x0: 148, y0: 29, x1: 165, y1: 56, kinds: ['villa', 'house'], every: 0.55 }                  /* Gianola */
 ];
 const houses: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = [];
 /* first the houses with the door right on a street, then the ones a short path away */
 for (const far of [0, 2]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
   if (noise(x, y, 16) > z.every) continue;
-  const kind = z.kinds[Math.floor(noise(x, y, 13) * z.kinds.length)], w = kind === 'condo' ? 4 : 3, h = kind === 'condo' ? 3 : 2;
+  let kind = z.kinds[Math.floor(noise(x, y, 13) * z.kinds.length)];
+  /* the north side of via Vitruvio is all shops */
+  if (y + 2 === 36 && x >= 57 && x <= 96 && kind !== 'condo') kind = 'shop';
+  const w = kind === 'condo' ? 4 : 3, h = kind === 'condo' ? 3 : 2;
   let fits = true;
   for (let a = y; a < y + h && fits; a++) for (let b = x; b < x + w && fits; b++) if (!free(b, a) || !/[.fT]/.test(get(b, a))) fits = false;
   /* room to walk around it: no building, railway, sea or hill right next to it */
@@ -477,6 +493,18 @@ for (const z of URBAN) {
   const inZ = (x: number, y: number) => x >= z.x0 && x < z.x1 && y >= z.y0 && y < z.y1;
   for (const c of components((x, y) => inZ(x, y) && /[.f]/.test(get(x, y)))) if (c.length <= 6) for (const [x, y] of c) set(x, y, '_');
 }
+/* Castellone, the old borgo: no lawns, stone everywhere between its houses */
+for (let y = 33; y < 49; y++) for (let x = 41; x < 66; x++) if (/[.fT]/.test(get(x, y)) && !green[y][x]) set(x, y, '_');
+/* the polygonal walls of the borgo, along its edge under the railway and down via Castellone */
+for (const [x, y] of [...Array.from({ length: 14 }, (_, k): XY => [42 + k, 33]), ...Array.from({ length: 5 }, (_, k): XY => [55, 38 + k])]) {
+  if (get(x, y) === '_' && !foot[y][x] && !pathed[y][x]) set(x, y, 'W');
+}
+/* Mola: fishing nets drying on the quay by the boats */
+for (let y = 28; y < 46; y++) for (let x = 84; x < 104; x++) {
+  if (get(x, y) !== '_' || foot[y][x] || pathed[y][x] || !N4.some(([a, b]) => /[~o]/.test(get(x + a, y + b)))) continue;
+  if (noise(x, y, 22) < 0.3) set(x, y, 'e');
+}
+
 /* ---------- 12. the countryside: olive trees in rows you can walk between, a few lone trees ---------- */
 const nearStreet = (x: number, y: number) => N4.some(([a, b]) => /[=v,r_]/.test(get(x + a, y + b)));
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {

@@ -80,3 +80,8 @@ div.pick { cursor: default; }
 .wgoal.new { animation: wgoal-new 1.5s ease; }
 @keyframes wgoal-new { 0%, 40% { transform: scale(1.08); box-shadow: 3px 3px 0 var(--shadow), 0 0 0 4px var(--warn); } 100% { transform: none; } }
 .tour .next .diary-n { border-style: solid; border-color: var(--warn); color: var(--ink); }
+/* a neighbourhood, when Antonio walks in: its name and what makes it itself */
+.wtoast { position: absolute; top: 100px; left: 0; max-width: min(86vw, 420px); margin: 0; padding: 7px 12px 8px; border: 2px solid var(--line); border-radius: 8px;
+  background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); font: 14px/1.35 var(--font-body); pointer-events: none; transition: opacity .6s ease; }
+.wtoast b { display: block; font: 17px/1.15 var(--font-display); }
+.wtoast.out { opacity: 0; }

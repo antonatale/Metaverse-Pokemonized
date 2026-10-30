@@ -152,6 +152,46 @@ tools/
 - **Pineta di Vindicio:** è dove sta davvero, accanto al Lido Frungillo all'inizio di via Tito Scipione. Venendo da Gaeta si trovano La Scogliera, poi l'Eclipse, poi la pineta, poi il centro. È un'area `pines` di `formia-places.ts`, con i due sentieri di `PATHS`.
 - **Persone con un aspetto loro:** gli amici hanno `person`; chi è qualcuno senza essere nella compagnia ha `look`, come Nicola Spadea (`LOOKS` in `walkers.ts`).
 
+## I quartieri
+
+Ogni quartiere ha il suo aspetto, le sue persone e una nota che compare quando Antonio ci entra (`note` sulle aree di `formia.ts`; il messaggio è `neighbourhood` in `ui/story-screen.ts`).
+
+- **Castellone**, il borgo alto:
+  - è tutto lastricato, con i vicoli di sampietrini e le case antiche di pietra (`borgo`);
+  - lungo il bordo corrono le mura poligonali;
+  - ci sono la torre ottagonale dei Caetani, Sant'Erasmo e la cavea del teatro romano;
+  - c'è l'ingresso del Cisternone;
+  - ci abitano la signora del teatro e la devota di Sant'Erasmo.
+- **Centro:** via Vitruvio con i negozi sul lato nord, il Comune con il Museo archeologico (c'è la guida), la piazza con il monumento ai caduti e la stazione con il treno.
+- **Mola**, il borgo marinaro: case colorate dei pescatori, reti stese sulle banchine, barche, la torre angioina, la chiesa dei Santi Lorenzo e Giovanni Battista, Morgana.
+- **Porto:** traghetto, biglietteria Laziomar, faro sul molo.
+- **Vindicio:** villette con la bouganville, i lidi, la pineta, la Tomba di Cicerone sull'Appia.
+- **Via Amendola, Acqualonga, Santo Janni:** palazzine, il Bruno Zauli con la pista, il Palamendola.
+- **Gianola:** il parco, la villa di Mamurra e le vasche del porticciolo romano in mare.
+- **Monti Aurunci:** in cima si vede Maranola.
+- **Targhe:** le vie principali hanno la targa con il nome vero e una frase. I nomi delle strade di `network.ts` sono quelli reali, confrontati con le posizioni di OpenStreetMap.
+
+## Fonti dei fatti di Formia
+
+I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere. Se ne aggiungi, controllale.
+- **Torre di Castellone:** ottagonale, alta 25 m, fatta costruire nel 1377 da Onorato I Caetani sulla base in opera poligonale dell'arce romana. Le mura avevano 12 torri, distrutte dai bombardamenti del 1943. Il borgo nacque contro le incursioni saracene. Fonte: italia.it, «Torre di Castellone».
+- **Cisternone romano:** del I sec. a.C., sotto Castellone, 1200 m², 7000 m³ d'acqua. Fonti: cultura.gov.it, italia.it.
+- **Sant'Erasmo:** vescovo e martire, protettore dei marinai, morto a Formia il 2 giugno 303. La chiesa di Castellone sorge sulla sua sepoltura: gli scavi del 1970–76 hanno trovato una necropoli romana e una cripta carolingia. Le reliquie andarono a Gaeta dopo l'842. Da «Elmo» viene il fuoco di Sant'Elmo. Fonti: italia.it, Arcidiocesi di Gaeta.
+- **Teatro romano:** di età augustea, a sud di Sant'Erasmo. Circa 300 persone abitano in più di settanta appartamenti costruiti dentro. Fonte: italia.it.
+- **Torre di Mola:** del castello angioino, costruita dopo il sacco del 1289 sopra le terme romane. Oggi ospita l'Archivio storico. Fonti: italia.it, formiae.it.
+- **Chiesa dei Santi Lorenzo e Giovanni Battista**, a Mola: citata dall'841. Fino all'Ottocento erano due chiese divise da un muro; la guerra l'ha quasi distrutta. San Giovanni si festeggia a Mola il 24 giugno. Fonti: Wikipedia, travel365.
+- **Museo archeologico nazionale:** in via Vitruvio 184, nell'ala sud del Palazzo comunale (le sale degli «Stalloni dei Borbone»). Ha statue togate con tracce di colore e statue di notabili e della famiglia imperiale, tra cui Gaio Cesare, trovate nell'antico Foro, oggi piazza Mattej. Fonti: italia.it, cultura.gov.it.
+- **Monumento ai caduti** in piazza della Vittoria: del 1926. Fonte: Wikipedia.
+- **Porto:** traghetti e aliscafi Laziomar per Ponza e Ventotene, tutto l'anno. Fonti: laziomar.it e gli aggregatori di traghetti.
+- **Birreria Morgana:** via Abate Tosti 105, nel centro storico di Mola. Fonti: Gambero Rosso, Trip.com.
+- **Centro Bruno Zauli:** nato nel 1955 da un'idea di Bruno Zauli, presidente della federazione di atletica dal 1946 al 1957. Carlo Vittori ci lavorò dal 1966 all'84 e allenava Mennea; ogni anno c'è il Memorial Mennea. Indirizzo: via Appia Lato Napoli 175. Fonti: Wikipedia, CONI, FIDAL.
+- **Gianola:** parco regionale dal 1987, Monte di Scauri 123 m. La villa è di Lucio Mamurra, cavaliere formiano e prefetto del genio di Cesare, con l'ottagono detto «Tempio di Giano». Il porticciolo romano era forse una peschiera; oggi è area marina protetta. Fonti: italia.it, Pesando–Stefanile (Università L'Orientale).
+- **Vindicio:** spiaggia di oltre un chilometro dal porto a Gaeta, Bandiera Blu, spot di windsurf e kite. La pineta è accanto al Lido Frungillo, in via Tito Scipione 3; l'Eclipse è in via Tito Scipione 58. Nicola Spadea è campione di windsurf e istruttore (Gunsails, Freedome). Fonti: spiagge.it, siviaggia.it, waterwind.it.
+- **Lido Oriente:** lungomare Città di Ferrara 128. Fonte: spiagge.it.
+- **Maranola:** il presepe vivente nei vicoli, da più di quarant'anni. Fonti: siti di eventi.
+- **Cucina:** tiella (la pizza bassa ripiena del golfo), spaghetti alla formiana con cozze, vongole e canocchie, olive di Gaeta, mozzarella di bufala, ciambelle all'anice. Fonti: Gazzetta del Gusto, guide gastronomiche.
+- **Incerti, quindi non usati:** la «Porta degli Spagnoli» (le fonti non concordano se sia a Castellone o a Mola), il «molo Azzurra» per i traghetti, l'indirizzo preciso del Cisternone.
+
 ## Attività, casa e motorino
 
 - **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.

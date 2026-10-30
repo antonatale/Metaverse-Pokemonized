@@ -261,23 +261,28 @@ function gelato(n: Npc) {
 }
 
 /* ---------- an evening at Morgana: a drink, and a quiz about Formia ---------- */
+/* every answer here is true (sources in CLAUDE.md); the first of each list is the right one */
 const QUIZ: [string, string[]][] = [
-  ['Secondo la tradizione, chi riposa nella tomba sulla strada per Gaeta?', ['Marco Tullio Cicerone', 'Giulio Cesare', 'Mamurra']],
-  ['Com\'è fatta la Torre di Castellone?', ['Ottagonale', 'Rotonda', 'Quadrata']],
-  ['Di che secolo è la Torre di Mola, del castello angioino?', ['Del Duecento', 'Dell\'Ottocento', 'Del Novecento']],
-  ['Chi è il patrono di Formia?', ['Sant\'Erasmo', 'San Lorenzo', 'San Giovanni']],
-  ['Quale campione si allenava al centro Bruno Zauli?', ['Pietro Mennea', 'Alberto Tomba', 'Valentino Rossi']],
-  ['Dove vanno i traghetti dal molo Azzurra?', ['Ponza e Ventotene', 'Capri e Ischia', 'In Sardegna']],
-  ['Cosa c\'è sotto Largo Sant\'Anna, a Castellone?', ['Il Cisternone romano', 'La galleria del treno', 'Un parcheggio']],
-  ['Di chi era la villa romana sul promontorio di Gianola?', ['Mamurra', 'Nerone', 'Cicerone']]
+  ['Secondo la tradizione, chi riposa nella tomba sull\'Appia verso Itri?', ['Marco Tullio Cicerone', 'Giulio Cesare', 'Mamurra']],
+  ['Chi fece costruire la torre ottagonale di Castellone, nel 1377?', ['Onorato I Caetani', 'Carlo II d\'Angiò', 'Federico II']],
+  ['Che cosa c\'è oggi nella Torre di Mola?', ['L\'Archivio storico di Formia', 'Il Municipio', 'Un faro']],
+  ['Quando si festeggia Sant\'Erasmo, il patrono di Formia?', ['Il 2 giugno', 'Il 24 giugno', 'Il 15 agosto']],
+  ['Chi allenava Pietro Mennea al centro Bruno Zauli?', ['Carlo Vittori', 'Bruno Zauli', 'Nessuno, faceva da solo']],
+  ['Dove vanno i traghetti e gli aliscafi dal porto di Formia?', ['Ponza e Ventotene', 'Capri e Ischia', 'In Sardegna']],
+  ['Quanta acqua conteneva il Cisternone romano di Castellone?', ['7000 metri cubi', '70 litri', 'Un milione di metri cubi']],
+  ['Chi era Mamurra, quello della villa di Gianola?', ['Il prefetto del genio di Giulio Cesare', 'Un imperatore romano', 'Un pescatore di Mola']],
+  ['Cosa c\'è di speciale nel teatro romano di Castellone?', ['Ci abitano trecento persone', 'È sott\'acqua', 'È a Gaeta']],
+  ['Come erano, in origine, le statue togate del museo di Formia?', ['Dipinte: ne restano tracce di colore', 'Sempre bianche', 'Dorate']],
+  ['Quale festa si fa a Mola il 24 giugno?', ['San Giovanni', 'Sant\'Erasmo', 'Ferragosto']],
+  ['Da quanto tempo c\'è il centro di preparazione olimpica di Formia?', ['Dal 1955', 'Dal 1999', 'Dal 1860']]
 ];
 function quiz(n: Npc) {
   const k = timesDone('quiz');
   say(['Stasera c\'è il quiz su Formia. Intanto, cosa vi porto?'], n.name, ['Una bionda', 'Una rossa', 'Un analcolico'].map(function (d) {
     return { label: d, fn: function () {
       sfx('found');
-      /* five of the eight questions, a different set each evening; the right answer moves around too */
-      const qs = [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return (i + k * 3) % QUIZ.length; }).slice(0, 5);
+      /* five of the questions, a different set each evening; the right answer moves around too */
+      const qs = QUIZ.map(function (_q, i) { return (i + k * 5) % QUIZ.length; }).slice(0, 5);
       let right = 0;
       const ask = function (q: number) {
         if (q >= qs.length) { finish(); return; }

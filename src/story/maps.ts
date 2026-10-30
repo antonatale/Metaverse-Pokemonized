@@ -67,10 +67,16 @@ export function prepare(id: string): PreparedMap {
 export function itemAt(m: PreparedMap, x: number, y: number): LostItem | null { for (var i = 0; i < m.items.length; i++) { var it = m.items[i]; if (it.x === x && it.y === y && !st.found[it.id]) return it; } return null; }
 export function allItems(): LostItem[] { var out: LostItem[] = []; Object.keys(MAPS).forEach(function (k) { (MAPS[k].items || []).forEach(function (it) { out.push(it); }); }); return out; }
 export function foundItems(): LostItem[] { return allItems().filter(function (it) { return st.found[it.id]; }); }
+/** the neighbourhood Antonio is in (the first area that contains him), if any */
+export function currentArea(): Area | null {
+  if (M.inside) return null;
+  for (var i = 0; i < M.areas.length; i++) { var a = M.areas[i]; if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h) return a; }
+  return null;
+}
 export function areaName(): string {
   if (M.inside) return M.name;
-  for (var i = 0; i < M.areas.length; i++) { var a = M.areas[i]; if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h) return a.name; }
-  return '';
+  var a = currentArea();
+  return a ? a.name : '';
 }
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0); }

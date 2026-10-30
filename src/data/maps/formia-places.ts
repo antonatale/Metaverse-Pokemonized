@@ -62,6 +62,8 @@ export const PLACES: PlaceSpec[] = [
   /* ---------- Castellone ---------- */
   { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true, tile: [57, 42] },
   { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], tile: [62, 42] },
+  /* the way down into the Cisternone romano, by Largo Sant'Anna */
+  { id: 'cisternone', kind: 'cistern', w: 1, h: 1, at: [41.25569, 13.60104], tile: [65, 42] },
   /* ---------- Vindicio: the Tomba di Cicerone, the beach, the Eclipse, the pineta ---------- */
   { id: 'tomba', kind: 'tomb', w: 3, h: 3, at: [41.2516, 13.5787] },
   /* the Pineta di Vindicio, by the Lido Frungillo at the Formia end of Via Tito Scipione: from Gaeta you come to
@@ -128,6 +130,20 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-zauli', near: { place: 'zauli', dx: -1, dy: 3 } },
   { id: 'sign-gianola', near: { place: 'mamurra', dx: -2, dy: 2 } },
   { id: 'sign-caposele', at: [41.2512, 13.5975] },
+  { id: 'sign-porticciolo', near: { place: 'mamurra', dx: -8, dy: 4 } },
+  /* Castellone: who lives inside the Roman theatre, a devotee of Sant'Erasmo; in the centre, the guide of the museum */
+  { id: 'teatro', near: { place: 'erasmo', dx: 5, dy: 3 } },
+  { id: 'devota', near: { place: 'erasmo', dx: -2, dy: 3 } },
+  { id: 'guida', near: { place: 'comune', dx: -2, dy: 1 } },
+  /* street-name plates at the corners of the real streets the map's streets stand for */
+  { id: 'targa-vitruvio', near: { place: 'comune', dx: -3, dy: -1 } },
+  { id: 'targa-abate-tosti', near: { place: 'morgana', dx: 6, dy: -2 } },
+  { id: 'targa-appia', near: { place: 'tomba', dx: 5, dy: -4 } },
+  { id: 'targa-vindicio', near: { place: 'tomba', dx: -1, dy: 5 } },
+  { id: 'targa-tito-scipione', near: { place: 'pineta', dx: -9, dy: 9 } },
+  { id: 'targa-amendola', near: { place: 'casa', dx: 6, dy: 5 } },
+  { id: 'targa-appia-napoli', near: { place: 'palamendola', dx: 7, dy: 1 } },
+  { id: 'targa-gianola', near: { place: 'oriente', dx: 6, dy: -10 }, on: 'any' },
   /* Antonio's lost things */
   { id: 'caricabatterie', near: { place: 'stazione', dx: 6, dy: 4 } },
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },

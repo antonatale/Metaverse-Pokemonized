@@ -8,7 +8,7 @@ import { beaterOf } from '../battle';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, personAt, blocked, cityCovi, hasBadge, route, type Person } from '../story/maps';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel } from '../story/movement';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
@@ -41,7 +41,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
@@ -90,8 +90,23 @@ var lastPlace = '';
 export function renderPlace() {
   var city = MAPS[M.city].name, a = areaName(), k = city + '|' + a;
   if (k === lastPlace) return;
+  var first = lastPlace === '';
   lastPlace = k;
   $('wplace').innerHTML = a ? '<small>' + esc(city) + '</small>' + esc(a) : esc(city);
+  var ar = currentArea();
+  if (ar && ar.note && !first) neighbourhood(ar.name, ar.note);
+}
+/* walking into a neighbourhood: what it is, for a few seconds (once in a while, not at every step over the border) */
+var toastTimer: ReturnType<typeof setTimeout> | undefined, toastSeen: Record<string, number> = {};
+function neighbourhood(name: string, note: string) {
+  var now = performance.now();
+  if (toastSeen[name] && now - toastSeen[name] < 60000) return;
+  toastSeen[name] = now;
+  var el = $('wtoast');
+  el.innerHTML = '<b>' + esc(name) + '</b> ' + esc(note);
+  el.hidden = false; el.classList.remove('out');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 5200);
 }
 /* the next stop of the tour, with an arrow that points to it (or to the door that leads to it) */
 var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
@@ -370,7 +385,7 @@ function frame(now: number) {
 }
 function start() { if (running) return; running = true; raf = requestAnimationFrame(frame); }
 function stop() { running = false; cancelAnimationFrame(raf); halt(); }
-function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); if (root) root.hidden = true; document.body.classList.remove('in-world'); }
+function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); if (root) { root.hidden = true; $('wtoast').hidden = true; } document.body.classList.remove('in-world'); }
 
 function intro() {
   st.seen.intro = true; save();

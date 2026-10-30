@@ -53,7 +53,8 @@ function flowers(c: Ctx, P: Palette, x: number, y: number, ww: number) {
 export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
   church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
   lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.75, pub: T * 0.75,
-  arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7 };
+  arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7,
+  borgo: T * 0.75, villa: T * 0.5, cistern: T * 0.5 };
 export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts): Sprite {
   opt = opt || {};
   var w = (opt.w || 1) * T, h = (opt.h || 1) * T, up = opt.up == null ? T : opt.up;
@@ -553,6 +554,72 @@ const OBJ: Record<string, ObjFn> = {
     /* the sailor, hanging off the boom */
     c.strokeStyle = STICKER_INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(22, 20); c.lineTo(23, 9); c.lineTo(16, 2); c.stroke();
     circle(c, 25, 6, 3.3); fillStroke(c, '#c99577', STICKER_INK, 1.2);
+  },
+  /* an old house of the borghi (Castellone, Mola): stone walls, an arched door, small shuttered windows, a tiled roof;
+     in Mola the plaster is painted in the fishermen's colours */
+  borgo: function (c, w, h, P, o) {
+    var v = o.v || 0, dx = (o.doorX! - o.x!) * T, wallTop = T * 0.25, roofTop = -T * 0.62;
+    var walls = [P.stone, P['wall-d'], P['wall-b'], P['wall-c'], P.stone];
+    var wall = walls[v % walls.length], shutter = Math.floor(v / 5) % 2 ? P['shutter-b'] : P['shutter-a'];
+    ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+    rr(c, 3, wallTop, w - 6, h - wallTop - 2, 2); fillStroke(c, wall, P.ink, 1.8);
+    /* the stones showing through the plaster */
+    c.strokeStyle = P.stone2; c.lineWidth = 1;
+    for (var k = 0; k < 7; k++) {
+      var sx = 6 + hash(v, k, 200) * (w - 18), sy = wallTop + 6 + hash(v, k, 201) * (h - wallTop - 14);
+      c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx + 6, sy - 1); c.lineTo(sx + 7, sy + 4); c.lineTo(sx + 1, sy + 5); c.closePath(); c.stroke();
+    }
+    c.beginPath(); c.moveTo(-1, wallTop + 3); c.lineTo(8, roofTop); c.lineTo(w - 8, roofTop); c.lineTo(w + 1, wallTop + 3); c.closePath();
+    fillStroke(c, o.roof || P['roof-a'], P.ink, 1.7);
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.globalAlpha = 0.3;
+    for (var y = roofTop + 6; y < wallTop; y += 6) { c.beginPath(); c.moveTo(4, y); c.lineTo(w - 4, y); c.stroke(); }
+    for (var x = 8; x < w - 6; x += 6) { c.beginPath(); c.moveTo(x, roofTop + 1); c.lineTo(x - 2, wallTop + 2); c.stroke(); }
+    c.globalAlpha = 1;
+    /* small windows high up, one on each side of the door */
+    [10, w - 22].forEach(function (wx) { if (Math.abs(wx + 6 - (dx + T / 2)) > 14) shuttered(c, P, wx, wallTop + 8, 11, 12, shutter); });
+    if (v % 3 === 0) flowers(c, P, 10, wallTop + 21, 11);
+    /* the arched door, with a stone frame */
+    c.beginPath(); c.moveTo(dx + 8, h - 2); c.lineTo(dx + 8, h - T + 10); c.arc(dx + T / 2, h - T + 10, T / 2 - 8, Math.PI, 0); c.lineTo(dx + T - 8, h - 2); c.closePath();
+    fillStroke(c, P.wood2, P.ink, 1.6);
+    c.beginPath(); c.arc(dx + T / 2, h - T + 10, T / 2 - 5, Math.PI, 0); c.strokeStyle = P.stone2; c.lineWidth = 2.4; c.stroke();
+    circle(c, dx + T - 12, h - T / 2 + 3, 1.3); c.fillStyle = P.ink; c.fill();
+    /* now and then an outside stair up to the first floor */
+    if (v % 4 === 1 && w >= T * 3) { c.fillStyle = P.stone2; for (var st = 0; st < 3; st++) c.fillRect(w - 18 + st * 4, h - 8 - st * 6, 14 - st * 4, 4); c.strokeStyle = P.ink; c.lineWidth = 1; c.strokeRect(w - 18, h - 20, 14, 18); }
+  },
+  /* a villa of Vindicio: low and white, a flat roof terrace, bougainvillea over the door, a palm in the garden */
+  villa: function (c, w, h, P, o) {
+    var v = o.v || 0, dx = (o.doorX! - o.x!) * T, top = T * 0.05;
+    ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+    rr(c, 3, top, w - 6, h - top - 2, 3); fillStroke(c, v % 2 ? P.wall : P['wall-e'], P.ink, 1.8);
+    rr(c, 1, top - 4, w - 2, 6, 2); fillStroke(c, P.wall, P.ink, 1.4);
+    c.strokeStyle = P.ink; c.lineWidth = 1; for (var x = 6; x < w - 4; x += 5) { c.beginPath(); c.moveTo(x, top - 4); c.lineTo(x, top - 10); c.stroke(); }
+    c.beginPath(); c.moveTo(2, top - 10); c.lineTo(w - 2, top - 10); c.stroke();
+    /* a striped awning over the terrace */
+    c.beginPath(); c.moveTo(w * 0.55, top - 10); c.lineTo(w - 4, top - 10); c.lineTo(w - 2, top - 2); c.lineTo(w * 0.55 - 2, top - 2); c.closePath();
+    c.save(); c.clip(); for (var k = 0; k < 8; k++) { c.fillStyle = k % 2 ? '#ffffff' : P['tent-b']; c.fillRect(w * 0.55 - 4 + k * 5, top - 12, 5, 12); } c.restore();
+    c.strokeStyle = P.ink; c.lineWidth = 1.1; c.stroke();
+    [10, w - 26].forEach(function (wx) { if (Math.abs(wx + 8 - (dx + T / 2)) > 16) { rr(c, wx, top + 10, 16, 14, 2); fillStroke(c, '#bfe3ff', P.ink, 1.3); c.beginPath(); c.moveTo(wx + 8, top + 10); c.lineTo(wx + 8, top + 24); c.lineWidth = 1; c.stroke(); } });
+    rr(c, dx + 7, h - T + 4, T - 14, T - 6, 3); fillStroke(c, P['tent-b'], P.ink, 1.6);
+    /* bougainvillea climbing over the door */
+    blobs(c, [[dx + 6, h - T + 2, 5], [dx + 13, h - T - 2, 5], [dx + 21, h - T - 1, 5], [dx + T - 5, h - T + 4, 4.5]], P['flower-a'], P.ink, 1.1);
+    c.fillStyle = P.leaf2; [[dx + 9, h - T + 4], [dx + 18, h - T + 1], [dx + 25, h - T + 6]].forEach(function (q) { circle(c, q[0], q[1], 1.6); c.fill(); });
+  },
+  /* the way down into the Cisternone: a stone arch with an iron gate */
+  cistern: function (c, w, h, P) {
+    ell(c, 16, 29, 12, 3); c.fillStyle = P.shadow; c.fill();
+    c.beginPath(); c.moveTo(3, 29); c.lineTo(3, 6); c.arc(16, 6, 13, Math.PI, 0); c.lineTo(29, 29); c.closePath(); fillStroke(c, P.stone, P.ink, 1.7);
+    c.beginPath(); c.moveTo(8, 29); c.lineTo(8, 9); c.arc(16, 9, 8, Math.PI, 0); c.lineTo(24, 29); c.closePath(); fillStroke(c, '#20263a', P.ink, 1.4);
+    c.strokeStyle = '#8f96a0'; c.lineWidth = 1.4; for (var k = 0; k < 4; k++) { c.beginPath(); c.moveTo(10 + k * 4, 29); c.lineTo(10 + k * 4, 6); c.stroke(); }
+    c.beginPath(); c.moveTo(8, 16); c.lineTo(24, 16); c.stroke();
+    c.strokeStyle = P.stone2; c.lineWidth = 1; c.beginPath(); c.moveTo(5, 14); c.lineTo(8, 13); c.moveTo(27, 18); c.lineTo(24, 17); c.stroke();
+  },
+  /* a street-name plate on its pole, as at the corners of Formia: white marble, a dark frame */
+  plate: function (c, w, h, P) {
+    ell(c, 16, 29, 6, 2); c.fillStyle = P.shadow; c.fill();
+    c.strokeStyle = P.ink; c.lineWidth = 2.6; c.beginPath(); c.moveTo(16, 29); c.lineTo(16, 6); c.stroke();
+    rr(c, 2, -6, 28, 13, 2); fillStroke(c, '#fbfbf7', P.ink, 1.6);
+    rr(c, 4.5, -3.5, 23, 8, 1); c.strokeStyle = P.ink; c.lineWidth = 0.9; c.stroke();
+    c.fillStyle = P.ink; c.globalAlpha = 0.7; c.fillRect(8, -0.5, 16, 1.6); c.globalAlpha = 1;
   },
   /* the Tomb of Cicero on the Appia: a square base and a round drum, overgrown on top */
   tomb: function (c, w, h, P) {
