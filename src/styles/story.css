@@ -71,3 +71,12 @@ div.pick { cursor: default; }
 .diary-n { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 2px dashed var(--line); border-radius: 50%; font: 15px/1 var(--font-display); color: var(--muted); }
 .diary .got .diary-n { border-style: solid; background: var(--t-chiacchiera); color: var(--on-hl); }
 .townmap { border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--m-sea); }
+/* the next stop of the tour, under the place name: an arrow that points to it */
+.wgoal { position: absolute; top: 52px; left: 0; max-width: min(78vw, 340px); display: flex; align-items: center; gap: 7px; padding: 4px 11px 4px 7px; border: 2px solid var(--line); border-radius: 8px;
+  background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-align: left; cursor: pointer; font: 15px/1.15 var(--font-display); }
+.wgoal-ic { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--warn); color: var(--on-hl); transition: transform .25s ease; }
+.wgoal-t { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wgoal-t small { display: block; font: 700 10px/1.25 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.wgoal.new { animation: wgoal-new 1.5s ease; }
+@keyframes wgoal-new { 0%, 40% { transform: scale(1.08); box-shadow: 3px 3px 0 var(--shadow), 0 0 0 4px var(--warn); } 100% { transform: none; } }
+.tour .next .diary-n { border-style: solid; border-color: var(--warn); color: var(--ink); }

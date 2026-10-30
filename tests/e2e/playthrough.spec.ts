@@ -344,3 +344,32 @@ test('home and the scooter', async ({ browser }) => {
   expect(get('rode to')).toBe('Eclipse beach');
   expect(get('back')).toBe('Parco la Fontana');
 });
+
+/* the tour of Formia: the next stop is always in the corner, with an arrow, and in the menu */
+test('the tour of Formia', async ({ browser }) => {
+  const story = (extra: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true }, found: {}, ...extra }) });
+  const goal = async (r: Run) => {
+    await r.page.click('#go-story');
+    await r.page.clock.runFor(1500);
+    return (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' ');
+  };
+  const first = await play(browser, 'tour-start', {}, async (r) => {
+    await r.page.click('#go-story');
+    await until(r.page, () => window.WORLD._debug.pos().dialog);
+    await talkThrough(r.page);
+    r.keep('goal', (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' '));
+    await r.page.click('#wgoal'); await r.page.clock.runFor(300);
+    r.keep('menu', await r.page.locator('.tour').innerText());
+    await r.shot('menu', { fullPage: true });
+  });
+  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true }, badges: ['forchetta'], squad: ['antonio', 'forchetta'] }) }, async (r) => {
+    r.keep('goal', await goal(r));
+    await r.page.keyboard.press('m'); await r.page.clock.runFor(300);
+    r.keep('title', await r.page.locator('.pickrow h3', { hasText: 'Giro di Formia' }).innerText());
+  });
+  const get = (run: { data: { name: string; value: unknown }[] }, n: string) => String(run.data.find((x) => x.name === n)!.value);
+  expect(get(first, 'goal')).toContain('Padel con Andrea');
+  expect(get(first, 'menu')).toContain('Sfida Forchetta');
+  expect(get(later, 'goal')).toContain('Quiz su Formia da Morgana');
+  expect(get(later, 'title').toLowerCase()).toContain('2 su 12');
+});

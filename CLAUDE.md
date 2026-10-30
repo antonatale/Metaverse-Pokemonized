@@ -52,6 +52,7 @@ src/
     maps.ts                mappe preparate, collisioni, oggetti persi, quartieri, covi, percorso più breve
     movement.ts            passi, rotazioni, porte, warp e viaggi (travel)
     activities.ts          le attività per Formia: elenco, volte fatte, record
+    goals.ts               il giro di Formia: le tappe in ordine, la prossima, dove puntare la freccia
     run.ts                 lo stato della corsetta in pineta
   save/
     story-progress.ts      salvataggio della storia  (chiave lotte-tra-amici:storia:v1)
@@ -91,16 +92,37 @@ tests/
 tools/
   sim.ts                   simulatore di bilanciamento
   golden.mjs               genera i golden
-  formia/                  la mappa di Formia da OpenStreetMap: extract.mjs, build.ts, paint.ts, show.ts, where.ts
+  formia/                  la mappa di Formia da OpenStreetMap: extract.mjs, build.ts, paint.ts, show.ts, where.ts, drift.ts
 ```
 
 ## La mappa di Formia
 
 - **È Formia vera:** costa, strade, ferrovia (con la galleria sotto Castellone), spiagge, pinete e parchi vengono da OpenStreetMap; i luoghi stanno dove sono davvero. Antonio è il protagonista: si parte da casa sua, Parco la Fontana in via Giovanni Amendola 1, e i posti dove va con gli amici (l'Eclipse beach di Nicola Spadea a Vindicio, la pineta di Vindicio, la Birreria Morgana a Mola) hanno persone e attività. Il resto della città fa da contorno.
-- **Come è fatta:** `tools/formia/build.ts` legge `tools/formia/osm-extract.json` (© OpenStreetMap contributors, ODbL) e, tramite `formia-projection.ts`, disegna il terreno. Poi sistema ogni luogo di `formia-places.ts` sulla casella libera più vicina alla sua posizione reale (niente strade, binari o mare sotto, una casella percorribile davanti alla porta), aggiunge le case di contorno nei quartieri e gli uliveti in campagna, e scrive tutto in `formia-ground.ts`.
-- **Per cambiarla:** modifica `formia-places.ts` (luoghi e "spot" di una casella: persone, cartelli, oggetti, motorini), `tools/formia/paint.ts` (ritocchi a mano sul terreno) o il generatore, poi `npx tsx tools/formia/build.ts`. Se un luogo non trova posto lo stampa come `NOT PLACED`. `npx tsx tools/formia/show.ts x0 x1 y0 y1` mostra un pezzo di mappa con le coordinate; `npx tsx tools/formia/where.ts` dove cadono i luoghi reali. Dopo, `npm test` (il controllo delle mappe dice se qualcuno è finito irraggiungibile) e `npm run golden`, perché il disegno della mappa cambia.
+- **Come è fatta:** `tools/formia/build.ts` legge `tools/formia/osm-extract.json` (© OpenStreetMap contributors, ODbL) e, tramite `formia-projection.ts`, disegna il terreno, in quest'ordine:
+  1. mare (con la costa lisciata), colline, verde, spiagge e rive: banchine di pietra in città, scogli e calette, sabbia a Vindicio e Gianola;
+  2. ferrovia;
+  3. i luoghi di `formia-places.ts`, ciascuno sulla casella libera più vicina alla sua posizione reale. Vanno **prima** delle strade, così restano dove sono davvero e sono le strade a girargli attorno;
+  4. strade: principali, con nome e le vie più lunghe dei quartieri;
+  5. un vialetto da ogni porta fino alla strada;
+  6. le persone e le cose ("spot"): mai su un edificio, su un vialetto o subito dietro un tetto;
+  7. le case di contorno, allineate lungo le vie;
+  8. i marciapiedi del centro e gli uliveti in campagna.
+
+  Tutto finisce in `formia-ground.ts`.
+- **Strade e ferrovia ad angolo retto:** come su una mappa da gioco, ogni tratto diventa una scala di gradini larghi (`zline`), non una diagonale a scalini di una casella. Le carreggiate doppie e il secondo binario si scartano (`thin`); i pezzi rimasti staccati si uniscono alla rete con il percorso più corto e i moncherini si tolgono. Così si va ovunque a piedi per strada.
+- **Per cambiarla:** modifica `formia-places.ts` (luoghi e "spot" di una casella: persone, cartelli, oggetti, motorini), `tools/formia/paint.ts` (ritocchi a mano sul terreno) o il generatore, poi `npx tsx tools/formia/build.ts`. Se un luogo non trova posto lo stampa come `NOT PLACED`. `npx tsx tools/formia/show.ts x0 x1 y0 y1` mostra un pezzo di mappa con le coordinate; `npx tsx tools/formia/where.ts` dove cadono i luoghi reali; `npx tsx tools/formia/drift.ts` di quante caselle ogni luogo si è spostato dalla sua posizione vera. Dopo, `npm test` (il controllo delle mappe dice se qualcuno è finito irraggiungibile) e `npm run golden`, perché il disegno della mappa cambia.
 - **Scala:** circa 33 m per casella in centro, di più nei tratti in mezzo; le spiagge di Vindicio e Gianola sono allargate di qualche casella verso il mare, sennò a questa scala sarebbero strisce.
-- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia3`), con spille, compagnia e oggetti ritrovati.
+- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia4`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
+
+## Il giro di Formia
+
+- **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): padel con Andrea, Forchetta, Morgana, il gelato, Costanzo, gli oggetti persi, l'Eclipse, la pineta, la Tomba di Cicerone e, alla fine, il treno per Torino. Il percorso va da casa verso ovest.
+- **Prossima tappa:** è la prima non ancora fatta; si può comunque fare tutto in qualsiasi ordine. Si vede in tre posti:
+  - nell'HUD, sotto il nome del posto, con una freccia che punta verso la tappa (`renderGoal` in `ui/story-screen.ts`);
+  - sulla mappa, come una freccia gialla che rimbalza sopra la persona, la cosa o la porta (`drawWorld`);
+  - sulla pianta del menu, come una stella; il menu elenca anche tutto il giro.
+- **Dentro casa o al circolo**, la freccia punta all'uscita; fuori, alla porta del posto dove sta la tappa (`heading`).
+- **Aggiungere una tappa:** una voce in `STOPS`, nell'ordine del giro. Il test `the tour of Formia` controlla la prima tappa e il conteggio.
 
 ## Attività, casa e motorino
 

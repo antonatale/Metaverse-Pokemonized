@@ -37,6 +37,21 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
   } else if (L.g === 'road') {
     c.strokeStyle = P.road2; c.lineWidth = 1;
     c.beginPath(); c.moveTo(X + 4 + r * 10, Y + 9); c.lineTo(X + 9 + r * 10, Y + 9); c.moveTo(X + 16, Y + 22 + r * 4); c.lineTo(X + 23, Y + 22 + r * 4); c.stroke();
+    /* a level crossing: the railway on both sides of the street, a few tiles away at most */
+    var track = function (dx: number, dy: number) {
+      for (var s = 1; s <= 3; s++) {
+        var q = x + dx * s, u = y + dy * s;
+        if (q < 0 || u < 0 || q >= map.w || u >= map.h) return false;
+        var g = map.cell(q, u).g;
+        if (g === 'rail') return true;
+        if (g !== 'road') return false;
+      }
+      return false;
+    };
+    c.strokeStyle = P.ink; c.lineWidth = 2; c.beginPath();
+    if (track(-1, 0) && track(1, 0)) { c.moveTo(X, Y + 11); c.lineTo(X + T, Y + 11); c.moveTo(X, Y + 21); c.lineTo(X + T, Y + 21); }
+    if (track(0, -1) && track(0, 1)) { c.moveTo(X + 11, Y); c.lineTo(X + 11, Y + T); c.moveTo(X + 21, Y); c.lineTo(X + 21, Y + T); }
+    c.stroke();
   } else if (L.g === 'sand') {
     c.fillStyle = P.sand2;
     for (k = 0; k < 6; k++) { circle(c, X + 3 + hash(x, y, 50 + k) * 26, Y + 3 + hash(x, y, 60 + k) * 26, 0.9); c.fill(); }

@@ -18,6 +18,8 @@ import { setScreen } from './common';
 import { offerActivity } from './activities';
 import { checkRun, cancelRun } from './run';
 import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
+import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
+import { run } from '../story/run';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -39,7 +41,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
@@ -78,6 +80,7 @@ function build() {
   dlg.addEventListener('click', function (e) { if ((e.target as Element).closest && (e.target as Element).closest('.wopts')) return; if (dialog) advance(); });
   cv.addEventListener('click', function () { if (dialog) advance(); });
   $('wmenu').addEventListener('click', openMenu);
+  $('wgoal').addEventListener('click', openMenu);
   window.addEventListener('resize', resize);
   built = true;
 }
@@ -90,8 +93,25 @@ export function renderPlace() {
   lastPlace = k;
   $('wplace').innerHTML = a ? '<small>' + esc(city) + '</small>' + esc(a) : esc(city);
 }
+/* the next stop of the tour, with an arrow that points to it (or to the door that leads to it) */
+var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
+const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+export function renderGoal() {
+  var el = $('wgoal'), h = heading(M.id);
+  if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
+  var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
+  var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = h.stop.id + '|' + turn;
+  if (k === lastGoal) return;
+  var fresh = lastGoal !== '' && lastGoal.split('|')[0] !== h.stop.id;
+  lastGoal = k; el.hidden = false;
+  el.innerHTML = '<span class="wgoal-ic"' + (here ? '' : ' style="transform:rotate(' + turn * 45 + 'deg)"') + '>' + (here ? GOAL_HERE : GOAL_ARROW) + '</span>' +
+    '<span class="wgoal-t"><small>Prossima tappa</small>' + esc(h.stop.text) + '</span>';
+  el.setAttribute('aria-label', 'Prossima tappa: ' + h.stop.text + ', ' + h.stop.where + (here ? ': sei arrivato' : '') + '. Apri il menu');
+  if (fresh && !reduced) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); clearTimeout(goalFlash); goalFlash = setTimeout(function () { el.classList.remove('new'); }, 1600); }
+}
 export function renderHud() {
-  lastPlace = ''; renderPlace();
+  lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal();
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
     return '<span title="' + esc(b.name + (got ? '' : ' (da conquistare)')) + '">' + badgeSVG({ color: b.color, mark: b.mark, earned: got }, 28) + '</span>';
@@ -300,6 +320,11 @@ function openMenu() {
   }).join('');
   sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
     '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
+    '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (STOPS.length - 1) + '</h3><ul class="wbadge-list diary tour">' + STOPS.map(function (s0) {
+      var done = s0.done(), next = s0 === nextStop();
+      return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
+        esc(s0.where + (done ? ' · fatto' : next ? ' · prossima tappa' : '')) + '</small></span></li>';
+    }).join('') + '</ul></div>' +
       '<div class="pickrow"><h3>Compagnia</h3><div class="pickgrid">' + st.squad.map(function (id) {
       return '<div class="pick" style="--tc:' + tc(id) + '"><span class="face">' + face(id) + '</span><span>' + esc(C[id].name) + '</span></div>';
     }).join('') + '</div></div>' +
@@ -339,6 +364,7 @@ function frame(now: number) {
   raf = requestAnimationFrame(frame);
   update(now);
   checkRun(now);
+  renderGoal();
   drawWorld(now);
 }
 function start() { if (running) return; running = true; raf = requestAnimationFrame(frame); }
@@ -351,7 +377,8 @@ function intro() {
     'In città ci sono due covi: Costanzo fa comizi in piazza della Vittoria, Forchetta gioca nei campi coperti del Bruno Zauli.',
     'Sfida gli amici nei loro covi: chi batti ti dà la sua spilla ed entra nella compagnia.',
     'E poi c\'è la Formia di tutti i giorni: l\'Eclipse a Vindicio, la pineta, una serata da Morgana. Il motorino è parcheggiato sotto casa.',
-    'E occhio: Antonio ha perso quattro cose in giro per Formia. Ritrovale e nelle lotte non le perderà più.']);
+    'E occhio: Antonio ha perso quattro cose in giro per Formia. Ritrovale e nelle lotte non le perderà più.',
+    'Se non sai dove andare, in alto c\'è la prossima tappa del giro di Formia: segui la freccia.']);
 }
 
 function open(quiet?: boolean) {

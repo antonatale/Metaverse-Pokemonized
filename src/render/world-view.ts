@@ -5,6 +5,7 @@ import { st } from '../save/story-progress';
 import { M, prepare, present, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
+import { heading } from '../story/goals';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
 import { root, cv, ctx } from '../ui/story-screen';
@@ -170,6 +171,13 @@ export function drawWorld(now: number) {
     ctx.lineTo(gx, gy + r * 1.8); ctx.lineTo(gx - r * 0.5, gy + r * 0.5); ctx.lineTo(gx - r * 1.8, gy); ctx.lineTo(gx - r * 0.5, gy - r * 0.5); ctx.closePath();
     ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
   });
+  /* the next stop of the tour: a bouncing arrow over the person, the thing or the door */
+  var hd = run ? null : heading(M.id);
+  if (hd) {
+    var ax = hd.x * T + T / 2, ay = hd.y * T - 16 + (reduced ? 0 : Math.sin(now / 220) * 3);
+    ctx.beginPath(); ctx.moveTo(ax - 7, ay - 9); ctx.lineTo(ax + 7, ay - 9); ctx.lineTo(ax, ay); ctx.closePath();
+    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.strokeStyle = '#1c2340'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  }
   /* the flags of a run in the pineta */
   if (run) run.flags.forEach(function (f, k) {
     if (run!.got[k]) return;
@@ -247,18 +255,31 @@ export function townMap(el: HTMLElement) {
   }
   var out = document.createElement('canvas'), o = out.getContext('2d')!, k = T * s;
   out.width = town.cv.width; out.height = town.cv.height;
-  out.setAttribute('role', 'img'); out.setAttribute('aria-label', 'La pianta di Formia, con il punto dove si trova Antonio');
+  out.setAttribute('role', 'img'); out.setAttribute('aria-label', 'La pianta di Formia, con il punto dove si trova Antonio e una stella sulla prossima tappa');
   o.drawImage(town.cv, 0, 0);
   o.font = Math.round(11 * u) + 'px "Lilita One", "Arial Rounded MT Bold", sans-serif'; o.textAlign = 'center'; o.textBaseline = 'bottom';
   o.lineJoin = 'round'; o.lineWidth = 3 * u; o.strokeStyle = '#fffdf6'; o.fillStyle = '#1c2340';
+  /* each label over its place; one that would cover another goes under its place, or beside it */
+  var taken: number[][] = [], lh = 13 * u;
   TOWN_LABELS.forEach(function (l) {
     var p = FORMIA_AT[l[1]], q = FORMIA_SPOT[l[1]];
     if (!p && !q) return;
     var half = o.measureText(l[0]).width / 2 + 2 * u;
-    var x = p ? (p.x + p.w / 2) * k : (q[0] + 0.5) * k, y = p ? p.y * k - 2 : q[1] * k - 2;
-    x = Math.max(half, Math.min(out.width - half, x));
-    o.strokeText(l[0], x, y); o.fillText(l[0], x, y);
+    var cx = p ? (p.x + p.w / 2) * k : (q[0] + 0.5) * k, top = p ? p.y * k - 2 : q[1] * k - 2, bottom = p ? (p.y + p.h) * k + lh : (q[1] + 1) * k + lh;
+    var tries = [[cx, top], [cx, bottom], [cx - half - 4 * u, top], [cx + half + 4 * u, top], [cx - half - 4 * u, bottom], [cx + half + 4 * u, bottom]];
+    var at = tries.map(function (t) { return [Math.max(half, Math.min(out.width - half, t[0])), Math.max(lh, Math.min(out.height, t[1]))]; })
+      .find(function (t) { return !taken.some(function (b) { return Math.abs(b[0] - t[0]) < b[2] + half && Math.abs(b[1] - t[1]) < lh; }); }) || [Math.max(half, Math.min(out.width - half, cx)), top];
+    taken.push([at[0], at[1], half]);
+    o.strokeText(l[0], at[0], at[1]); o.fillText(l[0], at[0], at[1]);
   });
+  /* the next stop, as a star */
+  var hd0 = heading('formia');
+  if (hd0) {
+    var gx = (hd0.x + 0.5) * k, gy = (hd0.y + 0.5) * k, R = 7 * u;
+    o.beginPath();
+    for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr0 = i % 2 ? R * 0.45 : R; o.lineTo(gx + Math.cos(a) * rr0, gy + Math.sin(a) * rr0); }
+    o.closePath(); o.fillStyle = '#ffd166'; o.fill(); o.lineWidth = 1.6 * u; o.strokeStyle = '#1c2340'; o.stroke();
+  }
   var me = whereOnFormia(), mx = (me[0] + 0.5) * k, my = (me[1] + 0.5) * k, r = 5 * u;
   o.beginPath(); o.arc(mx, my, r * 1.9, 0, Math.PI * 2); o.fillStyle = 'rgba(232,71,58,.25)'; o.fill();
   o.beginPath(); o.arc(mx, my, r, 0, Math.PI * 2); o.fillStyle = '#e8473a'; o.fill(); o.lineWidth = 2 * u; o.strokeStyle = '#fffdf6'; o.stroke();

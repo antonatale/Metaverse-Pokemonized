@@ -236,6 +236,11 @@ const foot = grid(false);
 const noStreet = grid(false);
 /** the footpaths to the doors: no one stands on them */
 const pathed = grid(false);
+/** the tiles just above a building, hidden by its roof: no one stands there */
+const roofed = grid(false);
+const roof = (x: number, y: number, w: number) => { for (let a = y - 2; a < y; a++) for (let b = x; b < x + w; b++) if (inside(b, a)) roofed[a][b] = true; };
+/** where people, signs and things stand */
+const spotted = grid(false);
 const free = (x: number, y: number) => inside(x, y) && !reserved[y][x];
 const GROUND: Record<string, RegExp> = { land: /[.f_v,TiQ]/, sand: /[:PI]/, sea: /~/, area: /[.f_v,TiQ=:]/, beach: /[:PI~]/ };
 const STEP_ON = /[.f:_v,=H]/;
@@ -293,6 +298,7 @@ for (const p of PLACES) {
     else if (p.fill === 'beach') { set(x, y, ':'); sea[y][x] = false; }
     if (p.fill !== 'piazza') noStreet[y][x] = true;
   }
+  if (p.kind !== 'area' && p.on !== 'sea') roof(at.x, at.y, at.w);
   if (p.kind !== 'area' && p.on !== 'sea') for (let y = at.y; y < at.y + at.h; y++) for (let x = at.x; x < at.x + at.w; x++) { foot[y][x] = true; noStreet[y][x] = true; if (/[TiQ]/.test(get(x, y))) set(x, y, '.'); }
 }
 /* ---------- 7. streets: the ones that make Formia recognisable, at right angles, joined into one network ---------- */
@@ -306,8 +312,23 @@ const NAMED = new Set([
 const WALK = /^(pedestrian|living_street)$/;
 const SKIP = new Set(['Via Rotabile', 'Via San Rocco', 'Lungomare Giovanni Caboto']);   /* up the hills, or in Gaeta */
 const RANK = ['trunk', 'primary', 'secondary', 'tertiary'];
-const streets = thin(osm.roads.filter((r) => !r.tunnel && !SKIP.has(r.name) && (MAIN.test(r.hw) || NAMED.has(r.name) || (WALK.test(r.hw) && r.name))),
-  (r) => (RANK.indexOf(r.hw) + 1 || 9));
+/* the neighbourhoods: their longer side streets are drawn too, so the houses have streets to line */
+const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
+  { x0: 22, y0: 44, x1: 56, y1: 66, kinds: ['house', 'house', 'condo'], every: 0.55 },          /* Vindicio, above the lungomare */
+  { x0: 44, y0: 6, x1: 112, y1: 34, kinds: ['house', 'condo', 'house'], every: 0.45 },          /* north of the railway: Rio Fresco, Acqualonga */
+  { x0: 52, y0: 34, x1: 76, y1: 58, kinds: ['house', 'house', 'shop'], every: 0.75 },           /* Castellone */
+  { x0: 74, y0: 24, x1: 118, y1: 50, kinds: ['house', 'condo', 'shop', 'house'], every: 0.8 },  /* the centre and Mola */
+  { x0: 112, y0: 12, x1: 150, y1: 32, kinds: ['condo', 'house', 'condo'], every: 0.6 },         /* Gianola, Via Amendola, Santo Janni */
+  { x0: 146, y0: 20, x1: 165, y1: 48, kinds: ['house', 'house'], every: 0.5 }                   /* Gianola, by the sea */
+];
+const LOCAL = /^(residential|unclassified)$/;
+const local = (r: Road) => {
+  if (!LOCAL.test(r.hw) || r.pts.length < 2) return false;
+  const a = P(r.pts[0]), b = P(r.pts[r.pts.length - 1]), m = P(r.pts[Math.floor(r.pts.length / 2)]);
+  return Math.hypot(b[0] - a[0], b[1] - a[1]) >= 7 && TOWN.some((z) => m[0] >= z.x0 && m[0] < z.x1 && m[1] >= z.y0 && m[1] < z.y1);
+};
+const streets = thin(osm.roads.filter((r) => !r.tunnel && !SKIP.has(r.name) && (MAIN.test(r.hw) || NAMED.has(r.name) || (WALK.test(r.hw) && r.name) || local(r))),
+  (r) => (RANK.indexOf(r.hw) + 1 || (LOCAL.test(r.hw) && !NAMED.has(r.name) ? 10 : 9)));
 /* where streets meet: a tile shared by two of them stays a corner of both */
 const uses = new Map<string, number>();
 const lines = streets.map((r) => {
@@ -411,12 +432,12 @@ for (const s of SPOTS) {
   } else { const q = P(s.at!); tx = Math.floor(q[0]); ty = Math.floor(q[1]); }
   const ok = STAND[s.on || 'land'];
   /* a spot may stand in the room around a place, never on a building, a door's path (Antonio himself may) or another spot */
-  const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && (!pathed[y][x] || !!s.walk);
+  const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && !roofed[y][x] && (!pathed[y][x] || !!s.walk);
   const found = rings(tx, ty, 6, (x, y) => {
     if (!open(x, y) || !ok.test(get(x, y))) return false;
     /* it must be reachable: at least one walkable tile next to it */
     if (!N4.some(([ax, ay]) => inside(x + ax, y + ay) && !foot[y + ay][x + ax] && STEP_ON.test(get(x + ax, y + ay)))) return false;
-    spots[s.id] = [x, y]; reserved[y][x] = true; foot[y][x] = true;
+    spots[s.id] = [x, y]; reserved[y][x] = true; foot[y][x] = true; spotted[y][x] = true;
     return true;
   });
   if (!found) misses.push(s.id + ' near ' + tx + ',' + ty);
@@ -432,14 +453,6 @@ for (const r of osm.rail) if (r.tunnel) for (const e of [r.pts[0], r.pts[r.pts.l
 }
 
 /* ---------- 10. the town around: houses along the streets of every neighbourhood ---------- */
-const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
-  { x0: 22, y0: 44, x1: 56, y1: 66, kinds: ['house', 'house', 'condo'], every: 0.55 },          /* Vindicio, above the lungomare */
-  { x0: 44, y0: 6, x1: 112, y1: 34, kinds: ['house', 'condo', 'house'], every: 0.45 },          /* north of the railway: Rio Fresco, Acqualonga */
-  { x0: 52, y0: 34, x1: 76, y1: 58, kinds: ['house', 'house', 'shop'], every: 0.75 },           /* Castellone */
-  { x0: 74, y0: 24, x1: 118, y1: 50, kinds: ['house', 'condo', 'shop', 'house'], every: 0.8 },  /* the centre and Mola */
-  { x0: 112, y0: 12, x1: 150, y1: 32, kinds: ['condo', 'house', 'condo'], every: 0.6 },         /* Gianola, Via Amendola, Santo Janni */
-  { x0: 146, y0: 20, x1: 165, y1: 48, kinds: ['house', 'house'], every: 0.5 }                   /* Gianola, by the sea */
-];
 const houses: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = [];
 /* first the houses with the door right on a street, then the ones a short path away */
 for (const far of [0, 3]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
@@ -449,6 +462,7 @@ for (const far of [0, 3]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++
   for (let a = y; a < y + h && fits; a++) for (let b = x; b < x + w && fits; b++) if (!free(b, a) || !/[.fT]/.test(get(b, a))) fits = false;
   /* room to walk around it */
   for (let a = y - 1; a <= y + h && fits; a++) for (let b = x - 1; b <= x + w && fits; b++) if (!inside(b, a) || foot[a][b] || /[~rRMQJ]/.test(get(b, a))) fits = false;
+  for (let a = y - 2; a < y && fits; a++) for (let b = x; b < x + w && fits; b++) if (inside(b, a) && spotted[a][b]) fits = false;
   const dx = x + Math.floor(w / 2);
   if (!fits || !/[.f,=v_]/.test(get(dx, y + h)) || foot[y + h][dx]) continue;
   for (let a = y; a < y + h; a++) for (let b = x; b < x + w; b++) foot[a][b] = true;
