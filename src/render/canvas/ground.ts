@@ -181,6 +181,42 @@ const DECO: Record<string, DecoFn> = {
     rr(c, X, Y + 6, T, T - 8, 2); fillStroke(c, P.wood, P.ink, 1.6);
     c.fillStyle = P.wood2; c.fillRect(X + 2, Y + 8, T - 4, 4);
   },
+  /* Antonio's flat, seen from above: furniture drawn flat into the floor */
+  bed: function (c, X, Y, P) {
+    rr(c, X + 3, Y + 2, T - 6, T - 4, 4); fillStroke(c, '#fffdf6', P.ink, 1.6);
+    rr(c, X + 3, Y + 12, T - 6, T - 14, 3); fillStroke(c, P['roof-b'], P.ink, 1.4);
+    rr(c, X + 7, Y + 4, T - 14, 6, 3); fillStroke(c, '#ffffff', P.ink, 1.2);
+    c.strokeStyle = P.ink; c.globalAlpha = 0.3; c.lineWidth = 1; c.beginPath(); c.moveTo(X + 5, Y + 20); c.lineTo(X + T - 5, Y + 20); c.stroke(); c.globalAlpha = 1;
+  },
+  desk: function (c, X, Y, P) {
+    rr(c, X + 1, Y + 4, T - 2, T - 10, 2); fillStroke(c, P.wood, P.ink, 1.6);
+    rr(c, X + 7, Y + 7, 18, 12, 2); fillStroke(c, '#30323a', P.ink, 1.3);
+    rr(c, X + 9, Y + 9, 14, 8, 1); c.fillStyle = '#bfe3ff'; c.fill();
+    c.strokeStyle = '#1c2340'; c.lineWidth = 0.8; for (var k = 0; k < 3; k++) { c.beginPath(); c.moveTo(X + 10, Y + 11 + k * 2); c.lineTo(X + 19 - k * 3, Y + 11 + k * 2); c.stroke(); }
+    circle(c, X + 27, Y + 20, 2.6); fillStroke(c, '#fffdf6', P.ink, 1);
+  },
+  tv: function (c, X, Y, P) {
+    rr(c, X + 2, Y + 16, T - 4, 10, 2); fillStroke(c, P.wood2, P.ink, 1.5);
+    rr(c, X + 3, Y + 3, T - 6, 14, 2); fillStroke(c, '#20242e', P.ink, 1.6);
+    c.fillStyle = '#5b8fd9'; c.globalAlpha = 0.6; c.fillRect(X + 6, Y + 6, T - 12, 8); c.globalAlpha = 1;
+    rr(c, X + 9, Y + 19, 14, 5, 2); fillStroke(c, '#f3f3f3', P.ink, 1);
+  },
+  sofa: function (c, X, Y, P) {
+    rr(c, X + 2, Y + 6, T - 4, T - 10, 5); fillStroke(c, P['roof-d'], P.ink, 1.6);
+    rr(c, X + 6, Y + 11, T - 12, T - 18, 3); fillStroke(c, P['roof-d'], P.ink, 1.1);
+    rr(c, X + 9, Y + 13, 8, 6, 2); fillStroke(c, P['flower-b'], P.ink, 1);
+  },
+  shelf: function (c, X, Y, P) {
+    rr(c, X + 2, Y + 3, T - 4, T - 8, 2); fillStroke(c, P.wood, P.ink, 1.6);
+    var cols = ['#e86a5c', '#5b8fd9', '#f2c14e', '#62b38a', '#b07cd8'];
+    for (var k = 0; k < 5; k++) { c.fillStyle = cols[k]; c.fillRect(X + 5 + k * 4.4, Y + 6, 3.4, 8); }
+    rr(c, X + 9, Y + 16, 14, 8, 3); fillStroke(c, '#eef1f4', P.ink, 1.2);
+    circle(c, X + 13, Y + 20, 1.6); c.fillStyle = '#7fe3ff'; c.fill(); circle(c, X + 19, Y + 20, 1.6); c.fill();
+  },
+  plant: function (c, X, Y, P) {
+    circle(c, X + 16, Y + 22, 7); fillStroke(c, P.clay, P.ink, 1.5);
+    blobs(c, [[11, 13, 6], [21, 13, 6], [16, 8, 6]].map(function (b) { return [X + b[0], Y + b[1], b[2]]; }), P.leaf, P.ink, 1.4);
+  },
   mat: function (c, X, Y, P) {
     rr(c, X + 4, Y + 10, T - 8, 14, 3); fillStroke(c, P['roof-a'], P.ink, 1.4);
   },

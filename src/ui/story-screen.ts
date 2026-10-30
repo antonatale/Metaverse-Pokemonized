@@ -9,7 +9,9 @@ import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
 import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, personAt, blocked, cityCovi, hasBadge, route, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy } from '../story/movement';
+import { press, release, update, halt, mover, busy, travel } from '../story/movement';
+import { RIDES } from '../data/maps/formia';
+import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
@@ -178,10 +180,26 @@ function interact() {
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
   var a = M.at[key(x, y)];
-  if (a && a.kind === 'sign') say(a.s.text);
+  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else say(a.s.text); }
   else if (a && a.kind === 'door') useDoor(a.b);
 }
 /* one of Antonio's lost things: picked up for good */
+/* ---------- the scooter: from one of its parking spots to another ---------- */
+function ride(s: Sign) {
+  var here = RIDES.find(function (r) { return r.at[0] === s.x && r.at[1] === s.y; });
+  var opts: DialogOpt[] = RIDES.filter(function (r) { return r !== here; }).map(function (r) {
+    return { label: r.name, fn: function () {
+      /* off next to the scooter where it is parked there */
+      var to = ([[0, 1], [1, 0], [-1, 0], [0, -1]] as [number, number][]).map(function (d) { return [r.at[0] + d[0], r.at[1] + d[1]] as [number, number]; })
+        .find(function (p) { return !blocked(M, p[0], p[1]) && !M.at[key(p[0], p[1])]; });
+      if (!to) return;
+      sfx('scooter');
+      travel(M.id, to[0], to[1], 'down');
+    } };
+  });
+  opts.push({ label: 'Resto qui', fn: null });
+  say(['Il motorino. Dove andiamo?'], null, opts);
+}
 function pickUp(it: LostItem) {
   sfx('pickup');
   st.found[it.id] = true; save();

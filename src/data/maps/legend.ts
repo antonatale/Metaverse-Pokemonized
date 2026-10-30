@@ -18,5 +18,8 @@ export const LEGEND: Record<string, Ground> = {
   'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true },
   'Q': { g: 'hill', obj: 'tree', solid: true }, 'J': { g: 'hill', obj: 'cypress', solid: true },
   /* the big Formia: umbrella pines on grass and on sand, a beach-volley net on sand */
-  'i': { g: 'grass', obj: 'pine', solid: true }, 'I': { g: 'sand', obj: 'pine', solid: true }, 'N': { g: 'sand', deco: 'net', solid: true, reach: true }
+  'i': { g: 'grass', obj: 'pine', solid: true },
+  /* Antonio's flat */
+  '1': { g: 'floor', deco: 'bed', solid: true }, '2': { g: 'floor', deco: 'desk', solid: true }, '3': { g: 'floor', deco: 'tv', solid: true },
+  '4': { g: 'floor', deco: 'sofa', solid: true }, '5': { g: 'floor', deco: 'shelf', solid: true }, '6': { g: 'floor', deco: 'plant', solid: true }, 'I': { g: 'sand', obj: 'pine', solid: true }, 'N': { g: 'sand', deco: 'net', solid: true, reach: true }
 };

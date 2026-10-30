@@ -53,6 +53,8 @@ function arrived(): boolean {
   save(); renderPlace();
   return false;
 }
+/** to another map, or another part of this one, with a fade (doors, warps, the scooter) */
+export function travel(to: string, x: number, y: number, dir?: Dir) { warp(to, x, y, dir); }
 function warp(to: string, x: number, y: number, dir?: Dir) {
   busy = true; held = null; walking = false;
   root.classList.add('fade');

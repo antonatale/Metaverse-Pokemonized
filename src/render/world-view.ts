@@ -45,7 +45,7 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   (m.objects || []).forEach(function (o) { add(o.x * T, (o.y + o.h) * T, paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), o.bob); });
   if (m.signs && m.signs.length) {
     var sg = paintObject('sign', P0, s, {});
-    m.signs.forEach(function (g) { add(g.x * T, (g.y + 1) * T, sg); });
+    m.signs.forEach(function (g) { if (!g.quiet) add(g.x * T, (g.y + 1) * T, sg); });
   }
   items.sort(function (a, b) { return a.yb - b.yb; });
   return items;

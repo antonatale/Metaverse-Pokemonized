@@ -54,7 +54,7 @@ const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
 });
 
 const buildings: Building[] = [
-  building('casa', { label: 'PARCO LA FONTANA', msg: ['Casa: Parco la Fontana, via Giovanni Amendola 1.', 'Le chiavi? In tasca. Per una volta.'] }),
+  building('casa', { label: 'PARCO LA FONTANA', to: 'casa', tx: 5, ty: 6, tdir: 'up' }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Dentro si allenano i velocisti. Si entra solo con il tesserino.'] }),
   building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
@@ -75,7 +75,8 @@ const buildings: Building[] = [
 const objects: MapObject[] = [
   object('fontana'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'),
   object('traghetto', { bob: true })
-].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })));
+].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })))
+  .concat(['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza'].map((id): MapObject => { const [x, y] = spot(id); return { kind: 'scooter', x, y, w: 1, h: 1 }; }));
 
 const pz = at('piazza'), cam = at('campo-amendola');
 const groundObjects: GroundObject[] = [
@@ -109,7 +110,7 @@ const signs: Sign[] = [
   sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Qui si allenava Pietro Mennea.']),
   sign('sign-gianola', ['Parco di Gianola.', 'Sul promontorio ci sono i resti della villa romana di Mamurra.']),
   sign('sign-caposele', ['Porticciolo di Caposele.'])
-];
+].concat(['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza'].map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })));
 
 const npcs: Npc[] = [
   npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza' }),
@@ -180,5 +181,8 @@ export const formia: MapDef = {
   buildings, objects, groundObjects, signs, npcs, items, areas,
   start: [st[0], st[1], 'down']
 };
-/** where Antonio's scooter is parked, for the quick rides around town */
-export const SCOOTER: [number, number] = spot('motorino');
+/** where Antonio's scooter can take him: it is parked at each of these */
+export const RIDES: { name: string; at: [number, number] }[] = [
+  { name: 'Casa', at: spot('motorino') }, { name: 'Eclipse beach', at: spot('motorino-eclipse') },
+  { name: 'Morgana', at: spot('motorino-morgana') }, { name: 'Piazza della Vittoria', at: spot('motorino-piazza') }
+];

@@ -281,6 +281,16 @@ const OBJ: Record<string, ObjFn> = {
     rr(c, 23, 8, 15, h - 16, 4); c.fillStyle = col; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1; c.stroke();
     c.fillStyle = '#fff3a0'; rr(c, w - 8, 7, 3, 5, 1); c.fill(); rr(c, w - 8, h - 12, 3, 5, 1); c.fill();
   },
+  /* Antonio's scooter, parked */
+  scooter: function (c, w, h, P) {
+    ell(c, 16, 28, 12, 3); c.fillStyle = P.shadow; c.fill();
+    circle(c, 7, 24, 4.5); fillStroke(c, '#30323a', P.ink, 1.4); circle(c, 25, 24, 4.5); fillStroke(c, '#30323a', P.ink, 1.4);
+    c.beginPath(); c.moveTo(5, 21); c.quadraticCurveTo(6, 12, 14, 13); c.lineTo(20, 13); c.quadraticCurveTo(28, 13, 28, 21); c.lineTo(22, 22); c.lineTo(10, 22); c.closePath();
+    fillStroke(c, '#5b8fd9', P.ink, 1.5);
+    rr(c, 10, 9, 10, 4, 2); fillStroke(c, '#30323a', P.ink, 1.2);
+    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.beginPath(); c.moveTo(25, 14); c.lineTo(27, 4); c.moveTo(24, 4); c.lineTo(30, 4); c.stroke();
+    circle(c, 29, 8, 1.6); c.fillStyle = '#fff3a0'; c.fill();
+  },
   lifeguard: function (c, w, h, P) {
     ell(c, 16, 28, 9, 3); c.fillStyle = P.shadow; c.fill();
     c.strokeStyle = P.ink; c.lineWidth = 2.2;

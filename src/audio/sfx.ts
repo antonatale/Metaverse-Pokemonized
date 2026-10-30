@@ -72,6 +72,7 @@ const FX: Record<string, Fx> = {
   notes(c, out, t) { arp(c, out, t, ['G5', 'B5', 'D6', 'G6'], 0.09, { type: 'square', gain: 0.05, cutoff: 3000, decay: 0.03, sustain: 0.6 }); },
 
   /* ---------- story ---------- */
+  scooter(c, out, t) { tone(c, out, 70, t, 0.9, { type: 'sawtooth', to: 150, gain: 0.09, cutoff: 900, attack: 0.05, sustain: 0.8, release: 0.2, vibrato: 30 }); hiss(c, out, t, 0.8, { type: 'lowpass', freq: 600, gain: 0.2, attack: 0.1 }); },
   step(c, out, t) { hiss(c, out, t, 0.05, { type: 'lowpass', freq: 900 + wobble() * 300, gain: 0.5 }); },
   door(c, out, t) { hiss(c, out, t, 0.25, { freq: 350, to: 1400, q: 0.7, gain: 0.3 }); tone(c, out, 200, t + 0.05, 0.08, { type: 'triangle', gain: 0.1 }); },
   pickup(c, out, t) { arp(c, out, t, ['E6', 'G6', 'C7'], 0.07, { type: 'square', gain: 0.06, cutoff: 6000, decay: 0.03, sustain: 0.6 }); },

@@ -68,6 +68,9 @@ export const SPOTS: SpotSpec[] = [
   /* home */
   { id: 'start', near: { place: 'casa', dx: 2, dy: 4 } },
   { id: 'motorino', near: { place: 'casa', dx: 6, dy: 3 } },
+  { id: 'motorino-eclipse', near: { place: 'eclipse', dx: -2, dy: 1 }, on: 'any' },
+  { id: 'motorino-morgana', near: { place: 'morgana', dx: 6, dy: 2 } },
+  { id: 'motorino-piazza', near: { place: 'piazza', dx: 4, dy: -2 } },
   { id: 'sign-casa', near: { place: 'casa', dx: -1, dy: 4 } },
   /* the friends and the townsfolk */
   { id: 'costanzo', near: { place: 'piazza', dx: 4, dy: 1 } },

@@ -51,7 +51,8 @@ export interface GroundObject {
   /** a hill village inside a range of peaks, in tiles from its corner */
   village?: [number, number];
 }
-export interface Sign { x: number; y: number; text: string[] }
+/** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter) */
+export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean }
 export interface Npc {
   id: string;
   x: number; y: number;

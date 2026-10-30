@@ -6,7 +6,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 declare global {
   interface Window {
-    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string }; overview(id: string, s: number): string }; state(): unknown };
+    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; overview(id: string, s: number): string }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -234,7 +234,7 @@ test('old saves', async ({ browser }) => {
 
 /* the things to do around Formia, each in its real place */
 async function choose(p: Page, label: string) {
-  await p.locator('#wopts button', { hasText: label }).first().click();
+  await p.locator('#wopts button', { hasText: label }).first().click({ timeout: 5000 });
   await p.clock.runFor(300);
 }
 async function talkTo(p: Page, id: string) {
@@ -301,4 +301,46 @@ test('activities around Formia', async ({ browser }) => {
   expect(st.done).toEqual({ corsa: 1, volley: 1, lettino: 1, quiz: 1, gelato: 1 });
   expect(st.best.volley).toBe(1);
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);
+});
+
+/* Antonio's flat in Parco la Fontana, and the scooter that takes him around town */
+test('home and the scooter', async ({ browser }) => {
+  const r = await play(browser, 'home', { seed: 10 }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    await talkThrough(p);
+    await goTo(p, 'door', 'casa');
+    await walk(p, ['up']);
+    await p.clock.runFor(600);
+    r.keep('inside', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await r.shot('casa');
+    await goTo(p, 'sign', 'portatile');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    r.keep('desk', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await talkThrough(p);
+    /* to the door mat, and out */
+    await walk(p, (await p.evaluate(() => window.WORLD._debug.route(5, 6))) || []);
+    await walk(p, ['down']);
+    await p.clock.runFor(600);
+    r.keep('out', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await goTo(p, 'sign', 'Il motorino di Antonio');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await choose(p, 'Eclipse beach');
+    await p.clock.runFor(800);
+    r.keep('rode to', await p.evaluate(() => window.WORLD._debug.area()));
+    await r.shot('eclipse');
+    /* he gets off just below the scooter parked here: face it, and ride home */
+    await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(200);
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await choose(p, 'Casa');
+    await p.clock.runFor(800);
+    r.keep('back', await p.evaluate(() => window.WORLD._debug.area()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('inside')).toBe('casa');
+  expect(get('desk')).toContain('paper');
+  expect(get('out')).toBe('formia');
+  expect(get('rode to')).toBe('Eclipse beach');
+  expect(get('back')).toBe('Parco la Fontana');
 });
