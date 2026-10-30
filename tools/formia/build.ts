@@ -187,7 +187,8 @@ for (const h of HILLS) for (let y = h.y0; y < h.y1; y++) for (let x = h.x0; x < 
 /* ---------- 3. green: the pineta, parks (no olive groves in them later) ---------- */
 const green = grid(false);
 for (const a of osm.areas) {
-  if (a.kind === 'forest') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) { green[y][x] = true; set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.08 ? 'f' : '.'); } });
+  /* the woods toward Gaeta: broadleaf trees (the umbrella pines are the Pineta di Vindicio's, drawn with the places) */
+  if (a.kind === 'forest') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) { green[y][x] = true; set(x, y, noise(x, y, 5) < 0.22 ? 'T' : noise(x, y, 6) < 0.08 ? 'f' : '.'); } });
   if (a.kind === 'park' || a.kind === 'garden') {
     const pines = /pineta/i.test(a.name);
     for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) { green[y][x] = true; set(x, y, noise(x, y, 7) < 0.3 ? (pines ? 'i' : 'T') : noise(x, y, 8) < 0.25 ? 'f' : '.'); } });
@@ -332,6 +333,8 @@ for (const p of PLACES) {
     if (p.fill === 'piazza') set(x, y, edge && (x - at.x) % 3 === 0 && y === at.y ? 'L' : 'v');
     else if (p.fill === 'garden') set(x, y, edge && noise(x, y, 11) < 0.45 ? 'T' : noise(x, y, 12) < 0.3 ? 'f' : '.');
     else if (p.fill === 'beach') { set(x, y, ':'); sea[y][x] = false; }
+    else if (p.fill === 'pines') { green[y][x] = true; if (get(x, y) !== ',') set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.1 ? 'f' : '.'); }
+    else if (p.fill === 'field') set(x, y, '.');
   }
   if (p.kind !== 'area' && p.on !== 'sea') {
     roof(at.x, at.y, at.w);
@@ -344,12 +347,35 @@ for (const p of PLACES) {
   if (!at || !at.door || p.on === 'sand') continue;
   if (pathToStreet(at.door[0], at.door[1] + 1, 30) == null) misses.push(p.id + ' (no path to a street)');
 }
-/* the Eclipse: rows of umbrellas, and a beach-volley net */
+/* the Eclipse beach: two rows of umbrellas with their sunbeds, two gazebos, the beach-volley net, and the windsurf
+   school on the shore (Nicola Spadea's boards); out at sea, windsurfers and the line of buoys */
 {
   const b = placed['eclipse-spiaggia'];
   if (b) {
-    for (let k = 0; k < 4; k++) { set(b.x + 1 + k * 2, b.y + 2, 'u'); set(b.x + 1 + k * 2, b.y + 4, 'u'); }
+    for (const row of [1, 3]) for (let k = 0; k < 3; k++) { set(b.x + 1 + k * 3, b.y + row, 'u'); set(b.x + 2 + k * 3, b.y + row, 'h'); }
     for (let k = 0; k < 3; k++) set(b.x + 9 + k, b.y + 3, 'N');
+    set(b.x, b.y, 'g'); set(b.x + b.w - 1, b.y, 'g');
+    set(b.x, b.y + b.h - 1, 'S'); set(b.x + 1, b.y + b.h - 1, 'S');
+    for (const [dx, dy] of [[3, 9], [10, 12], [-3, 12], [16, 9]]) if (get(b.x + dx, b.y + dy) === '~') set(b.x + dx, b.y + dy, 'V');
+  }
+}
+/* the other lidi: a row of umbrellas and sunbeds on the sand in front */
+for (const id of ['scogliera', 'oriente']) {
+  const l = placed[id];
+  if (!l) continue;
+  for (let x = l.x - 1; x <= l.x + l.w; x++) {
+    const y = l.y + l.h + 1, k = (x - l.x + 3) % 3;
+    if (get(x, y) === ':' && free(x, y) && k < 2) set(x, y, k === 0 ? 'u' : 'h');
+  }
+}
+/* the line of buoys off the beach of Vindicio, three tiles out, a buoy every few tiles */
+{
+  const wet = (x: number, y: number) => !inside(x, y) || sea[y][x];
+  for (let y = 55; y < H; y++) for (let x = 18; x < 62; x++) {
+    if (get(x, y) !== '~' || (x + y) % 4) continue;
+    let near = 9;
+    for (let d = 1; d <= 3 && near === 9; d++) for (let a = -d; a <= d; a++) for (let b = -d; b <= d; b++) if (!wet(x + a, y + b)) near = Math.min(near, d);
+    if (near === 3) set(x, y, 'y');
   }
 }
 for (const [x, y] of tunnels) { reserved[y][x] = true; reserved[y + 1][x] = true; foot[y][x] = true; }
@@ -389,6 +415,12 @@ for (const id of ['zendavid', 'sign-pineta', 'motorino-pineta', 'sign-tomba', 't
   if (by && pathToStreet(by[0], by[1], 40) == null) misses.push(id + ' (no path to a street)');
 }
 
+/* boats moored along the quays of the harbour */
+for (let y = 40; y < 58; y++) for (let x = 76; x < 104; x++) {
+  if (get(x, y) !== '~' || !free(x, y) || !N4.some(([a, b]) => get(x + a, y + b) === '_')) continue;
+  if (noise(x, y, 21) < 0.22) set(x, y, 'o');
+}
+
 /* ---------- 10. the town around: houses along the streets of every neighbourhood ---------- */
 const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
   { x0: 19, y0: 34, x1: 40, y1: 62, kinds: ['house', 'house', 'condo'], every: 0.6 },           /* Vindicio */
@@ -418,7 +450,7 @@ for (const far of [0, 2]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++
   for (let a = y; a < y + h; a++) for (let b = x; b < x + w; b++) set(b, a, '.');
 }
 /* ---------- 11. the centre is paved: pavements along its streets, no scraps of grass between them ---------- */
-const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 52, y0: 33, x1: 100, y1: 52 }];
+const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 57, y0: 33, x1: 100, y1: 52 }];
 for (const z of URBAN) {
   const pave: XY[] = [];
   for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {

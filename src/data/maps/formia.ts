@@ -50,13 +50,13 @@ const SHOPS: [string, string[]][] = [
 const ROOFS = ['#ff9a8b', '#9ec5ff', '#ffd166', '#c3a6ff', '#ff9a8b', '#ffd166'];
 const AWNINGS = ['#ff8fc1', '#8fd0f6', '#ffd166', '#57c968'];
 const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
-  const base = { id: 'casa-' + k, kind: h.kind, x: h.x, y: h.y, w: h.w, h: h.h, door: h.door, roof: ROOFS[h.v % ROOFS.length] };
+  const base = { id: 'casa-' + k, kind: h.kind, x: h.x, y: h.y, w: h.w, h: h.h, door: h.door, roof: ROOFS[h.v % ROOFS.length], v: h.v };
   if (h.kind === 'shop') { const s = SHOPS[h.v % SHOPS.length]; return { ...base, label: s[0], awning: AWNINGS[h.v % AWNINGS.length], msg: s[1] }; }
   return { ...base, msg: DOORS[h.v % DOORS.length] };
 });
 
 const buildings: Building[] = [
-  building('casa', { label: 'PARCO LA FONTANA', to: 'casa', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa', { label: 'PARCO LA FONTANA', to: 'casa', tx: 5, ty: 6, tdir: 'up', v: 11 }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Dentro si allenano i velocisti. Si entra solo con il tesserino.'] }),
   building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
@@ -76,17 +76,21 @@ const buildings: Building[] = [
 
 const objects: MapObject[] = [
   object('fontana'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'),
-  object('traghetto', { bob: true })
+  object('traghetto', { bob: true }),
+  /* a train standing at the station, the monument in Piazza della Vittoria, the lighthouse at the end of the mole */
+  { kind: 'train', x: at('stazione').x + 1, y: at('stazione').y - 1, w: 7, h: 1 },
+  { kind: 'monument', x: at('piazza').x + 8, y: at('piazza').y + 5, w: 1, h: 1 },
+  { kind: 'lighthouse', x: 97, y: 50, w: 1, h: 1 }
 ].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })))
   .concat(SCOOTERS.map((id): MapObject => { const [x, y] = spot(id); return { kind: 'scooter', x, y, w: 1, h: 1 }; }));
 
-const pz = at('piazza'), cam = at('campo-amendola');
+const pz = at('piazza'), cam = at('campo-amendola'), track = at('pista');
 const groundObjects: GroundObject[] = [
   { kind: 'banner', x: pz.x + 2, y: pz.y + 1, w: 6, text: 'COMIZIO' },
   { kind: 'court', x: cam.x, y: cam.y, w: cam.w, h: cam.h },
+  { kind: 'track', x: track.x, y: track.y, w: track.w, h: track.h },
   text(41.2700, 13.5740, 'Monti Aurunci', 19),
-  text(41.2462, 13.5700, 'Pineta di Vindicio', 17, 0.7),
-  text(41.2470, 13.5905, 'Vindicio', 20, 0.6),
+  text(41.24857, 13.58073, 'Vindicio', 20, 0.6),
   text(41.2470, 13.6050, 'Golfo di Gaeta', 26, 0.5),
   text(41.2604, 13.6000, 'Castellone', 17, 0.7),
   text(41.26047, 13.6115, 'Mola', 18, 0.7),
@@ -126,7 +130,8 @@ const npcs: Npc[] = [
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
   npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),
   npc('folla4', { name: 'Dalla folla', seed: 14, dir: 'right', lines: ['Io sono venuto solo per la difesa del bidet.'] }),
-  npc('nicola', { name: 'Nicola Spadea', seed: 81, dir: 'down', activity: 'lettino', lines: ['Benvenuti all\'Eclipse!', 'Antonio, il solito lettino in prima fila?'] }),
+  npc('nicola', { name: 'Nicola Spadea', look: 'nicola', dir: 'up', activity: 'windsurf', lines: ['Antonio! Oggi a Vindicio c\'è la termica giusta, mare piatto e vento costante.', 'Ti va una lezione di windsurf? Ti insegno a planare.'] }),
+  npc('barista', { name: 'Bar dell\'Eclipse', seed: 83, dir: 'down', activity: 'lettino', lines: ['Benvenuto all\'Eclipse!', 'Il solito ombrellone in prima fila, con due lettini?'] }),
   npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', activity: 'volley', lines: ['Weee! Antonio, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
   npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
   npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
@@ -167,9 +172,8 @@ const box = (name: string, la0: number, lo0: number, la1: number, lo1: number): 
 };
 const near = (name: string, id: string, m: number): Area => { const p = at(id); return clip(name, p.x - m, p.y - m, p.x + p.w - 1 + m, p.y + p.h - 1 + m); };
 const areas: Area[] = [
-  near('Parco la Fontana', 'casa', 3), near('Eclipse beach', 'eclipse-spiaggia', 2), near('Birreria Morgana', 'morgana', 2),
+  near('Parco la Fontana', 'casa', 3), near('Eclipse beach', 'eclipse-spiaggia', 2), near('Pineta di Vindicio', 'pineta', 1), near('Birreria Morgana', 'morgana', 2),
   near('Piazza della Vittoria', 'piazza', 2), near('Stazione', 'stazione', 3), near('Bruno Zauli', 'zauli', 5),
-  box('Pineta di Vindicio', 41.2515, 13.5660, 41.2420, 13.5790),
   box('Tomba di Cicerone', 41.2535, 13.5730, 41.2500, 13.5820),
   box('Vindicio', 41.2520, 13.5790, 41.2420, 13.5960),
   box('Caposele', 41.2530, 13.5940, 41.2480, 13.6010),

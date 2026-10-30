@@ -181,7 +181,7 @@ function glasses(c: Ctx, S: PersonLook, d: Dir) {
   if (!g) return;
   if (d === 'left') {
     if (g === 'round') { circle(c, 9.6, 14.2, 2.8); c.strokeStyle = '#141416'; c.lineWidth = 1.3; c.stroke(); c.beginPath(); c.moveTo(12.4, 13.8); c.lineTo(18, 13); c.stroke(); }
-    else if (g === 'green') { rr(c, 6, 12.2, 7, 4.2, 1.6); fillStroke(c, '#20242e', '#57c968', 1.6); c.strokeStyle = '#57c968'; c.beginPath(); c.moveTo(13, 13.6); c.lineTo(18, 13); c.stroke(); }
+    else if (g === 'green' || g === 'sun') { var fr = g === 'sun' ? '#141416' : '#57c968'; rr(c, 6, 12.2, 7, 4.2, 1.6); fillStroke(c, '#20242e', fr, 1.6); c.strokeStyle = fr; c.beginPath(); c.moveTo(13, 13.6); c.lineTo(18, 13); c.stroke(); }
     else if (g === 'thin') { c.strokeStyle = '#202227'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(6.5, 13.2); c.lineTo(12.5, 13.2); c.lineTo(18, 12.8); c.stroke(); }
     return;
   }
@@ -189,10 +189,11 @@ function glasses(c: Ctx, S: PersonLook, d: Dir) {
     c.strokeStyle = '#141416'; c.lineWidth = 1.3;
     circle(c, 12.4, 14.3, 2.9); c.stroke(); circle(c, 19.6, 14.3, 2.9); c.stroke();
     c.beginPath(); c.moveTo(15.2, 14); c.lineTo(16.8, 14); c.stroke();
-  } else if (g === 'green') {
-    rr(c, 8.6, 12.4, 6.6, 4.2, 1.6); fillStroke(c, '#20242e', '#57c968', 1.7);
-    rr(c, 16.8, 12.4, 6.6, 4.2, 1.6); fillStroke(c, '#20242e', '#57c968', 1.7);
-    c.strokeStyle = '#57c968'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(15.2, 13.6); c.lineTo(16.8, 13.6); c.stroke();
+  } else if (g === 'green' || g === 'sun') {
+    var frame = g === 'sun' ? '#141416' : '#57c968';
+    rr(c, 8.6, 12.4, 6.6, 4.2, 1.6); fillStroke(c, '#20242e', frame, 1.7);
+    rr(c, 16.8, 12.4, 6.6, 4.2, 1.6); fillStroke(c, '#20242e', frame, 1.7);
+    c.strokeStyle = frame; c.lineWidth = 1.6; c.beginPath(); c.moveTo(15.2, 13.6); c.lineTo(16.8, 13.6); c.stroke();
   } else if (g === 'thin') {
     c.strokeStyle = '#202227'; c.lineWidth = 1.2;
     c.beginPath(); c.moveTo(9.2, 12.8); c.lineTo(15, 12.8); c.moveTo(17, 12.8); c.lineTo(22.8, 12.8); c.moveTo(15, 13); c.lineTo(17, 13); c.stroke();
@@ -208,6 +209,11 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
   valentin: { skin: '#edc4ab', hair: { style: 'mane', color: '#7b4d33', hi: '#e6b98c' }, top: '#ddd6c6', top2: '#1c1c21', style: 'jacket', pants: '#3b3f4b', shoes: '#f3f3f3', glasses: 'green' },
   forchetta: { skin: '#e4bca1', hair: { style: 'longcurls', color: '#4f3423', hi: '#c29670' }, top: '#5d5a3e', top2: '#20263a', style: 'stripes', stripes: ['#283046', '#d6c9a8', '#6e6c43', '#8b8f93'], pants: '#22252d', shoes: '#efefef' },
   zendavid: { skin: '#deb294', hair: { style: 'buzz', color: '#2a201b' }, top: '#837c74', top2: '#19191d', style: 'knit', pants: '#56627a', shoes: '#e9e9e9', glasses: 'round', beard: '#2a1f1a', phones: true }
+};
+/* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
+   at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
+export const LOOKS: Record<string, PersonLook> = {
+  nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' }
 };
 /* generic townsfolk, varied by a seed */
 export function townsperson(seed: number): PersonLook {

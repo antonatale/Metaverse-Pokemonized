@@ -272,8 +272,19 @@ test('activities around Formia', async ({ browser }) => {
     await p.click('#mg-x');
     await p.clock.runFor(300);
     await talkThrough(p);
-    /* a lettino from Nicola */
+    /* a windsurf lesson with Nicola Spadea: no pulling on the sail, so the wind soon catapults Antonio in */
     await talkTo(p, 'nicola');
+    await choose(p, 'Prendi una lezione');
+    await p.clock.runFor(300);
+    await p.keyboard.press(' ');
+    await p.clock.runFor(5000);
+    r.keep('windsurf', await p.textContent('#mg-s'));
+    await r.shot('windsurf');
+    await p.click('#mg-x');
+    await p.clock.runFor(300);
+    await talkThrough(p);
+    /* a lettino from the bar of the lido */
+    await talkTo(p, 'barista');
     await choose(p, 'Prendi un lettino');
     await talkThrough(p);
     await talkThrough(p);
@@ -298,7 +309,8 @@ test('activities around Formia', async ({ browser }) => {
   expect(get('volley')).toContain('Scambi: 1');
   expect(get('volley end')).toContain('Fine: 1 scambio');
   const st = get('state') as unknown as { done: Record<string, number>; best: Record<string, number> };
-  expect(st.done).toEqual({ corsa: 1, volley: 1, lettino: 1, quiz: 1, gelato: 1 });
+  expect(get('windsurf')).toMatch(/Fine: \d+ m di planata/);
+  expect(st.done).toEqual({ corsa: 1, volley: 1, windsurf: 1, lettino: 1, quiz: 1, gelato: 1 });
   expect(st.best.volley).toBe(1);
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);
 });

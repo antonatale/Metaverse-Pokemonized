@@ -37,6 +37,8 @@
   --m-roof-a: #ff9a8b; --m-roof-b: #9ec5ff; --m-roof-c: #ffd166; --m-roof-d: #c3a6ff;
   --m-leaf: #86cf7f; --m-leaf2: #5aa860; --m-trunk: #b98a5e; --m-hedge: #77c07a; --m-flower-a: #ff8fc1; --m-flower-b: #ffd166;
   --m-hill: #bcd8a0; --m-hill2: #93ba7c; --m-rock: #ddd6c8; --m-rock2: #b2a893; --m-olive: #aec69c; --m-track: #ea8f72; --m-far: #d6deee; --m-far2: #b0bed9;
+  /* the facades of Formia: cream, pale yellow, terracotta pink, peach, sea blue; green or brown shutters; striped sun tents */
+  --m-wall-b: #fbe8b8; --m-wall-c: #f7cdb9; --m-wall-d: #f4dec6; --m-wall-e: #dbe7ef; --m-shutter-a: #5f9e6e; --m-shutter-b: #a5714c; --m-tent-a: #e9765f; --m-tent-b: #3f9fc4;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -51,6 +53,7 @@
     --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
     --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
     --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+    --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
     color-scheme: dark;
   }
 }
@@ -66,6 +69,7 @@
   --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
   --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
     --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+  --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
   color-scheme: dark;
 }
 

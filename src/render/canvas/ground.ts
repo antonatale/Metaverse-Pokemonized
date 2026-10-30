@@ -267,6 +267,21 @@ const DECO: Record<string, DecoFn> = {
   zebra: function (c, X, Y, P) {
     c.fillStyle = P.line;
     for (var k = 0; k < 3; k++) { rr(c, X + 4, Y + 3 + k * 10, T - 8, 5, 1); c.fill(); }
+  },
+  /* a sunbed of the lido, seen from above, with its towel */
+  lounger: function (c, X, Y, P, x, y) {
+    rr(c, X + 7, Y + 3, T - 14, T - 6, 3); fillStroke(c, '#fffdf6', P.ink, 1.5);
+    rr(c, X + 9, Y + 5, T - 18, 8, 2); fillStroke(c, '#e9eef4', P.ink, 1);
+    var towel = [P['tent-a'], P['tent-b'], P['flower-b']][Math.floor(hash(x, y, 180) * 3)];
+    rr(c, X + 9, Y + 14, T - 18, 12, 2); c.fillStyle = towel; c.fill();
+    c.fillStyle = '#ffffff'; c.globalAlpha = 0.7; c.fillRect(X + 9, Y + 18, T - 18, 2); c.globalAlpha = 1;
+  },
+  /* the line of buoys that marks off the swimmers from the boats and the windsurfs */
+  buoy: function (c, X, Y, P, x, y) {
+    c.strokeStyle = P.foam; c.globalAlpha = 0.8; c.lineWidth = 1.4; c.setLineDash([3, 3]);
+    c.beginPath(); c.moveTo(X, Y + 17); c.lineTo(X + T, Y + 17); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+    circle(c, X + 16, Y + 16, 4.6); fillStroke(c, hash(x, y, 181) < 0.5 ? '#ff8a3c' : '#ffffff', P.ink, 1.3);
+    c.strokeStyle = P.foam; c.lineWidth = 1.4; c.beginPath(); c.arc(X + 16, Y + 18, 7, 0.3, Math.PI - 0.3); c.stroke();
   }
 };
 

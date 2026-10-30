@@ -21,5 +21,8 @@ export const LEGEND: Record<string, Ground> = {
   'i': { g: 'grass', obj: 'pine', solid: true },
   /* Antonio's flat */
   '1': { g: 'floor', deco: 'bed', solid: true }, '2': { g: 'floor', deco: 'desk', solid: true }, '3': { g: 'floor', deco: 'tv', solid: true },
-  '4': { g: 'floor', deco: 'sofa', solid: true }, '5': { g: 'floor', deco: 'shelf', solid: true }, '6': { g: 'floor', deco: 'plant', solid: true }, 'I': { g: 'sand', obj: 'pine', solid: true }, 'N': { g: 'sand', deco: 'net', solid: true, reach: true }
+  '4': { g: 'floor', deco: 'sofa', solid: true }, '5': { g: 'floor', deco: 'shelf', solid: true }, '6': { g: 'floor', deco: 'plant', solid: true }, 'I': { g: 'sand', obj: 'pine', solid: true }, 'N': { g: 'sand', deco: 'net', solid: true, reach: true },
+  /* the lidi of Vindicio: sunbeds, gazebos, the windsurf boards on the sand, windsurfers and the line of buoys out at sea */
+  'h': { g: 'sand', deco: 'lounger', solid: true }, 'g': { g: 'sand', obj: 'gazebo', solid: true }, 'S': { g: 'sand', obj: 'board', solid: true },
+  'V': { g: 'sea', obj: 'windsurf', solid: true }, 'y': { g: 'sea', deco: 'buoy', solid: true }
 };

@@ -56,7 +56,7 @@ export const STOPS: Stop[] = [
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   lost('caricabatterie'),
   lost('appunti'),
-  doing('lettino', 'nicola', 'All\'Eclipse, a Vindicio, Nicola Spadea ti tiene il lettino in prima fila.'),
+  doing('windsurf', 'nicola', 'All\'Eclipse c\'è Nicola Spadea, il campione di windsurf: oggi c\'è la termica giusta per una lezione.'),
   doing('volley', 'valentin', 'All\'Eclipse Valentin cerca gente per il beach volley.'),
   lost('portafoglio'),
   doing('corsa', 'zendavid', 'Zendavid corre in pineta, a Vindicio. Con le cuffie, ovviamente.'),

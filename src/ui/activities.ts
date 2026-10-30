@@ -16,6 +16,7 @@ export function offerActivity(n: Npc) {
 function play(id: string, n: Npc) {
   if (id === 'volley') playRally(n, VOLLEY);
   else if (id === 'padel') playRally(n, PADEL);
+  else if (id === 'windsurf') windsurf(n);
   else if (id === 'lettino') lettino(n);
   else if (id === 'gelato') gelato(n);
   else if (id === 'quiz') quiz(n);
@@ -118,12 +119,124 @@ function playRally(n: Npc, R: Rally) {
   raf = requestAnimationFrame(frame);
 }
 
-/* ---------- a lettino at the Eclipse, from Nicola Spadea ---------- */
+/* ---------- a windsurf lesson with Nicola Spadea at Vindicio: hold the sail in the gusts and plane as far as you can.
+   The wind leans you forward; a tap sheets the sail in and pulls you back. Too far forward and the wind catapults
+   you in, too far back and you fall in backwards. The gusts are fixed waves, not chance: a lesson is fair. ---------- */
+function windsurf(n: Npc) {
+  const best0 = bestOf('windsurf'), k0 = timesDone('windsurf');
+  sheet('<div class="award mg" role="dialog" aria-modal="true" aria-labelledby="mg-t">' +
+    '<h2 id="mg-t">Windsurf con Nicola</h2>' +
+    '<p>Il vento ti spinge in avanti: tocca, o premi Spazio, per cazzare la vela e tornare in equilibrio. Troppo poco e il vento ti catapulta in acqua, troppo e cadi all\'indietro. Più resti in piedi, più vai veloce.</p>' +
+    '<canvas class="mg-court" id="mg-c" width="320" height="120" aria-label="Il mare di Vindicio, con la tavola e la vela"></canvas>' +
+    '<p class="mg-score" id="mg-s" aria-live="polite">Planata: 0 m' + (best0 ? ' · record ' + best0 + ' m' : '') + '</p>' +
+    '<button class="btn" type="button" id="mg-x">Basta così</button></div>', 'result');
+  const cv = $('mg-c') as HTMLCanvasElement, c = cv.getContext('2d')!, scoreEl = $('mg-s');
+  const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 320, Hc = 120;
+  cv.width = Wc * dpr; cv.height = Hc * dpr; cv.style.width = '100%'; cv.style.maxWidth = Wc + 'px';
+  const col = { sea: css('--m-sea', '#a7d8f2'), sea2: css('--m-sea2', '#79bde6'), foam: css('--m-foam', '#ffffff'), ink: css('--m-ink', '#1f2c6e'),
+    zone: css('--good', '#2c9a55'), warn: css('--red', '#c8372d'), sky: css('--m-paper', '#f7f6f0'), far: css('--m-far2', '#b0bed9') };
+  let lean = 0, dist = 0, t = 0, over = false, raf = 0, last = performance.now(), shown = -1, fell = '';
+  /* the wind: a steady push that swells and slackens, and a gust every few seconds */
+  const gust = (tt: number) => Math.pow(Math.max(0, Math.sin(tt * 1.3 + k0 * 2.1)), 8);
+  const wind = (tt: number) => 0.5 + 0.25 * Math.sin(tt * 0.7 + k0) + 0.9 * gust(tt);
+  function draw() {
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.fillStyle = col.sky; c.fillRect(0, 0, Wc, 30);
+    /* Gaeta on the horizon */
+    c.fillStyle = col.far; c.beginPath(); c.moveTo(0, 30); c.quadraticCurveTo(40, 14, 90, 24); c.quadraticCurveTo(120, 18, 150, 30); c.closePath(); c.fill();
+    c.fillStyle = col.sea; c.fillRect(0, 30, Wc, Hc - 30);
+    c.strokeStyle = col.sea2; c.lineWidth = 2;
+    const off = (dist * 3) % 40;
+    for (let r = 0; r < 4; r++) for (let k = -1; k < 9; k++) { const wx = k * 40 - off + (r % 2) * 20, wy = 42 + r * 20; c.beginPath(); c.moveTo(wx, wy); c.quadraticCurveTo(wx + 8, wy - 4, wx + 16, wy); c.stroke(); }
+    /* a gust coming: dark ripples on the water */
+    const g = gust(t + 0.6);
+    if (g > 0.05) { c.globalAlpha = Math.min(0.5, g); c.fillStyle = col.sea2; for (let k = 0; k < 14; k++) c.fillRect(((k * 47 + t * 160) % (Wc + 40)) - 40, 36 + (k * 19) % 70, 22, 2); c.globalAlpha = 1; }
+    /* the board, the sail leaning with the wind, the sailor */
+    const bx = 150, by = 92, a = lean * 0.75;
+    c.fillStyle = col.foam; c.globalAlpha = 0.9; c.beginPath(); c.ellipse(bx - 34, by + 6, 26, 3, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+    c.beginPath(); c.moveTo(bx - 34, by); c.quadraticCurveTo(bx, by - 6, bx + 38, by + 1); c.quadraticCurveTo(bx, by + 7, bx - 34, by); c.closePath();
+    c.fillStyle = '#fffdf6'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
+    c.save(); c.translate(bx + 4, by - 2); c.rotate(a);
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -66); c.strokeStyle = col.ink; c.lineWidth = 2.4; c.stroke();
+    c.beginPath(); c.moveTo(0, -66); c.quadraticCurveTo(-34, -30, -4, -4); c.closePath(); c.fillStyle = '#ff8a3c'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = '#ffffff'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6, -50); c.lineTo(-14, -44); c.moveTo(-6, -30); c.lineTo(-16, -26); c.stroke();
+    c.restore();
+    /* the sailor hangs off the boom, leaning against the sail */
+    const hx = bx + 22 + lean * 6, hy = by - 40 + Math.abs(lean) * 6;
+    c.strokeStyle = '#1c2340'; c.lineWidth = 4; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(bx + 14, by - 2); c.lineTo(hx - 2, hy + 20); c.moveTo(bx + 22, by - 2); c.lineTo(hx + 2, hy + 20); c.stroke();
+    c.strokeStyle = '#1fa3b5'; c.lineWidth = 7; c.beginPath(); c.moveTo(hx, hy + 20); c.lineTo(hx, hy + 4); c.stroke();
+    c.strokeStyle = '#c48f6c'; c.lineWidth = 3; c.beginPath(); c.moveTo(hx, hy + 8); c.lineTo(bx + 4 + Math.sin(a) * 30, by - 2 - Math.cos(a) * 30); c.stroke();
+    c.beginPath(); c.arc(hx, hy, 6, 0, Math.PI * 2); c.fillStyle = '#c48f6c'; c.fill(); c.strokeStyle = '#1c2340'; c.lineWidth = 1.6; c.stroke();
+    /* the balance meter: green in the middle, red at the ends */
+    const mx = 20, mw = Wc - 40, my = 8;
+    c.fillStyle = col.warn; c.globalAlpha = 0.35; c.fillRect(mx, my, mw, 8); c.globalAlpha = 0.5; c.fillStyle = col.zone; c.fillRect(mx + mw * 0.3, my, mw * 0.4, 8); c.globalAlpha = 1;
+    c.strokeStyle = col.ink; c.lineWidth = 1.5; c.strokeRect(mx, my, mw, 8);
+    const nx = mx + mw * (0.5 + lean / 2);
+    c.beginPath(); c.moveTo(nx, my - 3); c.lineTo(nx - 5, my - 9); c.lineTo(nx + 5, my - 9); c.closePath(); c.fillStyle = col.ink; c.fill();
+    if (fell) {
+      c.font = '15px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+      const tw = c.measureText(fell).width + 16;
+      c.fillStyle = col.sky; c.beginPath(); c.roundRect(10, 26, tw, 22, 6); c.fill(); c.strokeStyle = col.ink; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = col.ink; c.fillText(fell, 18, 37.5);
+    }
+  }
+  function frame(now: number) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!over) {
+      t += dt;
+      lean += wind(t) * dt * 0.95;
+      const speed = 2 + Math.min(7, t * 0.45) * (1 - Math.abs(lean) * 0.6);
+      dist += speed * dt * 3;
+      if (lean >= 1) fall('Catapultato in acqua!');
+      else if (lean <= -1) fall('Caduto all\'indietro!');
+      const m = Math.floor(dist);
+      if (!over && m !== shown) { shown = m; scoreEl.textContent = 'Planata: ' + m + ' m' + (best0 ? ' · record ' + best0 + ' m' : ''); }
+    }
+    draw();
+    if (!over) raf = requestAnimationFrame(frame);
+  }
+  function pull() {
+    if (over) return;
+    lean -= 0.3;
+    sfx('whoosh');
+    if (lean <= -1) fall('Caduto all\'indietro!');
+  }
+  function fall(why: string) {
+    over = true; fell = why; cancelAnimationFrame(raf); draw();
+    sfx('dodge');
+    const m = Math.floor(dist), better = record('windsurf', m);
+    if (better && m > 0) sfx('badge');
+    scoreEl.textContent = 'Fine: ' + m + ' m di planata' + (better && m > 0 ? ' · nuovo record!' : best0 ? ' · record ' + best0 + ' m' : '');
+    const x0 = $('mg-x'); x0.textContent = 'Continua'; x0.focus();
+  }
+  const key = function (e: KeyboardEvent) {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'a' || e.key === 'A') {
+      if (over && e.key === 'Enter') return;
+      e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) pull();
+    }
+  };
+  document.addEventListener('keydown', key, true);
+  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); pull(); });
+  $('mg-x').addEventListener('click', function () {
+    const quit = !over, m = Math.floor(dist);
+    if (quit) { over = true; cancelAnimationFrame(raf); if (m > 0) record('windsurf', m); }
+    document.removeEventListener('keydown', key, true);
+    closeSheet();
+    say(m >= 200 ? ['Questo è livello campionato!', 'Domani ti porto al largo, fino a Gianola.']
+      : m >= 60 ? ['Bella planata! Con la termica di Vindicio si vola.', 'La prossima volta lavoriamo sulla strambata.']
+        : ['In acqua! Succede a tutti, anche a me le prime volte.', 'Risali sulla tavola: più tieni la vela, più vai veloce.'], n.name);
+  });
+  draw();
+  raf = requestAnimationFrame(frame);
+}
+
+/* ---------- a lettino at the Eclipse, from the bar of the lido ---------- */
 function lettino(n: Npc) {
   const k = timesDone('lettino');
   sfx('shimmer');
-  say(['Nicola ti sistema il lettino in prima fila, sotto l\'ombrellone.',
-    'Il mare è piatto, si sente la musica del lido. Il sole scende dietro Gaeta e tutto diventa arancione.',
+  say(['Ti sistemano il lettino in prima fila, sotto l\'ombrellone.',
+    'Il mare è piatto, si sente la musica del lido. Al largo le vele dei windsurf di Nicola; il sole scende dietro Gaeta e tutto diventa arancione.',
     k === 0 ? 'Che pomeriggio. Ci voleva.' : k < 3 ? 'Un altro pomeriggio così. Formia d\'estate.' : 'Ormai il lettino in prima fila è il tuo.'], null, null, function () {
     record('lettino');
     say(k >= 2 ? ['Antonio, ormai sei di casa all\'Eclipse.', 'Il lettino te lo tengo libero.'] : ['Torna quando vuoi.', 'Il lettino è sempre qui.'], n.name);

@@ -130,9 +130,30 @@ tools/
 - **Chi dà consigli:** alcuni abitanti (la vicina, il tifoso al bar, il marinaio al porto, il bagnino all'Eclipse) hanno `hint: true`. Dopo le loro frasi dicono il `tip` della prossima tappa, con parole loro.
 - **Aggiungere una tappa:** una voce in `STOPS`, nell'ordine del giro. Il test `the tour of Formia` controlla la prima tappa e il conteggio.
 
+## Com'è disegnata Formia
+
+- **Case di contorno:** ognuna ha un seme `v` (in `formia-ground.ts`) da cui `render/canvas/objects.ts` (`facade`) sceglie:
+  - la facciata: crema, giallo, rosa, pesca o azzurro;
+  - le persiane: verdi o marroni;
+  - il tetto: a falde, con il comignolo, oppure un terrazzo con piante o il serbatoio;
+  - le fioriere e le tende a strisce sui balconi delle palazzine.
+
+  I colori sono token `--m-wall-*`, `--m-shutter-*`, `--m-tent-*`.
+- **Posti importanti, riconoscibili:**
+  - casa (Parco la Fontana, palazzina gialla con le tende);
+  - il Bruno Zauli con la pista d'atletica;
+  - il Palamendola con il tetto a volta;
+  - la stazione con il treno fermo;
+  - la piazza con il monumento e il comizio;
+  - il porto con il traghetto, le barche e il faro sul molo;
+  - Morgana con le lucine;
+  - l'Eclipse: ombrelloni con i lettini, gazebo, beach volley, le tavole da windsurf di Nicola sulla riva, i windsurf che scivolano nella baia e la fila di boe.
+- **Pineta di Vindicio:** è dove sta davvero, accanto al Lido Frungillo all'inizio di via Tito Scipione. Venendo da Gaeta si trovano La Scogliera, poi l'Eclipse, poi la pineta, poi il centro. È un'area `pines` di `formia-places.ts`, con i due sentieri di `PATHS`.
+- **Persone con un aspetto loro:** gli amici hanno `person`; chi è qualcuno senza essere nella compagnia ha `look`, come Nicola Spadea (`LOOKS` in `walkers.ts`).
+
 ## Attività, casa e motorino
 
-- **Attività** (`story/activities.ts`): beach volley con Valentin e lettino da Nicola all'Eclipse, corsetta in pineta con Zendavid, quiz da Morgana, gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
+- **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
 - **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
 - **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
 - **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.

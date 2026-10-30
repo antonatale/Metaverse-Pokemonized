@@ -1,6 +1,6 @@
 import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
-import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
+import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, present, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
@@ -17,7 +17,7 @@ function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
 interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number }
-interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean }
+interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number }
 
 /* ---------- drawing ---------- */
 /* DPR: device pixels per CSS pixel. Z: map zoom (big screens see the map larger). VS = DPR × Z: device pixels
@@ -28,21 +28,23 @@ var cache: { map: string | null; theme: string; chunks: Record<string, HTMLCanva
 var walkers: Record<string, Walker> = {}, sprites: Record<string, Sprite> = {};
 /* how far above its footprint each kind of thing is drawn */
 const UP = HEIGHT;
-var UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'];
+var UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'], SAILS = ['#ff8a3c', '#3f9fc4', '#e9765f', '#57c968', '#ffd166'];
 function themeKey() { return getComputedStyle(document.documentElement).getPropertyValue('--m-paper').trim() + '|' + RS; }
 /* the tall still things of a map, sorted by their bottom edge (the ground is painted in pieces, see chunk) */
 function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   var items: SceneItem[] = [], spr: Record<string, Sprite> = {};
-  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean) { items.push({ x: x, yb: yb, spr: sp, bob: !!bob }); };
+  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number) { items.push({ x: x, yb: yb, spr: sp, bob: !!bob, glide: glide || 0 }); };
   for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
     var L = m.cell(x, y);
     if (!L.obj) continue;
-    var color = L.obj === 'umbrella' ? UMBRELLAS[(x + y) % 3] : L.obj === 'boat' ? BOATS[(x + y) % 2] : null, k = L.obj + (color || '');
+    var sail = L.obj === 'board' || L.obj === 'windsurf';
+    var color = L.obj === 'umbrella' ? UMBRELLAS[(x + y) % 3] : L.obj === 'boat' ? BOATS[(x + y) % 2] : sail ? SAILS[(x * 3 + y) % SAILS.length] : null, k = L.obj + (color || '');
     if (!spr[k]) spr[k] = paintObject(L.obj, P0, s, { color: color, up: UP[L.obj] });
-    add(x * T, (y + 1) * T, spr[k], L.obj === 'boat');
+    /* the windsurfers glide back and forth across the bay */
+    add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
   }
   (m.buildings || []).forEach(function (b) {
-    add(b.x * T, (b.y + b.h) * T, paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning }));
+    add(b.x * T, (b.y + b.h) * T, paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }));
   });
   (m.objects || []).forEach(function (o) { add(o.x * T, (o.y + o.h) * T, paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), o.bob); });
   if (m.signs && m.signs.length) {
@@ -68,9 +70,9 @@ function chunk(cx: number, cy: number): HTMLCanvasElement {
   while (cache.order.length > 12) delete cache.chunks[cache.order.shift()!];
   return c0;
 }
-function walkerFor(n: Pick<Npc, 'person' | 'seed'>, s: number): Walker {
-  var id = (n.person || ('npc' + n.seed)) + '@' + s;
-  return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : townsperson(n.seed!), s));
+function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker {
+  var id = (n.person || n.look || ('npc' + n.seed)) + '@' + s;
+  return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
 }
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
@@ -86,9 +88,10 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
   for (var n = 0; n < items.length; n++) {
     var it = items[n];
     while (k < people.length && people[k].yb <= it.yb) person(people[k++]);
-    if (view && (it.x + it.spr.w < view.x || it.x > view.x + view.w || it.yb < view.y || it.yb - it.spr.h > view.y + view.h)) continue;
+    var gx = it.glide && now && !reduced ? Math.sin(now / 5200 + it.x * 0.013) * it.glide * T : 0;
+    if (view && (it.x + gx + it.spr.w < view.x || it.x + gx > view.x + view.w || it.yb < view.y || it.yb - it.spr.h > view.y + view.h)) continue;
     var dy = it.bob && now && !reduced ? Math.sin(now / 650 + it.x * 0.037) * 1.5 : 0;
-    c.drawImage(it.spr.cv, it.x, it.yb - it.spr.h + dy, it.spr.cv.width / s, it.spr.cv.height / s);
+    c.drawImage(it.spr.cv, it.x + gx, it.yb - it.spr.h + dy, it.spr.cv.width / s, it.spr.cv.height / s);
   }
   while (k < people.length) person(people[k++]);
 }

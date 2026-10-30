@@ -44,8 +44,8 @@ export const STREETS: Line[] = [
   { name: 'Via Acqualonga', w: 1, pts: [[148, 22], [148, 27]] },
   { name: 'Via Gramsci', w: 1, pts: [[118, 22], [118, 27]] }
 ];
-/** footpaths (not streets): through the pineta */
+/** footpaths (not streets): through the Pineta di Vindicio, from the Appia down to the beach and across */
 export const PATHS: Line[] = [
-  { name: 'Sentiero della pineta', w: 1, pts: [[17, 64], [3, 64]] },
-  { name: 'Sentiero della pineta', w: 1, pts: [[9, 58], [9, 75]] }
+  { name: 'Sentiero della pineta', w: 1, pts: [[48, 50], [48, 57]] },
+  { name: 'Sentiero della pineta', w: 1, pts: [[40, 53], [56, 53]] }
 ];

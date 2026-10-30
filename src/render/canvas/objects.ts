@@ -12,17 +12,48 @@ export interface ObjOpts {
   x?: number; doorX?: number; label?: string; roof?: string; awning?: string;
   /** a lost thing: which one */
   item?: string;
+  /** a house of the town: its variation seed (facade colour, roof, shutters, balconies) */
+  v?: number;
 }
 /** a painted object: the picture, and its size in map px (up included) */
 export interface Sprite { cv: HTMLCanvasElement; w: number; h: number; up: number }
 type ObjFn = (c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) => void;
-interface BuildingLook { roof: string; windows: number; awning?: string; sign?: string }
+interface BuildingLook { roof: string; windows: number; awning?: string; sign?: string; wall?: string; shutter?: string; chimney?: boolean; plants?: boolean; door?: string }
+/** how a house of the town looks, from its variation seed: Formia's facades are cream, yellow, pink, peach or pale blue,
+    with green or brown shutters; roofs are tiled, tiled with a chimney, or flat terraces */
+function facade(P: Palette, v: number) {
+  var walls = [P.wall, P['wall-b'], P['wall-c'], P['wall-d'], P['wall-e']];
+  return {
+    wall: walls[v % 5], shutter: Math.floor(v / 5) % 2 ? P['shutter-b'] : P['shutter-a'], roof: Math.floor(v / 10) % 3,
+    plants: Math.floor(v / 30) % 2 === 0, tents: Math.floor(v / 7) % 3, door: Math.floor(v / 60) % 2 ? P.wood : P['shutter-a']
+  };
+}
+/* a window with its two shutters open against the wall */
+function shuttered(c: Ctx, P: Palette, x: number, y: number, ww: number, wh: number, shutter?: string) {
+  if (shutter) {
+    [x - 5, x + ww + 0.5].forEach(function (sx) {
+      rr(c, sx, y, 4.5, wh, 1); fillStroke(c, shutter, P.ink, 1);
+      c.strokeStyle = P.ink; c.globalAlpha = 0.35; c.lineWidth = 0.7;
+      for (var k = 3; k < wh - 1; k += 3) { c.beginPath(); c.moveTo(sx + 0.8, y + k); c.lineTo(sx + 3.7, y + k); c.stroke(); }
+      c.globalAlpha = 1;
+    });
+  }
+  rr(c, x, y, ww, wh, 2); fillStroke(c, '#bfe3ff', P.ink, 1.4);
+  c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(x + ww / 2, y); c.lineTo(x + ww / 2, y + wh); c.stroke();
+}
+/* a flower box under a window */
+function flowers(c: Ctx, P: Palette, x: number, y: number, ww: number) {
+  rr(c, x - 1, y, ww + 2, 4, 1); fillStroke(c, P.clay, P.ink, 1);
+  c.fillStyle = P.leaf; for (var k = 0; k < 4; k++) { circle(c, x + 2 + k * (ww - 4) / 3, y - 1, 1.8); c.fill(); }
+  c.fillStyle = P['flower-a']; circle(c, x + 3, y - 2, 1.3); c.fill(); c.fillStyle = P['flower-b']; circle(c, x + ww - 3, y - 2, 1.3); c.fill();
+}
 
 /* ---------- tall objects: drawn sorted by their bottom edge, so people walk behind them ---------- */
 /** how far above its footprint each kind of thing is drawn, in px (1 tile when missing) */
 export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
   church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
-  lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.1, pub: T * 0.75 };
+  lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.75, pub: T * 0.75,
+  arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7 };
 export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts): Sprite {
   opt = opt || {};
   var w = (opt.w || 1) * T, h = (opt.h || 1) * T, up = opt.up == null ? T : opt.up;
@@ -345,9 +376,11 @@ const OBJ: Record<string, ObjFn> = {
   },
   /* a palazzina, the apartment blocks of Formia (Antonio's is Parco la Fontana): flat roof, floors of balconies */
   condo: function (c, w, h, P, o) {
-    var top = -T * 1.05, dx = (o.doorX! - o.x!) * T;
+    var top = -T * 1.05, dx = (o.doorX! - o.x!) * T, v = o.v || 0, fa = facade(P, v), tent = fa.tents === 1 ? P['tent-a'] : P['tent-b'];
     ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
-    rr(c, 3, top, w - 6, h - top - 2, 2); fillStroke(c, P.wall, P.ink, 1.8);
+    /* on the roof: a water tank and an aerial, now and then */
+    if (v % 3 === 0) { rr(c, 10, top - 15, 14, 11, 4); fillStroke(c, P.stone, P.ink, 1.3); c.strokeStyle = P.ink; c.lineWidth = 1.3; c.beginPath(); c.moveTo(w - 16, top - 4); c.lineTo(w - 16, top - 22); c.moveTo(w - 22, top - 18); c.lineTo(w - 10, top - 18); c.moveTo(w - 20, top - 13); c.lineTo(w - 12, top - 13); c.stroke(); }
+    rr(c, 3, top, w - 6, h - top - 2, 2); fillStroke(c, fa.wall, P.ink, 1.8);
     rr(c, 0, top - 5, w, 8, 2); fillStroke(c, P.stone2, P.ink, 1.6);
     c.fillStyle = o.roof || P['roof-b']; c.globalAlpha = 0.35; c.fillRect(4, top + 3, w - 8, 5); c.globalAlpha = 1;
     var floors = Math.max(2, Math.floor((h - T - top - 8) / 21));
@@ -357,7 +390,13 @@ const OBJ: Record<string, ObjFn> = {
         rr(c, x, wy, 14, 11, 2); fillStroke(c, '#bfe3ff', P.ink, 1.2);
         c.strokeStyle = P.ink; c.lineWidth = 1.1;
         c.beginPath(); c.moveTo(x - 3, wy + 14); c.lineTo(x + 17, wy + 14); c.moveTo(x - 3, wy + 14); c.lineTo(x - 3, wy + 18); c.moveTo(x + 17, wy + 14); c.lineTo(x + 17, wy + 18); c.stroke();
-        if ((x + f) % 3 === 0) { c.fillStyle = P['flower-a']; circle(c, x + 2, wy + 13, 1.8); c.fill(); }
+        /* a striped sun tent pulled down over some balconies */
+        if (fa.tents && hash(x, f, v) < 0.45) {
+          c.beginPath(); c.moveTo(x - 3, wy - 2); c.lineTo(x + 17, wy - 2); c.lineTo(x + 19, wy + 7); c.lineTo(x - 5, wy + 7); c.closePath();
+          c.save(); c.clip(); for (var st = 0; st < 6; st++) { c.fillStyle = st % 2 ? '#ffffff' : tent; c.fillRect(x - 5 + st * 4, wy - 2, 4, 10); } c.restore();
+          c.strokeStyle = P.ink; c.lineWidth = 1.1; c.stroke();
+        }
+        if ((x + f + v) % 3 === 0) { c.fillStyle = P['flower-a']; circle(c, x + 2, wy + 13, 1.8); c.fill(); }
       }
     }
     rr(c, dx + 5, h - T + 1, T - 10, T - 3, 3); fillStroke(c, '#bfe3ff', P.ink, 1.5);
@@ -389,8 +428,15 @@ const OBJ: Record<string, ObjFn> = {
     rr(c, mx - 7, my - 9, 13, 4, 2); fillStroke(c, '#fffdf6', P.ink, 1.1);
     c.beginPath(); c.arc(mx + 6, my - 1, 3.4, -Math.PI / 2, Math.PI / 2); c.strokeStyle = P.ink; c.lineWidth = 1.3; c.stroke();
   },
-  house: function (c, w, h, P, o) { building(c, w, h, P, o, { roof: o.roof || P['roof-a'], windows: 2 }); },
-  shop: function (c, w, h, P, o) { building(c, w, h, P, o, { roof: o.roof || P['roof-c'], windows: 1, awning: o.awning || '#ff8fc1' }); },
+  house: function (c, w, h, P, o) {
+    var f = facade(P, o.v || 0);
+    if (f.roof === 1) terrace(c, w, h, P, o, f);
+    else building(c, w, h, P, o, { roof: o.roof || P['roof-a'], windows: 2, wall: f.wall, shutter: f.shutter, chimney: f.roof === 2, plants: f.plants, door: f.door });
+  },
+  shop: function (c, w, h, P, o) {
+    var f = facade(P, o.v || 0);
+    building(c, w, h, P, o, { roof: o.roof || P['roof-c'], windows: 1, awning: o.awning || '#ff8fc1', wall: f.wall, shutter: f.shutter, plants: f.plants });
+  },
   station: function (c, w, h, P, o) {
     building(c, w, h, P, o, { roof: P['roof-b'], windows: 4, sign: 'STAZIONE' });
     var cx = w / 2; circle(c, cx, -2, 7); fillStroke(c, '#fffaf0', P.ink, 1.6);
@@ -421,6 +467,93 @@ const OBJ: Record<string, ObjFn> = {
     c.fillStyle = '#20263a'; rr(c, cx - 2, top + 34, 4, 13, 2); c.fill(); rr(c, cx - 13, top + 58, 4, 10, 2); c.fill();
     rr(c, cx - 7, bot - 20, 14, 22, 7); fillStroke(c, P.wood, P.ink, 1.6);
   },
+  /* the Palamendola, the sports hall of via Amendola: a long barrel-vault roof, glass all along the front */
+  arena: function (c, w, h, P, o) {
+    var wallTop = T * 0.45, roofTop = -T * 0.75, dx = (o.doorX! - o.x!) * T;
+    ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+    rr(c, 2, wallTop, w - 4, h - wallTop - 2, 2); fillStroke(c, P.wall, P.ink, 1.8);
+    c.beginPath(); c.moveTo(-1, wallTop + 3); c.bezierCurveTo(4, roofTop, w - 4, roofTop, w + 1, wallTop + 3); c.closePath();
+    fillStroke(c, P['roof-b'], P.ink, 1.8);
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.globalAlpha = 0.4;
+    for (var k = 1; k < 9; k++) { var rx = k * w / 9; c.beginPath(); c.moveTo(rx, wallTop + 2); c.quadraticCurveTo(rx + (rx - w / 2) * 0.08, roofTop + 14, w / 2 + (rx - w / 2) * 0.55, roofTop + 9); c.stroke(); }
+    c.globalAlpha = 1;
+    rr(c, 10, wallTop + 8, w - 20, h - wallTop - 20, 2); fillStroke(c, '#bfe3ff', P.ink, 1.4);
+    c.strokeStyle = P.ink; c.lineWidth = 1; for (var x = 26; x < w - 14; x += 16) { c.beginPath(); c.moveTo(x, wallTop + 8); c.lineTo(x, h - 12); c.stroke(); }
+    ['#3f7ccf', '#ffd166', '#2c9a55'].forEach(function (col, i) { c.fillStyle = col; c.fillRect(6, h - 10 + i * 2.5, w - 12, 2); });
+    rr(c, dx + 6, h - T + 3, T - 12, T - 5, 2); fillStroke(c, '#e8f5ff', P.ink, 1.4);
+    /* a basketball over the entrance */
+    circle(c, w - 22, wallTop - 4, 6); fillStroke(c, '#f08a3c', P.ink, 1.3);
+    c.beginPath(); c.moveTo(w - 28, wallTop - 4); c.lineTo(w - 16, wallTop - 4); c.moveTo(w - 22, wallTop - 10); c.lineTo(w - 22, wallTop + 2); c.lineWidth = 0.9; c.stroke();
+    if (o.label) plaque(c, P, o.label, w / 2, wallTop - 2, w - 40, 14);
+  },
+  /* a regional train standing at the station: two white coaches with a blue band, the pantograph up */
+  train: function (c, w, h, P) {
+    var top = -T * 0.45, bot = h - 4, half = w / 2;
+    ell(c, w / 2, bot + 1, w / 2 - 6, 4); c.fillStyle = P.shadow; c.fill();
+    [[3, half - 2], [half + 2, w - 3]].forEach(function (seg, i) {
+      var x0 = seg[0], x1 = seg[1];
+      c.beginPath();
+      if (i === 0) { c.moveTo(x0 + 14, top); c.lineTo(x1, top); c.lineTo(x1, bot); c.lineTo(x0 + 4, bot); c.quadraticCurveTo(x0 - 2, top + 8, x0 + 14, top); }
+      else { c.moveTo(x0, top); c.lineTo(x1 - 14, top); c.quadraticCurveTo(x1 + 2, top + 8, x1 - 4, bot); c.lineTo(x0, bot); c.closePath(); }
+      c.closePath(); fillStroke(c, '#f7f7f4', P.ink, 1.7);
+      c.save(); c.clip(); c.fillStyle = '#3f7ccf'; c.fillRect(x0 - 4, bot - 11, x1 - x0 + 8, 5); c.fillStyle = '#2c9a55'; c.fillRect(x0 - 4, bot - 6, x1 - x0 + 8, 3); c.restore();
+      for (var x = x0 + 18; x < x1 - 16; x += 15) { rr(c, x, top + 6, 11, 9, 2); fillStroke(c, '#20263a', P.ink, 1); }
+      rr(c, (x0 + x1) / 2 - 5, top + 5, 10, bot - top - 9, 2); fillStroke(c, '#d9dde6', P.ink, 1);
+      c.fillStyle = '#20263a'; rr(c, i === 0 ? x0 + 5 : x1 - 13, top + 5, 8, 8, 3); c.fill();
+    });
+    c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(half - 30, top); c.lineTo(half - 22, top - 10); c.lineTo(half - 12, top - 10); c.moveTo(half - 26, top - 5); c.lineTo(half - 14, top - 10); c.stroke();
+  },
+  /* the monument in Piazza della Vittoria: a stone plinth, a column, a bronze victory on top */
+  monument: function (c, w, h, P) {
+    ell(c, 16, 29, 12, 3.6); c.fillStyle = P.shadow; c.fill();
+    rr(c, 3, 18, 26, 11, 2); fillStroke(c, P.stone, P.ink, 1.6);
+    rr(c, 7, 11, 18, 8, 1); fillStroke(c, P.stone2, P.ink, 1.4);
+    rr(c, 12, -22, 8, 34, 2); fillStroke(c, P.stone, P.ink, 1.5);
+    c.strokeStyle = P.stone2; c.lineWidth = 1; c.beginPath(); c.moveTo(14.5, -18); c.lineTo(14.5, 9); c.moveTo(17.5, -18); c.lineTo(17.5, 9); c.stroke();
+    c.beginPath(); c.moveTo(16, -40); c.quadraticCurveTo(26, -38, 25, -30); c.lineTo(19, -28); c.lineTo(20, -22); c.lineTo(12, -22); c.lineTo(13, -28); c.lineTo(7, -30); c.quadraticCurveTo(6, -38, 16, -40); c.closePath();
+    fillStroke(c, '#7c9a7a', P.ink, 1.4);
+    circle(c, 16, -42, 3); fillStroke(c, '#7c9a7a', P.ink, 1.2);
+  },
+  /* the lighthouse at the end of the mole: white and red, a lantern on top */
+  lighthouse: function (c, w, h, P) {
+    ell(c, 16, 29, 9, 3); c.fillStyle = P.shadow; c.fill();
+    c.beginPath(); c.moveTo(9, 28); c.lineTo(12, -34); c.lineTo(20, -34); c.lineTo(23, 28); c.closePath();
+    c.save(); c.clip(); for (var k = 0; k < 6; k++) { c.fillStyle = k % 2 ? '#d14b3a' : '#fbfbf7'; c.fillRect(0, -34 + k * 11, w, 11); } c.restore();
+    c.strokeStyle = P.ink; c.lineWidth = 1.7; c.stroke();
+    rr(c, 9, -40, 14, 7, 1); fillStroke(c, '#ffe9a8', P.ink, 1.4);
+    poly(c, [[8, -40], [16, -49], [24, -40]]); fillStroke(c, '#d14b3a', P.ink, 1.4);
+    rr(c, 7, -34, 18, 3, 1); fillStroke(c, '#20263a', P.ink, 1);
+  },
+  /* a white gazebo of the lido: four poles and a peaked canopy */
+  gazebo: function (c, w, h, P) {
+    ell(c, 16, 27, 14, 4); c.fillStyle = P.shadow; c.fill();
+    c.strokeStyle = P.ink; c.lineWidth = 2; c.beginPath(); c.moveTo(4, 27); c.lineTo(4, 2); c.moveTo(28, 27); c.lineTo(28, 2); c.stroke();
+    c.beginPath(); c.moveTo(-1, 4); c.lineTo(16, -14); c.lineTo(33, 4); c.closePath(); fillStroke(c, '#fffdf6', P.ink, 1.6);
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.globalAlpha = 0.4; c.beginPath(); c.moveTo(16, -14); c.lineTo(8, 4); c.moveTo(16, -14); c.lineTo(24, 4); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = P['tent-b']; for (var k = 0; k < 5; k++) { c.beginPath(); c.arc(1 + k * 7.5, 4, 3.6, 0, Math.PI); c.fill(); }
+  },
+  /* a windsurf board planted in the sand, its sail up: the school of the Eclipse */
+  board: function (c, w, h, P, o) {
+    var sail = o.color || P['tent-a'];
+    ell(c, 16, 28, 10, 3); c.fillStyle = P.shadow; c.fill();
+    c.beginPath(); c.moveTo(10, 29); c.quadraticCurveTo(8, 6, 13, -16); c.quadraticCurveTo(17, 6, 15, 29); c.closePath(); fillStroke(c, '#fffdf6', P.ink, 1.4);
+    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.beginPath(); c.moveTo(19, 26); c.lineTo(21, -30); c.stroke();
+    c.beginPath(); c.moveTo(21, -30); c.quadraticCurveTo(33, -6, 21, 20); c.closePath(); fillStroke(c, sail, P.ink, 1.5);
+    c.strokeStyle = '#ffffff'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(22, -18); c.lineTo(27, -14); c.moveTo(22, -4); c.lineTo(28, -2); c.stroke();
+    c.strokeStyle = P.ink; c.lineWidth = 1.2; c.beginPath(); c.moveTo(21, -2); c.lineTo(31, -6); c.stroke();
+  },
+  /* someone windsurfing in the bay: board, sail and sailor leaning out */
+  windsurf: function (c, w, h, P, o) {
+    var sail = o.color || P['tent-b'];
+    c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.moveTo(2, 25); c.quadraticCurveTo(10, 29, 24, 25); c.moveTo(-2, 21); c.lineTo(5, 22); c.stroke();
+    c.beginPath(); c.moveTo(4, 22); c.quadraticCurveTo(16, 18, 30, 22); c.quadraticCurveTo(16, 26, 4, 22); c.closePath(); fillStroke(c, '#fffdf6', P.ink, 1.3);
+    c.strokeStyle = P.ink; c.lineWidth = 1.6; c.beginPath(); c.moveTo(18, 21); c.lineTo(14, -18); c.stroke();
+    c.beginPath(); c.moveTo(14, -18); c.quadraticCurveTo(2, 0, 16, 18); c.closePath(); fillStroke(c, sail, P.ink, 1.4);
+    c.strokeStyle = '#ffffff'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(12, -8); c.lineTo(8, -5); c.moveTo(13, 4); c.lineTo(9, 6); c.stroke();
+    /* the sailor, hanging off the boom */
+    c.strokeStyle = STICKER_INK; c.lineWidth = 2.4; c.beginPath(); c.moveTo(22, 20); c.lineTo(23, 9); c.lineTo(16, 2); c.stroke();
+    circle(c, 25, 6, 3.3); fillStroke(c, '#c99577', STICKER_INK, 1.2);
+  },
   /* the Tomb of Cicero on the Appia: a square base and a round drum, overgrown on top */
   tomb: function (c, w, h, P) {
     ell(c, w / 2, h - 4, w / 2 - 2, 6); c.fillStyle = P.shadow; c.fill();
@@ -441,7 +574,8 @@ const OBJ: Record<string, ObjFn> = {
 function building(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts, d: BuildingLook) {
   var wallTop = T * 0.9, roofTop = -T * 0.55;
   ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
-  rr(c, 3, wallTop, w - 6, h - wallTop - 2, 3); fillStroke(c, P.wall, P.ink, 1.8);
+  if (d.chimney) { rr(c, w - 30, roofTop - 4, 9, 13, 1); fillStroke(c, d.wall || P.wall, P.ink, 1.4); rr(c, w - 31.5, roofTop - 6, 12, 4, 1); fillStroke(c, P.stone2, P.ink, 1.2); }
+  rr(c, 3, wallTop, w - 6, h - wallTop - 2, 3); fillStroke(c, d.wall || P.wall, P.ink, 1.8);
   c.beginPath(); c.moveTo(-2, wallTop + 4); c.lineTo(10, roofTop); c.lineTo(w - 10, roofTop); c.lineTo(w + 2, wallTop + 4); c.closePath();
   fillStroke(c, d.roof, P.ink, 1.8);
   c.strokeStyle = P.ink; c.lineWidth = 1; c.globalAlpha = 0.35;
@@ -452,8 +586,8 @@ function building(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts, d: Build
   for (var k = 0; k < n + 1; k++) slots.push(10 + k * ((w - 20 - 18) / Math.max(1, n)));
   slots.forEach(function (sx) {
     if (Math.abs(sx + 9 - (dx + T / 2)) < 20) return;
-    rr(c, sx, wy, 18, 14, 2); fillStroke(c, '#bfe3ff', P.ink, 1.5);
-    c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(sx + 9, wy); c.lineTo(sx + 9, wy + 14); c.stroke();
+    shuttered(c, P, sx + (d.shutter ? 2 : 0), wy, d.shutter ? 14 : 18, 14, d.shutter);
+    if (d.plants) flowers(c, P, sx + (d.shutter ? 2 : 0), wy + 15, d.shutter ? 14 : 18);
   });
   if (d.awning) {
     var aw = Math.min(T * 1.6, w - 8), ax = dx + T / 2 - aw / 2;
@@ -461,7 +595,29 @@ function building(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts, d: Build
     fillStroke(c, d.awning, P.ink, 1.5);
     c.fillStyle = '#ffffff'; for (var a = 0; a < 4; a++) c.fillRect(ax + 6 + a * (aw - 12) / 4, wallTop + 3, (aw - 12) / 8, 10);
   }
-  rr(c, dx + 7, h - T + 4, T - 14, T - 6, 3); fillStroke(c, P.wood, P.ink, 1.6);
+  rr(c, dx + 7, h - T + 4, T - 14, T - 6, 3); fillStroke(c, d.door || P.wood, P.ink, 1.6);
   circle(c, dx + T - 11, h - T / 2 + 2, 1.4); c.fillStyle = P.ink; c.fill();
   if (d.sign || o.label) plaque(c, P, (o.label || d.sign)!, w / 2, wallTop - 3, w - 12, 15);
+}
+/* a house with a flat roof terrace, as on the coast: a parapet, plants or a water tank up top, two floors of shuttered windows */
+function terrace(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts, f: ReturnType<typeof facade>) {
+  var top = -T * 0.15, dx = (o.doorX! - o.x!) * T, v = o.v || 0;
+  ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+  if (v % 2) { rr(c, w - 24, top - 16, 13, 12, 4); fillStroke(c, P.stone, P.ink, 1.3); c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(w - 21, top - 6); c.lineTo(w - 21, top - 1); c.moveTo(w - 14, top - 6); c.lineTo(w - 14, top - 1); c.stroke(); }
+  else blobs(c, [[12, top - 6, 5], [20, top - 8, 6], [w - 14, top - 7, 5.5]], P.leaf, P.ink, 1.3);
+  rr(c, 3, top, w - 6, h - top - 2, 3); fillStroke(c, f.wall, P.ink, 1.8);
+  rr(c, 1, top - 4, w - 2, 6, 2); fillStroke(c, f.wall, P.ink, 1.5);
+  c.fillStyle = P.ink; c.globalAlpha = 0.12; c.fillRect(4, top + 2, w - 8, 3); c.globalAlpha = 1;
+  var rows = [top + 10, h - T + 2], n = Math.max(2, Math.round((w - 12) / 30));
+  rows.forEach(function (wy, r) {
+    for (var k = 0; k < n; k++) {
+      var sx = 12 + k * ((w - 24 - 14) / Math.max(1, n - 1));
+      if (r === 1 && Math.abs(sx + 7 - (dx + T / 2)) < 18) continue;
+      shuttered(c, P, sx, wy, 14, 13, f.shutter);
+      if (r === 0 && f.plants) flowers(c, P, sx, wy + 14, 14);
+    }
+  });
+  rr(c, dx + 7, h - T + 4, T - 14, T - 6, 3); fillStroke(c, f.door, P.ink, 1.6);
+  circle(c, dx + T - 11, h - T / 2 + 2, 1.4); c.fillStyle = P.ink; c.fill();
+  if (o.label) plaque(c, P, o.label, w / 2, top + 3, w - 12, 13);
 }

@@ -14,8 +14,8 @@ export interface PlaceSpec {
   door?: boolean;
   /** column of the door from the left edge, the middle when missing */
   doorAt?: number;
-  /** for 'area': the ground it is paved or planted with */
-  fill?: 'piazza' | 'garden' | 'beach';
+  /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it) */
+  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field';
   /** tiles kept free of houses and trees around it */
   room?: number;
   /** how far it may move from where it really is, in tiles */
@@ -37,11 +37,13 @@ export const PLACES: PlaceSpec[] = [
   /* ---------- home: Parco la Fontana, Via Giovanni Amendola 1, Gianola ---------- */
   { id: 'casa', kind: 'condo', w: 5, h: 4, at: [41.2633, 13.6430], door: true, room: 2 },
   { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], room: 1 },
-  { id: 'palamendola', kind: 'coni', w: 6, h: 2, at: [41.2616, 13.6419], door: true },
+  { id: 'palamendola', kind: 'arena', w: 6, h: 2, at: [41.2616, 13.6419], door: true },
   { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 6, h: 3, at: [41.2608, 13.6397] },
   /* ---------- the Bruno Zauli olympic centre, and its covered tennis courts (Forchetta's covo) ---------- */
   { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true },
   { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true },
+  /* the athletics track where Mennea trained, behind the centre */
+  { id: 'pista', kind: 'area', fill: 'field', w: 12, h: 4, at: [41.2655, 13.6300], tile: [119, 14] },
   { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250] },
   /* ---------- Mola ---------- */
   { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], tile: [93, 38] },
@@ -62,6 +64,9 @@ export const PLACES: PlaceSpec[] = [
   { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], tile: [62, 42] },
   /* ---------- Vindicio: the Tomba di Cicerone, the beach, the Eclipse, the pineta ---------- */
   { id: 'tomba', kind: 'tomb', w: 3, h: 3, at: [41.2516, 13.5787] },
+  /* the Pineta di Vindicio, by the Lido Frungillo at the Formia end of Via Tito Scipione: from Gaeta you come to
+     La Scogliera, then the Eclipse, then the pineta, then the centre. Between the Appia and the beach, crossed by footpaths */
+  { id: 'pineta', kind: 'area', fill: 'pines', w: 17, h: 7, at: [41.2503, 13.5925], tile: [40, 50] },
   /* the Eclipse beach, Nicola Spadea's lido on the lungomare of Vindicio: the lido at the back, the beach in front */
   { id: 'eclipse', kind: 'lido', w: 6, h: 2, at: [41.2492, 13.5874], door: true, on: 'sand', reach: 8, room: 0 },
   { id: 'eclipse-spiaggia', kind: 'area', fill: 'beach', w: 12, h: 6, at: [41.2484, 13.5880], on: 'sand', reach: 8, room: 0 },
@@ -79,15 +84,17 @@ export const SPOTS: SpotSpec[] = [
   { id: 'motorino-morgana', near: { place: 'morgana', dx: 6, dy: 2 } },
   { id: 'motorino-piazza', near: { place: 'piazza', dx: 4, dy: -2 } },
   { id: 'motorino-zauli', near: { place: 'zauli', dx: 8, dy: 3 } },
-  { id: 'motorino-pineta', at: [41.2492, 13.5770] },
+  { id: 'motorino-pineta', near: { place: 'pineta', dx: -2, dy: 3 } },
   { id: 'sign-casa', near: { place: 'casa', dx: -1, dy: 4 } },
   /* the friends and the townsfolk */
   { id: 'costanzo', near: { place: 'piazza', dx: 4, dy: 1 } },
   { id: 'folla1', near: { place: 'piazza', dx: 2, dy: 3 } }, { id: 'folla2', near: { place: 'piazza', dx: 5, dy: 3 } },
   { id: 'folla3', near: { place: 'piazza', dx: 7, dy: 3 } }, { id: 'folla4', near: { place: 'piazza', dx: 1, dy: 2 } },
-  { id: 'nicola', near: { place: 'eclipse', dx: 3, dy: 3 }, on: 'sand' },
+  /* Nicola Spadea, windsurf champion, by his boards on the shore; the bar of the lido gives out the sunbeds */
+  { id: 'nicola', near: { place: 'eclipse-spiaggia', dx: 2, dy: 5 }, on: 'sand' },
+  { id: 'barista', near: { place: 'eclipse', dx: 7, dy: 1 }, on: 'any' },
   { id: 'valentin', near: { place: 'eclipse-spiaggia', dx: 9, dy: 4 }, on: 'sand' },
-  { id: 'zendavid', at: [41.2482, 13.5730] },
+  { id: 'zendavid', near: { place: 'pineta', dx: 10, dy: 4 } },
   { id: 'andrea', near: { place: 'zauli', dx: 2, dy: 4 } },
   { id: 'oste', near: { place: 'morgana', dx: 4, dy: 3 } },
   { id: 'costanzo-morgana', near: { place: 'morgana', dx: 1, dy: 4 } },
@@ -103,7 +110,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'velocista', near: { place: 'zauli', dx: 6, dy: 4 } },
   { id: 'tennista', near: { place: 'tennis', dx: 5, dy: 3 } },
   { id: 'cestista', near: { place: 'palamendola', dx: 1, dy: 2 } },
-  { id: 'bagnino', near: { place: 'eclipse-spiaggia', dx: 1, dy: 5 }, on: 'sand' },
+  { id: 'bagnino', near: { place: 'eclipse-spiaggia', dx: 9, dy: 0 }, on: 'sand' },
   { id: 'bambino', near: { place: 'eclipse-spiaggia', dx: 6, dy: 5 }, on: 'sand' },
   { id: 'guardaparco', near: { place: 'mamurra', dx: 3, dy: 1 } },
   { id: 'pescatore', near: { place: 'torre-mola', dx: -2, dy: 3 } },
@@ -119,7 +126,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-porto', near: { place: 'biglietti', dx: -1, dy: 2 } },
   { id: 'sign-tomba', near: { place: 'tomba', dx: -1, dy: 3 } },
   { id: 'sign-vindicio', near: { place: 'eclipse-spiaggia', dx: -1, dy: 0 }, on: 'any' },
-  { id: 'sign-pineta', at: [41.2490, 13.5752] },
+  { id: 'sign-pineta', near: { place: 'pineta', dx: -1, dy: 1 } },
   { id: 'sign-zauli', near: { place: 'zauli', dx: -1, dy: 3 } },
   { id: 'sign-gianola', near: { place: 'mamurra', dx: -2, dy: 2 } },
   { id: 'sign-caposele', at: [41.2512, 13.5975] },

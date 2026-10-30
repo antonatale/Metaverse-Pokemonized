@@ -28,6 +28,8 @@ export interface Building {
   gate?: string;
   /** a door you walk through: target map, tile and facing */
   to?: string; tx?: number; ty?: number; tdir?: Dir;
+  /** the houses of the town: a variation seed for their look (facade colour, roof, shutters, sun tents) */
+  v?: number;
 }
 export interface MapObject {
   kind: string;
@@ -64,6 +66,8 @@ export interface Npc {
   /** townsfolk: a name, a look picked by seed, and what they say */
   name?: string;
   seed?: number;
+  /** someone who has a look of their own (render/canvas/walkers.ts LOOKS), like Nicola Spadea */
+  look?: string;
   lines?: string[];
   /** talks about a city exit */
   gate?: string;

@@ -17,6 +17,7 @@ export interface Activity {
 const secs = (n: number) => Math.floor(n / 60) + ':' + ('0' + Math.round(n % 60)).slice(-2);
 export const ACTIVITIES: Activity[] = [
   { id: 'volley', name: 'Beach volley con Valentin', where: 'Eclipse beach, Vindicio', verb: 'Gioca a beach volley', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
+  { id: 'windsurf', name: 'Lezione di windsurf con Nicola', where: 'Eclipse beach, Vindicio', verb: 'Prendi una lezione', score: (n) => n + ' m di planata' },
   { id: 'lettino', name: 'Un pomeriggio all\'Eclipse', where: 'Eclipse beach, Vindicio', verb: 'Prendi un lettino' },
   { id: 'corsa', name: 'Corsetta in pineta con Zendavid', where: 'Pineta di Vindicio', verb: 'Corri tra i pini', score: secs, lower: true },
   { id: 'padel', name: 'Padel con Andrea', where: 'Centro Bruno Zauli', verb: 'Gioca a padel', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },

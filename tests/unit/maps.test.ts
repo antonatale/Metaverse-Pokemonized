@@ -6,6 +6,7 @@ import { CHARS } from '../../src/data/characters';
 import { ITEMS } from '../../src/data/items';
 import { prepare, blocked } from '../../src/story/maps';
 import { FORMIA_TUNNELS } from '../../src/data/maps/formia-ground';
+import { LOOKS } from '../../src/render/canvas/walkers';
 import { streetPieces, deadEnds, railEnds } from '../../tools/formia/playable';
 
 /* The map checker (it used to be tools/check-maps.js): rows of the same length, known characters,
@@ -101,6 +102,7 @@ for (const [id, m] of Object.entries(MAPS)) {
       (m.npcs || []).forEach((n) => {
         expect(ids.has(n.id), 'two people called ' + n.id).toBe(false); ids.add(n.id);
         if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
+        else if (n.look) expect(LOOKS[n.look] && !!n.name, n.id + ' needs a name and a known look').toBeTruthy();
         else expect(typeof n.seed === 'number' && !!n.name, n.id + ' needs a name and a seed').toBe(true);
         if (n.covo) expect(COVI[n.covo] && COVI[n.covo].leader === n.person, 'covo of ' + n.id).toBeTruthy();
         if (n.gate) expect(GATES[n.gate], 'gate of ' + n.id).toBeDefined();
