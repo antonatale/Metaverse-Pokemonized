@@ -89,10 +89,13 @@ const groundObjects: GroundObject[] = [
   text(41.2470, 13.5905, 'Vindicio', 20, 0.6),
   text(41.2470, 13.6050, 'Golfo di Gaeta', 26, 0.5),
   text(41.2604, 13.6000, 'Castellone', 17, 0.7),
-  text(41.2610, 13.6150, 'Mola', 18, 0.7),
-  text(41.2651, 13.6420, 'via Amendola', 15, 0.7),
+  text(41.26047, 13.6115, 'Mola', 18, 0.7),
+  text(41.26183, 13.6466, 'via Amendola', 15, 0.7),
   text(41.2590, 13.6620, 'Gianola', 18, 0.7),
-  text(41.2533, 13.5780, 'verso Gaeta', 15, 0.6)
+  /* where the roads lead, past the edges of the map */
+  text(41.24347, 13.5734, 'verso Gaeta', 15, 0.6),
+  text(41.25469, 13.5685, 'verso Itri e Roma', 15, 0.6),
+  text(41.26183, 13.6730, 'verso Scauri', 15, 0.6)
 ];
 
 const signs: Sign[] = [
