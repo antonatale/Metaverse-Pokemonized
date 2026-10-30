@@ -2,7 +2,7 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, type PreparedMap } from '../story/maps';
+import { M, prepare, present, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
@@ -152,7 +152,7 @@ export function drawWorld(now: number) {
     ctx.beginPath(); ctx.moveTo(tx * T + 5 + ox, ty * T + 8 + oy); ctx.quadraticCurveTo(tx * T + 10 + ox, ty * T + 5 + oy, tx * T + 15 + ox, ty * T + 8 + oy); ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  var people: Drawn[] = M.people.map(function (p) {
+  var people: Drawn[] = M.people.filter(present).map(function (p) {
     var idle = p.n.person ? 0 : ((Math.floor(now / 700 + hash(p.x, p.y, 9) * 6) % 7) === 0 ? 1 : 0);
     return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, RS), d: p.dir, f: reduced ? 0 : idle };
   });
@@ -203,7 +203,7 @@ export function preview(el: HTMLElement | null) {
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
   c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
-  var people = m.people.map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
+  var people = m.people.filter(present).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(ME, s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
@@ -217,7 +217,7 @@ export function overview(id?: string, s?: number): string {
   s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
   c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
-  var people: Drawn[] = m.people.map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
+  var people: Drawn[] = m.people.filter(present).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
   m.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: paintObject('item', P0, s!, { item: ITEMS[it.move].icon, up: UP.item }) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, null, 0);

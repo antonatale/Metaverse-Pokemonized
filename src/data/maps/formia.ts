@@ -113,7 +113,10 @@ const signs: Sign[] = [
 ].concat(['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza'].map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })));
 
 const npcs: Npc[] = [
-  npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza' }),
+  npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza', unless: 'costanzo' }),
+  /* friends who joined the squad leave their covo and turn up where Antonio and the others hang out */
+  npc('costanzo-morgana', { person: 'costanzo', name: 'costanzo', dir: 'down', with: 'costanzo', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] }),
+  npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', with: 'forchetta', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
   npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
   npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),

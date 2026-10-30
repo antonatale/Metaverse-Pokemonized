@@ -69,6 +69,9 @@ export interface Npc {
   gate?: string;
   /** offers something to do together (see story/activities.ts) */
   activity?: string;
+  /** there only once this friend is in Antonio's squad (he hangs out with him), or only until then (he leaves his covo) */
+  with?: FriendId;
+  unless?: FriendId;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

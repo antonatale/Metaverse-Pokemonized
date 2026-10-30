@@ -81,6 +81,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'zendavid', at: [41.2482, 13.5730] },
   { id: 'andrea', near: { place: 'zauli', dx: 2, dy: 4 } },
   { id: 'oste', near: { place: 'morgana', dx: 4, dy: 3 } },
+  { id: 'costanzo-morgana', near: { place: 'morgana', dx: 1, dy: 4 } },
+  { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
   { id: 'vicina', near: { place: 'casa', dx: 5, dy: 5 } },
   { id: 'capotreno', near: { place: 'stazione', dx: 2, dy: 3 } },
   { id: 'turista', near: { place: 'tomba', dx: 4, dy: 2 } },
