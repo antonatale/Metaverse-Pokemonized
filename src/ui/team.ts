@@ -1,0 +1,164 @@
+import { st, save } from '../save/story-progress';
+import type { TypeName } from '../data/types';
+import { fighter } from '../data/fighters';
+import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, type ItemId, type SkillId } from '../data/growth';
+import { beaterOf } from '../battle';
+import { team, level, idOf, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, type Growth } from '../story/growth';
+import { SPR } from '../render/svg';
+import { creature } from '../render/svg/creatures';
+import { esc, each, $ } from './dom';
+import { say, sheet, closeSheet, renderHud } from './story-screen';
+import { sfx } from '../audio';
+
+/* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
+   money, new moves, a new form), the shops, the team and the bag in the menu, Antonio's abilities. */
+
+function tcOf(key: string) { return 'var(--t-' + fighter(idOf(key)).type.toLowerCase() + ')'; }
+/** a fighter's picture: a friend's face, or the creature */
+export function portrait(key: string): string {
+  var id = idOf(key);
+  return isSpecies(id) ? creature(id, 'smirk', '', '10 26 180 170') : SPR.person(id, 'smirk', '', SPR.thumb(id));
+}
+function xpBar(key: string): string {
+  var l = level(key), need = toNext(l.lv), pct = l.lv >= MAX_LEVEL ? 100 : Math.round(100 * l.xp / need);
+  return '<span class="xpbar" role="img" aria-label="' + l.xp + ' punti esperienza su ' + need + '"><i style="width:' + pct + '%"></i></span>';
+}
+
+/* ---------- the first creature, from the guardaparco of Gianola ---------- */
+export function chooseStarter(done: (uid: string) => void) {
+  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sc-t"><div class="sheet-h"><h2 id="sc-t">Scegli la tua prima creatura</h2><button class="tb-btn" type="button" id="sc-x">Ci penso</button></div>' +
+    '<p class="hint">Tre cuccioli cercano casa. Quello che scegli verrà con te: crescerà con te, lotterà con te, e un giorno cambierà forma.</p><div class="starters">' +
+    STARTERS.map(function (id) {
+      var sp = SPECIES[id];
+      return '<button class="starter" type="button" data-sp="' + id + '" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><span class="art">' + creature(id, 'grin', '', '0 16 200 184') + '</span>' +
+        '<b>' + esc(sp.name) + '</b><span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span><small>' + esc(sp.text) + '</small></button>';
+    }).join('') + '</div></div>');
+  $('sc-x').addEventListener('click', closeSheet);
+  each(o.querySelectorAll('.starter'), function (b) {
+    b.addEventListener('click', function () {
+      var sp = b.getAttribute('data-sp') as SpeciesId;
+      closeSheet();
+      st.seen.starter = true;
+      var uid = addCreature(sp, 5);
+      save(); renderHud(); sfx('badge');
+      done(uid);
+    });
+  });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('.starter'); if (b) b.focus(); }, 30);
+}
+
+/* ---------- who goes into battle ---------- */
+export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void) {
+  var keys = team(), best = beaterOf(foeType);
+  if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
+  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
+    '<p class="hint">È di tipo ' + esc(foeType) + ': ha il vantaggio chi è di tipo ' + esc(best || '') + '.</p><div class="pickgrid">' +
+    keys.map(function (key) {
+      var c = fighter(idOf(key));
+      return '<button class="pick" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span>' + esc(c.name) + ' <small class="lv">Lv ' + level(key).lv + '</small></span>' +
+        (c.type === best ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
+    }).join('') + '</div></div>');
+  $('pf-x').addEventListener('click', closeSheet);
+  each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-key')!); }); });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
+}
+
+/* ---------- what a battle brings ---------- */
+/** says what a fighter got: levels, new moves, ability points; then its new form, if it evolves */
+export function growthSay(g: Growth, first: string[], then?: () => void) {
+  var who = fighter(g.evolved ? g.evolved.from : idOf(g.key)).name, lines = first.slice();
+  if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '!');
+  g.learned.forEach(function (m) { lines.push(who + ' impara ' + CMOVES[m].name + '!'); });
+  if (g.key === 'antonio' && g.to > g.from) lines.push('Antonio ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
+  if (g.to > g.from) sfx('badge');
+  say(lines, null, null, function () { if (g.evolved) evolve(g.evolved.from, g.evolved.to, then); else if (then) then(); });
+}
+/** after a story battle: experience for who fought (a third when lost), money for a win */
+export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void) {
+  var xp = xpFor(foeLv, won, covo), cash = won ? moneyFor(foeLv, covo) : 0, name = fighter(idOf(key)).name;
+  var g = gainXp(key, xp);
+  if (cash) earn(cash);
+  save(); renderHud();
+  growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' Antonio incassa ' + cash + ' €.' : '')], then);
+}
+function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
+  sfx('badge');
+  var a = SPECIES[from], b = SPECIES[to];
+  sheet('<div class="award evolve" role="dialog" aria-modal="true" aria-labelledby="ev-t" style="--tc:var(--t-' + b.type.toLowerCase() + ')">' +
+    '<h2 id="ev-t">Cosa? ' + esc(a.name) + ' si evolve!</h2>' +
+    '<div class="evo"><span>' + creature(from, 'worried', '', '0 16 200 184') + '</span><b aria-hidden="true">→</b><span>' + creature(to, 'cool', '', '0 16 200 184') + '</span></div>' +
+    '<p>' + esc(a.name) + ' è diventato <b>' + esc(b.name) + '</b>. ' + esc(b.text) + '</p>' +
+    '<button class="btn primary" type="button" id="ev-ok">Continua</button></div>', 'result');
+  $('ev-ok').addEventListener('click', function () { closeSheet(); if (then) then(); });
+  setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);
+}
+
+/* ---------- the shops of Formia ---------- */
+export function openShop(id: string) {
+  var sh = SHOPS[id];
+  var render = function (bought?: string) {
+    var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><div class="sheet-h"><h2 id="sh-t">' + esc(sh.name) + '</h2><button class="tb-btn" type="button" id="shop-x">Chiudi</button></div>' +
+      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : sh.hello) + '</p><p class="wallet">In tasca: <b>' + money() + ' €</b></p><ul class="wares">' +
+      sh.sells.map(function (it) {
+        var w = WARES[it], p = priceFor(it);
+        return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + ' Ne hai ' + has(it) + '.</small></span>' +
+          '<button class="btn" type="button" data-it="' + it + '"' + (money() < p ? ' disabled' : '') + '>' + p + ' €</button></li>';
+      }).join('') + '</ul>' + (money() < Math.min.apply(null, sh.sells.map(priceFor)) ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
+    $('shop-x').addEventListener('click', closeSheet);
+    each(o.querySelectorAll('[data-it]'), function (b) {
+      b.addEventListener('click', function () {
+        var it = b.getAttribute('data-it') as ItemId;
+        if (!buy(it)) return;
+        sfx('pickup'); save(); renderHud();
+        render(WARES[it].name.toLowerCase());
+      });
+    });
+    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-it]:not([disabled])') || $('shop-x'); if (b) b.focus(); }, 30);
+  };
+  render();
+}
+
+/* ---------- in the menu: the team, the bag, Antonio's abilities ---------- */
+export function teamHtml(): string {
+  return '<div class="pickrow"><h3>Squadra</h3><ul class="team">' + team().map(function (key) {
+    var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
+    if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
+    else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') : 'Amico';
+    return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(c.name) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
+      '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
+      (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
+      (has('caffe') ? '<button class="btn small" type="button" data-caffe="' + key + '">Caffè</button>' : '') + '</li>';
+  }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') + '</div>' +
+    '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella', 'caffe'] as ItemId[]).map(function (it) {
+      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
+    }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone; il caffè al bar di Mola.</p></div>';
+}
+export function wireTeam(reopen: () => void) {
+  each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
+  each(document.querySelectorAll('[data-caffe]'), function (b) {
+    b.addEventListener('click', function () {
+      var key = b.getAttribute('data-caffe')!, g = drinkCoffee(key);
+      save(); closeSheet(); renderHud();
+      if (g) growthSay(g, [fighter(idOf(key)).name + ' beve un caffè: +' + g.xp + ' punti esperienza.']);
+    });
+  });
+}
+export function openSkills(back: () => void) {
+  var render = function () {
+    var left = pointsLeft();
+    var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sk-t"><div class="sheet-h"><h2 id="sk-t">Abilità di Antonio</h2><button class="tb-btn" type="button" id="sk-x">Indietro</button></div>' +
+      '<p class="hint">' + (left ? 'Hai ' + left + (left === 1 ? ' punto' : ' punti') + ' da spendere: uno a ogni livello.' : 'Un punto a ogni livello: vinci lotte e fai attività per salire.') + '</p><ul class="skills">' +
+      SKILLS.map(function (s) {
+        var g = grade(s.id), full = g >= s.max;
+        return '<li><span><b>' + esc(s.name) + ' <span class="pips" aria-label="grado ' + g + ' su ' + s.max + '">' + Array.from({ length: s.max }, function (_, k) { return '<i class="' + (k < g ? 'on' : '') + '"></i>'; }).join('') + '</span></b><small>' + esc(s.text) + '</small></span>' +
+          '<button class="btn" type="button" data-sk="' + s.id + '"' + (!left || full ? ' disabled' : '') + '>' + (full ? 'Al massimo' : '+1') + '</button></li>';
+      }).join('') + '</ul></div>');
+    $('sk-x').addEventListener('click', function () { closeSheet(); back(); });
+    each(o.querySelectorAll('[data-sk]'), function (b) {
+      b.addEventListener('click', function () { if (takeSkill(b.getAttribute('data-sk') as SkillId)) { sfx('pickup'); save(); render(); } });
+    });
+    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-sk]:not([disabled])') || $('sk-x'); if (b) b.focus(); }, 30);
+  };
+  render();
+}

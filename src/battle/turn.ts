@@ -4,7 +4,8 @@ import { TUNE, K } from '../data/tuning';
 import type { BattleEvent, BattleState, Grade, Result } from './types';
 import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
-import { ch, mv, available } from './state';
+import { ch, mv, available, statsOf } from './state';
+import { SPECIES, isSpecies } from '../data/creatures';
 import { snap } from './labels';
 import { useMove } from './moves';
 import { ai } from './ai';
@@ -15,8 +16,8 @@ import { ai } from './ai';
 /* ---------- intro ---------- */
 export function intro(s: BattleState): BattleEvent[] {
   const ev: BattleEvent[] = [], A = s.sides[0], B = s.sides[1], ca = ch(A), cb = ch(B);
-  const key = [A.id, B.id].sort().join('|'), pair = PAIRS[key];
-  ev.push(say(s.boss ? 'L\'Esame di Controlli sfida ' + ca.name + '!' : cb.name + ' sfida ' + ca.name + '!'));
+  const key = [A.id, B.id].sort().join('|'), pair = PAIRS[key] as Record<string, string> | undefined;
+  ev.push(say(s.boss ? 'L\'Esame di Controlli sfida ' + ca.name + '!' : s.wild && isSpecies(B.id) ? SPECIES[B.id].wild + ' salta fuori!' : cb.name + ' sfida ' + ca.name + '!'));
   ev.push(expr(1, s.boss ? 'angry' : 'grin'));
   ev.push(line(1, pair && A.id !== B.id ? pair[B.id] : cb.lines.entry));
   ev.push(expr(1, s.boss ? 'idle' : 'smirk'));
@@ -41,7 +42,7 @@ export function beginTurn(s: BattleState): BattleEvent[] {
         ev.push(snap(s));
       }
       const losable = ['diagnosi', 'certificati', 'simtoreal', 'america'].filter(function (m) { return i !== 0 || !s.safe || s.safe.indexOf(m) < 0; });
-      if (!x.lock && !x.charge && losable.length && rand(s) < 0.15) {
+      if (!x.lock && !x.charge && losable.length && rand(s) < (x.perk ? x.perk.lose : 0.15)) {
         const id = pick(s, losable), item = ITEMS[id];
         x.lock = { move: id, until: s.turn + 1 };
         x.st.lost++;
@@ -52,7 +53,7 @@ export function beginTurn(s: BattleState): BattleEvent[] {
         ev.push(snap(s));
         ev.push(say(CHARS.antonio.moves.filter(function (m) { return m.id === id; })[0].name + ' è bloccata per 2 turni.'));
       }
-      if (!x.boost && rand(s) < 0.25) {
+      if (!x.boost && rand(s) < (x.perk ? x.perk.idea : 0.25)) {
         x.boost = true;
         ev.push(anim(i, 'ai'));
         ev.push(expr(i, 'grin'));
@@ -95,7 +96,7 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
     ev.push(anim(i, 'confused'));
     ev.push(say(cm.name + ' è confuso…'));
     if (rand(s) < 0.33) {
-      let self = Math.max(1, Math.round(30 * cm.stats.atk / cm.stats.def * (s.K || K) * (0.88 + rand(s) * 0.12)));
+      let self = Math.max(1, Math.round(30 * statsOf(me).atk / statsOf(me).def * (s.K || K) * (0.88 + rand(s) * 0.12)));
       if (me.id === 'forchetta' && !me.sturdy && self >= me.hp && me.hp > 1) { self = me.hp - 1; me.sturdy = true; }
       me.hp = Math.max(0, me.hp - self);
       ev.push({ k: 'hp', who: i, hp: me.hp, dmg: self });
@@ -120,10 +121,10 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
 /* ---------- resolution ---------- */
 function orderOf(s: BattleState, choice: (string | null)[]): number[] {
   const keys = [0, 1].map(function (i) {
-    const side = s.sides[i], c = ch(side), id = choice[i], m = id && id !== 'skip' ? (mv(side, id === 'copenhagenRet' ? 'copenhagen' : id)) : null;
+    const side = s.sides[i], id = choice[i], m = id && id !== 'skip' ? (mv(side, id === 'copenhagenRet' ? 'copenhagen' : id)) : null;
     let pr = m && m.priority ? m.priority : 0;
-    if (side.id === 'forchetta') pr = -5;
-    return { i: i, pr: pr, spe: c.stats.spe, tie: rand(s) };
+    if (side.id === 'forchetta' && pr < 6) pr = -5;
+    return { i: i, pr: pr, spe: statsOf(side).spe, tie: rand(s) };
   });
   keys.sort(function (a, b) { return b.pr - a.pr || b.spe - a.spe || a.tie - b.tie; });
   return keys.map(function (k) { return k.i; });
@@ -138,7 +139,11 @@ function grade(s: BattleState): Grade {
 }
 function finish(s: BattleState, result: Result, winner: number | null, ev: BattleEvent[]) {
   s.phase = 'over'; s.result = result; s.winner = winner;
-  if (result === 'win') {
+  if (result === 'catch') {
+    ev.push(anim(1, 'caught'));
+    ev.push(say('Preso! ' + ch(s.sides[1]).name + ' è nel retino.'));
+    ev.push(expr(0, 'cool'));
+  } else if (result === 'win') {
     const wi = winner as number, w = s.sides[wi], l = s.sides[1 - wi];
     if (s.boss && wi === 0) s.grade = grade(s);
     ev.push(expr(1 - wi, l.id === 'esame' ? 'ko' : 'sleepy'));
@@ -181,6 +186,7 @@ export function playTurn(s: BattleState, choices?: Record<number, string>): Batt
     if (s.sides[k].hp <= 0) continue;
     attacked[k] = act(s, k, choice[k] === 'skip' ? null : choice[k], ev);
     ev.push(snap(s));
+    if (s.caught) { finish(s, 'catch', 0, ev); return ev; }
     const dead = s.sides[0].hp <= 0 ? 0 : s.sides[1].hp <= 0 ? 1 : -1;
     if (dead >= 0) { finish(s, 'win', 1 - dead, ev); return ev; }
   }

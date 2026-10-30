@@ -1,4 +1,5 @@
 import { st, save } from '../save/story-progress';
+import { gainXp, earn, type Growth } from './growth';
 
 /* Things to do around Formia, in the places where Antonio and his friends actually go. Each one is offered by
    someone on the map (an Npc with `activity`), played by ui/activities.ts, and remembered in the save:
@@ -27,6 +28,14 @@ export const ACTIVITIES: Activity[] = [
 export function activity(id: string): Activity { const a = ACTIVITIES.find((x) => x.id === id); if (!a) throw new Error('no activity ' + id); return a; }
 export function timesDone(id: string): number { return (st.done && st.done[id]) || 0; }
 export function bestOf(id: string): number | undefined { return st.best ? st.best[id] : undefined; }
+/** what each thing to do brings: experience for Antonio, and a few euro for a good score */
+const XP = 20;
+const PAY: Record<string, (score: number) => number> = {
+  volley: (n) => Math.min(10, n), padel: (n) => Math.min(10, n), quiz: (n) => 2 * n, windsurf: (n) => Math.min(12, Math.floor(n / 20)), corsa: () => 4
+};
+/** the story screen shows what an activity brought (set by ui/story-screen.ts) */
+let rewardHook: ((g: Growth, money: number) => void) | null = null;
+export function onReward(f: (g: Growth, money: number) => void) { rewardHook = f; }
 /** remembers that it was done, with its score; true when the score is a new best */
 export function record(id: string, score?: number): boolean {
   const a = activity(id);
@@ -38,6 +47,9 @@ export function record(id: string, score?: number): boolean {
     better = b == null || (a.lower ? score < b : score > b);
     if (better) st.best[id] = score;
   }
+  const g = gainXp('antonio', XP), cash = PAY[id] && score != null ? PAY[id](score) : 0;
+  if (cash) earn(cash);
   save();
+  if (rewardHook) rewardHook(g, cash);
   return better;
 }

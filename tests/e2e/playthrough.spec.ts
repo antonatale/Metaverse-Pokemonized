@@ -409,15 +409,81 @@ test('the tour of Formia', async ({ browser }) => {
     r.keep('menu', await r.page.locator('.tour').innerText());
     await r.shot('menu', { fullPage: true });
   });
-  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true }, badges: ['forchetta'], squad: ['antonio', 'forchetta'] }) }, async (r) => {
+  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true }, badges: ['forchetta'], squad: ['antonio', 'forchetta'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
     await r.page.keyboard.press('m'); await r.page.clock.runFor(300);
     r.keep('title', await r.page.locator('.pickrow h3', { hasText: 'Giro di Formia' }).innerText());
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => String(run.data.find((x) => x.name === n)!.value);
-  expect(get(first, 'goal')).toContain('Padel con Andrea');
-  expect(get(first, 'tip')).toContain('Andrea ti aspetta al Bruno Zauli');
+  expect(get(first, 'goal')).toContain('La tua prima creatura');
+  expect(get(first, 'tip')).toContain('guardaparco di Gianola');
+  expect(get(first, 'menu')).toContain('Padel con Andrea');
   expect(get(first, 'menu')).toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Quiz su Formia da Morgana');
-  expect(get(later, 'title').toLowerCase()).toContain('2 su 12');
+  expect(get(later, 'title').toLowerCase()).toContain('3 su 13');
+});
+
+/* the creatures of Formia: the first one from the guardaparco, a wild one fought, the team in the menu; then money
+   spent on nets at Mola and a wild one caught */
+test('creatures of Formia', async ({ browser }) => {
+  const first = await play(browser, 'creatures', { seed: 5 }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    await talkThrough(p);
+    await talkTo(p, 'guardaparco');
+    await choose(p, 'Fammeli vedere');
+    await r.shot('starters');
+    await p.click('.starter[data-sp="polpino"]'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await talkTo(p, 'selv-gianola-1');
+    await choose(p, 'Lotta!');
+    await r.shot('pick');
+    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    await fight(r, 'wild', 2);
+    r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await r.shot('team', { fullPage: true });
+    r.keep('team', await p.locator('.team').innerText());
+  });
+  const sf = first.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; lv: Record<string, { lv: number; xp: number }>; money: number };
+  expect(sf.mons[0]).toEqual({ uid: 'c1', sp: 'polpino' });
+  expect(sf.lv.c1.lv > 5 || sf.lv.c1.xp > 0).toBe(true);
+  expect(String(first.data.find((x) => x.name === 'team')!.value)).toContain('Polpino');
+
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true, starter: true }, found: {},
+    mons: [{ uid: 'c1', sp: 'gabbi' }], lv: { c1: { lv: 12, xp: 0 } }, money: 120, bag: {} };
+  const second = await play(browser, 'catch', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkTo(p, 'pescatore');
+    await choose(p, 'Compra');
+    for (let k = 0; k < 3; k++) { await p.click('[data-it="retino2"]'); await p.clock.runFor(200); }
+    await r.shot('shop');
+    await p.click('#shop-x'); await p.clock.runFor(200);
+    await talkTo(p, 'selv-gramsci');
+    await choose(p, 'Lotta!');
+    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    for (let turn = 0; turn < 12; turn++) {
+      await toPrompt(p);
+      if (await battleOver(p)) break;
+      const net = p.locator('#pad .mv[data-id="retino2"]:not([disabled])');
+      if (await net.count()) await net.click(); else await p.click('#pad .mv[data-id="' + await p.evaluate(() => window.UI._debug.suggest()) + '"]');
+    }
+    await p.clock.runFor(600);
+    await r.shot('caught');
+    r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const sc = second.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; money: number; bag: Record<string, number> };
+  expect(sc.money).toBeLessThan(120);
+  expect(sc.bag.retino2).toBeLessThan(3);
+  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']);
+  else expect(sc.mons.length).toBe(1);
 });

@@ -124,9 +124,9 @@ export function renderStory() {
   $('go-story').addEventListener('click', function () { WORLD.open(); });
   WORLD.preview($('story-map'));
 }
-export function storyCity(story: { covo: string }): string {
-  var cv = COVI && COVI[story.covo];
-  return cv && MAPS[cv.city] ? MAPS[cv.city].name : 'la mappa';
+export function storyCity(story: { covo?: string }): string {
+  var cv = COVI && story.covo ? COVI[story.covo] : null;
+  return cv && MAPS[cv.city] ? MAPS[cv.city].name : 'Formia';
 }
 function examLabel(x: ExamRecord | undefined) { return !x || x.best == null ? '—' : (x.lode ? '30L' : String(x.best)); }
 export function renderLibretto() {

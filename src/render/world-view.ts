@@ -7,6 +7,8 @@ import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
+import { creature } from './svg/creatures';
+import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
 import { root, cv, ctx } from '../ui/story-screen';
@@ -17,7 +19,7 @@ const CH = 12;   /* tiles per side of a cached piece of ground */
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
-interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number }
+interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null }
 /** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
 interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
@@ -79,6 +81,19 @@ function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker 
   var id = (n.person || n.look || ('npc' + n.seed)) + '@' + s;
   return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
 }
+/* the wild creatures on the map: their battle picture, as an image (it loads once, and until then they are not drawn) */
+var monImg: Partial<Record<SpeciesId, { img: HTMLImageElement; ok: boolean }>> = {};
+function creatureImage(sp: SpeciesId): HTMLImageElement | null {
+  var m = monImg[sp];
+  if (!m) {
+    var img = new Image(), entry = { img: img, ok: false };
+    monImg[sp] = entry;
+    img.onload = function () { entry.ok = true; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(creature(sp, 'smirk', '', '0 0 200 200', 'smirk'));
+    return null;
+  }
+  return m.ok ? m.img : null;
+}
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
   return sprites[id] || (sprites[id] = paintObject('item', P || palette(), s, { item: kind, up: UP.item }));
@@ -87,6 +102,7 @@ function itemSprite(kind: string, s: number): Sprite {
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
+    if (e.img) { c.drawImage(e.img, e.x - 6, e.yb - 46, 44, 44); return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
     var img = e.w![e.d!][e.f || 0]; c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s);
   };
@@ -281,9 +297,16 @@ export function drawWorld(now: number) {
     ctx.beginPath(); ctx.moveTo(tx * T + 5 + ox, ty * T + 8 + oy); ctx.quadraticCurveTo(tx * T + 10 + ox, ty * T + 5 + oy, tx * T + 15 + ox, ty * T + 8 + oy); ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  var people: Drawn[] = M.people.filter(present).map(function (p) {
+  var people: Drawn[] = [];
+  M.people.filter(present).forEach(function (p) {
+    if (p.n.wild) {
+      /* a wild creature hops on the spot now and then */
+      var img = creatureImage(p.n.wild.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
+      if (img) people.push({ yb: (p.y + 1) * T - hop, x: p.x * T, img: img });
+      return;
+    }
     var idle = p.n.person ? 0 : ((Math.floor(now / 700 + hash(p.x, p.y, 9) * 6) % 7) === 0 ? 1 : 0);
-    return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, RS), d: p.dir, f: reduced ? 0 : idle };
+    people.push({ yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, RS), d: p.dir, f: reduced ? 0 : idle });
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
   people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
@@ -342,7 +365,7 @@ export function preview(el: HTMLElement | null) {
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
   c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
-  var people = m.people.filter(present).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
+  var people = m.people.filter(function (p) { return present(p) && !p.n.wild; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(ME, s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
@@ -356,7 +379,7 @@ export function overview(id?: string, s?: number): string {
   s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
   c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
-  var people: Drawn[] = m.people.filter(present).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
+  var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
   m.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: paintObject('item', P0, s!, { item: ITEMS[it.move].icon, up: UP.item }) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, null, 0);

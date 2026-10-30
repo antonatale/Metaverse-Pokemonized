@@ -1,3 +1,4 @@
+import { SPECIES } from '../../src/data/creatures';
 import { describe, expect, it } from 'vitest';
 import { MAPS, LEGEND, type MapDef } from '../../src/data/maps';
 import { COVI } from '../../src/data/covi';
@@ -101,6 +102,7 @@ for (const [id, m] of Object.entries(MAPS)) {
       const ids = new Set<string>();
       (m.npcs || []).forEach((n) => {
         expect(ids.has(n.id), 'two people called ' + n.id).toBe(false); ids.add(n.id);
+        if (n.wild) { expect(SPECIES[n.wild.sp], n.id).toBeDefined(); expect(n.wild.lv[0]).toBeLessThanOrEqual(n.wild.lv[1]); return; }
         if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
         else if (n.look) expect(LOOKS[n.look] && !!n.name, n.id + ' needs a name and a known look').toBeTruthy();
         else expect(typeof n.seed === 'number' && !!n.name, n.id + ' needs a name and a seed').toBe(true);

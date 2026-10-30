@@ -1,10 +1,9 @@
-import { CHARS as C, type CharId, type FriendId } from '../data/characters';
+import { CHARS as C, type CharId } from '../data/characters';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
 import type { Building, Dir, LostItem } from '../data/maps/types';
 import { COVI, type Covo } from '../data/covi';
 import { GATES } from '../data/gates';
-import { beaterOf } from '../battle';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
@@ -21,6 +20,13 @@ import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
 import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
+import { SPECIES } from '../data/creatures';
+import { SHOPS } from '../data/growth';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money } from '../story/growth';
+import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam } from './team';
+import { onReward } from '../story/activities';
+import type { StoryTag } from '../battle';
+import { wildGone } from '../story/maps';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -42,7 +48,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I soldi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
@@ -109,6 +115,18 @@ function neighbourhood(name: string, note: string) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 5200);
 }
+/* what an activity brought Antonio, in the same corner, for a few seconds */
+function notify(html: string) {
+  var el = $('wtoast');
+  el.innerHTML = html;
+  el.hidden = false; el.classList.remove('out');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 4200);
+}
+onReward(function (g, cash) {
+  notify('<b>Antonio</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + cash + ' €' : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : ''));
+  if (built) renderHud();
+});
 /* the next stop of the tour, with an arrow that points to it (or to the door that leads to it) */
 var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
 const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -128,6 +146,7 @@ export function renderGoal() {
 }
 export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal();
+  $('wmoney').textContent = money() + ' €';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
     return '<span title="' + esc(b.name + (got ? '' : ' (da conquistare)')) + '">' + badgeSVG({ color: b.color, mark: b.mark, earned: got }, 28) + '</span>';
@@ -263,6 +282,9 @@ function talkTo(p: Person) {
   p.dir = OPP[st.dir];
   var n = p.n;
   if (n.covo) leaderTalk(n.covo);
+  else if (n.wild) wildTalk(p);
+  else if (n.starter && !hasStarter()) starterTalk(n.name || '');
+  else if (n.shop) say(n.lines || [SHOPS[n.shop].hello], n.name, [{ label: 'Compra', fn: function () { openShop(n.shop!); } }, { label: 'No, grazie', fn: null }]);
   else if (n.gate) gateTalk(n.gate, n.name);
   else if (n.activity) offerActivity(n);
   else if (n.hint) say((n.lines || []).concat(nextStop().tip), n.name);
@@ -270,6 +292,7 @@ function talkTo(p: Person) {
 }
 export function useDoor(b: Building) {
   if (b.gate) gateTalk(b.gate);
+  else if (b.shop) say(b.msg || [SHOPS[b.shop].hello], null, [{ label: 'Compra', fn: function () { openShop(b.shop!); } }, { label: 'No, grazie', fn: null }]);
   else if (b.msg) say(b.msg);
 }
 function gateTalk(g: string, who?: string) {
@@ -285,10 +308,36 @@ function leaderTalk(id: string) {
   say(cv0.intro, cv0.leader, [{ label: 'Sfida!', fn: function () { challenge(id); } }, { label: 'Più tardi', fn: null }]);
 }
 function challenge(id: string) {
-  var cv0 = COVI[id], squad = st.squad.filter(function (x) { return x !== cv0.leader; });
-  var safe = foundItems().map(function (it) { return it.move; });
-  var go = function (who: FriendId) { hide(); startBattle({ a: who, b: cv0.leader, mode: 'cpu', story: { covo: id }, safe: safe }); };
-  if (squad.length <= 1) go(squad[0] || 'antonio'); else pickFighter(squad, cv0, go);
+  var cv0 = COVI[id];
+  pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, function (key) {
+    hide();
+    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level }, safe: safeMoves(),
+      sideA: sideOf(key), sideB: foeSide(cv0.leader, cv0.level), bag: battleBag() });
+  });
+}
+/** Antonio's moves whose thing he has found around town: in story battles he can't lose it any more */
+function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
+/* ---------- the creatures of Formia: a wild one, the first one ---------- */
+function wildTalk(p: Person) {
+  var w = p.n.wild!, sp = SPECIES[w.sp], lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
+  say([sp.wild + ', livello ' + lv + '!', sp.text], null, [{ label: 'Lotta!', fn: function () {
+    pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, function (key) {
+      hide();
+      startBattle({ a: idOf(key), b: w.sp, mode: 'cpu', story: { wild: p.n.id, sp: w.sp, key: key, foeLv: lv }, safe: safeMoves(),
+        sideA: sideOf(key), sideB: foeSide(w.sp, lv), wild: true, bag: battleBag() });
+    });
+  } }, { label: 'Lascia stare', fn: null }]);
+}
+function starterTalk(who: string) {
+  say(['Ciao Antonio! Al Parco di Gianola sono nati tre cuccioli di creature di Formia.', 'Uno lo affiderei volentieri a te: lo fai crescere, e lui lotta con te.'], who, [
+    { label: 'Fammeli vedere', fn: function () {
+      chooseStarter(function (uid) {
+        var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];
+        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche le trovi in pineta, sugli scogli, negli uliveti, a Gianola e sui monti. Con un retino le puoi catturare: il pescatore di Mola li vende.'], who);
+      });
+    } },
+    { label: 'Più tardi', fn: null }
+  ]);
 }
 export function sheet(html: string, cls?: string) {
   var o = $('overlay');
@@ -298,34 +347,34 @@ export function sheet(html: string, cls?: string) {
 }
 export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
 function face(id: string) { return SPR.person(id, 'smirk', '', SPR.thumb(id)); }
-function pickFighter(squad: FriendId[], cv0: Covo, go: (who: FriendId) => void) {
-  var L = C[cv0.leader], best = beaterOf(L.type);
-  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">Chi mandi in campo?</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
-    '<p class="hint">' + esc(L.name) + ' è di tipo ' + esc(L.type) + ': ha il vantaggio chi è di tipo ' + esc(best) + '.</p><div class="pickgrid">' +
-    squad.map(function (id) {
-      return '<button class="pick" type="button" data-id="' + id + '" style="--tc:' + tc(id) + '"><span class="face">' + face(id) + '</span><span>' + esc(C[id].name) + '</span>' +
-        (C[id].type === best ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
-    }).join('') + '</div></div>');
-  $('pf-x').addEventListener('click', closeSheet);
-  each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-id') as FriendId); }); });
-  setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
-}
-/** called by the battle screen when a story battle ends */
-export function afterBattle(res: { covo: string; won: boolean; quit: boolean }) {
+/** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
+export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number> }) {
   open(true);
-  var cv0 = COVI[res.covo];
-  if (!cv0) return;
+  var tag = res.tag, key = tag.key || 'antonio', lv = tag.foeLv || 5;
+  keepBag(res.bag); save(); renderHud();
   if (res.quit) { say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
-  if (res.won && !st.beaten[res.covo]) {
-    st.beaten[res.covo] = true;
+  if (tag.wild) {
+    var sp = SPECIES[tag.sp as keyof typeof SPECIES];
+    if (res.won || res.caught) wildGone[tag.wild] = Date.now();
+    if (res.caught) {
+      addCreature(sp.id, lv); save();
+      sfx('badge');
+      say([sp.name + ' entra nella tua squadra, al livello ' + lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, lv, true, false); });
+    } else rewards(key, lv, res.won, false, res.won ? undefined : function () { say([sp.name + ' è ancora lì. Puoi riprovare quando vuoi.']); });
+    return;
+  }
+  var cv0 = tag.covo ? COVI[tag.covo] : null;
+  if (!cv0) return;
+  if (res.won && !st.beaten[tag.covo!]) {
+    st.beaten[tag.covo!] = true;
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
-    if (st.squad.indexOf(cv0.leader) < 0) st.squad.push(cv0.leader);
+    if (st.squad.indexOf(cv0.leader) < 0) { st.squad.push(cv0.leader); joinAt(cv0.leader, cv0.level); }
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0); });
-  } else if (res.won) say(cv0.after, cv0.leader);
-  else say(cv0.lose, cv0.leader);
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true); }); });
+  } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, cv0!.level, true, false); });
+  else say(cv0.lose, cv0.leader, null, function () { rewards(key, cv0!.level, false, true); });
 }
-function award(cv0: Covo) {
+function award(cv0: Covo, then?: () => void) {
   sfx('badge');
   var b = cv0.badge, L = C[cv0.leader];
   sheet('<div class="award" role="dialog" aria-modal="true" aria-labelledby="aw-t" style="--tc:' + tc(cv0.leader) + '">' +
@@ -336,7 +385,9 @@ function award(cv0: Covo) {
     '<button class="btn primary" type="button" id="aw-ok">Continua</button></div>', 'result');
   $('aw-ok').addEventListener('click', function () {
     closeSheet();
-    if (cityCovi(cv0.city).every(hasBadge)) say(['Hai tutte le spille di ' + MAPS[cv0.city].name + '!', 'Il treno per Torino arriva con il prossimo aggiornamento del gioco.']);
+    var all = cityCovi(cv0.city).every(hasBadge);
+    if (then) then();
+    else if (all) say(['Hai tutte le spille di ' + MAPS[cv0.city].name + '!', 'Il treno per Torino arriva con il prossimo aggiornamento del gioco.']);
   });
   setTimeout(function () { var bt = $('aw-ok'); if (bt) bt.focus(); }, 30);
 }
@@ -366,9 +417,7 @@ function openMenu() {
       return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
         esc(s0.where + (done ? ' · fatto' : next ? ' · prossima tappa' : '')) + '</small></span></li>';
     }).join('') + '</ul></div>' +
-      '<div class="pickrow"><h3>Compagnia</h3><div class="pickgrid">' + st.squad.map(function (id) {
-      return '<div class="pick" style="--tc:' + tc(id) + '"><span class="face">' + face(id) + '</span><span>' + esc(C[id].name) + '</span></div>';
-    }).join('') + '</div></div>' +
+      teamHtml() +
     '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
     '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
       var got = !!st.found[it.id], nm = ITEMS[it.move].name;
@@ -384,6 +433,7 @@ function openMenu() {
     '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
     '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
   townMap($('wm-map'));
+  wireTeam(openMenu);
   each(document.querySelectorAll('[data-ora]'), function (b) {
     b.addEventListener('click', function () {
       setDayMode(b.getAttribute('data-ora') as DayMode);

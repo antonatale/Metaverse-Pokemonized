@@ -1,6 +1,6 @@
 # Lotte tra Amici
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss (l'Esame di Controlli), più una modalità storia su una mappa di Formia vista dall'alto. Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
+Gioco di lotte a turni in stile Pokémon con sei amici e un boss (l'Esame di Controlli), più una modalità storia su una mappa di Formia vista dall'alto, dove Antonio cresce di livello, guadagna e spende soldi e ha una squadra di creature di Formia (originali, non i Pokémon veri). Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
 
 Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrato a moduli **senza cambiare nulla**: stesse meccaniche, numeri, testi, animazioni e salvataggi. Il prossimo passo previsto è spostare gradualmente il rendering su Phaser (vedi in fondo).
 
@@ -30,6 +30,9 @@ src/
                            playtest, gancio window.claude.hot per l'aggiornamento a caldo dell'Artifact
   data/                    solo dati, niente logica
     characters.ts          i sei amici e l'Esame: statistiche, mosse, passive, difetti, frasi; ROSTER, PAIRS, JOKES
+    creatures.ts           le creature di Formia: specie, mosse (CMOVES), evoluzioni, le tre iniziali, chi impara cosa
+    fighters.ts            fighter(id): un amico, l'Esame o una creatura, per il motore e le schermate
+    growth.ts              livelli (numeri al livello, esperienza), abilità di Antonio, negozi e prezzi
     types.ts               i cinque tipi in ciclo (TYPES, TYPE_ORDER)
     tuning.ts              numeri di bilanciamento (TUNE, K, CRIT)
     items.ts               le cose che Antonio perde (ITEMS) e dove le ritrova (FOUND)
@@ -56,12 +59,13 @@ src/
     goals.ts               il giro di Formia: le tappe in ordine, la prossima, dove puntare la freccia
     daytime.ts             l'ora di Formia: alba e tramonto veri del giorno, buio, scelta del menu (chiave lotte-tra-amici:ora:v1)
     run.ts                 lo stato della corsetta in pineta
+    growth.ts              la crescita nella storia: livelli ed esperienza, abilità, soldi, borsa, creature di Antonio
   save/
     story-progress.ts      salvataggio della storia  (chiave lotte-tra-amici:storia:v1)
     libretto.ts            vittorie, sconfitte, voti (chiave lotte-tra-amici:libretto:v2)
   render/
     svg/                   ritratti generati da parametri (looks.ts), espressioni, capelli, vestiti, Esame, robot;
-                           badges.ts: spille e icone degli oggetti
+                           badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
     world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, la notte (lampioni, finestre, faro),
                            anteprima della home, mappa intera
@@ -82,6 +86,7 @@ src/
     story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu (con il Diario
                            di Formia), motorino, ciclo dei frame
     activities.ts          le attività: beach volley, lettino, gelato, quiz da Morgana
+    team.ts                la squadra: prima creatura, chi va in campo, ricompense ed evoluzioni, negozi, abilità
     run.ts                 la corsetta in pineta: bandierine, cronometro nell'HUD
     icons.ts, dom.ts
   styles/                  CSS diviso per sezione; index.css = font + app.css; l'ordine degli @import è la cascata
@@ -125,7 +130,7 @@ tools/
 
 ## Il giro di Formia
 
-- **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): padel con Andrea, Forchetta, Morgana, il gelato, Costanzo, gli oggetti persi, l'Eclipse, la pineta, la Tomba di Cicerone e, alla fine, il treno per Torino. Il percorso va da casa verso ovest.
+- **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): la prima creatura dal guardaparco di Gianola, padel con Andrea, Forchetta, Morgana, il gelato, Costanzo, gli oggetti persi, l'Eclipse, la pineta, la Tomba di Cicerone e, alla fine, il treno per Torino. Il percorso va da casa verso ovest.
 - **Prossima tappa:** è la prima non ancora fatta; si può comunque fare tutto in qualsiasi ordine. Si vede in tre posti:
   - nell'HUD, sotto il nome del posto, con una freccia che punta verso la tappa (`renderGoal` in `ui/story-screen.ts`);
   - sulla mappa, come una freccia gialla che rimbalza sopra la persona, la cosa o la porta (`drawWorld`);
@@ -211,6 +216,36 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
 - **Cartelli:** quelli dei posti principali dicono anche da che parte sono gli altri (← Vindicio · Mola →).
 
+## Crescita, creature ed economia
+
+- **Livelli** (`data/growth.ts`, `story/growth.ts`): ogni lottatore della storia (Antonio, gli amici che si uniscono, le creature) ha un livello e l'esperienza verso il prossimo, salvati in `st.lv` con chiave `antonio`, l'id dell'amico o l'uid della creatura (`c1`, `c2`…).
+  - I numeri dei personaggi sono quelli al livello 5, il livello di partenza: una lotta tra due livelli 5 è identica a quella libera.
+  - Da lì Attacco, Difesa e Velocità crescono del 2,5% a livello, i PS dell'1%.
+  - L'esperienza arriva dalle lotte (un terzo se si perde), dalle attività (20 ad Antonio) e dal caffè.
+  - I capi dei covi hanno un livello (`level` in `covi.ts`): Costanzo 6, Forchetta 9. Gli amici battuti si uniscono a quel livello.
+- **Abilità di Antonio:** un punto a ogni livello, da spendere nel menu (Squadra → Abilità).
+  - Muscoli, Pelle dura e Scatto alzano i numeri.
+  - Memoria di ferro gli fa perdere meno le cose, Prompt engineer gli fa venire più idee: sono le probabilità di `beginTurn`, passate al motore come `perk`.
+  - Contrattare abbassa i prezzi.
+- **Creature di Formia** (`data/creatures.ts`): animali e piante della città, disegnati per questo gioco.
+  - Ci sono tre iniziali con tre forme (Polpino → Polpetto → Polpastro, Ramarrino → Ramarrone → Muraglione, Gabbì → Gabbianotto → Gabbiammiraglio, che si evolvono ai livelli 14 e 30).
+  - Le selvatiche hanno due forme (al 18): Cicalina in pineta e al Parco Gramsci, Riccetto a Gianola, Granchietto sugli scogli della Scogliera, Olivella negli uliveti, Civettina sui Monti Aurunci.
+  - Le mosse sono numeri (`CMOVES`, con `fx`: alza o abbassa Attacco e Difesa, confonde, cura) e le esegue `genericMove` in `battle/moves.ts`. Una creatura lotta con le ultime quattro mosse imparate.
+  - **La prima creatura** si sceglie dal guardaparco di Gianola (`starter: true` sull'Npc): è la prima tappa del giro.
+  - **Le selvatiche** sono Npc con `wild` (specie e livelli) e saltellano sulla mappa. Dopo una lotta vinta o una cattura spariscono per due minuti (`wildGone` in `story/maps.ts`).
+  - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
+- **Economia:**
+  - **Gli euro** (`st.money`, nell'HUD) si guadagnano battendo creature (3 + livello), vincendo un covo la prima volta (80) e con le attività (scambi, risposte giuste, metri di planata).
+  - **I negozi** (`SHOPS`): reti e retini dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).
+  - **Cosa fanno:** la tiella cura 40 PS in lotta, il caffè dà 60 punti esperienza dal menu.
+- **Nel motore** solo le lotte della storia usano queste cose; quelle libere restano identiche e i golden delle 2040 lotte non cambiano.
+  - Ogni lato può avere `stats`, `lvl`, `known` (le mosse di una creatura) e `perk`.
+  - La lotta può essere `wild`, con una `bag`: retino e retino da pesca solo contro una selvatica, la tiella sempre. Si usano prima delle mosse.
+  - Il risultato `catch` chiude la lotta con la creatura nel retino.
+  - **Dopo la lotta** la schermata della storia (`afterBattle`) riceve chi ha lottato, il livello dell'avversario e la borsa rimasta, poi dà esperienza e soldi, dice le mosse imparate e mostra l'evoluzione (`ui/team.ts`).
+- **Salvataggi:** campi nuovi e facoltativi in `lotte-tra-amici:storia:v1` (`lv`, `skills`, `money`, `bag`, `mons`, `seen.starter`). Un salvataggio vecchio parte dal livello 5, senza soldi e senza creature.
+- **Test:** `tests/unit/creatures.test.ts` controlla i dati, le lotte tra creature a ogni livello, la cattura e la crescita. La partita `creatures of Formia` sceglie Polpino, lotta con un Riccetto, compra i retini a Mola e cattura una Cicalina.
+
 ## Giorno e notte
 
 - **L'ora di Formia** (`story/daytime.ts`): di base è quella di fuori, dall'orologio del dispositivo. Alba e tramonto sono quelli veri di Formia per quel giorno, calcolati da latitudine, longitudine, equazione del tempo e ora legale (il 30 ottobre: 6:38 e 17:00). Il buio cresce da un quarto d'ora prima del tramonto a un'ora dopo, e al contrario all'alba.
@@ -293,7 +328,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **CSP della cornice:** script esterni solo da cdnjs, jsdelivr o unpkg; fogli di stile solo da Google Fonts; niente immagini esterne. Il resto deve essere inline o generato in codice, e Phaser va benissimo incorporato nel bundle singlefile.
 - **Font:** dopo la prima pubblicazione va verificato che i font incorporati (`@font-face` con URL `data:`) si carichino davvero nella cornice. Se no, pubblica `dist-google-fonts/index.html`.
-- **Limite della pagina:** 16 MB. Oggi il file è di circa 530 KB.
+- **Limite della pagina:** 16 MB. Oggi il file è di circa 580 KB.
 - **Origine nuova:** un nuovo Artifact è una nuova origine, quindi salvataggi e libretto ripartono vuoti.
 
 ## Verso Phaser

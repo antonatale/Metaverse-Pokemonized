@@ -1,4 +1,5 @@
 import type { FriendId } from '../characters';
+import type { SpeciesId } from '../creatures';
 
 /* The shape of a map. To add a city: every row the same length, linked by a door with `to` or a warp;
    indoors maps have `inside: true` and the `city` they belong to. tests/unit/maps.test.ts checks all of it. */
@@ -30,6 +31,8 @@ export interface Building {
   to?: string; tx?: number; ty?: number; tdir?: Dir;
   /** the houses of the town: a variation seed for their look (facade colour, roof, shutters, sun tents) */
   v?: number;
+  /** a shop: after its message, you can buy (data/growth.ts SHOPS) */
+  shop?: string;
 }
 export interface MapObject {
   kind: string;
@@ -79,6 +82,12 @@ export interface Npc {
   /** there only once this friend is in Antonio's squad (he hangs out with him), or only until then (he leaves his covo) */
   with?: FriendId;
   unless?: FriendId;
+  /** a wild creature of Formia, and the levels it may have when met */
+  wild?: { sp: SpeciesId; lv: [number, number] };
+  /** gives Antonio his first creature (the guardaparco of Gianola) */
+  starter?: boolean;
+  /** sells things (data/growth.ts SHOPS) */
+  shop?: string;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

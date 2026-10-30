@@ -4,7 +4,7 @@ import type { TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
 import { say, line, expr, anim } from './events';
-import { ch, mv, eff, modMult, sideType, zenOn } from './state';
+import { ch, mv, eff, modMult, sideType, zenOn, statsOf } from './state';
 
 /* ---------- damage ---------- */
 export function movePower(side: Side, m: Move): number {
@@ -14,10 +14,10 @@ export function movePower(side: Side, m: Move): number {
 }
 interface Parts { base: number; eff: number; type: TypeName; critChance: number; forceCrit: boolean; acc: number; notes: string[] }
 function parts(s: BattleState, i: number, id: string): Parts {
-  const me = s.sides[i], foe = s.sides[1 - i], m = mv(me, id)!, cm = ch(me), cf = ch(foe);
+  const me = s.sides[i], foe = s.sides[1 - i], m = mv(me, id)!;
   const type = sideType(s, me, foe), e = eff(type, sideType(s, foe, me));
-  const atk = cm.stats.atk * modMult(s, me, 'atk') * (me.id === 'zendavid' ? 1 - 0.06 * me.anx : 1);
-  const def = cf.stats.def * modMult(s, foe, 'def');
+  const atk = statsOf(me).atk * modMult(s, me, 'atk') * (me.id === 'zendavid' ? 1 - 0.06 * me.anx : 1);
+  const def = statsOf(foe).def * modMult(s, foe, 'def');
   let mult = 1, forceCrit = false;
   const critChance = m.crit || CRIT, notes: string[] = [];
   if (me.boost) mult *= 1.5;

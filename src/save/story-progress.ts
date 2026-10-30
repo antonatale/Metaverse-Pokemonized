@@ -1,6 +1,7 @@
 import { MAPS } from '../data/maps';
 import type { Dir } from '../data/maps/types';
 import type { FriendId } from '../data/characters';
+import type { SpeciesId } from '../data/creatures';
 
 /* Saved progress of the story, on this device only. Same key and same format as the old single-file game,
    so old saves keep working; localStorage can be missing or throw (private windows, sandboxed frames). */
@@ -22,17 +23,29 @@ export interface StoryProgress {
   /** things done around town (activities.ts): how many times, and the best score */
   done?: Record<string, number>;
   best?: Record<string, number>;
+  /* growing up (story/growth.ts); missing in older saves, which start from level 5 with nothing */
+  /** level and experience toward the next, by fighter: 'antonio', a friend, or a creature's uid */
+  lv?: Record<string, { lv: number; xp: number }>;
+  /** Antonio's abilities: the grades taken in each */
+  skills?: Record<string, number>;
+  /** euro in his pocket */
+  money?: number;
+  /** what he carries: nets, tielle, coffees */
+  bag?: Record<string, number>;
+  /** his creatures, in the order he got them; the first is the one he started with */
+  mons?: { uid: string; sp: SpeciesId }[];
 }
 
 export function blank(): StoryProgress {
   var m = MAPS.formia;
-  return { v: 1, map: 'formia', x: m.start[0], y: m.start[1], dir: m.start[2], badges: [], squad: ['antonio'], beaten: {}, seen: {}, found: {} };
+  return { v: 1, map: 'formia', x: m.start[0], y: m.start[1], dir: m.start[2], badges: [], squad: ['antonio'], beaten: {}, seen: {}, found: {}, lv: {}, skills: {}, money: 0, bag: {}, mons: [] };
 }
 function load(): StoryProgress {
   try {
     var v = JSON.parse(window.localStorage.getItem(KEY) || 'null');
     if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
       v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
+      v.lv = v.lv || {}; v.skills = v.skills || {}; v.money = v.money || 0; v.bag = v.bag || {}; v.mons = v.mons || [];
       /* Formia was redrawn (formia2), as the real town (formia3), with joined-up streets (formia4), as a game map
          with a hand-drawn network of streets (formia5), with the east of town and the street lamps redrawn (formia6):
          start again from home, keep pins, squad and found things */

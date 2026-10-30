@@ -5,7 +5,7 @@ import { TYPES, TYPE_ORDER, type TypeName } from '../data/types';
 import { ITEMS } from '../data/items';
 import { TUNE } from '../data/tuning';
 import type { BattleState } from './types';
-import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf } from './state';
+import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf, BAG } from './state';
 import { expected } from './damage';
 import { snap, moveLabel } from './labels';
 import { ai } from './ai';
@@ -25,7 +25,7 @@ export function sideType(s: BattleState, i: number): TypeName { return typeOf(s,
 export const ENGINE = {
   TYPES, TYPE_ORDER, eff, beaterOf, ITEMS, CHARS, ROSTER, TUNE,
   move, newBattle, intro, beginTurn, needs, playTurn,
-  available, moveLabel, snap, ai, expected,
+  available, moveLabel, snap, ai, expected, BAG,
   ANTONIO: CHARS.antonio, ESAME: CHARS.esame,
   clock, planName, sideType
 };

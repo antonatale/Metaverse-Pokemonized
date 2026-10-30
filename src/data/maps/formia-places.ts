@@ -30,6 +30,8 @@ export interface PlaceSpec {
 /** something on one tile: a sign, a person, a lost thing, a scooter; at a real place or next to one */
 export interface SpotSpec {
   id: string; at?: LatLon; near?: { place: string; dx: number; dy: number }; on?: 'sand' | 'sea' | 'any';
+  /** a tile picked by hand (the countryside and the mountains have no place to be near) */
+  tile?: [number, number];
   /** nobody stands here, Antonio just starts here: it may be on a footpath */
   walk?: boolean;
 }
@@ -165,5 +167,17 @@ export const SPOTS: SpotSpec[] = [
   { id: 'caricabatterie', near: { place: 'stazione', dx: 6, dy: 4 } },
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },
   { id: 'passaporto', near: { place: 'tomba', dx: 1, dy: 4 } },
-  { id: 'portafoglio', near: { place: 'eclipse-spiaggia', dx: 10, dy: 2 }, on: 'sand' }
+  { id: 'portafoglio', near: { place: 'eclipse-spiaggia', dx: 10, dy: 2 }, on: 'sand' },
+  /* the wild creatures of Formia, where they live: the easy ones near home, the strong ones up in the Aurunci */
+  { id: 'selv-gramsci', near: { place: 'parco-gramsci', dx: 2, dy: 1 } },
+  { id: 'selv-gianola-1', tile: [156, 62], on: 'sand' },
+  { id: 'selv-gianola-2', tile: [158, 66], on: 'sand' },
+  { id: 'selv-pineta-1', near: { place: 'pineta', dx: 4, dy: 2 } },
+  { id: 'selv-pineta-2', near: { place: 'pineta', dx: 12, dy: 4 } },
+  { id: 'selv-scogli-1', near: { place: 'scogliera', dx: -2, dy: 3 }, on: 'sand' },
+  { id: 'selv-scogli-2', near: { place: 'scogliera', dx: 5, dy: 4 }, on: 'sand' },
+  { id: 'selv-ulivi-1', tile: [10, 41] },
+  { id: 'selv-ulivi-2', tile: [22, 44] },
+  { id: 'selv-monti-1', tile: [66, 6] },
+  { id: 'selv-monti-2', tile: [75, 9] }
 ];

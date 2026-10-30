@@ -6,6 +6,8 @@ export interface Covo {
   name: string;
   city: string;
   leader: FriendId;
+  /** the leader's level: the story starts at 5 */
+  level: number;
   badge: Badge;
   /** what the leader says before the challenge, after winning, after losing, and once beaten */
   intro: string[];
@@ -16,7 +18,7 @@ export interface Covo {
 
 export const COVI: Record<string, Covo> = {
   piazza: {
-    name: 'Piazza della Vittoria', city: 'formia', leader: 'costanzo',
+    name: 'Piazza della Vittoria', city: 'formia', leader: 'costanzo', level: 6,
     badge: { id: 'gialosai', name: 'Spilla «Già lo sai»', mark: 'C', color: '#ffe45c' },
     intro: ['GIÀ LO SAI.', 'Questa è la mia piazza. Se vuoi parlare, prima devi battermi.'],
     win: ['Daje Roma daje… va bene, hai vinto tu.', 'Vengo con te: un comizio in giro per il mondo ci sta.'],
@@ -24,7 +26,7 @@ export const COVI: Record<string, Covo> = {
     after: ['Il prossimo comizio lo facciamo insieme. GIÀ LO SAI.']
   },
   circolo: {
-    name: 'Tennis coperti del Bruno Zauli', city: 'formia', leader: 'forchetta',
+    name: 'Tennis coperti del Bruno Zauli', city: 'formia', leader: 'forchetta', level: 9,
     badge: { id: 'peggio', name: 'Spilla «Poteva andare peggio»', mark: 'F', color: '#8fd0f6' },
     intro: ['Poteva andare peggio.', 'Palleggiamo? Chi perde paga il campo.'],
     win: ['Poteva andare peggio. Per me.', 'Vengo con te. La prossima però si gioca alla Play.'],

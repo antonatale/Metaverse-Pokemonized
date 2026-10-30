@@ -49,6 +49,11 @@ const lost = (id: string): Stop => {
 const [tx, ty] = npcAt('formia', 'capotreno');
 
 export const STOPS: Stop[] = [
+  (function (): Stop {
+    const [x, y] = npcAt('formia', 'guardaparco');
+    return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'Il guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
+      map: 'formia', x, y, done: () => !!st.seen.starter };
+  })(),
   doing('padel', 'andrea', 'Andrea ti aspetta al Bruno Zauli: ha calcolato che a padel oggi vince lui.'),
   covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
   doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),

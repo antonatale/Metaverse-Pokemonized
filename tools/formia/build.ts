@@ -405,6 +405,9 @@ for (let y = 0; y < 4; y++) for (let x = 71; x < 80; x++) if (/[QJ]/.test(get(x,
 
 /* ---------- 9. people, signs and things, by their places ---------- */
 const spots: Record<string, [number, number]> = {};
+/* nobody stands right in front of a door */
+const front = grid(false);
+for (const p of Object.values(placed)) if (p.door && inside(p.door[0], p.door[1] + 1)) front[p.door[1] + 1][p.door[0]] = true;
 const STAND: Record<string, RegExp> = { land: /[.f_v,]/, sand: /[:]/, any: /[.f_v,:]/, sea: /~/ };
 for (const s of SPOTS) {
   let tx: number, ty: number;
@@ -412,10 +415,11 @@ for (const s of SPOTS) {
     const p = placed[s.near.place];
     if (!p) { misses.push(s.id + ' (no ' + s.near.place + ')'); continue; }
     tx = p.x + s.near.dx; ty = p.y + s.near.dy;
-  } else { const q = P(s.at!); tx = Math.floor(q[0]); ty = Math.floor(q[1]); }
+  } else if (s.tile) { tx = s.tile[0]; ty = s.tile[1]; }
+  else { const q = P(s.at!); tx = Math.floor(q[0]); ty = Math.floor(q[1]); }
   const ok = STAND[s.on || 'land'];
   /* a spot may stand in the room around a place, never on a building, a door's path (Antonio himself may) or another spot */
-  const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && !roofed[y][x] && (!pathed[y][x] || !!s.walk);
+  const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && !roofed[y][x] && !front[y][x] && (!pathed[y][x] || !!s.walk);
   const found = rings(tx, ty, 6, (x, y) => {
     if (!open(x, y) || !ok.test(get(x, y))) return false;
     /* two ways to reach it, so nothing placed later can shut it in, and it must not shut in a spot placed before */

@@ -72,7 +72,7 @@ const buildings: Building[] = [
   building('donbosco', { label: 'DON BOSCO', msg: ['Villaggio Don Bosco: la parrocchia del Cuore Immacolato di Maria, su via Appia Lato Napoli.', 'Quasi di fronte a casa di Antonio, dall\'altra parte dell\'Appia. La chiesa è aperta: dentro c\'è silenzio.'] }),
   building('oratorio', { label: 'ORATORIO', msg: ['L\'oratorio del Villaggio Don Bosco.', 'Da dentro arrivano voci di ragazzi e il rumore di una partita a biliardino.'] }),
   building('gelati', { label: 'LAVEZZI', msg: ['Gelateria Lavezzi, in piazza Marconi dal 1870.', 'Amalio Lavezzi cominciò con un chiosco: solo limone e caffè, fatti con la neve del Vesuvio. Oggi c\'è la quarta generazione.'] }),
-  building('bar', { msg: ['Il bar è pieno: c\'è la partita.'] }),
+  building('bar', { msg: ['Il bar è pieno: c\'è la partita.', 'Al banco però il caffè lo fanno lo stesso.'], shop: 'bar' }),
   building('biglietti', { label: 'BIGLIETTI', msg: ['Biglietteria Laziomar: traghetti e aliscafi per Ponza e Ventotene.', 'Per oggi niente gite.'] }),
   building('stazione', { gate: 'torino' }),
   building('comune', { label: 'COMUNE · MUSEO', msg: ['Museo archeologico nazionale di Formia, nell\'ala sud del Palazzo comunale.', 'Due statue togate conservano ancora tracce del loro colore: le statue antiche erano dipinte.', 'Oggi è chiuso.'] }),
@@ -170,7 +170,7 @@ const npcs: Npc[] = [
   npc('teatro', { name: 'Signora del teatro', seed: 27, dir: 'down', lines: ['Lo sai che casa mia sta dentro il teatro romano?', 'È di età augustea: sopra la cavea ci hanno costruito le case. Ci abitiamo in trecento.'] }),
   npc('devota', { name: 'Devota di Sant\'Erasmo', seed: 28, dir: 'right', lines: ['Il 2 giugno è la festa di Sant\'Erasmo, il patrono.', 'Protegge i marinai: il «fuoco di Sant\'Elmo» che si vede sugli alberi delle navi porta il suo nome.'] }),
   npc('guida', { name: 'Guida del museo', seed: 29, dir: 'down', lines: ['Al museo ci sono le statue dei notabili di Formiae e della famiglia imperiale, compreso Gaio Cesare, il nipote di Augusto.', 'Le hanno trovate quasi tutte nell\'antico Foro, oggi piazza Mattej.'] }),
-  npc('fornaia', { name: 'Fornaia', seed: 24, dir: 'down', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'È la pizza bassa ripiena del golfo, nata tra pescatori e contadini. E ho pure le ciambelle all\'anice.'] }),
+  npc('fornaia', { name: 'Fornaia', seed: 24, dir: 'down', shop: 'forno', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'È la pizza bassa ripiena del golfo, nata tra pescatori e contadini. E ho pure le ciambelle all\'anice.'] }),
   npc('tifoso', { name: 'Tifoso', seed: 51, dir: 'up', hint: true, lines: ['Il bar è pieno, c\'è la partita. Io guardo da qui.', 'Qui al bar si sa tutto.'] }),
   npc('gelataio', { name: 'Gelataio di Lavezzi', seed: 52, dir: 'down', activity: 'gelato', lines: ['Benvenuto da Lavezzi! Facciamo il gelato qui in piazza Marconi dal 1870.', 'Il bisnonno Amalio aveva un chiosco e solo due gusti, limone e caffè: la neve la prendeva sul Vesuvio.'] }),
   npc('studente', { name: 'Studente della Vitruvio Pollione', seed: 64, dir: 'down', lines: ['Abbiamo la scuola proprio davanti alla chiesa di San Giovanni: a mezzogiorno suonano le campane e sembra la campanella.', 'La scuola porta il nome di Vitruvio Pollione, l\'architetto del «De architectura». Molti dicono che fosse di Formia.'] }),
@@ -181,8 +181,20 @@ const npcs: Npc[] = [
   npc('cestista', { name: 'Cestista', seed: 62, dir: 'down', lines: ['Stasera al Palamendola c\'è la partita. Vieni?'] }),
   npc('bagnino', { name: 'Bagnino', seed: 43, dir: 'down', hint: true, lines: ['Bandiera verde: si può fare il bagno.', 'Vindicio è Bandiera Blu. E con la termica del pomeriggio è il posto del windsurf e del kite.'] }),
   npc('bambino', { name: 'Bambino', seed: 42, dir: 'left', lines: ['Ho perso il secchiello.', 'Pure tu perdi sempre le cose?'] }),
-  npc('guardaparco', { name: 'Guardaparco', seed: 44, dir: 'right', lines: ['La villa era di Mamurra, un cavaliere di Formia: il prefetto del genio di Giulio Cesare.', 'Il porticciolo romano, qui sotto, forse era una peschiera. Oggi è area marina protetta: niente pesca e niente motori.'] }),
-  npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.'] })
+  npc('guardaparco', { name: 'Guardaparco', seed: 44, dir: 'right', starter: true, lines: ['La villa era di Mamurra, un cavaliere di Formia: il prefetto del genio di Giulio Cesare.', 'Il porticciolo romano, qui sotto, forse era una peschiera. Oggi è area marina protetta: niente pesca e niente motori.'] }),
+  npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
+  /* the wild creatures of Formia: they come back a while after being beaten or caught */
+  npc('selv-gramsci', { dir: 'down', wild: { sp: 'cicalina', lv: [2, 4] } }),
+  npc('selv-gianola-1', { dir: 'left', wild: { sp: 'riccetto', lv: [3, 5] } }),
+  npc('selv-gianola-2', { dir: 'left', wild: { sp: 'riccetto', lv: [4, 6] } }),
+  npc('selv-pineta-1', { dir: 'down', wild: { sp: 'cicalina', lv: [4, 6] } }),
+  npc('selv-pineta-2', { dir: 'down', wild: { sp: 'cicalina', lv: [5, 7] } }),
+  npc('selv-scogli-1', { dir: 'right', wild: { sp: 'granchietto', lv: [6, 8] } }),
+  npc('selv-scogli-2', { dir: 'left', wild: { sp: 'granchietto', lv: [7, 9] } }),
+  npc('selv-ulivi-1', { dir: 'down', wild: { sp: 'olivella', lv: [7, 9] } }),
+  npc('selv-ulivi-2', { dir: 'down', wild: { sp: 'olivella', lv: [8, 10] } }),
+  npc('selv-monti-1', { dir: 'down', wild: { sp: 'civettina', lv: [9, 12] } }),
+  npc('selv-monti-2', { dir: 'down', wild: { sp: 'civettina', lv: [10, 13] } })
 ];
 
 const item = (id: string, move: string, pron: string, t: string): LostItem => { const [x, y] = spot(id); return { id, move, x, y, pron, text: t }; };

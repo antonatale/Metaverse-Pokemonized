@@ -1,4 +1,4 @@
-import type { CharId } from '../data/characters';
+import type { FighterId, Stats } from '../data/characters';
 import type { TypeName } from '../data/types';
 
 /* The state of a battle is plain JSON, RNG included: same seed and same choices, same battle.
@@ -6,12 +6,12 @@ import type { TypeName } from '../data/types';
 
 export type Mode = 'cpu' | 'pvp';
 export type Phase = 'intro' | 'begin' | 'select' | 'busy' | 'over';
-export type Result = 'win' | 'time' | 'draw';
+export type Result = 'win' | 'time' | 'draw' | 'catch';
 
 export interface Mod { stat: string; mult: number; until: number; tag: string }
 
 export interface Side {
-  id: CharId;
+  id: FighterId;
   human: boolean;
   hp: number;
   max: number;
@@ -55,7 +55,19 @@ export interface Side {
   /** times each limited move has been used */
   uses: Record<string, number>;
   st: { dmg: number; crits: number; lost: number; fails: number; heals: number };
+  /* story battles only (missing elsewhere, so the free battles stay exactly as they were) */
+  /** the fighter's numbers at its level (with Antonio's abilities), and the level */
+  stats?: Stats;
+  lvl?: number;
+  /** a creature: the moves it knows */
+  known?: string[];
+  /** Antonio's abilities: his chance a turn to lose a thing, and to get an idea from the AI */
+  perk?: { lose: number; idea: number };
 }
+/** how a side of a story battle comes on */
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; perk?: { lose: number; idea: number } }
+/** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
+export interface StoryTag { covo?: string; wild?: string; sp?: string; key?: string; foeLv?: number }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }
@@ -82,10 +94,16 @@ export interface BattleState {
   /** moves whose object the player's Antonio can't lose (story mode: the things already found around town) */
   safe: string[];
   /** set by the UI for story battles */
-  story?: { covo: string } | null;
+  story?: StoryTag | null;
+  /** a wild creature: the player may throw a net at it */
+  wild?: boolean;
+  /** the player's bag in story battles (nets, tielle), used up as the battle goes */
+  bag?: Record<string, number>;
+  /** the net held: the battle ends with the creature caught */
+  caught?: boolean;
 }
 
-export interface NewBattle { a: CharId; b: CharId; mode?: Mode; seed: number; safe?: string[] }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number> }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }

@@ -79,7 +79,10 @@ export function areaName(): string {
   return a ? a.name : '';
 }
 /** is this person around now? some come and go with Antonio's squad */
-export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0); }
+export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)); }
+/** wild creatures beaten or caught leave for a while: two minutes, then another one is there */
+export const wildGone: Record<string, number> = {};
+export function wildHere(id: string): boolean { var t = wildGone[id]; return !t || Date.now() - t > 120000; }
 export function personAt(m: PreparedMap, x: number, y: number): Person | null { for (var i = 0; i < m.people.length; i++) { var p = m.people[i]; if (p.x === x && p.y === y && present(p)) return p; } return null; }
 export function blocked(m: PreparedMap, x: number, y: number): boolean { return x < 0 || y < 0 || x >= m.w || y >= m.h || m.solid[y * m.w + x] === 1 || !!personAt(m, x, y) || !!itemAt(m, x, y); }
 export function cityCovi(city: string): Covo[] { return Object.keys(COVI).filter(function (k) { return COVI[k].city === city; }).map(function (k) { return COVI[k]; }); }

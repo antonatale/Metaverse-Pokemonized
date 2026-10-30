@@ -3,6 +3,7 @@ import { ITEMS } from '../data/items';
 import type { BattleState, Chip, MoveLabel, Snap } from './types';
 import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn } from './state';
 import { movePower } from './damage';
+import { isSpecies } from '../data/creatures';
 
 /* What the UI shows, decided here so the UI never needs to know the rules:
    the status chips under each name, and the label of every move button. */
@@ -67,6 +68,23 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     case 'battuta': out.icon = 'mic'; out.sub = '40% di far ridere'; break;
     case 'zen': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Cuffie già in testa' : 'Cuffie, cura 20'; break;
     case 'stronger': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Forte · +20% cuffie' : 'Danno alto'; break;
+    case 'retino': case 'retino2': out.icon = 'ball'; out.sub = 'Cattura' + (id === 'retino2' ? ' meglio' : '') + ' · ' + (s.bag![id] || 0) + ' nella borsa'; break;
+    case 'tiella': out.icon = 'heart'; out.sub = 'Cura 40 PS · ' + (s.bag!.tiella || 0) + ' nella borsa'; break;
+    default: {
+      /* the creatures' moves: what they do, from their numbers (the Esame's keep no label, as they always had) */
+      if (!isSpecies(me.id)) break;
+      const fx = m.fx || {}, bits: string[] = [];
+      if (m.kind === 'atk') bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
+      if (m.priority) bits.push('Attacca per primo');
+      if (m.drain) bits.push('si cura metà');
+      if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');
+      if (fx.heal) bits.push('Cura il ' + Math.round(fx.heal * 100) + '%');
+      if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');
+      if (fx.foe) bits.push(fx.foe === 'atkDown' ? 'Attacco avv. −25%' : 'Difesa avv. −20%');
+      if (fx.conf) bits.push(fx.conf >= 1 ? 'Confonde' : 'può confondere');
+      out.icon = m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : 'down';
+      out.sub = bits.join(', ');
+    }
   }
   if (m.uses) out.left = m.uses - (me.uses[id] || 0);
   return out;

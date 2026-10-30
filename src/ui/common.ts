@@ -1,4 +1,7 @@
-import { CHARS as C, type CharId, type FriendId, type Character, type Move } from '../data/characters';
+import { type CharId, type FriendId, type Character, type Move } from '../data/characters';
+import { fighter } from '../data/fighters';
+import { isSpecies } from '../data/creatures';
+import { creature } from '../render/svg/creatures';
 import type { Mode } from '../battle';
 import { SPR } from '../render/svg';
 import { reduced, $ } from './dom';
@@ -7,12 +10,13 @@ import { reduced, $ } from './dom';
    and what the player has picked so far. */
 
 export const TC: Record<string, string> = { Calma: 'var(--t-calma)', Caos: 'var(--t-caos)', Cervello: 'var(--t-cervello)', Chiacchiera: 'var(--t-chiacchiera)', Cuore: 'var(--t-cuore)' };
-export function tc(id: string): string { return TC[C[id as CharId].type]; }
+export function tc(id: string): string { return TC[fighter(id).type]; }
 export function typeTag(t: string): string { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }
 export function kindTag(m: Move): string { return m.kind === 'atk' ? '<span class="type">Attacco</span>' : '<span class="type">Supporto</span>'; }
 export function sleep(ms: number): Promise<void> { return new Promise<void>(function (r) { setTimeout(r, reduced ? Math.min(ms, 60) : ms); }); }
-export function face(id: string, expr?: string, cls?: string): string { return id === 'esame' ? SPR.esame('idle', cls) : SPR.person(id, expr || 'smirk', cls, SPR.thumb(id)); }
-export function bust(id: string, expr?: string, cls?: string, vb?: string): string { return id === 'esame' ? SPR.esame(expr || 'idle', cls) : SPR.person(id, expr || 'smirk', cls, vb); }
+export function face(id: string, expr?: string, cls?: string): string { return id === 'esame' ? SPR.esame('idle', cls) : isSpecies(id) ? creature(id, expr || 'smirk', cls, '10 26 180 170') : SPR.person(id, expr || 'smirk', cls, SPR.thumb(id)); }
+/** a fighter's portrait in battle and on the result: a friend, the Esame, or a creature of Formia */
+export function bust(id: string, expr?: string, cls?: string, vb?: string): string { return id === 'esame' ? SPR.esame(expr || 'idle', cls) : isSpecies(id) ? creature(id, expr || 'smirk', cls) : SPR.person(id, expr || 'smirk', cls, vb); }
 
 export const home = $('home'), battle = $('battle'), overlay = $('overlay');
 /** the screen on show, and what the player has picked on the home page and in the setup sheet */

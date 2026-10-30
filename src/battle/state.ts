@@ -1,7 +1,8 @@
-import { CHARS, type CharId, type Character, type Move } from '../data/characters';
+import type { Character, FighterId, Move, Stats } from '../data/characters';
+import { fighter } from '../data/fighters';
 import { TYPES, type TypeName } from '../data/types';
 import { TUNE } from '../data/tuning';
-import type { BattleState, NewBattle, Side } from './types';
+import type { BattleState, NewBattle, Side, SideOpts } from './types';
 
 /* ---------- types ---------- */
 export function eff(a: TypeName | null, d: TypeName | null): number {
@@ -13,15 +14,24 @@ export function eff(a: TypeName | null, d: TypeName | null): number {
 export function beaterOf(t: string): TypeName | null { for (const k in TYPES) if (TYPES[k as TypeName].beats === t) return k as TypeName; return null; }
 
 /* ---------- lookups ---------- */
-export function ch(side: Side): Character { return CHARS[side.id]; }
+export function ch(side: Side): Character { return fighter(side.id); }
+/** a side's numbers: its own in story battles (level, abilities), the character's otherwise */
+export function statsOf(side: Side): Stats { return side.stats || ch(side).stats; }
 export function move(c: Character, id: string): Move | null { for (let i = 0; i < c.moves.length; i++) if (c.moves[i].id === id) return c.moves[i]; return null; }
-export function mv(side: Side, id: string): Move | null { return move(ch(side), id); }
+export function mv(side: Side, id: string): Move | null { return move(ch(side), id) || BAG[id] || null; }
+/** the bag of story battles: nets for a wild creature, a slice of tiella. They go before any move */
+export const BAG: Record<string, Move> = {
+  retino: { id: 'retino', name: 'Retino', kind: 'status', priority: 6, text: 'Prova a catturare la creatura: più è stanca, più è facile.' },
+  retino2: { id: 'retino2', name: 'Retino da pesca', kind: 'status', priority: 6, text: 'Il retino dei pescatori di Mola: cattura molto più facilmente.' },
+  tiella: { id: 'tiella', name: 'Tiella', kind: 'heal', priority: 6, text: 'Una fetta di tiella: recupera 40 PS.' }
+};
+export const BAG_IDS = ['retino', 'retino2', 'tiella'];
 
 /* ---------- a new battle ---------- */
-function newSide(id: CharId, human: boolean): Side {
-  const c = CHARS[id];
-  return {
-    id: id, human: !!human, hp: c.stats.hp, max: c.stats.hp,
+function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
+  const c = fighter(id), hp = o && o.stats ? o.stats.hp : c.stats.hp;
+  const side: Side = {
+    id: id, human: !!human, hp: hp, max: hp,
     skip: null, conf: 0, mods: [], encore: null, lastMove: null, revealed: false,
     boost: false, tee: 0, lv: 0, lock: null, saidAi: false, seenAmerica: false,
     lastAtk: null, atkStreak: 0, persona: 0,
@@ -29,6 +39,11 @@ function newSide(id: CharId, human: boolean): Side {
     sturdy: false, anx: 0, zen: 0, used: {}, uses: {},
     st: { dmg: 0, crits: 0, lost: 0, fails: 0, heals: 0 }
   };
+  if (o && o.stats) side.stats = { hp: o.stats.hp, atk: o.stats.atk, def: o.stats.def, spe: o.stats.spe };
+  if (o && o.lvl) side.lvl = o.lvl;
+  if (o && o.known) side.known = o.known.slice();
+  if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
+  return side;
 }
 export function newBattle(o: NewBattle): BattleState {
   const a = o.a, b = o.b;
@@ -37,12 +52,14 @@ export function newBattle(o: NewBattle): BattleState {
   const s: BattleState = {
     v: 2, rng: (o.seed >>> 0) || 1, turn: 1, mode: mode, boss: b === 'esame', K: b === 'esame' ? 0.42 : TUNE.K,
     maxTurns: b === 'esame' ? 12 : 30,
-    sides: [newSide(a, true), newSide(b, mode === 'pvp')],
+    sides: [newSide(a, true, o.sideA), newSide(b, mode === 'pvp', o.sideB)],
     phase: 'intro', plan: [null, null], forced: [null, null], forecast: [false, false], forecastNext: [false, false],
     result: null, winner: null, grade: null, recorded: false,
     safe: (o.safe || []).slice()
   };
   if (mode === 'pvp') { s.sides[0].revealed = true; s.sides[1].revealed = true; }
+  if (o.wild) s.wild = true;
+  if (o.bag) s.bag = Object.assign({}, o.bag);
   return s;
 }
 
@@ -64,12 +81,15 @@ export function personaOn(s: BattleState, side: Side): boolean { return side.id 
 export function available(s: BattleState, i: number): string[] {
   const side = s.sides[i], c = ch(side);
   const all = c.moves.map(function (m) { return m.id; }).filter(function (id) {
+    if (side.known && side.known.indexOf(id) < 0) return false;
     if (side.lock && side.lock.move === id) return false;
     const mm = move(c, id)!;
     if (mm.uses && (side.uses[id] || 0) >= mm.uses) return false;
     return true;
   });
   if (side.encore && side.encore.until >= s.turn && all.indexOf(side.encore.move) >= 0) return [side.encore.move];
+  /* the player's bag, in story battles: the nets only against a wild creature */
+  if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' || s.wild)) all.push(b); });
   return all;
 }
 

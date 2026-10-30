@@ -1,10 +1,13 @@
 import type { TypeName } from './types';
+import type { SpeciesId } from './creatures';
 
 /* The six friends and the boss. Stats, moves and `uses` were tuned with thousands of simulated
    CPU-vs-CPU battles (npm run sim): every character should win 45–55% overall. Change them only with the sim. */
 
 export type FriendId = 'antonio' | 'costanzo' | 'andrea' | 'valentin' | 'forchetta' | 'zendavid';
 export type CharId = FriendId | 'esame';
+/** anyone who can fight: the friends, the Esame, and the creatures of Formia (data/creatures.ts) */
+export type FighterId = CharId | SpeciesId;
 export type MoveKind = 'atk' | 'heal' | 'buff' | 'status';
 
 export interface Move {
@@ -30,13 +33,25 @@ export interface Move {
   drain?: number;
   /** chance that the move works at all (Battuta) */
   chance?: number;
+  /** the creatures' moves: what they do besides the damage (battle/moves.ts, genericMove) */
+  fx?: MoveFx;
+}
+export interface MoveFx {
+  /** raises its own Attack (+30%) or Defence (+25%) for 3 turns */
+  self?: 'atkUp' | 'defUp';
+  /** lowers the foe's Attack (−25%, 3 turns) or Defence (−20%, 2 turns) */
+  foe?: 'atkDown' | 'defDown';
+  /** chance to confuse the foe for 2 turns */
+  conf?: number;
+  /** share of its full health it gets back */
+  heal?: number;
 }
 export interface Stats { hp: number; atk: number; def: number; spe: number }
 export interface Trait { name: string; text: string }
 /** what a character says: entry, win and ko always, the rest only where the engine looks for them */
 export interface Lines { entry: string; win: string; ko: string; [key: string]: string | undefined }
 export interface Character {
-  id: CharId;
+  id: FighterId;
   name: string;
   full: string;
   nick: string;

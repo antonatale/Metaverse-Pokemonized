@@ -4,6 +4,7 @@ import type { BattleEvent, BattleState } from './types';
 import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
 import { ch, mv, addMod, available, beaterOf, zenOn } from './state';
+import type { Move } from '../data/characters';
 import { applyHit, heal, confuse } from './damage';
 
 /* ---------- moves: what each one does, character by character ---------- */
@@ -209,11 +210,64 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
     case 'orale':
       heal(s, i, 30, ev, 'Ti fa ripetere tutto a voce: l\'Esame recupera PS.');
       break;
+    /* --- the bag, in story battles --- */
+    case 'retino': case 'retino2': {
+      s.bag![id] = (s.bag![id] || 0) - 1;
+      ev.push(anim(i, 'net'));
+      /* the more worn out the creature, the easier: a third of the times at full health, almost always near the end */
+      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1));
+      if (rand(s) < chance) s.caught = true;
+      else { ev.push(anim(j, 'dodge')); ev.push(say(ch(foe).name + ' scappa dal retino!')); }
+      break;
+    }
+    case 'tiella':
+      s.bag!.tiella = (s.bag!.tiella || 0) - 1;
+      ev.push(expr(i, 'grin'));
+      heal(s, i, 40, ev, nm + ' mangia una fetta di tiella: si sente meglio.');
+      break;
+    /* --- the creatures of Formia: their moves are numbers, done here --- */
+    default:
+      if (genericMove(s, i, m!, ev)) attacked = true;
   }
   const used = id === 'copenhagenRet' ? 'copenhagen' : id;
   if (me.id === 'zendavid') me.used[used] = true;
   if (me.id === 'costanzo' && m!.kind === 'atk') { me.atkStreak = me.lastAtk === id ? me.atkStreak + 1 : 1; me.lastAtk = id; }
   if (id !== 'copenhagenRet') me.lastMove = id;
   if (m && m.uses) me.uses[id] = (me.uses[id] || 0) + 1;
+  return attacked;
+}
+/* the standard effects of the creatures' moves, the same numbers as the friends' (Palestra, Pit stop, Abbaia, Diagnosi) */
+const FX: Record<string, { stat: string; mult: number; turns: number; text: string }> = {
+  atkUp: { stat: 'atk', mult: 1.3, turns: 3, text: 'l\'Attacco di {n} sale per 3 turni.' },
+  defUp: { stat: 'def', mult: 1.25, turns: 3, text: 'la Difesa di {n} sale per 3 turni.' },
+  atkDown: { stat: 'atk', mult: 0.75, turns: 3, text: 'l\'Attacco di {n} cala per 3 turni.' },
+  defDown: { stat: 'def', mult: 0.8, turns: 2, text: 'la Difesa di {n} cala per 2 turni.' }
+};
+function cap(t: string) { return t.charAt(0).toUpperCase() + t.slice(1); }
+/** a creature's move: damage, a heal, a raise or a drop, a confusion; true if it attacked */
+function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boolean {
+  const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, fx = m.fx || {};
+  let attacked = false;
+  if (m.kind === 'atk') {
+    ev.push(expr(i, 'grin'));
+    const dmg = applyHit(s, i, m.id, ev); attacked = true;
+    if (dmg > 0 && m.drain && me.hp > 0) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
+    if (dmg <= 0 || foe.hp <= 0) return attacked;
+  } else if (m.kind === 'heal' && fx.heal) {
+    ev.push(expr(i, 'grin'));
+    heal(s, i, me.max * fx.heal, ev);
+  } else ev.push(expr(i, 'smirk'));
+  if (fx.self) {
+    const f = FX[fx.self];
+    addMod(me, f.stat, f.mult, s.turn + f.turns, fx.self);
+    ev.push(anim(i, fx.self === 'atkUp' ? 'pump' : 'glowGreen'));
+    ev.push(say(cap(f.text.replace('{n}', ch(me).name))));
+  }
+  if (fx.foe && foe.hp > 0) {
+    const f = FX[fx.foe];
+    addMod(foe, f.stat, f.mult, s.turn + f.turns, fx.foe);
+    ev.push(say(cap(f.text.replace('{n}', ch(foe).name))));
+  }
+  if (fx.conf && foe.hp > 0 && (fx.conf >= 1 || rand(s) < fx.conf)) confuse(s, j, 2, ev);
   return attacked;
 }
