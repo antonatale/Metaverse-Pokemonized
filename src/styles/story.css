@@ -70,3 +70,4 @@ div.pick { cursor: default; }
 .wrun { position: absolute; top: 46px; left: 0; padding: 5px 10px 4px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); font: 15px/1.1 var(--font-display); color: var(--red); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .diary-n { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 2px dashed var(--line); border-radius: 50%; font: 15px/1 var(--font-display); color: var(--muted); }
 .diary .got .diary-n { border-style: solid; background: var(--t-chiacchiera); color: var(--on-hl); }
+.townmap { border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--m-sea); }

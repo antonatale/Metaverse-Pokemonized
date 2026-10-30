@@ -121,7 +121,7 @@ const npcs: Npc[] = [
   npc('nicola', { name: 'Nicola Spadea', seed: 81, dir: 'down', activity: 'lettino', lines: ['Benvenuti all\'Eclipse!', 'Antonio, il solito lettino in prima fila?'] }),
   npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', activity: 'volley', lines: ['Weee! Antonio, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
   npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
-  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
+  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
   npc('oste', { name: 'Al bancone', seed: 82, dir: 'down', activity: 'quiz', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] }),
   npc('vicina', { name: 'Vicina di casa', seed: 15, dir: 'left', lines: ['Antonio! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
   npc('capotreno', { name: 'Capotreno', seed: 21, dir: 'down', gate: 'torino' }),

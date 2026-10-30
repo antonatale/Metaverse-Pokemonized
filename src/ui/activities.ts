@@ -14,27 +14,42 @@ export function offerActivity(n: Npc) {
   say(n.lines || ['…'], n.name, [{ label: a.verb, fn: function () { play(a.id, n); } }, { label: 'Più tardi', fn: null }]);
 }
 function play(id: string, n: Npc) {
-  if (id === 'volley') volley(n);
+  if (id === 'volley') playRally(n, VOLLEY);
+  else if (id === 'padel') playRally(n, PADEL);
   else if (id === 'lettino') lettino(n);
   else if (id === 'gelato') gelato(n);
   else if (id === 'quiz') quiz(n);
   else if (id === 'corsa') startRun(n);
 }
 
-/* ---------- beach volley with Valentin at the Eclipse: hit the ball while it is in the green zone ---------- */
+/* ---------- rallies: beach volley with Valentin at the Eclipse, padel with Andrea at the Bruno Zauli.
+   Hit the ball while it is in the green zone; every exchange is faster. ---------- */
 function css(name: string, fallback: string) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
-function volley(n: Npc) {
-  const best0 = bestOf('volley');
+interface Rally { id: string; title: string; text: string; court: string; padel?: boolean; end: (n: number) => string[] }
+const VOLLEY: Rally = {
+  id: 'volley', title: 'Beach volley all\'Eclipse', court: 'Il campo da beach volley',
+  text: 'Rimanda la palla a Valentin: tocca, o premi Spazio, quando è nella zona verde. Ogni scambio è più veloce.',
+  end: (r) => r >= 12 ? ['WEEE! Sei un animale anomalo pure tu!', 'Stasera festa, e offri tu.'] : r >= 6 ? ['Weee! Bella partita.', 'Domani rivincita al tramonto.'] : ['Weee… va be\', era il riscaldamento.', 'Riprova quando vuoi, io sto qui.']
+};
+const PADEL: Rally = {
+  id: 'padel', title: 'Padel al Bruno Zauli', court: 'Il campo da padel', padel: true,
+  text: 'Rispondi ad Andrea: tocca, o premi Spazio, quando la pallina è nella zona verde. Lui calcola tutto, e accelera.',
+  end: (r) => r >= 12 ? ['Statisticamente impossibile.', 'Rifacciamo, devo raccogliere più dati.'] : r >= 6 ? ['Come previsto: partita equilibrata.', 'Al 94% la prossima la vinco io.'] : ['Ho calcolato tutto. Anche questo.', 'Palestra e padel: domani di nuovo.']
+};
+function playRally(n: Npc, R: Rally) {
+  const best0 = bestOf(R.id);
   const o = sheet('<div class="award mg" role="dialog" aria-modal="true" aria-labelledby="mg-t">' +
-    '<h2 id="mg-t">Beach volley all\'Eclipse</h2>' +
-    '<p>Rimanda la palla a Valentin: tocca, o premi Spazio, quando è nella zona verde. Ogni scambio è più veloce.</p>' +
-    '<canvas class="mg-court" id="mg-c" width="320" height="120" aria-label="Il campo da beach volley"></canvas>' +
+    '<h2 id="mg-t">' + R.title + '</h2>' +
+    '<p>' + R.text + '</p>' +
+    '<canvas class="mg-court" id="mg-c" width="320" height="120" aria-label="' + R.court + '"></canvas>' +
     '<p class="mg-score" id="mg-s" aria-live="polite">Scambi: 0' + (best0 ? ' · record ' + best0 : '') + '</p>' +
     '<button class="btn" type="button" id="mg-x">Basta così</button></div>', 'result');
   const cv = $('mg-c') as HTMLCanvasElement, c = cv.getContext('2d')!, scoreEl = $('mg-s');
   const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 320, Hc = 120;
   cv.width = Wc * dpr; cv.height = Hc * dpr; cv.style.width = '100%'; cv.style.maxWidth = Wc + 'px';
-  const col = { sand: css('--m-sand', '#f8e9b0'), sand2: css('--m-sand2', '#e2c97a'), sea: css('--m-sea', '#a7d8f2'), ink: css('--m-ink', '#1f2c6e'), zone: css('--good', '#2c9a55') };
+  const col = R.padel
+    ? { sand: css('--m-roof-b', '#9ec5ff'), sand2: css('--m-line', '#ffffff'), sea: css('--m-stone2', '#c4bca9'), ink: css('--m-ink', '#1f2c6e'), zone: css('--good', '#2c9a55'), ball: '#e6f04a' }
+    : { sand: css('--m-sand', '#f8e9b0'), sand2: css('--m-sand2', '#e2c97a'), sea: css('--m-sea', '#a7d8f2'), ink: css('--m-ink', '#1f2c6e'), zone: css('--good', '#2c9a55'), ball: '#fffdf6' };
   /* x goes from Valentin (0) to Antonio (1) and back; the green zone is on Antonio's side */
   let x = 0.12, dir = 1, speed = 0.55, zone = 0.17, rally = 0, over = false, raf = 0, last = performance.now(), flash = 0;
   const zoneC = 0.86;
@@ -42,7 +57,8 @@ function volley(n: Npc) {
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.fillStyle = col.sea; c.fillRect(0, 0, Wc, 26);
     c.fillStyle = col.sand; c.fillRect(0, 26, Wc, Hc - 26);
-    c.fillStyle = col.sand2; for (let k = 0; k < 40; k++) c.fillRect((k * 53) % Wc, 30 + (k * 29) % (Hc - 34), 2, 2);
+    if (R.padel) { c.strokeStyle = col.sand2; c.lineWidth = 2; c.strokeRect(6, 30, Wc - 12, Hc - 36); c.beginPath(); c.moveTo(Wc * 0.25, 30); c.lineTo(Wc * 0.25, Hc - 6); c.moveTo(Wc * 0.75, 30); c.lineTo(Wc * 0.75, Hc - 6); c.stroke(); }
+    else { c.fillStyle = col.sand2; for (let k = 0; k < 40; k++) c.fillRect((k * 53) % Wc, 30 + (k * 29) % (Hc - 34), 2, 2); }
     c.globalAlpha = 0.35; c.fillStyle = col.zone; c.fillRect((zoneC - zone / 2) * Wc, 30, zone * Wc, Hc - 34); c.globalAlpha = 1;
     c.strokeStyle = col.ink; c.lineWidth = 2; c.strokeRect((zoneC - zone / 2) * Wc, 30, zone * Wc, Hc - 34);
     c.beginPath(); c.moveTo(Wc / 2, 30); c.lineTo(Wc / 2, Hc - 4); c.stroke();
@@ -52,7 +68,7 @@ function volley(n: Npc) {
     void t;
     const bx = x * Wc, by = Hc - 22 - h;
     c.globalAlpha = 0.25; c.fillStyle = col.ink; c.beginPath(); c.ellipse(bx, Hc - 12, 8, 3, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
-    c.beginPath(); c.arc(bx, by, 8, 0, Math.PI * 2); c.fillStyle = flash > 0 ? col.zone : '#fffdf6'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.arc(bx, by, 8, 0, Math.PI * 2); c.fillStyle = flash > 0 ? col.zone : col.ball; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
     c.beginPath(); c.arc(bx, by, 8, -0.6, 1.2); c.strokeStyle = '#ffb36b'; c.lineWidth = 2; c.stroke();
   }
   function frame(now: number) {
@@ -77,7 +93,7 @@ function volley(n: Npc) {
   function lose() {
     over = true; cancelAnimationFrame(raf); draw();
     sfx('dodge');
-    const better = record('volley', rally);
+    const better = record(R.id, rally);
     if (better && rally > 0) sfx('badge');
     scoreEl.textContent = 'Fine: ' + rally + (rally === 1 ? ' scambio' : ' scambi') + (better && rally > 0 ? ' · nuovo record!' : best0 ? ' · record ' + best0 : '');
     const x0 = $('mg-x'); x0.textContent = 'Continua'; x0.focus();
@@ -94,7 +110,7 @@ function volley(n: Npc) {
     over = true; cancelAnimationFrame(raf);
     document.removeEventListener('keydown', key, true);
     closeSheet();
-    const lines = rally >= 12 ? ['WEEE! Sei un animale anomalo pure tu!', 'Stasera festa, e offri tu.'] : rally >= 6 ? ['Weee! Bella partita.', 'Domani rivincita al tramonto.'] : ['Weee… va be\', era il riscaldamento.', 'Riprova quando vuoi, io sto qui.'];
+    const lines = R.end(rally);
     say(lines, n.name);
   });
   void o;

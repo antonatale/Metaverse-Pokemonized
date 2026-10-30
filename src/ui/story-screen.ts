@@ -12,7 +12,7 @@ import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, person
 import { press, release, update, halt, mover, busy, travel } from '../story/movement';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
-import { resize, invalidate, drawWorld, preview, overview } from '../render/world-view';
+import { resize, invalidate, drawWorld, preview, overview, townMap } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity } from './activities';
@@ -299,7 +299,8 @@ function openMenu() {
       '<span><b>' + esc(b.name) + '</b><small>' + esc(cv0.name) + ' · ' + esc(C[cv0.leader].name) + (got ? '' : ' · da conquistare') + '</small></span></li>';
   }).join('');
   sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
-    '<div class="pickrow"><h3>Compagnia</h3><div class="pickgrid">' + st.squad.map(function (id) {
+    '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
+      '<div class="pickrow"><h3>Compagnia</h3><div class="pickgrid">' + st.squad.map(function (id) {
       return '<div class="pick" style="--tc:' + tc(id) + '"><span class="face">' + face(id) + '</span><span>' + esc(C[id].name) + '</span></div>';
     }).join('') + '</div></div>' +
     '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
@@ -316,6 +317,7 @@ function openMenu() {
     '<p class="hint">I progressi della storia restano su questo dispositivo.</p>' +
     '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
     '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
+  townMap($('wm-map'));
   $('wm-x').addEventListener('click', closeSheet);
   $('wm-home').addEventListener('click', function () { closeSheet(); hide(); goHome(); });
   var r = $('wm-reset'), armed = false;
@@ -348,6 +350,7 @@ function intro() {
   say(['Formia, casa: Parco la Fontana, in via Amendola. Da qui parte il viaggio: Formia, poi Torino, poi Chicago.',
     'In città ci sono due covi: Costanzo fa comizi in piazza della Vittoria, Forchetta gioca nei campi coperti del Bruno Zauli.',
     'Sfida gli amici nei loro covi: chi batti ti dà la sua spilla ed entra nella compagnia.',
+    'E poi c\'è la Formia di tutti i giorni: l\'Eclipse a Vindicio, la pineta, una serata da Morgana. Il motorino è parcheggiato sotto casa.',
     'E occhio: Antonio ha perso quattro cose in giro per Formia. Ritrovale e nelle lotte non le perderà più.']);
 }
 

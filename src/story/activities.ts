@@ -19,6 +19,7 @@ export const ACTIVITIES: Activity[] = [
   { id: 'volley', name: 'Beach volley con Valentin', where: 'Eclipse beach, Vindicio', verb: 'Gioca a beach volley', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
   { id: 'lettino', name: 'Un pomeriggio all\'Eclipse', where: 'Eclipse beach, Vindicio', verb: 'Prendi un lettino' },
   { id: 'corsa', name: 'Corsetta in pineta con Zendavid', where: 'Pineta di Vindicio', verb: 'Corri tra i pini', score: secs, lower: true },
+  { id: 'padel', name: 'Padel con Andrea', where: 'Centro Bruno Zauli', verb: 'Gioca a padel', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
   { id: 'quiz', name: 'Quiz su Formia da Morgana', where: 'Birreria Morgana, Mola', verb: 'Siediti al tavolo', score: (n) => n + ' risposte giuste su 5' },
   { id: 'gelato', name: 'Gelato sul lungomare', where: 'Gelateria, Mola', verb: 'Prendi un gelato' }
 ];

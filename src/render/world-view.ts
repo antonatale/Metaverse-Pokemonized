@@ -5,6 +5,7 @@ import { st } from '../save/story-progress';
 import { M, prepare, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
+import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
 import { root, cv, ctx } from '../ui/story-screen';
 
@@ -221,4 +222,46 @@ export function overview(id?: string, s?: number): string {
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, null, 0);
   return c0.toDataURL('image/png');
+}
+
+/* ---------- the town map in the story menu: all of Formia, the places that matter, and where Antonio is ---------- */
+var town: { key: string; cv: HTMLCanvasElement } | null = null;
+const TOWN_LABELS: [string, string][] = [['Casa', 'casa'], ['Eclipse', 'eclipse'], ['Pineta', 'sign-pineta'], ['Morgana', 'morgana'], ['Piazza', 'piazza'],
+  ['Stazione', 'stazione'], ['Bruno Zauli', 'zauli'], ['Tomba di Cicerone', 'tomba'], ['Gianola', 'mamurra']];
+/** where Antonio is on the Formia map: indoors, at the door he went in by */
+function whereOnFormia(): [number, number] {
+  if (st.map === 'formia') return [st.x, st.y];
+  const door = st.map === 'casa' ? FORMIA_AT.casa.door : st.map === 'circolo' ? FORMIA_AT.tennis.door : null;
+  return door ? [door[0], door[1] + 1] : [st.x, st.y];
+}
+export function townMap(el: HTMLElement) {
+  /* drawn at the size it is shown, so labels and the marker stay readable on a phone */
+  var m = prepare('formia'), cssW = Math.max(240, el.clientWidth || 340), s = cssW * dpr() / (m.w * T), u = dpr(), key = themeKey() + '|' + s.toFixed(4);
+  if (!town || town.key !== key) {
+    var P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
+    c0.width = Math.round(m.w * T * s); c0.height = Math.round(m.h * T * s);
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
+    drawSorted(c, sceneItems(m, P0, s), [], s, null, 0);
+    town = { key, cv: c0 };
+  }
+  var out = document.createElement('canvas'), o = out.getContext('2d')!, k = T * s;
+  out.width = town.cv.width; out.height = town.cv.height;
+  out.setAttribute('role', 'img'); out.setAttribute('aria-label', 'La pianta di Formia, con il punto dove si trova Antonio');
+  o.drawImage(town.cv, 0, 0);
+  o.font = Math.round(11 * u) + 'px "Lilita One", "Arial Rounded MT Bold", sans-serif'; o.textAlign = 'center'; o.textBaseline = 'bottom';
+  o.lineJoin = 'round'; o.lineWidth = 3 * u; o.strokeStyle = '#fffdf6'; o.fillStyle = '#1c2340';
+  TOWN_LABELS.forEach(function (l) {
+    var p = FORMIA_AT[l[1]], q = FORMIA_SPOT[l[1]];
+    if (!p && !q) return;
+    var half = o.measureText(l[0]).width / 2 + 2 * u;
+    var x = p ? (p.x + p.w / 2) * k : (q[0] + 0.5) * k, y = p ? p.y * k - 2 : q[1] * k - 2;
+    x = Math.max(half, Math.min(out.width - half, x));
+    o.strokeText(l[0], x, y); o.fillText(l[0], x, y);
+  });
+  var me = whereOnFormia(), mx = (me[0] + 0.5) * k, my = (me[1] + 0.5) * k, r = 5 * u;
+  o.beginPath(); o.arc(mx, my, r * 1.9, 0, Math.PI * 2); o.fillStyle = 'rgba(232,71,58,.25)'; o.fill();
+  o.beginPath(); o.arc(mx, my, r, 0, Math.PI * 2); o.fillStyle = '#e8473a'; o.fill(); o.lineWidth = 2 * u; o.strokeStyle = '#fffdf6'; o.stroke();
+  out.style.width = '100%'; out.style.height = 'auto'; out.style.display = 'block';
+  el.innerHTML = ''; el.appendChild(out);
 }
