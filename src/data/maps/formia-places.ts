@@ -24,7 +24,11 @@ export interface PlaceSpec {
   on?: 'sand' | 'sea';
 }
 /** something on one tile: a sign, a person, a lost thing, a scooter; at a real place or next to one */
-export interface SpotSpec { id: string; at?: LatLon; near?: { place: string; dx: number; dy: number }; on?: 'sand' | 'sea' | 'any' }
+export interface SpotSpec {
+  id: string; at?: LatLon; near?: { place: string; dx: number; dy: number }; on?: 'sand' | 'sea' | 'any';
+  /** nobody stands here, Antonio just starts here: it may be on a footpath */
+  walk?: boolean;
+}
 
 export const PLACES: PlaceSpec[] = [
   /* ---------- home: Parco la Fontana, Via Giovanni Amendola 1, Gianola ---------- */
@@ -66,7 +70,7 @@ export const PLACES: PlaceSpec[] = [
 
 export const SPOTS: SpotSpec[] = [
   /* home */
-  { id: 'start', near: { place: 'casa', dx: 2, dy: 4 } },
+  { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
   { id: 'motorino', near: { place: 'casa', dx: 6, dy: 3 } },
   { id: 'motorino-eclipse', near: { place: 'eclipse', dx: -2, dy: 1 }, on: 'any' },
   { id: 'motorino-morgana', near: { place: 'morgana', dx: 6, dy: 2 } },

@@ -54,10 +54,29 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     c.beginPath(); c.moveTo(X, Y + T - 8); c.lineTo(X + T, Y + T - 8); c.stroke();
   } else if (L.g === 'rail') {
     c.fillStyle = P.path; c.fillRect(X, Y, T, T);
-    c.strokeStyle = P.wood2; c.lineWidth = 3;
-    for (k = 0; k < 4; k++) { c.beginPath(); c.moveTo(X + 4 + k * 8, Y + 6); c.lineTo(X + 4 + k * 8, Y + 26); c.stroke(); }
-    c.strokeStyle = P.ink; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(X, Y + 11); c.lineTo(X + T, Y + 11); c.moveTo(X, Y + 21); c.lineTo(X + T, Y + 21); c.stroke();
+    /* the track runs towards the rail next to it: along the row, down the column, or round a corner */
+    var rl = function (dx: number, dy: number) { return x + dx >= 0 && y + dy >= 0 && x + dx < map.w && y + dy < map.h && map.cell(x + dx, y + dy).g === 'rail'; };
+    var we = rl(-1, 0) || rl(1, 0), ns = rl(0, -1) || rl(0, 1);
+    if (!we && !ns) we = true;
+    /* half a track from the middle of the tile to one side: sleepers across, two rails along */
+    var half = function (dx: number, dy: number) {
+      var cx = X + T / 2, cy = Y + T / 2;
+      c.strokeStyle = P.wood2; c.lineWidth = 3;
+      for (var s = 0; s < 2; s++) {
+        var o = 4 + s * 8;
+        c.beginPath();
+        if (dy === 0) { c.moveTo(cx + dx * o, Y + 6); c.lineTo(cx + dx * o, Y + 26); } else { c.moveTo(X + 6, cy + dy * o); c.lineTo(X + 26, cy + dy * o); }
+        c.stroke();
+      }
+      c.strokeStyle = P.ink; c.lineWidth = 2; c.beginPath();
+      if (dy === 0) { c.moveTo(cx - (dx < 0 ? 0 : 5), Y + 11); c.lineTo(dx < 0 ? X : X + T, Y + 11); c.moveTo(cx - (dx < 0 ? 0 : 5), Y + 21); c.lineTo(dx < 0 ? X : X + T, Y + 21); }
+      else { c.moveTo(X + 11, cy - (dy < 0 ? 0 : 5)); c.lineTo(X + 11, dy < 0 ? Y : Y + T); c.moveTo(X + 21, cy - (dy < 0 ? 0 : 5)); c.lineTo(X + 21, dy < 0 ? Y : Y + T); }
+      c.stroke();
+    };
+    /* a straight run goes right across, even where a road or a tunnel cuts it off on one side */
+    if (we && !ns) { half(-1, 0); half(1, 0); }
+    else if (ns && !we) { half(0, -1); half(0, 1); }
+    else { if (rl(-1, 0)) half(-1, 0); if (rl(1, 0)) half(1, 0); if (rl(0, -1)) half(0, -1); if (rl(0, 1)) half(0, 1); }
   } else if (L.g === 'sea') {
     c.fillStyle = P.sea2;
     if (r < 0.5) { ell(c, X + 8 + r * 16, Y + 20, 7, 1.6); c.fill(); }
