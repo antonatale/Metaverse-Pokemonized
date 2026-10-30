@@ -15,7 +15,7 @@ export interface StoryProgress {
   squad: FriendId[];
   /** covi beaten */
   beaten: Record<string, boolean>;
-  /** one-off things already seen: intro, formia2 … formia5 (the save was moved to a redrawn Formia) */
+  /** one-off things already seen: intro, formia2 … formia6 (the save was moved to a redrawn Formia) */
   seen: Record<string, boolean>;
   /** lost things picked up */
   found: Record<string, boolean>;
@@ -34,11 +34,12 @@ function load(): StoryProgress {
     if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
       v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
       /* Formia was redrawn (formia2), as the real town (formia3), with joined-up streets (formia4), as a game map
-         with a hand-drawn network of streets (formia5): start again from home, keep pins, squad and found things */
-      if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5)) {
+         with a hand-drawn network of streets (formia5), with the east of town and the street lamps redrawn (formia6):
+         start again from home, keep pins, squad and found things */
+      if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5 || !v.seen.formia6)) {
         var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
       }
-      v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true;
+      v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true; v.seen.formia6 = true;
       return v;
     }
   } catch (e) { /* storage unavailable */ }

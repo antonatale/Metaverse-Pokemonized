@@ -15,6 +15,8 @@
 .seg button { padding: 10px 8px; border: 0; background: var(--card); font: 15px/1.2 var(--font-display); color: var(--ink); cursor: pointer; }
 .seg button + button { border-left: 2px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.seg.seg4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.seg4 button { padding: 9px 4px; font-size: 14px; }
 .pickrow h3 { margin: 0 0 6px; font: 13px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--red); }
 .pickgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .pick { border: 2px solid var(--line); border-radius: 7px; background: var(--card); padding: 3px 3px 4px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; cursor: pointer; }

@@ -22,7 +22,7 @@ export const ACTIVITIES: Activity[] = [
   { id: 'corsa', name: 'Corsetta in pineta con Zendavid', where: 'Pineta di Vindicio', verb: 'Corri tra i pini', score: secs, lower: true },
   { id: 'padel', name: 'Padel con Andrea', where: 'Centro Bruno Zauli', verb: 'Gioca a padel', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
   { id: 'quiz', name: 'Quiz su Formia da Morgana', where: 'Birreria Morgana, Mola', verb: 'Siediti al tavolo', score: (n) => n + ' risposte giuste su 5' },
-  { id: 'gelato', name: 'Gelato sul lungomare', where: 'Gelateria, Mola', verb: 'Prendi un gelato' }
+  { id: 'gelato', name: 'Gelato da Lavezzi', where: 'Piazza Marconi, centro', verb: 'Prendi un gelato' }
 ];
 export function activity(id: string): Activity { const a = ACTIVITIES.find((x) => x.id === id); if (!a) throw new Error('no activity ' + id); return a; }
 export function timesDone(id: string): number { return (st.done && st.done[id]) || 0; }

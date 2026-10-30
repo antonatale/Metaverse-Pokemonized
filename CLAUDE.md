@@ -54,6 +54,7 @@ src/
     movement.ts            passi, rotazioni, porte, warp e viaggi (travel)
     activities.ts          le attività per Formia: elenco, volte fatte, record
     goals.ts               il giro di Formia: le tappe in ordine, la prossima, dove puntare la freccia
+    daytime.ts             l'ora di Formia: alba e tramonto veri del giorno, buio, scelta del menu (chiave lotte-tra-amici:ora:v1)
     run.ts                 lo stato della corsetta in pineta
   save/
     story-progress.ts      salvataggio della storia  (chiave lotte-tra-amici:storia:v1)
@@ -62,7 +63,8 @@ src/
     svg/                   ritratti generati da parametri (looks.ts), espressioni, capelli, vestiti, Esame, robot;
                            badges.ts: spille e icone degli oggetti
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
-    world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, anteprima della home, mappa intera
+    world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, la notte (lampioni, finestre, faro),
+                           anteprima della home, mappa intera
   audio/                   musica ed effetti sintetizzati con la Web Audio API (nessun file audio)
     context.ts             AudioContext creato al primo tocco o tasto, bus musica/effetti, acceso/spento
                            (chiave lotte-tra-amici:audio:v1), pausa quando la scheda non è visibile
@@ -105,6 +107,7 @@ tools/
   - **Scheletro giocabile, a mano:** ferrovia e strade sono in `tools/formia/network.ts`, come elenchi di angoli in caselle, e corrono dritte da un angolo all'altro. La ferrovia è una sola linea, dalla galleria nella collina a ovest al bordo est, passando davanti alla stazione; dove una strada la incrocia c'è un passaggio a livello. Le strade (Appia, lungomare, via Vitruvio, le vie dei quartieri, via Amendola…) si toccano in caselle comuni, quindi sono un'unica rete senza vicoli ciechi. I sentieri della pineta sono `PATHS`.
   - **I luoghi vengono dopo le strade:** ognuno di `formia-places.ts` va sulla casella libera più vicina alla posizione vera da cui la sua porta dà su una strada (o, se non c'è, su un vialetto di pochi passi). Quelli del centro hanno `tile`, una casella scelta a mano, perché stazione, Comune, piazza, bar e Morgana sono composti insieme alle strade.
   - **Poi il resto:** persone e cose accanto ai loro posti (mai su un edificio, su un vialetto, dietro un tetto, o in un angolo da cui chiuderebbero un altro); le case di contorno lungo le vie; i marciapiedi del centro; gli ulivi in campagna, in file con lo spazio per passare.
+  - **Per ultimi i lampioni:** lungo le strade della città, sul marciapiede o sul bordo erboso (`K` erba, `L` pietra, `Y` lastricato), un lato e l'altro a turno. Mai davanti a una porta o accanto a qualcuno, e ognuno viene tolto se taglia fuori anche una sola casella raggiungibile da casa.
 
   Tutto finisce in `formia-ground.ts`.
 - **Per cambiarla:**
@@ -118,7 +121,7 @@ tools/
     - `npx tsx tools/formia/drift.ts`: di quanto si è spostato ogni luogo;
     - `npm test`: controlla anche che strade e ferrovia restino continue (`tools/formia/playable.ts`). Poi `npm run golden`, perché il disegno cambia.
 - **Scala:** circa 33 m per casella in centro, di più nei tratti in mezzo; le spiagge di Vindicio e Gianola sono allargate di qualche casella verso il mare, sennò a questa scala sarebbero strisce.
-- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia5`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
+- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia6`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
 
 ## Il giro di Formia
 
@@ -141,7 +144,10 @@ tools/
 
   I colori sono token `--m-wall-*`, `--m-shutter-*`, `--m-tent-*`.
 - **Posti importanti, riconoscibili:**
-  - casa (Parco la Fontana, palazzina gialla con le tende);
+  - casa (Parco la Fontana, palazzina gialla con le tende), con il giardino e la fontana: la siepe lo separa dall'Appia;
+  - quasi di fronte, dall'altra parte dell'Appia e un po' verso il centro, il Villaggio Don Bosco: la chiesa con la vetrata, la canonica e il campanile, l'oratorio, il campo (`parish`);
+  - in piazza San Giovanni, a Mola, la chiesa dei Santi Lorenzo e Giovanni Battista, con la facciata a due ordini, le nicchie, il campanile con l'orologio (`collegiata`); di fronte la scuola Vitruvio Pollione con le bandiere (`school`); accanto, gli archi dell'acquedotto romano (`aqueduct`);
+  - la Gelateria Lavezzi in piazza Marconi, accanto al Comune: insegna verde e oro «dal 1870», tenda a strisce, vetrina con le vaschette, il cono (`gelateria`);
   - il Bruno Zauli con la pista d'atletica;
   - il Palamendola con il tetto a volta;
   - la stazione con il treno fermo;
@@ -163,10 +169,11 @@ Ogni quartiere ha il suo aspetto, le sue persone e una nota che compare quando A
   - c'è l'ingresso del Cisternone;
   - ci abitano la signora del teatro e la devota di Sant'Erasmo.
 - **Centro:** via Vitruvio con i negozi sul lato nord, il Comune con il Museo archeologico (c'è la guida), la piazza con il monumento ai caduti e la stazione con il treno.
-- **Mola**, il borgo marinaro: case colorate dei pescatori, reti stese sulle banchine, barche, la torre angioina, la chiesa dei Santi Lorenzo e Giovanni Battista, Morgana.
+- **Mola**, il borgo marinaro: case colorate dei pescatori, reti stese sulle banchine, barche, la torre angioina, Morgana. Più su, piazza San Giovanni: la chiesa dei Santi Lorenzo e Giovanni Battista, di fronte la scuola Vitruvio Pollione (c'è uno studente), accanto l'acquedotto romano.
 - **Porto:** traghetto, biglietteria Laziomar, faro sul molo.
 - **Vindicio:** villette con la bouganville, i lidi, la pineta, la Tomba di Cicerone sull'Appia.
-- **Via Amendola, Acqualonga, Santo Janni:** palazzine, il Bruno Zauli con la pista, il Palamendola.
+- **Via Amendola, Acqualonga, Santo Janni:** palazzine, il Bruno Zauli con la pista, il Palamendola. Via Acqualonga corre sotto la ferrovia; giù fino all'Appia scendono via Gramsci, via Amendola (casa di Antonio, con il giardino) e via Santo Janni.
+- **Villaggio Don Bosco:** dall'Appia scende via San Giovanni Bosco; la chiesa, l'oratorio e il campo, con l'animatore.
 - **Gianola:** il parco, la villa di Mamurra e le vasche del porticciolo romano in mare.
 - **Monti Aurunci:** in cima si vede Maranola.
 - **Targhe:** le vie principali hanno la targa con il nome vero e una frase. I nomi delle strade di `network.ts` sono quelli reali, confrontati con le posizioni di OpenStreetMap.
@@ -179,7 +186,10 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Sant'Erasmo:** vescovo e martire, protettore dei marinai, morto a Formia il 2 giugno 303. La chiesa di Castellone sorge sulla sua sepoltura: gli scavi del 1970–76 hanno trovato una necropoli romana e una cripta carolingia. Le reliquie andarono a Gaeta dopo l'842. Da «Elmo» viene il fuoco di Sant'Elmo. Fonti: italia.it, Arcidiocesi di Gaeta.
 - **Teatro romano:** di età augustea, a sud di Sant'Erasmo. Circa 300 persone abitano in più di settanta appartamenti costruiti dentro. Fonte: italia.it.
 - **Torre di Mola:** del castello angioino, costruita dopo il sacco del 1289 sopra le terme romane. Oggi ospita l'Archivio storico. Fonti: italia.it, formiae.it.
-- **Chiesa dei Santi Lorenzo e Giovanni Battista**, a Mola: citata dall'841. Fino all'Ottocento erano due chiese divise da un muro; la guerra l'ha quasi distrutta. San Giovanni si festeggia a Mola il 24 giugno. Fonti: Wikipedia, travel365.
+- **Chiesa dei Santi Lorenzo e Giovanni Battista**, in piazza San Giovanni a Mola: citata dall'841. Fino all'Ottocento erano due chiese divise da un muro; la guerra l'ha quasi distrutta. Dentro c'è una tavola di Antoniazzo Romano (verso il 1490). San Giovanni si festeggia a Mola il 24 giugno. Vicino alla chiesa ci sono resti dell'acquedotto romano. Fonti: Wikipedia, gcatholic.org, wanderlog, travel365, guide turistiche.
+- **Scuola Vitruvio Pollione:** istituto comprensivo, la scuola media è in via Emanuele Filiberto, a Mola. Che Vitruvio fosse di Formia è una tradizione, non una certezza: i testi dicono «molti dicono». Fonti: tuttitalia, whatschool, gjc.it. Che la scuola stia di fronte alla chiesa, e il giardino con la siepe sull'Appia di Parco la Fontana, sono indicazioni di chi ci abita, non di fonti pubbliche.
+- **Villaggio Don Bosco:** è la parrocchia del Cuore Immacolato di Maria, su via Appia Lato Napoli, con l'oratorio. Nell'aprile 2023 un incendio ha danneggiato la sacrestia e la canonica (Avvenire): non è nei testi del gioco. Com'è fatta davvero la chiesa non l'abbiamo trovato: il disegno è una chiesa parrocchiale moderna qualunque. La frase «Basta che siate giovani perché io vi ami assai» è di San Giovanni Bosco. Fonti: Avvenire, gcatholic.org, copray.ch.
+- **Gelateria Lavezzi:** in piazza Guglielmo Marconi (9 o 11, le fonti non concordano), dal 1870: Amalio Lavezzi cominciò con un chiosco, limone e caffè, con la neve presa sul Vesuvio; oggi c'è la quarta generazione. Ha i tavolini fuori. I colori veri dell'insegna non li abbiamo verificati: verde e oro sono una scelta. Fonti: innercitynews.com.au, Broadsheet, TripAligner, RestaurantGuru.
 - **Museo archeologico nazionale:** in via Vitruvio 184, nell'ala sud del Palazzo comunale (le sale degli «Stalloni dei Borbone»). Ha statue togate con tracce di colore e statue di notabili e della famiglia imperiale, tra cui Gaio Cesare, trovate nell'antico Foro, oggi piazza Mattej. Fonti: italia.it, cultura.gov.it.
 - **Monumento ai caduti** in piazza della Vittoria: del 1926. Fonte: Wikipedia.
 - **Porto:** traghetti e aliscafi Laziomar per Ponza e Ventotene, tutto l'anno. Fonti: laziomar.it e gli aggregatori di traghetti.
@@ -194,12 +204,26 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 ## Attività, casa e motorino
 
-- **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
+- **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato da Lavezzi (limone e caffè sono i primi gusti, come nel 1870). Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
 - **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
 - **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
-- **Morgana:** la porta in via Tullia porta in `morgana.ts`: bancone, tavoli, palco con il microfono. Il quiz lo propone l'oste dietro il bancone; Costanzo, quando è in compagnia, sta a un tavolo. Il giro di Formia punta alla porta da fuori e all'oste da dentro.
+- **Morgana:** la porta su via Abate Tosti porta in `morgana.ts`: bancone, tavoli, palco con il microfono. Il quiz lo propone l'oste dietro il bancone; Costanzo, quando è in compagnia, sta a un tavolo. Il giro di Formia punta alla porta da fuori e all'oste da dentro.
 - **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
 - **Cartelli:** quelli dei posti principali dicono anche da che parte sono gli altri (← Vindicio · Mola →).
+
+## Giorno e notte
+
+- **L'ora di Formia** (`story/daytime.ts`): di base è quella di fuori, dall'orologio del dispositivo. Alba e tramonto sono quelli veri di Formia per quel giorno, calcolati da latitudine, longitudine, equazione del tempo e ora legale (il 30 ottobre: 6:38 e 17:00). Il buio cresce da un quarto d'ora prima del tramonto a un'ora dopo, e al contrario all'alba.
+- **Dal menu** ("Ora del giorno") si sceglie Come fuori, Giorno, Tramonto o Notte. La scelta sta in `lotte-tra-amici:ora:v1`, sempre in `try/catch`; i salvataggi non si toccano.
+- **Come si disegna** (`drawNight` in `render/world-view.ts`): un foglio di notte (`--m-night`) a un terzo della risoluzione, con buchi sfumati dove c'è luce e una tinta calda (`--m-lamp`) nelle pozze; poi la lampadina di ogni lampione. Al tramonto c'è una velatura arancio (`--m-dusk`). Fanno luce:
+  - i lampioni;
+  - le porte dei posti (più larga dove c'è vita: Morgana, il bar, Lavezzi, la stazione, l'Eclipse) e di un terzo delle case;
+  - torri, chiese, la Tomba di Cicerone e il monumento, illuminati;
+  - le finestre: il vetro azzurro delle sprite (`#bfe3ff`, `#e8f5ff`) diventa caldo (`glowOf`), in tutti i posti e in sette case su dieci;
+  - il faro, con due fasci che girano sulla baia;
+  - un alone intorno ad Antonio, che non si perde mai nel buio.
+- **Dentro** (casa, circolo, Morgana) le luci sono sempre accese: niente buio. Di notte i gabbiani dormono.
+- **Nei test** l'orologio finto di Playwright segna le 11 di mattina: si gioca di giorno. Per guardare la notte basta mettere `lotte-tra-amici:ora:v1` a `notte`.
 
 ## Come gira
 
@@ -268,7 +292,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **CSP della cornice:** script esterni solo da cdnjs, jsdelivr o unpkg; fogli di stile solo da Google Fonts; niente immagini esterne. Il resto deve essere inline o generato in codice, e Phaser va benissimo incorporato nel bundle singlefile.
 - **Font:** dopo la prima pubblicazione va verificato che i font incorporati (`@font-face` con URL `data:`) si carichino davvero nella cornice. Se no, pubblica `dist-google-fonts/index.html`.
-- **Limite della pagina:** 16 MB. Oggi il file è di circa 430 KB.
+- **Limite della pagina:** 16 MB. Oggi il file è di circa 530 KB.
 - **Origine nuova:** un nuovo Artifact è una nuova origine, quindi salvataggi e libretto ripartono vuoti.
 
 ## Verso Phaser

@@ -299,11 +299,11 @@ test('activities around Formia', async ({ browser }) => {
     await choose(p, 'Una rossa');
     await talkThrough(p);
     for (let q = 0; q < 5; q++) { await choose(p, ''); await talkThrough(p); }
-    /* and out again into via Tullia */
+    /* and out again into via Abate Tosti */
     await walk(p, (await p.evaluate(() => window.WORLD._debug.route(5, 7))) || []);
     await walk(p, ['down']);
     await p.clock.runFor(600);
-    /* a gelato on the lungomare */
+    /* a gelato from Lavezzi, in piazza Marconi */
     await talkTo(p, 'gelataio');
     await choose(p, 'Prendi un gelato');
     await choose(p, '');

@@ -20,6 +20,7 @@ import { checkRun, cancelRun } from './run';
 import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
 import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
+import { DAY_MODES, dayMode, setDayMode, sunTimes, type DayMode } from '../story/daytime';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -326,6 +327,12 @@ function award(cv0: Covo) {
 }
 
 /* ---------- menu ---------- */
+/** what the hour of Formia follows: the sun of today, or the choice in the menu */
+function hourHint() {
+  if (dayMode !== 'auto') return 'L\'ora resta questa finché non la cambi. A casa, da Morgana e al circolo le luci sono sempre accese.';
+  var t = sunTimes(new Date()), hm = function (h: number) { var m = Math.round(h * 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
+  return 'Come fuori: oggi a Formia il sole sorge alle ' + hm(t[0]) + ' e tramonta alle ' + hm(t[1]) + '. Di sera si accendono i lampioni.';
+}
 function openMenu() {
   if (!running || dialog || busy) return;
   var city = M.city;
@@ -336,6 +343,9 @@ function openMenu() {
   }).join('');
   sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
     '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
+    '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
+      return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
+    }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
     '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (STOPS.length - 1) + '</h3><ul class="wbadge-list diary tour">' + STOPS.map(function (s0) {
       var done = s0.done(), next = s0 === nextStop();
       return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
@@ -359,6 +369,13 @@ function openMenu() {
     '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
     '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
   townMap($('wm-map'));
+  each(document.querySelectorAll('[data-ora]'), function (b) {
+    b.addEventListener('click', function () {
+      setDayMode(b.getAttribute('data-ora') as DayMode);
+      each(document.querySelectorAll('[data-ora]'), function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+      $('wm-ora').textContent = hourHint();
+    });
+  });
   $('wm-x').addEventListener('click', closeSheet);
   $('wm-home').addEventListener('click', function () { closeSheet(); hide(); goHome(); });
   var r = $('wm-reset'), armed = false;

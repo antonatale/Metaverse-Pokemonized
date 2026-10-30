@@ -14,8 +14,9 @@ export interface PlaceSpec {
   door?: boolean;
   /** column of the door from the left edge, the middle when missing */
   doorAt?: number;
-  /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it) */
-  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field';
+  /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it; a yard is a
+      lawn closed by a hedge, with a gate on its west side) */
+  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard';
   /** tiles kept free of houses and trees around it */
   room?: number;
   /** how far it may move from where it really is, in tiles */
@@ -34,22 +35,32 @@ export interface SpotSpec {
 }
 
 export const PLACES: PlaceSpec[] = [
-  /* ---------- home: Parco la Fontana, Via Giovanni Amendola 1, Gianola ---------- */
-  { id: 'casa', kind: 'condo', w: 5, h: 4, at: [41.2633, 13.6430], door: true, room: 2 },
-  { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], room: 1 },
-  { id: 'palamendola', kind: 'arena', w: 6, h: 2, at: [41.2616, 13.6419], door: true },
-  { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 6, h: 3, at: [41.2608, 13.6397] },
+  /* ---------- home: Parco la Fontana, Via Giovanni Amendola 1: the building, its garden closed by a hedge on the Via
+     Appia, the fountain in the garden. Across the Appia, a little toward the centre, the Villaggio Don Bosco ---------- */
+  { id: 'casa', kind: 'condo', w: 5, h: 4, at: [41.2633, 13.6430], door: true, tile: [136, 16] },
+  { id: 'giardino', kind: 'area', fill: 'yard', w: 7, h: 3, at: [41.2626, 13.6430], tile: [135, 20] },
+  { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], tile: [139, 20] },
+  { id: 'palamendola', kind: 'arena', w: 6, h: 2, at: [41.2616, 13.6419], door: true, tile: [143, 17] },
+  { id: 'donbosco', kind: 'parish', w: 5, h: 3, at: [41.2614, 13.6391], door: true, tile: [129, 25] },
+  { id: 'oratorio', kind: 'coni', w: 4, h: 2, at: [41.2612, 13.6400], door: true, tile: [135, 25] },
+  { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 7, h: 4, at: [41.2611, 13.6380], tile: [120, 25] },
   /* ---------- the Bruno Zauli olympic centre, and its covered tennis courts (Forchetta's covo) ---------- */
-  { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true },
-  { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true },
+  { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true, tile: [114, 20] },
+  { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true, tile: [114, 16] },
   /* the athletics track where Mennea trained, behind the centre */
-  { id: 'pista', kind: 'area', fill: 'field', w: 12, h: 4, at: [41.2655, 13.6300], tile: [119, 14] },
-  { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250] },
+  { id: 'pista', kind: 'area', fill: 'field', w: 12, h: 4, at: [41.2655, 13.6300], tile: [121, 16] },
+  { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250], tile: [114, 25] },
   /* ---------- Mola ---------- */
   { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], tile: [93, 38] },
   { id: 'morgana', kind: 'pub', w: 5, h: 3, at: [41.25819, 13.61234], door: true, tile: [91, 33] },
-  { id: 'chiesa-mola', kind: 'church', w: 4, h: 3, at: [41.2598, 13.6162], door: true },
-  { id: 'gelati', kind: 'shop', w: 4, h: 3, at: [41.2578, 13.6098], door: true, tile: [82, 38] },
+  /* Piazza San Giovanni: the collegiate church of Saints Lorenzo and Giovanni Battista, and across the square the
+     Vitruvio Pollione school; by them the remains of the Roman aqueduct */
+  { id: 'chiesa-mola', kind: 'collegiata', w: 6, h: 3, at: [41.2598, 13.6162], door: true, tile: [104, 18] },
+  { id: 'piazza-sangiovanni', kind: 'area', fill: 'piazza', w: 9, h: 4, at: [41.2596, 13.6165], tile: [103, 21] },
+  { id: 'scuola', kind: 'school', w: 6, h: 2, at: [41.2609, 13.6181], door: true, tile: [104, 25] },
+  { id: 'acquedotto', kind: 'aqueduct', w: 3, h: 2, at: [41.2590, 13.6150], tile: [101, 25] },
+  /* the Gelateria Lavezzi, in Piazza Marconi by the Comune: gelato since 1870 */
+  { id: 'gelati', kind: 'gelateria', w: 4, h: 3, at: [41.25581, 13.60496], door: true, tile: [76, 38] },
   { id: 'bar', kind: 'bar', w: 4, h: 3, at: [41.2584, 13.6110], door: true, tile: [86, 33] },
   { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true, tile: [87, 38] },
   { id: 'traghetto', kind: 'ferry', w: 5, h: 3, at: [41.2554, 13.6118], on: 'sea', reach: 6 },
@@ -81,13 +92,13 @@ export const PLACES: PlaceSpec[] = [
 export const SPOTS: SpotSpec[] = [
   /* home */
   { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
-  { id: 'motorino', near: { place: 'casa', dx: 6, dy: 3 } },
+  { id: 'motorino', near: { place: 'casa', dx: -3, dy: 5 } },
   { id: 'motorino-eclipse', near: { place: 'eclipse', dx: -2, dy: 1 }, on: 'any' },
   { id: 'motorino-morgana', near: { place: 'morgana', dx: 6, dy: 2 } },
   { id: 'motorino-piazza', near: { place: 'piazza', dx: 4, dy: -2 } },
-  { id: 'motorino-zauli', near: { place: 'zauli', dx: 8, dy: 3 } },
+  { id: 'motorino-zauli', near: { place: 'zauli', dx: 8, dy: 1 } },
   { id: 'motorino-pineta', near: { place: 'pineta', dx: -2, dy: 3 } },
-  { id: 'sign-casa', near: { place: 'casa', dx: -1, dy: 4 } },
+  { id: 'sign-casa', near: { place: 'casa', dx: -2, dy: 3 } },
   /* the friends and the townsfolk */
   { id: 'costanzo', near: { place: 'piazza', dx: 4, dy: 1 } },
   { id: 'folla1', near: { place: 'piazza', dx: 2, dy: 3 } }, { id: 'folla2', near: { place: 'piazza', dx: 5, dy: 3 } },
@@ -97,9 +108,9 @@ export const SPOTS: SpotSpec[] = [
   { id: 'barista', near: { place: 'eclipse', dx: 7, dy: 1 }, on: 'any' },
   { id: 'valentin', near: { place: 'eclipse-spiaggia', dx: 9, dy: 4 }, on: 'sand' },
   { id: 'zendavid', near: { place: 'pineta', dx: 10, dy: 4 } },
-  { id: 'andrea', near: { place: 'zauli', dx: 2, dy: 4 } },
+  { id: 'andrea', near: { place: 'zauli', dx: 7, dy: 2 } },
   { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
-  { id: 'vicina', near: { place: 'casa', dx: 5, dy: 5 } },
+  { id: 'vicina', near: { place: 'casa', dx: 6, dy: 3 } },
   { id: 'capotreno', near: { place: 'stazione', dx: 9, dy: 2 } },
   { id: 'turista', near: { place: 'tomba', dx: 4, dy: 2 } },
   { id: 'anziano', near: { place: 'torre-castellone', dx: 2, dy: 2 } },
@@ -107,7 +118,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'tifoso', near: { place: 'bar', dx: 2, dy: 3 } },
   { id: 'gelataio', near: { place: 'gelati', dx: 1, dy: 3 } },
   { id: 'marinaio', near: { place: 'biglietti', dx: 3, dy: 1 } },
-  { id: 'velocista', near: { place: 'zauli', dx: 6, dy: 4 } },
+  { id: 'velocista', near: { place: 'pista', dx: 6, dy: 2 } },
   { id: 'tennista', near: { place: 'tennis', dx: 5, dy: 3 } },
   { id: 'cestista', near: { place: 'palamendola', dx: 1, dy: 2 } },
   { id: 'bagnino', near: { place: 'eclipse-spiaggia', dx: 9, dy: 0 }, on: 'sand' },
@@ -141,9 +152,15 @@ export const SPOTS: SpotSpec[] = [
   { id: 'targa-appia', near: { place: 'tomba', dx: 5, dy: -4 } },
   { id: 'targa-vindicio', near: { place: 'tomba', dx: -1, dy: 5 } },
   { id: 'targa-tito-scipione', near: { place: 'pineta', dx: -9, dy: 9 } },
-  { id: 'targa-amendola', near: { place: 'casa', dx: 6, dy: 5 } },
-  { id: 'targa-appia-napoli', near: { place: 'palamendola', dx: 7, dy: 1 } },
+  { id: 'targa-amendola', near: { place: 'casa', dx: -3, dy: 2 } },
+  { id: 'targa-appia-napoli', near: { place: 'palamendola', dx: 5, dy: 5 } },
   { id: 'targa-gianola', near: { place: 'oriente', dx: 6, dy: -10 }, on: 'any' },
+  /* the Villaggio Don Bosco, the school and the church of Mola, Lavezzi */
+  { id: 'sign-donbosco', near: { place: 'donbosco', dx: -2, dy: 2 } },
+  { id: 'animatore', near: { place: 'campo-amendola', dx: 3, dy: 1 } },
+  { id: 'sign-sangiovanni', near: { place: 'piazza-sangiovanni', dx: 1, dy: 1 } },
+  { id: 'studente', near: { place: 'piazza-sangiovanni', dx: 6, dy: 3 } },
+  { id: 'targa-sgb', near: { place: 'donbosco', dx: -2, dy: 0 } },
   /* Antonio's lost things */
   { id: 'caricabatterie', near: { place: 'stazione', dx: 6, dy: 4 } },
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },

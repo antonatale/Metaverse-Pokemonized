@@ -15,7 +15,7 @@ export const LEGEND: Record<string, Ground> = {
   'M': { g: 'hill', solid: true }, 'O': { g: 'grass', obj: 'olive', solid: true }, 'C': { g: 'grass', obj: 'cypress', solid: true },
   'H': { g: 'steps' }, 'v': { g: 'paving' }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
   'z': { g: 'road', deco: 'zebra' }, 'G': { g: 'far', solid: true }, 'B': { g: 'stone', deco: 'bench', solid: true },
-  'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true },
+  'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true }, 'K': { g: 'grass', obj: 'lamp', solid: true },
   'Q': { g: 'hill', obj: 'tree', solid: true }, 'J': { g: 'hill', obj: 'cypress', solid: true },
   /* the big Formia: umbrella pines on grass and on sand, a beach-volley net on sand */
   'i': { g: 'grass', obj: 'pine', solid: true },
@@ -27,6 +27,8 @@ export const LEGEND: Record<string, Ground> = {
   'V': { g: 'sea', obj: 'windsurf', solid: true }, 'y': { g: 'sea', deco: 'buoy', solid: true },
   /* inside Morgana: a wooden table with its chairs */
   't': { g: 'floor', deco: 'table', solid: true },
+  /* a table outside the Gelateria Lavezzi */
+  'd': { g: 'stone', deco: 'cafe', solid: true },
   /* the quay of Mola: nets spread out to dry (you can walk over them) */
   'e': { g: 'stone', deco: 'nets' }
 };

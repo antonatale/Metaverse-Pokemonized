@@ -6,6 +6,7 @@ import { M, prepare, present, type PreparedMap } from '../story/maps';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { heading } from '../story/goals';
+import { darkness, sunset } from '../story/daytime';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
 import { root, cv, ctx } from '../ui/story-screen';
@@ -17,14 +18,16 @@ function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
 interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number }
-interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number }
+interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null }
+/** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
+interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
 
 /* ---------- drawing ---------- */
 /* DPR: device pixels per CSS pixel. Z: map zoom (big screens see the map larger). VS = DPR × Z: device pixels
    per map pixel on screen. RS: the resolution the cached pictures are painted at, the same as VS so zoomed
    tiles stay sharp, but at most 3 so a big map's ground stays a reasonable size in memory. */
 var DPR = dpr(), Z = 1, VS = DPR, RS = DPR, P = null as unknown as Palette, themeK = '', themeAt = 0, previewEl: HTMLElement | null = null;
-var cache: { map: string | null; theme: string; chunks: Record<string, HTMLCanvasElement>; order: string[]; items: SceneItem[] } = { map: null, theme: '', chunks: {}, order: [], items: [] };
+var cache: { map: string | null; theme: string; chunks: Record<string, HTMLCanvasElement>; order: string[]; items: SceneItem[]; lights: Light[] } = { map: null, theme: '', chunks: {}, order: [], items: [], lights: [] };
 var walkers: Record<string, Walker> = {}, sprites: Record<string, Sprite> = {};
 /* how far above its footprint each kind of thing is drawn */
 const UP = HEIGHT;
@@ -33,7 +36,7 @@ function themeKey() { return getComputedStyle(document.documentElement).getPrope
 /* the tall still things of a map, sorted by their bottom edge (the ground is painted in pieces, see chunk) */
 function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   var items: SceneItem[] = [], spr: Record<string, Sprite> = {};
-  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number) { items.push({ x: x, yb: yb, spr: sp, bob: !!bob, glide: glide || 0 }); };
+  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number, lit?: boolean) { items.push({ x: x, yb: yb, spr: sp, bob: !!bob, glide: glide || 0, lit: !!lit }); };
   for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
     var L = m.cell(x, y);
     if (!L.obj) continue;
@@ -44,7 +47,9 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
     add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
   }
   (m.buildings || []).forEach(function (b) {
-    add(b.x * T, (b.y + b.h) * T, paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }));
+    /* at night the windows light up: in every place, and in most of the houses */
+    var lit = b.id.indexOf('casa-') !== 0 || hash(b.x, b.y, 7) < 0.7;
+    add(b.x * T, (b.y + b.h) * T, paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }), false, 0, lit);
   });
   (m.objects || []).forEach(function (o) { add(o.x * T, (o.y + o.h) * T, paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), o.bob); });
   if (m.signs && m.signs.length) {
@@ -58,7 +63,7 @@ function ensureCaches(now: number) {
   if (!themeK || now - themeAt > 500) { themeK = themeKey(); themeAt = now; }
   if (cache.map === M.id && cache.theme === themeK) return;
   P = palette();
-  cache.items = sceneItems(M, P, RS); cache.chunks = {}; cache.order = []; sprites = {};
+  cache.items = sceneItems(M, P, RS); cache.lights = lightsOf(M); cache.chunks = {}; cache.order = []; sprites = {};
   cache.map = M.id; cache.theme = themeK;
 }
 /* the ground is painted in square pieces as they come into view, and the least recently used are dropped */
@@ -79,7 +84,7 @@ function itemSprite(kind: string, s: number): Sprite {
   return sprites[id] || (sprites[id] = paintObject('item', P || palette(), s, { item: kind, up: UP.item }));
 }
 /* draws the sorted items and the moving things in one pass, so people walk behind trees and roofs */
-function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number) {
+function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
@@ -92,6 +97,10 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
     if (view && (it.x + gx + it.spr.w < view.x || it.x + gx > view.x + view.w || it.yb < view.y || it.yb - it.spr.h > view.y + view.h)) continue;
     var dy = it.bob && now && !reduced ? Math.sin(now / 650 + it.x * 0.037) * 1.5 : 0;
     c.drawImage(it.spr.cv, it.x + gx, it.yb - it.spr.h + dy, it.spr.cv.width / s, it.spr.cv.height / s);
+    if (night && it.lit) {
+      var g = glowOf(it);
+      if (g) { c.globalAlpha = night; c.drawImage(g, it.x, it.yb - it.spr.h, it.spr.cv.width / s, it.spr.cv.height / s); c.globalAlpha = 1; if (lit) lit.push(it); }
+    }
   }
   while (k < people.length) person(people[k++]);
 }
@@ -106,6 +115,122 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
   if (window.MutationObserver) new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function () { cache.map = null; retheme(); });
 })();
+/* ---------- the night: street lamps, lit windows, the lighthouse ---------- */
+/* what lights up once it is dark, by kind: floodlit monuments (the height of their light), places with life at the door */
+const FLOOD: Record<string, number> = { tower: 1.3, octagon: 1.1, church: 1, collegiata: 1.2, tomb: 1, monument: 0.8, clocktower: 1, parish: 0.9, cistern: 0.3, fountain: 0.4, ruins: 0.5, aqueduct: 0.4 };
+const LIVELY: Record<string, number> = { morgana: 2.4, bar: 1.7, gelati: 1.8, stazione: 2, eclipse: 2, forno: 1.3, biglietti: 1.3, casa: 1.4 };
+function lightsOf(m: PreparedMap): Light[] {
+  var out: Light[] = [];
+  if (m.inside) return out;
+  for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
+    /* a street lamp: the head leans to the right of its pole; the light falls on the ground around the foot */
+    if (m.cell(x, y).obj === 'lamp') out.push({ x: x * T + 21, y: y * T + 18, r: T * 1.9, a: 0.85, warm: 1, bulb: [x * T + 23, y * T - 8.5] });
+  }
+  (m.buildings || []).forEach(function (b) {
+    var house = b.id.indexOf('casa-') === 0;
+    if (house && hash(b.x, b.y, 8) > 0.35) return;
+    var big = LIVELY[b.id] || 0;
+    /* the light over the door: of a few houses, of every place; the places with life around them glow wider */
+    out.push({ x: b.door[0] * T + T / 2, y: (b.door[1] + 1) * T + 2, r: T * (big || (house ? 1 : 1.25)), a: house ? 0.6 : 0.8, warm: big ? 1.2 : house ? 0.6 : 0.8 });
+    var f = FLOOD[b.kind];
+    if (f) out.push({ x: (b.x + b.w / 2) * T, y: (b.y + b.h) * T - (UP[b.kind] || T) * 0.6, r: Math.max(b.w * T * 0.7, T * 2) * f, a: 0.7, warm: 0.3 });
+  });
+  (m.objects || []).forEach(function (o) {
+    var f = FLOOD[o.kind];
+    if (f) out.push({ x: (o.x + o.w / 2) * T, y: (o.y + o.h) * T - (UP[o.kind] || T) * 0.55, r: Math.max(o.w * T * 0.75, T * 2) * f, a: 0.75, warm: 0.35 });
+    if (o.kind === 'lighthouse') out.push({ x: o.x * T + 16, y: o.y * T - 36, r: T * 1.4, a: 1, warm: 1.4, bulb: [o.x * T + 16, o.y * T - 36] });
+    if (o.kind === 'train' || o.kind === 'ferry') out.push({ x: (o.x + o.w / 2) * T, y: (o.y + o.h / 2) * T, r: o.w * T * 0.55, a: 0.6, warm: 0.5 });
+  });
+  return out;
+}
+/* the windows of a building, lit: its glass (the pale blue of every window and shop front) painted warm */
+var GLASS = [[191, 227, 255], [232, 245, 255]];
+function glowOf(it: SceneItem): HTMLCanvasElement | null {
+  if (it.glow !== undefined) return it.glow;
+  it.glow = null;
+  var w = it.spr.cv.width, h = it.spr.cv.height, src: ImageData;
+  try { src = it.spr.cv.getContext('2d')!.getImageData(0, 0, w, h); } catch (e) { return null; }
+  var c0 = document.createElement('canvas'); c0.width = w; c0.height = h;
+  var c = c0.getContext('2d')!, out = c.createImageData(w, h), d = src.data, o = out.data, any = false;
+  var n = parseInt((P.lamp || '#ffc96b').slice(1), 16), lr = (n >> 16) & 255, lg = (n >> 8) & 255, lb = n & 255;
+  for (var i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 250) continue;
+    for (var k = 0; k < GLASS.length; k++) if (d[i] === GLASS[k][0] && d[i + 1] === GLASS[k][1] && d[i + 2] === GLASS[k][2]) { o[i] = lr; o[i + 1] = lg; o[i + 2] = lb; o[i + 3] = 255; any = true; break; }
+  }
+  if (!any) return null;
+  c.putImageData(out, 0, 0);
+  return (it.glow = c0);
+}
+var lightCv: HTMLCanvasElement | null = null, NIGHT_A = 0.76, NIGHT_Q = 3;
+/** how much the lamps and windows are on: from nothing at dusk to full a little after */
+function lampsOn(dk: number) { return Math.max(0, Math.min(1, (dk - 0.12) / 0.35)); }
+function rgba(hex: string, a: number) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+/** darkens the frame by the hour: a sheet of night with holes where the lights are, then their warm glow */
+function drawNight(now: number, dk: number, sn: number, camX: number, camY: number, vw: number, vh: number, pp: { x: number; y: number }, lit: SceneItem[]) {
+  var W = cv.width, H = cv.height;
+  if (sn > 0.01) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = sn * 0.16; ctx.fillStyle = P.dusk; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+  if (dk < 0.01) return;
+  var on = lampsOn(dk), q = NIGHT_Q, lw = Math.ceil(W / q), lh = Math.ceil(H / q);
+  if (!lightCv) lightCv = document.createElement('canvas');
+  if (lightCv.width !== lw || lightCv.height !== lh) { lightCv.width = lw; lightCv.height = lh; }
+  var lc = lightCv.getContext('2d')!;
+  lc.setTransform(1, 0, 0, 1, 0, 0); lc.globalCompositeOperation = 'source-over'; lc.globalAlpha = 1;
+  lc.fillStyle = P.night; lc.fillRect(0, 0, lw, lh);
+  lc.setTransform(VS / q, 0, 0, VS / q, -camX * VS / q, -camY * VS / q);
+  lc.globalCompositeOperation = 'destination-out';
+  var seen = function (x: number, y: number, r: number) { return x + r > camX && x - r < camX + vw && y + r > camY && y - r < camY + vh; };
+  var hole = function (x: number, y: number, r: number, a: number) {
+    if (a <= 0 || !seen(x, y, r)) return;
+    var g = lc.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(0,0,0,' + a + ')'); g.addColorStop(0.45, 'rgba(0,0,0,' + a * 0.5 + ')'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    lc.fillStyle = g; lc.fillRect(x - r, y - r, r * 2, r * 2);
+  };
+  cache.lights.forEach(function (l) { hole(l.x, l.y, l.r, l.a * on); });
+  /* Antonio is never lost in the dark */
+  hole(pp.x + T / 2, pp.y + T / 2, T * 2.4, 0.5);
+  /* the lit windows shine through */
+  lc.globalAlpha = on * 0.9;
+  lit.forEach(function (it) { lc.drawImage(it.glow!, it.x, it.yb - it.spr.h, it.spr.cv.width / RS, it.spr.cv.height / RS); });
+  lc.globalAlpha = 1;
+  /* the lighthouse at the end of the mole: two beams sweeping the bay */
+  var lh0 = (M.objects || []).filter(function (o) { return o.kind === 'lighthouse'; })[0];
+  if (lh0 && seen(lh0.x * T + 16, lh0.y * T - 36, T * 9)) {
+    var bx = lh0.x * T + 16, by = lh0.y * T - 36, ang = reduced ? 0.6 : now / 1700;
+    for (var k2 = 0; k2 < 2; k2++) {
+      var a2 = ang + k2 * Math.PI, len = T * 9, spread = 0.16;
+      var bg = lc.createLinearGradient(bx, by, bx + Math.cos(a2) * len, by + Math.sin(a2) * len * 0.6);
+      bg.addColorStop(0, 'rgba(0,0,0,' + 0.85 * on + ')'); bg.addColorStop(1, 'rgba(0,0,0,0)');
+      lc.beginPath(); lc.moveTo(bx, by);
+      lc.lineTo(bx + Math.cos(a2 - spread) * len, by + Math.sin(a2 - spread) * len * 0.6);
+      lc.lineTo(bx + Math.cos(a2 + spread) * len, by + Math.sin(a2 + spread) * len * 0.6);
+      lc.closePath(); lc.fillStyle = bg; lc.fill();
+    }
+  }
+  /* the light of lamps and windows is warm: their pools are tinted, not only uncovered */
+  lc.globalCompositeOperation = 'source-over';
+  cache.lights.forEach(function (l) {
+    if (!l.warm || !seen(l.x, l.y, l.r)) return;
+    var r = l.r * 0.8, g = lc.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
+    g.addColorStop(0, rgba(P.lamp, Math.min(0.55, 0.36 * l.warm) * on)); g.addColorStop(1, rgba(P.lamp, 0));
+    lc.fillStyle = g; lc.fillRect(l.x - r, l.y - r, r * 2, r * 2);
+  });
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = dk * NIGHT_A; ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(lightCv, 0, 0, lw * q, lh * q);
+  ctx.globalAlpha = 1;
+  /* a bright bulb on each lamp, and the lantern of the lighthouse */
+  ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS);
+  ctx.globalCompositeOperation = 'lighter';
+  cache.lights.forEach(function (l) {
+    if (l.bulb && seen(l.bulb[0], l.bulb[1], 9)) {
+      var b = ctx.createRadialGradient(l.bulb[0], l.bulb[1], 0, l.bulb[0], l.bulb[1], 9);
+      b.addColorStop(0, rgba(P.lamp, 0.9 * on)); b.addColorStop(1, rgba(P.lamp, 0));
+      ctx.fillStyle = b; ctx.fillRect(l.bulb[0] - 9, l.bulb[1] - 9, 18, 18);
+    }
+  });
+  ctx.globalCompositeOperation = 'source-over';
+}
+
 /** sizes the canvas to the story screen; big screens see the map larger */
 export function resize() {
   if (!root || root.hidden) return;
@@ -164,7 +289,9 @@ export function drawWorld(now: number) {
   people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
-  drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now);
+  var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
+  drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now, lampsOn(dk), lit);
+  ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit); ctx.restore();
   /* a glint on the lost things, gulls over the water */
   M.items.forEach(function (it) {
     if (st.found[it.id]) return;
@@ -189,7 +316,8 @@ export function drawWorld(now: number) {
     ctx.beginPath(); ctx.moveTo(fx + 1, fy - 26); ctx.quadraticCurveTo(fx + 8, fy - 24 + wave, fx + 14, fy - 21); ctx.lineTo(fx + 1, fy - 15); ctx.closePath();
     ctx.fillStyle = '#e8473a'; ctx.fill(); ctx.lineWidth = 1.4; ctx.stroke();
   });
-  M.gulls.forEach(function (gl) {
+  /* the gulls sleep at night */
+  if (dk < 0.5) M.gulls.forEach(function (gl) {
     var t1 = reduced ? gl.ph : gl.ph + now * gl.sp, x = gl.x + Math.cos(t1) * gl.r, y = gl.y + Math.sin(t1) * gl.r * 0.55;
     if (x < camX - 20 || x > camX + vw + 20 || y < camY - 20 || y > camY + vh + 20) return;
     var fl = reduced ? 0.5 : 0.5 + 0.5 * Math.sin(now / 140 + gl.ph * 9), wy = 2 + fl * 4;

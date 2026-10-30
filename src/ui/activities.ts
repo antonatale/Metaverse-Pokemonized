@@ -243,8 +243,8 @@ function lettino(n: Npc) {
   });
 }
 
-/* ---------- a gelato on the lungomare ---------- */
-const FLAVOURS = ['Limone', 'Fragola', 'Nocciola', 'Pistacchio', 'Cioccolato', 'Cocco'];
+/* ---------- a gelato from Lavezzi, in piazza Marconi: lemon and coffee were the first two flavours, in 1870 ---------- */
+const FLAVOURS = ['Limone', 'Caffè', 'Fragola', 'Nocciola', 'Pistacchio', 'Cioccolato'];
 function gelato(n: Npc) {
   const k = timesDone('gelato'), a = FLAVOURS.slice(k % 2 ? 2 : 0).concat(FLAVOURS.slice(0, k % 2 ? 2 : 0)).slice(0, 4);
   say(['Cono o coppetta? Facciamo cono. Primo gusto?'], n.name, a.map(function (f1) {
@@ -253,7 +253,7 @@ function gelato(n: Npc) {
         return { label: f2, fn: function () {
           record('gelato');
           sfx('pickup');
-          say(['Ecco: ' + f1.toLowerCase() + ' e ' + f2.toLowerCase() + '.', 'Mangialo sul lungomare, guardando i traghetti per Ponza.'], n.name);
+          say(['Ecco: ' + f1.toLowerCase() + ' e ' + f2.toLowerCase() + '.', 'Mangialo in piazza, o giù al porto guardando i traghetti per Ponza.'], n.name);
         } };
       }));
     } };

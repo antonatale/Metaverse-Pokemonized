@@ -23,11 +23,11 @@ export const STREETS: Line[] = [
   { name: 'Via Vitruvio', w: 2, pts: [[40, 36], [97, 36]] },
   { name: 'Via Abate Tosti', w: 2, pts: [[97, 36], [97, 22]] },
   { name: 'Via Remigio Paone', w: 2, pts: [[40, 48], [40, 22]] },
-  { name: 'Via Appia Lato Napoli', w: 2, pts: [[97, 27], [164, 27]] },
-  { name: 'Via Gianola', w: 2, pts: [[160, 27], [160, 53]] },
+  /* past Mola the Appia climbs a little away from the bay: between it and the sea, the Villaggio Don Bosco */
+  { name: 'Via Appia Lato Napoli', w: 2, pts: [[97, 27], [112, 27], [112, 23], [164, 23]] },
+  { name: 'Via Gianola', w: 2, pts: [[160, 23], [160, 53]] },
   /* north of the railway: Rio Fresco, Penitro, the road up to Maranola */
   { name: 'Via Rubino', w: 1, pts: [[40, 22], [97, 22]] },
-  { name: 'Via Amendola', w: 1, pts: [[97, 22], [164, 22]] },
   { name: 'Via Penitro', w: 1, pts: [[40, 22], [40, 12], [97, 12], [97, 22]] },
   { name: 'Via per Maranola', w: 1, pts: [[70, 22], [70, 0]] },
   { name: 'Via Monte di Mola', w: 1, pts: [[56, 22], [56, 36]] },
@@ -41,10 +41,13 @@ export const STREETS: Line[] = [
   { name: 'Via Vindicio', w: 1, pts: [[28, 48], [28, 36], [40, 36]] },
   { name: 'Via Tito Scipione', w: 1, pts: [[18, 60], [40, 60]] },
   { name: 'Via Vindicio', w: 1, pts: [[18, 72], [23, 72]] },
-  /* east: Santo Janni, the Bruno Zauli, Via Amendola, Acqualonga */
-  { name: 'Via Santo Janni', w: 1, pts: [[104, 27], [104, 18], [132, 18], [132, 27]] },
-  { name: 'Via Acqualonga', w: 1, pts: [[148, 22], [148, 27]] },
-  { name: 'Via Gramsci', w: 1, pts: [[118, 22], [118, 27]] }
+  /* east: behind the Appia under the railway, Acqualonga; down to it Via Gramsci, Via Amendola (Antonio's) and Via Santo Janni;
+     across the Appia from Antonio's garden, Via San Giovanni Bosco down to the Villaggio Don Bosco */
+  { name: 'Via Acqualonga', w: 1, pts: [[97, 15], [164, 15]] },
+  { name: 'Via Gramsci', w: 1, pts: [[113, 15], [113, 23]] },
+  { name: 'Via Giovanni Amendola', w: 1, pts: [[134, 15], [134, 23]] },
+  { name: 'Via Santo Janni', w: 1, pts: [[150, 15], [150, 23]] },
+  { name: 'Via San Giovanni Bosco', w: 1, pts: [[128, 25], [128, 28]] }
 ];
 /** footpaths (not streets): through the Pineta di Vindicio, from the Appia down to the beach and across */
 export const PATHS: Line[] = [

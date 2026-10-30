@@ -52,7 +52,7 @@ export const STOPS: Stop[] = [
   doing('padel', 'andrea', 'Andrea ti aspetta al Bruno Zauli: ha calcolato che a padel oggi vince lui.'),
   covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
   doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),
-  doing('gelato', 'gelataio', 'A Mola, vicino al porto, il gelataio ha un pistacchio che non ti dico.'),
+  doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   lost('caricabatterie'),
   lost('appunti'),

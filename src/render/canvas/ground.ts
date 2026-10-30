@@ -290,6 +290,12 @@ const DECO: Record<string, DecoFn> = {
     c.strokeStyle = P.wood2; c.lineWidth = 1; c.beginPath(); c.arc(X + 16, Y + 16, 7, 0.4, 2.4); c.stroke();
     circle(c, X + 12, Y + 14, 3); fillStroke(c, '#ffd166', P.ink, 1.1); circle(c, X + 20, Y + 18, 3); fillStroke(c, '#c96b2c', P.ink, 1.1);
   },
+  /* a café table outside the Gelateria Lavezzi: a white round top, two chairs, two cups of gelato */
+  cafe: function (c, X, Y, P) {
+    [[7, 16], [T - 7, 16]].forEach(function (q) { rr(c, X + q[0] - 4.5, Y + q[1] - 4.5, 9, 9, 2.5); fillStroke(c, P.wood2, P.ink, 1.2); });
+    circle(c, X + 16, Y + 16, 9.5); fillStroke(c, '#fffdf6', P.ink, 1.6);
+    circle(c, X + 13, Y + 14, 2.8); fillStroke(c, '#ff9fb2', P.ink, 1); circle(c, X + 19.5, Y + 18, 2.8); fillStroke(c, '#fff3a0', P.ink, 1);
+  },
   /* the line of buoys that marks off the swimmers from the boats and the windsurfs */
   buoy: function (c, X, Y, P, x, y) {
     c.strokeStyle = P.foam; c.globalAlpha = 0.8; c.lineWidth = 1.4; c.setLineDash([3, 3]);

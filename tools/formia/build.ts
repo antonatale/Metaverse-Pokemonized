@@ -330,11 +330,16 @@ for (const p of PLACES) {
   /* open places are painted into the ground */
   if (p.kind === 'area') for (let y = at.y; y < at.y + at.h; y++) for (let x = at.x; x < at.x + at.w; x++) {
     const edge = x === at.x || y === at.y || x === at.x + at.w - 1 || y === at.y + at.h - 1;
-    if (p.fill === 'piazza') set(x, y, edge && (x - at.x) % 3 === 0 && y === at.y ? 'L' : 'v');
+    if (p.fill === 'piazza') set(x, y, edge && (x - at.x) % 3 === 0 && y === at.y ? 'Y' : 'v');
     else if (p.fill === 'garden') set(x, y, edge && noise(x, y, 11) < 0.45 ? 'T' : noise(x, y, 12) < 0.3 ? 'f' : '.');
     else if (p.fill === 'beach') { set(x, y, ':'); sea[y][x] = false; }
     else if (p.fill === 'pines') { green[y][x] = true; if (get(x, y) !== ',') set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.1 ? 'f' : '.'); }
     else if (p.fill === 'field') set(x, y, '.');
+    else if (p.fill === 'yard') {
+      /* a lawn closed by a hedge on the south and east, and on the west but for the gate in its top corner */
+      const hedge = y === at.y + at.h - 1 || x === at.x + at.w - 1 || (x === at.x && y > at.y);
+      set(x, y, hedge ? '#' : noise(x, y, 23) < 0.25 ? 'f' : '.'); green[y][x] = true;
+    }
   }
   if (p.kind !== 'area' && p.on !== 'sea') {
     roof(at.x, at.y, at.w);
@@ -379,6 +384,15 @@ for (const id of ['scogliera', 'oriente']) {
   }
 }
 for (const [x, y] of tunnels) { reserved[y][x] = true; reserved[y + 1][x] = true; foot[y][x] = true; }
+/* a table outside the Gelateria Lavezzi, by its door path (never on the paving of the piazza, which is a street) */
+if (placed.gelati) {
+  const g = placed.gelati, x = g.x + 2, y = g.y + g.h + 1;
+  if (!foot[y][x] && !pathed[y][x] && /[._f]/.test(get(x, y))) {
+    set(x, y, 'd'); reserved[y][x] = true;
+    /* no tree right below it, or its crown would hide the table */
+    if (get(x, y + 1) === 'T') set(x, y + 1, '.');
+  }
+}
 
 /* the Porticciolo romano of Gianola: the stone tanks of Mamurra's fishpond in the sea, joined to the beach */
 {
@@ -439,7 +453,8 @@ const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; e
   { x0: 19, y0: 34, x1: 40, y1: 62, kinds: ['villa', 'villa', 'house'], every: 0.6 },           /* Vindicio */
   { x0: 40, y0: 4, x1: 99, y1: 22, kinds: ['house', 'condo', 'house'], every: 0.5 },            /* Rio Fresco */
   { x0: 40, y0: 22, x1: 99, y1: 50, kinds: ['house', 'condo', 'shop', 'shop'], every: 0.85 },   /* the centre */
-  { x0: 99, y0: 13, x1: 165, y1: 27, kinds: ['condo', 'house', 'condo'], every: 0.65 },         /* Santo Janni, Via Amendola */
+  { x0: 101, y0: 14, x1: 165, y1: 23, kinds: ['condo', 'house', 'condo'], every: 0.65 },        /* Acqualonga, Via Amendola, Santo Janni */
+  { x0: 139, y0: 24, x1: 158, y1: 30, kinds: ['villa', 'house'], every: 0.6 },                  /* down toward the sea */
   { x0: 148, y0: 29, x1: 165, y1: 56, kinds: ['villa', 'house'], every: 0.55 }                  /* Gianola */
 ];
 const houses: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = [];
@@ -512,6 +527,42 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   const grove = noise(Math.floor(x / 7), Math.floor(y / 6), 19) < 0.5;
   if (grove && y % 3 === 1 && x % 2 === 0) set(x, y, 'O'); else if (noise(x, y, 18) < 0.02) set(x, y, 'T');
 }
+/* ---------- 13. street lamps: along the streets of the town, on the pavement or the verge, the two sides taking turns ---------- */
+let lamps = 0;
+{
+  const WALK = /[.f:_v,=zHe]/;
+  const walkable = (x: number, y: number) => inside(x, y) && !foot[y][x] && WALK.test(get(x, y));
+  /* how many tiles one can walk to from the start: a lamp may never cut anything off */
+  const reach = () => {
+    const seen = grid(false), q: XY[] = [spots.start];
+    let n = 0;
+    seen[spots.start[1]][spots.start[0]] = true;
+    while (q.length) {
+      const [x, y] = q.pop()!; n++;
+      for (const [a, b] of N4) { const u = x + a, v = y + b; if (walkable(u, v) && !seen[v][u]) { seen[v][u] = true; q.push([u, v]); } }
+    }
+    return n;
+  };
+  /* never in front of a door, nor next to someone or a sign */
+  const keep = grid(false);
+  const mark = (x: number, y: number) => { if (inside(x, y)) keep[y][x] = true; };
+  for (const p of Object.values(placed)) if (p.door) for (let k = -1; k <= 1; k++) mark(p.door[0] + k, p.door[1] + 1);
+  for (const h of houses) for (let k = -1; k <= 1; k++) mark(h.door[0] + k, h.door[1] + 1);
+  for (const [x, y] of Object.values(spots)) for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) mark(x + b, y + a);
+  const LAMP: Record<string, string> = { '.': 'K', f: 'K', _: 'L', v: 'Y' };
+  /* the cobbled lanes of Castellone have their lamps too */
+  const road = (x: number, y: number) => /[=z]/.test(get(x, y)) || (get(x, y) === 'v' && x > 40 && x < 66 && y > 32 && y < 49);
+  let total = reach();
+  for (let y = 4; y < H; y++) for (let x = 18; x < W; x++) {
+    const g = get(x, y);
+    if (!LAMP[g] || foot[y][x] || pathed[y][x] || roofed[y][x] || keep[y][x] || road(x, y)) continue;
+    if (!((road(x, y + 1) && x % 8 === 0) || (road(x, y - 1) && x % 8 === 4) || (road(x + 1, y) && y % 8 === 2) || (road(x - 1, y) && y % 8 === 6))) continue;
+    set(x, y, LAMP[g]);
+    if (reach() !== total - 1) { set(x, y, g); continue; }
+    total--; lamps++;
+  }
+}
+
 if (misses.length) console.log('NOT PLACED:', misses.join(' | '));
 if (problems.length) console.log('PROBLEMS:\n  ' + problems.slice(0, 40).join('\n  '));
 
@@ -533,4 +584,4 @@ fs.writeFileSync(file, '/* Generated by tools/formia/build.ts from OpenStreetMap
   'export const FORMIA_TUNNELS: [number, number][] = ' + JSON.stringify(tunnels) + ';\n' +
   '/** the houses of the town around */\n' +
   'export const FORMIA_HOUSES: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = ' + JSON.stringify(houses) + ';\n');
-console.log('wrote', W + '×' + H, 'tiles to', path.relative(process.cwd(), file), '·', houses.length, 'houses');
+console.log('wrote', W + '×' + H, 'tiles to', path.relative(process.cwd(), file), '·', houses.length, 'houses ·', lamps, 'street lamps');
