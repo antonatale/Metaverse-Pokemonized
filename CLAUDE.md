@@ -106,7 +106,9 @@ tools/
   5. un vialetto da ogni porta fino alla strada;
   6. le persone e le cose ("spot"): mai su un edificio, su un vialetto o subito dietro un tetto;
   7. le case di contorno, allineate lungo le vie;
-  8. i marciapiedi del centro e gli uliveti in campagna.
+  8. i marciapiedi del centro e gli uliveti in campagna (mai dentro la pineta o i parchi).
+
+  Dietro le spiagge corre il lungomare lastricato, e dalla pineta e dalla Tomba di Cicerone partono dei sentieri fino alla strada.
 
   Tutto finisce in `formia-ground.ts`.
 - **Strade e ferrovia ad angolo retto:** come su una mappa da gioco, ogni tratto diventa una scala di gradini larghi (`zline`), non una diagonale a scalini di una casella. Le carreggiate doppie e il secondo binario si scartano (`thin`); i pezzi rimasti staccati si uniscono alla rete con il percorso più corto e i moncherini si tolgono. Così si va ovunque a piedi per strada.
@@ -129,7 +131,8 @@ tools/
 - **Attività** (`story/activities.ts`): beach volley con Valentin e lettino da Nicola all'Eclipse, corsetta in pineta con Zendavid, quiz da Morgana, gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
 - **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
 - **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
-- **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana e in piazza della Vittoria (`RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
+- **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
+- **Cartelli:** quelli dei posti principali dicono anche da che parte sono gli altri (← Vindicio · Mola →).
 
 ## Come gira
 

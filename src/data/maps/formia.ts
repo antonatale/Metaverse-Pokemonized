@@ -9,6 +9,8 @@ import { tile, W, H } from './formia-projection';
 
 const at = (id: string) => { const p = FORMIA_AT[id]; if (!p) throw new Error('Formia: ' + id + ' was not placed'); return p; };
 const spot = (id: string): [number, number] => { const s = FORMIA_SPOT[id]; if (!s) throw new Error('Formia: spot ' + id + ' was not placed'); return s; };
+/** where Antonio's scooter is parked: home, and the places of the tour */
+const SCOOTERS = ['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza', 'motorino-zauli', 'motorino-pineta'];
 const door = (id: string): [number, number] => at(id).door!;
 const kindOf = (id: string) => PLACES.find((p) => p.id === id)!.kind;
 function building(id: string, o: Partial<Building>): Building {
@@ -76,7 +78,7 @@ const objects: MapObject[] = [
   object('fontana'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'),
   object('traghetto', { bob: true })
 ].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })))
-  .concat(['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza'].map((id): MapObject => { const [x, y] = spot(id); return { kind: 'scooter', x, y, w: 1, h: 1 }; }));
+  .concat(SCOOTERS.map((id): MapObject => { const [x, y] = spot(id); return { kind: 'scooter', x, y, w: 1, h: 1 }; }));
 
 const pz = at('piazza'), cam = at('campo-amendola');
 const groundObjects: GroundObject[] = [
@@ -94,23 +96,23 @@ const groundObjects: GroundObject[] = [
 ];
 
 const signs: Sign[] = [
-  sign('sign-casa', ['Parco la Fontana, via Giovanni Amendola 1.', 'Casa di Antonio.']),
-  sign('sign-stazione', ['Stazione di Formia-Gaeta. Treni per Roma e per Napoli.']),
+  sign('sign-casa', ['Parco la Fontana, via Giovanni Amendola 1.', 'Casa di Antonio.', '← Il Bruno Zauli, Mola, il centro, Vindicio · → Gianola']),
+  sign('sign-stazione', ['Stazione di Formia-Gaeta. Treni per Roma e per Napoli.', '↓ Piazza della Vittoria, il porto · → Mola, Morgana']),
   sign('sign-comune', ['Palazzo comunale, in via Vitruvio. Nell\'ala del museo ci sono le statue romane trovate a Formia.']),
-  sign('sign-piazza', ['Piazza della Vittoria.', 'Oggi c\'è il comizio di Costanzo, Er Politico.']),
+  sign('sign-piazza', ['Piazza della Vittoria.', 'Oggi c\'è il comizio di Costanzo, Er Politico.', '← Castellone, Vindicio, l\'Eclipse · → Mola, il Bruno Zauli, via Amendola']),
   sign('sign-erasmo', ['Chiesa di Sant\'Erasmo, a Castellone.']),
   sign('sign-castellone', ['Torre di Castellone: ottagonale, del Trecento.', 'Castellone è il borgo alto, nato sopra l\'antica città romana.']),
   sign('sign-cisternone', ['Largo Sant\'Anna. Qui sotto c\'è il Cisternone romano, una cisterna enorme di epoca imperiale.']),
   sign('sign-mola', ['Torre di Mola: la torre rotonda del castello angioino, del Duecento.']),
-  sign('sign-morgana', ['Birreria Morgana, via Tullia.', 'La sera ci si vede qui.']),
+  sign('sign-morgana', ['Birreria Morgana, via Tullia.', 'La sera ci si vede qui.', '← Il centro, Vindicio · → Il Bruno Zauli, via Amendola']),
   sign('sign-porto', ['Porto di Formia, molo Azzurra. Traghetti e aliscafi per Ponza e Ventotene.']),
   sign('sign-tomba', ['Tomba di Cicerone.', 'Secondo la tradizione qui riposa Marco Tullio Cicerone, ucciso a Formia nel 43 avanti Cristo.']),
-  sign('sign-vindicio', ['Lungomare di Vindicio.', 'D\'estate qui c\'è tutta Formia.']),
+  sign('sign-vindicio', ['Lungomare di Vindicio.', 'D\'estate qui c\'è tutta Formia.', '← La pineta, la Tomba di Cicerone · → Il centro, Mola']),
   sign('sign-pineta', ['Pineta di Vindicio.', 'Pini domestici e ombra, anche ad agosto.']),
-  sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Qui si allenava Pietro Mennea.']),
+  sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Qui si allenava Pietro Mennea.', '← Mola, il centro · → Via Amendola, casa']),
   sign('sign-gianola', ['Parco di Gianola.', 'Sul promontorio ci sono i resti della villa romana di Mamurra.']),
   sign('sign-caposele', ['Porticciolo di Caposele.'])
-].concat(['motorino', 'motorino-eclipse', 'motorino-morgana', 'motorino-piazza'].map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })));
+].concat(SCOOTERS.map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })));
 
 const npcs: Npc[] = [
   npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza', unless: 'costanzo' }),
@@ -187,5 +189,6 @@ export const formia: MapDef = {
 /** where Antonio's scooter can take him: it is parked at each of these */
 export const RIDES: { name: string; at: [number, number] }[] = [
   { name: 'Casa', at: spot('motorino') }, { name: 'Eclipse beach', at: spot('motorino-eclipse') },
-  { name: 'Morgana', at: spot('motorino-morgana') }, { name: 'Piazza della Vittoria', at: spot('motorino-piazza') }
+  { name: 'Morgana', at: spot('motorino-morgana') }, { name: 'Piazza della Vittoria', at: spot('motorino-piazza') },
+  { name: 'Bruno Zauli', at: spot('motorino-zauli') }, { name: 'Pineta di Vindicio', at: spot('motorino-pineta') }
 ];

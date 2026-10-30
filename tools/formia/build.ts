@@ -169,12 +169,13 @@ for (let x = 0; x < W; x++) {
 }
 for (const a of osm.areas) if (a.kind === 'wood') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) set(x, y, noise(x, y, 4) < 0.3 ? 'Q' : 'M'); });
 
-/* ---------- 3. green: the pineta, parks ---------- */
+/* ---------- 3. green: the pineta, parks (no olive groves in them later) ---------- */
+const green = grid(false);
 for (const a of osm.areas) {
-  if (a.kind === 'forest') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.08 ? 'f' : '.'); });
+  if (a.kind === 'forest') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) { green[y][x] = true; set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.08 ? 'f' : '.'); } });
   if (a.kind === 'park' || a.kind === 'garden') {
     const pines = /pineta/i.test(a.name);
-    for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) set(x, y, noise(x, y, 7) < 0.3 ? (pines ? 'i' : 'T') : noise(x, y, 8) < 0.25 ? 'f' : '.'); });
+    for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) { green[y][x] = true; set(x, y, noise(x, y, 7) < 0.3 ? (pines ? 'i' : 'T') : noise(x, y, 8) < 0.25 ? 'f' : '.'); } });
   }
 }
 
@@ -197,6 +198,8 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   if (!isLand(x, y)) continue;
   const d = shore(x, y), z = SHORE.find((s) => x >= s.x0 && x < s.x1)!;
   if (z.kind === 'beach' && d <= 3) set(x, y, d === 3 && noise(x, y, 9) < 0.25 ? 'P' : ':');
+  /* behind the beach, the lungomare: a paved walk along the sand */
+  if (z.kind === 'beach' && d === 4 && /[.f]/.test(get(x, y))) set(x, y, '_');
   /* in town the sea is walled by a stone quay, with a few rocks at its foot */
   if (z.kind === 'town' && d <= 2) set(x, y, d === 1 && noise(x, y, 10) < 0.18 ? 'R' : '_');
   if (z.kind === 'rocky' && d === 1) set(x, y, noise(x, y, 10) < 0.35 ? 'R' : ':');
@@ -442,6 +445,13 @@ for (const s of SPOTS) {
   });
   if (!found) misses.push(s.id + ' near ' + tx + ',' + ty);
 }
+/* footpaths through the pineta and up to the Tomba di Cicerone, from the people and signs there to the street */
+for (const id of ['zendavid', 'sign-pineta', 'motorino-pineta', 'sign-tomba', 'turista']) {
+  const sp = spots[id];
+  if (!sp) continue;
+  const by = N4.map(([a, b]): XY => [sp[0] + a, sp[1] + b]).find(([x, y]) => inside(x, y) && !foot[y][x] && /[.f,]/.test(get(x, y)));
+  if (by && pathToStreet(by[0], by[1], 40) == null) misses.push(id + ' (no path to a street)');
+}
 /* the tunnels' mouths, where the railway goes into the hill */
 const tunnels: [number, number][] = [];
 for (const r of osm.rail) if (r.tunnel) for (const e of [r.pts[0], r.pts[r.pts.length - 1]]) {
@@ -488,7 +498,7 @@ for (const z of URBAN) {
 /* ---------- 12. the countryside: olive groves and a few trees where the town thins out ---------- */
 const nearStreet = (x: number, y: number) => N4.some(([a, b]) => /[=v,r_]/.test(get(x + a, y + b)));
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-  if (get(x, y) !== '.' || !free(x, y) || foot[y][x] || nearStreet(x, y)) continue;
+  if (get(x, y) !== '.' || green[y][x] || !free(x, y) || foot[y][x] || nearStreet(x, y)) continue;
   const n = noise(x, y, 18), grove = noise(Math.floor(x / 6), Math.floor(y / 5), 19) < 0.45;
   if (grove && n < 0.16) set(x, y, 'O'); else if (n < 0.025) set(x, y, 'T');
 }

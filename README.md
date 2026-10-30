@@ -1,6 +1,6 @@
 # Lotte tra Amici
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia nella Formia vera (mappa da OpenStreetMap): si parte da casa, a Parco la Fontana, e si va all'Eclipse a Vindicio, in pineta, da Morgana, con attività e minigiochi nei posti di tutti i giorni. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
+Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia nella Formia vera (mappa da OpenStreetMap): si parte da casa, a Parco la Fontana, e si va all'Eclipse a Vindicio, in pineta, da Morgana, con attività e minigiochi nei posti di tutti i giorni. Un giro di Formia mette in fila sfide, attività e oggetti persi: la prossima tappa è sempre in alto, con una freccia che indica la strada, e il motorino porta da un posto all'altro. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
 
 ## Come avviarlo
 
