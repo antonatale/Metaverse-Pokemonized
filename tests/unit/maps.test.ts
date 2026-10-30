@@ -5,6 +5,8 @@ import { GATES } from '../../src/data/gates';
 import { CHARS } from '../../src/data/characters';
 import { ITEMS } from '../../src/data/items';
 import { prepare, blocked } from '../../src/story/maps';
+import { FORMIA_TUNNELS } from '../../src/data/maps/formia-ground';
+import { streetPieces, deadEnds, railEnds } from '../../tools/formia/playable';
 
 /* The map checker (it used to be tools/check-maps.js): rows of the same length, known characters,
    and every person, sign, door and lost thing reachable on foot from the start of the story. */
@@ -122,5 +124,17 @@ describe('story', () => {
       expect(where.some((m) => (m.npcs || []).some((n) => n.covo === k && n.person === cv.leader)), 'nobody leads ' + k).toBe(true);
     }
     for (const [k, g] of Object.entries(GATES)) expect(MAPS[g.city], k).toBeDefined();
+  });
+});
+
+/* Formia is walked along its streets: they must be one network, and the railway one line */
+describe('Formia is playable', () => {
+  const rows = MAPS.formia.rows;
+  it('has its streets in one piece, with no dead ends', () => {
+    expect(streetPieces(rows).length).toBe(1);
+    expect(deadEnds(rows)).toEqual([]);
+  });
+  it('has one railway line, stopping only at its tunnel or at the edge', () => {
+    expect(railEnds(rows, FORMIA_TUNNELS)).toEqual([]);
   });
 });

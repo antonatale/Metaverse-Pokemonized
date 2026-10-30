@@ -1,11 +1,12 @@
-/* Generates the ground of the Formia map from OpenStreetMap (tools/formia/osm-extract.json):
-   sea and coast, beaches, the pineta, parks, hills, the railway and the main streets, at real positions
-   through projection.ts. Streets and railway are redrawn at right angles, as on a game map, and joined into
-   one network; every door gets a path to the street, and the houses of the town around line the streets.
-   The places of formia-places.ts are set on the free spot nearest to where they really are, and the few
-   hand-drawn touches on the ground are the PAINT list of paint.ts.
+/* Generates the ground of the Formia map: the real coast, beaches, pineta, parks and hills from OpenStreetMap
+   (tools/formia/osm-extract.json, through formia-projection.ts), and on it the playable skeleton drawn by hand in
+   network.ts: one railway line and one network of streets, straight and joined, as on a game map.
+   Then every place of formia-places.ts is set near where it really is, with its door on a street; people, signs
+   and things stand by their places; the houses of the town line the streets; the centre is paved and the
+   countryside has rows of olive trees you can walk between.
      npx tsx tools/formia/build.ts            writes src/data/maps/formia-ground.ts
      npx tsx tools/formia/build.ts --print    also prints the map
+     npx tsx tools/formia/build.ts --base     prints only the coast and the green, to draw the network on
    Map data © OpenStreetMap contributors (ODbL 1.0). */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,22 +14,19 @@ import { fileURLToPath } from 'node:url';
 import { W, H, col, row } from '../../src/data/maps/formia-projection';
 import { PAINT, CLEAR } from './paint';
 import { PLACES, SPOTS } from '../../src/data/maps/formia-places';
+import { RAIL, TUNNEL_ENDS, HILLS, STREETS, PATHS, type Line } from './network';
 
 type LL = [number, number];   /* lat, lon */
 type XY = [number, number];   /* a tile */
-interface Road { hw: string; name: string; tunnel: boolean; bridge: boolean; pts: LL[] }
-interface Rail { tunnel: boolean; bridge: boolean; usage: string; pts: LL[] }
 interface Area { kind: string; sport: string; name: string; rings: LL[][] }
 const here = path.dirname(fileURLToPath(import.meta.url));
-const osm = JSON.parse(fs.readFileSync(path.join(here, 'osm-extract.json'), 'utf8')) as { coast: LL[][]; roads: Road[]; rail: Rail[]; areas: Area[] };
+const osm = JSON.parse(fs.readFileSync(path.join(here, 'osm-extract.json'), 'utf8')) as { coast: LL[][]; areas: Area[] };
 
 const G: string[][] = Array.from({ length: H }, () => Array(W).fill('.'));
 const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
 const get = (x: number, y: number) => (inside(x, y) ? G[y][x] : '');
 const set = (x: number, y: number, c: string) => { if (inside(x, y)) G[y][x] = c; };
 const P = (p: LL): [number, number] => [col(p[1]), row(p[0])];
-const tileOf = (p: LL): XY => { const q = P(p); return [Math.floor(q[0]), Math.floor(q[1])]; };
-const K = (x: number, y: number) => x + ',' + y;
 const N4: XY[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const grid = <T>(v: T) => Array.from({ length: H }, () => Array<T>(W).fill(v));
 /* a fixed sequence, so the map comes out the same every time */
@@ -37,6 +35,7 @@ const noise = (x: number, y: number, k: number) => {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 };
+const problems: string[] = [];
 
 /** every tile a segment passes through (supercover, so a line never leaks diagonally) */
 function cells(a: [number, number], b: [number, number], fn: (x: number, y: number) => void) {
@@ -66,39 +65,17 @@ function polygon(ring: LL[], fn: (x: number, y: number) => void) {
     for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.ceil(xs[k] - 0.5); x <= Math.floor(xs[k + 1] - 0.5); x++) if (inside(x, y)) fn(x, y);
   }
 }
-/** Douglas-Peucker on tiles: drops the points within eps of the line, never the ones in keep (junctions) */
-function simplify(pts: XY[], eps: number, keep: Set<string>): XY[] {
-  if (pts.length < 3) return pts;
-  const out: XY[] = [pts[0]];
-  const rec = (i: number, j: number) => {
-    const [ax, ay] = pts[i], [bx, by] = pts[j], len = Math.hypot(bx - ax, by - ay) || 1;
-    let best = -1, far = eps;
-    for (let k = i + 1; k < j; k++) {
-      const d = keep.has(K(pts[k][0], pts[k][1])) ? Infinity : Math.abs((bx - ax) * (ay - pts[k][1]) - (ax - pts[k][0]) * (by - ay)) / len;
-      if (d > far) { far = d; best = k; }
+/** the tiles of a hand-drawn line: straight runs between its corners, 2 tiles wide when w is 2 */
+function walkLine(l: Line, fn: (x: number, y: number) => void) {
+  for (let i = 0; i + 1 < l.pts.length; i++) {
+    const [x0, y0] = l.pts[i], [x1, y1] = l.pts[i + 1];
+    if (x0 !== x1 && y0 !== y1) { problems.push(l.name + ': ' + x0 + ',' + y0 + ' → ' + x1 + ',' + y1 + ' is not straight'); continue; }
+    const sx = Math.sign(x1 - x0), sy = Math.sign(y1 - y0);
+    for (let x = x0, y = y0; ; x += sx, y += sy) {
+      fn(x, y);
+      if (l.w === 2) { fn(x + 1, y); fn(x, y + 1); fn(x + 1, y + 1); }
+      if (x === x1 && y === y1) break;
     }
-    if (best < 0) { out.push(pts[j]); return; }
-    rec(i, best); rec(best, j);
-  };
-  rec(0, pts.length - 1);
-  return out;
-}
-/** a straight run of tiles, along a row or a column */
-function run(x0: number, y0: number, x1: number, y1: number, fn: (x: number, y: number) => void) {
-  const sx = Math.sign(x1 - x0), sy = Math.sign(y1 - y0);
-  for (let x = x0, y = y0; ; x += sx, y += sy) { fn(x, y); if (x === x1 && y === y1) break; }
-}
-/** a segment redrawn at right angles: a staircase of Z steps about `step` tiles deep, centred on the real line */
-function zline(a: XY, b: XY, step: number, fn: (x: number, y: number) => void) {
-  const dx = b[0] - a[0], dy = b[1] - a[1], across = Math.abs(dx) >= Math.abs(dy);
-  const minor = across ? Math.abs(dy) : Math.abs(dx), major = across ? Math.abs(dx) : Math.abs(dy);
-  const n = Math.max(1, Math.min(Math.round(minor / step), Math.floor(major / 3)));
-  let p = a;
-  for (let i = 1; i <= n; i++) {
-    const q: XY = [Math.round(a[0] + dx * i / n), Math.round(a[1] + dy * i / n)];
-    if (across) { const m = Math.round((p[0] + q[0]) / 2); run(p[0], p[1], m, p[1], fn); run(m, p[1], m, q[1], fn); run(m, q[1], q[0], q[1], fn); }
-    else { const m = Math.round((p[1] + q[1]) / 2); run(p[0], p[1], p[0], m, fn); run(p[0], m, q[0], m, fn); run(q[0], m, q[0], q[1], fn); }
-    p = q;
   }
 }
 /** cheapest way over the map from the `from` tiles to any tile `goal` accepts; cost(x, y) is Infinity where you can't go */
@@ -126,6 +103,29 @@ function cheapest(from: XY[], goal: (x: number, y: number) => boolean, cost: (x:
   }
   return null;
 }
+/** the pieces a test cuts the map into, by flood */
+function components(test: (x: number, y: number) => boolean): XY[][] {
+  const seen = grid(false), out: XY[][] = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (seen[y][x] || !test(x, y)) continue;
+    const comp: XY[] = [], q: XY[] = [[x, y]];
+    seen[y][x] = true;
+    while (q.length) {
+      const [cx, cy] = q.pop()!;
+      comp.push([cx, cy]);
+      for (const [a, b] of N4) { const nx = cx + a, ny = cy + b; if (inside(nx, ny) && !seen[ny][nx] && test(nx, ny)) { seen[ny][nx] = true; q.push([nx, ny]); } }
+    }
+    out.push(comp);
+  }
+  return out;
+}
+function rings(cx: number, cy: number, reach: number, fn: (x: number, y: number) => boolean) {
+  for (let r = 0; r <= reach; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    if (fn(cx + dx, cy + dy)) return true;
+  }
+  return false;
+}
 
 /* ---------- 1. sea: everything the gulf reaches without crossing the coast ---------- */
 const coast = grid(false);
@@ -150,14 +150,24 @@ const sea = grid(false);
     q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
   }
 }
-/* a smoother shore: no one-tile coves or spits */
-for (let pass = 0; pass < 2; pass++) {
-  const flip: XY[] = [];
-  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
-    const wet = N4.filter(([a, b]) => sea[y + b][x + a]).length;
-    if (sea[y][x] ? wet <= 1 : wet >= 3) flip.push([x, y]);
+/* a game-map shore: each tile takes what most of its neighbours are, a few times over, so the thin piers,
+   the one-tile coves and the jagged bits of the harbour go; then islands go under and puddles are filled */
+for (let pass = 0; pass < 3; pass++) {
+  const next = grid(false);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let wet = 0, all = 0;
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (inside(x + b, y + a)) { all++; if (sea[y + a][x + b]) wet++; }
+    next[y][x] = wet * 2 > all;
   }
-  for (const [x, y] of flip) sea[y][x] = !sea[y][x];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) sea[y][x] = next[y][x];
+}
+{
+  /* the sea is what the gulf reaches; land not joined to the mainland goes under */
+  const [sx, sy] = P([41.2445, 13.620]), wet = grid(false), q: XY[] = [[Math.floor(sx), Math.floor(sy)]];
+  while (q.length) { const [x, y] = q.pop()!; if (!inside(x, y) || wet[y][x] || !sea[y][x]) continue; wet[y][x] = true; q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+  const dry = grid(false), q2: XY[] = [[0, 0]];
+  while (q2.length) { const [x, y] = q2.pop()!; if (!inside(x, y) || dry[y][x] || wet[y][x]) continue; dry[y][x] = true; q2.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) sea[y][x] = !dry[y][x];
 }
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (sea[y][x]) G[y][x] = '~';
 const isLand = (x: number, y: number) => inside(x, y) && !sea[y][x];
@@ -168,6 +178,11 @@ for (let x = 0; x < W; x++) {
   for (let y = 0; y < top; y++) set(x, y, noise(x, y, 2) < 0.12 ? 'Q' : noise(x, y, 3) < 0.06 ? 'J' : 'M');
 }
 for (const a of osm.areas) if (a.kind === 'wood') for (const r of a.rings) polygon(r, (x, y) => { if (isLand(x, y)) set(x, y, noise(x, y, 4) < 0.3 ? 'Q' : 'M'); });
+/* and the ones drawn by hand, with a ragged edge */
+for (const h of HILLS) for (let y = h.y0; y < h.y1; y++) for (let x = h.x0; x < h.x1; x++) {
+  const edge = x === h.x1 - 1 || y === h.y0 || y === h.y1 - 1;
+  if (isLand(x, y) && !(edge && noise(x, y, 20) < 0.4)) set(x, y, noise(x, y, 4) < 0.3 ? 'Q' : 'M');
+}
 
 /* ---------- 3. green: the pineta, parks (no olive groves in them later) ---------- */
 const green = grid(false);
@@ -200,43 +215,45 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   if (z.kind === 'beach' && d <= 3) set(x, y, d === 3 && noise(x, y, 9) < 0.25 ? 'P' : ':');
   /* behind the beach, the lungomare: a paved walk along the sand */
   if (z.kind === 'beach' && d === 4 && /[.f]/.test(get(x, y))) set(x, y, '_');
-  /* in town the sea is walled by a stone quay, with a few rocks at its foot */
-  if (z.kind === 'town' && d <= 2) set(x, y, d === 1 && noise(x, y, 10) < 0.18 ? 'R' : '_');
+  /* in town the sea is walled by a stone quay */
+  if (z.kind === 'town' && d <= 2) set(x, y, '_');
   if (z.kind === 'rocky' && d === 1) set(x, y, noise(x, y, 10) < 0.35 ? 'R' : ':');
 }
 /* rocks in the water are drawn as sea */
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (get(x, y) === 'R') { sea[y][x] = true; }
-
-/** the ways that run beside one already kept (the second track, the other carriageway) are left out:
-    drawn at right angles, two lines a tile apart would come out as two staircases */
-function thin<T extends { pts: LL[] }>(ways: T[], rank: (w: T) => number): T[] {
-  const sorted = ways.map((w) => {
-    const tiles: XY[] = [];
-    polyline(w.pts, (x, y) => { if (inside(x, y)) tiles.push([x, y]); });
-    return { w, tiles };
-  }).sort((a, b) => rank(a.w) - rank(b.w) || b.tiles.length - a.tiles.length);
-  const near = grid(false), kept = new Set<T>();
-  for (const o of sorted) {
-    if (o.tiles.length && o.tiles.filter(([x, y]) => near[y][x]).length / o.tiles.length >= 0.75) continue;
-    kept.add(o.w);
-    for (const [x, y] of o.tiles) for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (inside(x + b, y + a)) near[y + a][x + b] = true;
-  }
-  return ways.filter((w) => kept.has(w));
+if (process.argv.includes('--base')) {
+  console.log('    ' + Array.from({ length: W }, (_, x) => (x % 10 === 0 ? String(Math.floor(x / 10) % 10) : ' ')).join(''));
+  console.log('    ' + Array.from({ length: W }, (_, x) => String(x % 10)).join(''));
+  G.forEach((r, y) => console.log(String(y).padStart(3) + ' ' + r.map((c) => (/[~R]/.test(c) ? '~' : /[:P]/.test(c) ? ':' : /[MQJ]/.test(c) ? 'M' : /[iT_]/.test(c) ? c : '.')).join('')));
+  process.exit(0);
 }
 
-/* ---------- 5. railway, at right angles (tunnels stay hidden) ---------- */
-const railTiles = (r: Rail) => r.pts.map(tileOf);
-for (const r of thin(osm.rail.filter((r) => !r.tunnel && (r.usage === 'main' || r.usage === '')), () => 0)) {
-  const t = simplify(railTiles(r), 1.5, new Set([0, r.pts.length - 1].map((i) => K(...tileOf(r.pts[i])))));
-  for (let i = 0; i + 1 < t.length; i++) zline(t[i], t[i + 1], 12, (x, y) => { if (isLand(x, y)) set(x, y, 'r'); });
+/* ---------- 5. the railway: one line, from its tunnel to the edge of the map ---------- */
+walkLine({ name: 'ferrovia', w: 1, pts: RAIL }, (x, y) => { if (!inside(x, y)) return; if (!isLand(x, y)) problems.push('railway in the sea at ' + x + ',' + y); else set(x, y, 'r'); });
+const tunnels: [number, number][] = TUNNEL_ENDS.map(([x, y]) => [x, y - 1]);
+
+/* ---------- 6. the streets, and the footpaths of the pineta ---------- */
+const STREET = /[=vz]/;
+const isStreet = (x: number, y: number) => STREET.test(get(x, y));
+for (const l of STREETS) walkLine(l, (x, y) => {
+  if (!inside(x, y)) return;
+  if (!isLand(x, y)) { problems.push(l.name + ' in the sea at ' + x + ',' + y); return; }
+  set(x, y, l.ch || '=');   /* over the railway: a level crossing */
+});
+for (const l of PATHS) walkLine(l, (x, y) => { if (isLand(x, y) && !isStreet(x, y) && get(x, y) !== 'r') set(x, y, ','); });
+{
+  const pieces = components(isStreet);
+  if (pieces.length > 1) problems.push('the streets are in ' + pieces.length + ' pieces: ' + pieces.map((c) => c[0].join(',') + ' (' + c.length + ')').join(' '));
 }
 
-/* ---------- 6. the places, before the streets: a free spot near where each one really is (the streets go round them) ---------- */
+/* ---------- 7. by hand ---------- */
+for (const c of CLEAR) for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) if (isLand(x, y) && !/[=v,r]/.test(get(x, y))) set(x, y, c.to || '.');
+for (const p of PAINT) p.rows.forEach((line, dy) => [...line].forEach((ch, dx) => { if (ch !== ' ') set(p.x + dx, p.y + dy, ch); }));
+
+/* ---------- 8. the places: near where each one really is, with the door on a street ---------- */
 const reserved = grid(false);
 /** the tiles under a building: nothing goes through them */
 const foot = grid(false);
-/** where no street is drawn: under buildings, gardens, beaches and squares */
-const noStreet = grid(false);
 /** the footpaths to the doors: no one stands on them */
 const pathed = grid(false);
 /** the tiles just above a building, hidden by its roof: no one stands there */
@@ -245,21 +262,18 @@ const roof = (x: number, y: number, w: number) => { for (let a = y - 2; a < y; a
 /** where people, signs and things stand */
 const spotted = grid(false);
 const free = (x: number, y: number) => inside(x, y) && !reserved[y][x];
-const GROUND: Record<string, RegExp> = { land: /[.f_v,TiQ]/, sand: /[:PI]/, sea: /~/, area: /[.f_v,TiQ=:]/, beach: /[:PI~]/ };
-const STEP_ON = /[.f:_v,=H]/;
+/* buildings and gardens stand on open ground, never on a street, a quay or the railway */
+const OPEN = /[.fTiOQ]/;
+const GROUND: Record<string, RegExp> = { land: OPEN, sand: /[:PI]/, sea: /~/, area: OPEN, beach: /[:PI~]/ };
+const STEP_ON = /[.f:_v,=zH]/;
+/** a street, a square, a quay or a promenade: where a door may open */
+const WAY = /[=vz_]/;
 interface At { x: number; y: number; w: number; h: number; door?: [number, number] }
 const placed: Record<string, At> = {};
 const misses: string[] = [];
-function rings(cx: number, cy: number, reach: number, fn: (x: number, y: number) => boolean) {
-  for (let r = 0; r <= reach; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-    if (fn(cx + dx, cy + dy)) return true;
-  }
-  return false;
-}
-/** a footpath from the tile in front of a door to the nearest street, square or quay; false when there is none within `limit` */
+/** a footpath from the tile in front of a door to the nearest street, square or quay; null when there is none within `limit` */
 function pathToStreet(x: number, y: number, limit: number, draw = true): number | null {
-  if (/[=vz_]/.test(get(x, y))) return 0;
+  if (WAY.test(get(x, y))) return 0;
   const way = cheapest([[x, y]], (gx, gy) => /[=vz_,]/.test(get(gx, gy)) && !foot[gy][gx], (gx, gy) => {
     if (!isLand(gx, gy) || foot[gy][gx]) return Infinity;
     const g = get(gx, gy);
@@ -273,144 +287,58 @@ function pathToStreet(x: number, y: number, limit: number, draw = true): number 
 }
 for (const p of PLACES) {
   const [px, py] = P(p.at), x0 = Math.round(px - p.w / 2), y0 = Math.round(py - p.h / 2);
-  /* an open place may cover a street: you walk on both */
   const ok = p.kind === 'area' ? (p.on === 'sand' ? GROUND.beach : GROUND.area) : GROUND[p.on || 'land'], dx = p.doorAt == null ? Math.floor(p.w / 2) : p.doorAt;
-  const fits = (x: number, y: number) => {
+  const body = (x: number, y: number) => {
     for (let yy = y; yy < y + p.h; yy++) for (let xx = x; xx < x + p.w; xx++) if (!free(xx, yy) || !ok.test(get(xx, yy))) return false;
-    if (p.door && !(free(x + dx, y + p.h) && STEP_ON.test(get(x + dx, y + p.h)))) return false;
     return true;
   };
-  const found = rings(x0, y0, p.reach == null ? 8 : p.reach, (x, y) => {
-    if (!fits(x, y)) return false;
+  /* a square must open on a street */
+  const onStreet = (x: number, y: number) => {
+    for (let k = -1; k <= p.w; k++) if (WAY.test(get(x + k, y - 1)) || WAY.test(get(x + k, y + p.h))) return true;
+    for (let k = 0; k < p.h; k++) if (WAY.test(get(x - 1, y + k)) || WAY.test(get(x + p.w, y + k))) return true;
+    return false;
+  };
+  /* first try with the door right on a street; then a few steps of footpath away */
+  const tries: ((x: number, y: number) => boolean)[] = [];
+  if (p.door && p.on !== 'sand') {
+    tries.push((x, y) => free(x + dx, y + p.h) && WAY.test(get(x + dx, y + p.h)));
+    tries.push((x, y) => free(x + dx, y + p.h) && STEP_ON.test(get(x + dx, y + p.h)) && pathToStreet(x + dx, y + p.h, 4, false) != null);
+  } else if (p.door) tries.push((x, y) => free(x + dx, y + p.h) && STEP_ON.test(get(x + dx, y + p.h)));
+  else if (p.fill === 'piazza') tries.push(onStreet);
+  else tries.push(() => true);
+  let found: boolean;
+  if (p.tile) {
+    /* picked by hand: it only has to keep off the streets, the railway, the sea and the other buildings (the room around them is fine) */
+    const [tx, ty] = p.tile;
+    found = true;
+    for (let y = ty; y < ty + p.h; y++) for (let x = tx; x < tx + p.w; x++) if (!isLand(x, y) || /[=vzr]/.test(get(x, y)) || foot[y][x]) { problems.push(p.id + ' at ' + p.tile + ': tile ' + x + ',' + y + ' is taken (' + get(x, y) + ')'); found = false; }
+    if (found) placed[p.id] = { x: tx, y: ty, w: p.w, h: p.h, door: p.door ? [tx + dx, ty + p.h - 1] : undefined };
+  } else found = tries.some((door) => rings(x0, y0, p.reach == null ? 10 : p.reach, (x, y) => {
+    if (!body(x, y) || !door(x, y)) return false;
     placed[p.id] = { x, y, w: p.w, h: p.h, door: p.door ? [x + dx, y + p.h - 1] : undefined };
     return true;
-  });
+  }));
   if (!found) { misses.push(p.id + ' near ' + x0 + ',' + y0); continue; }
   const at = placed[p.id], room = p.room == null ? 1 : p.room;
   for (let y = at.y - room; y < at.y + at.h + room; y++) for (let x = at.x - room; x < at.x + at.w + room; x++) {
     if (!inside(x, y)) continue;
     reserved[y][x] = true;
     const inFoot = x >= at.x && x < at.x + at.w && y >= at.y && y < at.y + at.h;
-    if (!inFoot && /[TiQPI]/.test(get(x, y))) set(x, y, get(x, y) === 'P' || get(x, y) === 'I' ? ':' : '.');
+    if (!inFoot && /[TiQPIO]/.test(get(x, y))) set(x, y, get(x, y) === 'P' || get(x, y) === 'I' ? ':' : get(x, y) === 'Q' ? 'M' : '.');
   }
   /* open places are painted into the ground */
   if (p.kind === 'area') for (let y = at.y; y < at.y + at.h; y++) for (let x = at.x; x < at.x + at.w; x++) {
     const edge = x === at.x || y === at.y || x === at.x + at.w - 1 || y === at.y + at.h - 1;
-    if (p.fill === 'piazza') { set(x, y, edge && (x - at.x) % 3 === 0 && y === at.y ? 'L' : 'v'); noStreet[y][x] = true; }
+    if (p.fill === 'piazza') set(x, y, edge && (x - at.x) % 3 === 0 && y === at.y ? 'L' : 'v');
     else if (p.fill === 'garden') set(x, y, edge && noise(x, y, 11) < 0.45 ? 'T' : noise(x, y, 12) < 0.3 ? 'f' : '.');
     else if (p.fill === 'beach') { set(x, y, ':'); sea[y][x] = false; }
-    if (p.fill !== 'piazza') noStreet[y][x] = true;
   }
-  if (p.kind !== 'area' && p.on !== 'sea') roof(at.x, at.y, at.w);
-  if (p.kind !== 'area' && p.on !== 'sea') for (let y = at.y; y < at.y + at.h; y++) for (let x = at.x; x < at.x + at.w; x++) { foot[y][x] = true; noStreet[y][x] = true; if (/[TiQ]/.test(get(x, y))) set(x, y, '.'); }
-}
-/* ---------- 7. streets: the ones that make Formia recognisable, at right angles, joined into one network ---------- */
-const MAIN = /^(trunk|primary|secondary|tertiary)$/;
-const NAMED = new Set([
-  'Via Giovanni Amendola', 'Via Acqualonga', 'Via Tullia', 'Via Abate Tosti', 'Via Cassio I', 'Via Cassio II', 'Via degli Olivetani',
-  'Via del Tempio di Giano', 'Via del Porticciolo Romano', 'Via Antonio Gramsci', 'Via Giuseppe Garibaldi', 'Via Ferdinando Lavanga',
-  'Via Porto Capossele', 'Via Angelo Rubino', 'Via Santo Janni', 'Via Gianola', 'Lungomare Città di Ferrara', 'Via Santo Janni Pescinola',
-  'Via Remigio Paone', 'Via Fontana', 'Via Miramare', 'Via del Commercio', 'Piazzale Marinai d\'Italia', 'Largo Caduti Formiani', 'Via Mamurrano'
-]);
-const WALK = /^(pedestrian|living_street)$/;
-const SKIP = new Set(['Via Rotabile', 'Via San Rocco', 'Lungomare Giovanni Caboto']);   /* up the hills, or in Gaeta */
-const RANK = ['trunk', 'primary', 'secondary', 'tertiary'];
-/* the neighbourhoods: their longer side streets are drawn too, so the houses have streets to line */
-const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
-  { x0: 22, y0: 44, x1: 56, y1: 66, kinds: ['house', 'house', 'condo'], every: 0.55 },          /* Vindicio, above the lungomare */
-  { x0: 44, y0: 6, x1: 112, y1: 34, kinds: ['house', 'condo', 'house'], every: 0.45 },          /* north of the railway: Rio Fresco, Acqualonga */
-  { x0: 52, y0: 34, x1: 76, y1: 58, kinds: ['house', 'house', 'shop'], every: 0.75 },           /* Castellone */
-  { x0: 74, y0: 24, x1: 118, y1: 50, kinds: ['house', 'condo', 'shop', 'house'], every: 0.8 },  /* the centre and Mola */
-  { x0: 112, y0: 12, x1: 150, y1: 32, kinds: ['condo', 'house', 'condo'], every: 0.6 },         /* Gianola, Via Amendola, Santo Janni */
-  { x0: 146, y0: 20, x1: 165, y1: 48, kinds: ['house', 'house'], every: 0.5 }                   /* Gianola, by the sea */
-];
-const LOCAL = /^(residential|unclassified)$/;
-const local = (r: Road) => {
-  if (!LOCAL.test(r.hw) || r.pts.length < 2) return false;
-  const a = P(r.pts[0]), b = P(r.pts[r.pts.length - 1]), m = P(r.pts[Math.floor(r.pts.length / 2)]);
-  return Math.hypot(b[0] - a[0], b[1] - a[1]) >= 7 && TOWN.some((z) => m[0] >= z.x0 && m[0] < z.x1 && m[1] >= z.y0 && m[1] < z.y1);
-};
-const streets = thin(osm.roads.filter((r) => !r.tunnel && !SKIP.has(r.name) && (MAIN.test(r.hw) || NAMED.has(r.name) || (WALK.test(r.hw) && r.name) || local(r))),
-  (r) => (RANK.indexOf(r.hw) + 1 || (LOCAL.test(r.hw) && !NAMED.has(r.name) ? 10 : 9)));
-/* where streets meet: a tile shared by two of them stays a corner of both */
-const uses = new Map<string, number>();
-const lines = streets.map((r) => {
-  const t: XY[] = [];
-  for (const p of r.pts.map(tileOf)) if (!t.length || K(...t[t.length - 1]) !== K(...p)) t.push(p);
-  for (const k of new Set(t.map((p) => K(...p)))) uses.set(k, (uses.get(k) || 0) + 1);
-  return t;
-});
-const junction = new Set([...uses].filter(([, n]) => n > 1).map(([k]) => k));
-const isStreet = (x: number, y: number) => /[=vz]/.test(get(x, y));
-streets.forEach((r, i) => {
-  const wide = r.hw === 'trunk' || r.hw === 'primary', c = WALK.test(r.hw) ? 'v' : '=';
-  const keep = new Set([...junction, K(...lines[i][0]), K(...lines[i][lines[i].length - 1])]);
-  const t = simplify(lines[i], 1.2, keep);
-  const put = (x: number, y: number) => {
-    if (!isLand(x, y) || noStreet[y]?.[x] || /[MQJ]/.test(get(x, y)) && !wide) return;
-    if (get(x, y) === 'r' && c === 'v') return;
-    set(x, y, c);
-  };
-  for (let k = 0; k + 1 < t.length; k++) zline(t[k], t[k + 1], 4, (x, y) => { put(x, y); if (wide) { put(x + 1, y); put(x, y + 1); put(x + 1, y + 1); } });
-});
-/** the street tiles around one, by flood */
-function components(test: (x: number, y: number) => boolean): XY[][] {
-  const seen = grid(false), out: XY[][] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (seen[y][x] || !test(x, y)) continue;
-    const comp: XY[] = [], q: XY[] = [[x, y]];
-    seen[y][x] = true;
-    while (q.length) {
-      const [cx, cy] = q.pop()!;
-      comp.push([cx, cy]);
-      for (const [a, b] of N4) { const nx = cx + a, ny = cy + b; if (inside(nx, ny) && !seen[ny][nx] && test(nx, ny)) { seen[ny][nx] = true; q.push([nx, ny]); } }
-    }
-    out.push(comp);
-  }
-  return out;
-}
-/* little islands of grass between streets become street */
-for (const c of components((x, y) => isLand(x, y) && !noStreet[y][x] && /[.fT]/.test(get(x, y)))) {
-  if (c.length > 4) continue;
-  const shut = c.every(([x, y]) => N4.every(([a, b]) => { const g = get(x + a, y + b); return g !== '' && (/[=vz.fT]/.test(g)); }));
-  if (shut) for (const [x, y] of c) set(x, y, '=');
-}
-/* bits of street cut off by the coast or the hills are joined to the rest, the crumbs are dropped */
-{
-  const comps = components(isStreet).sort((a, b) => b.length - a.length);
-  const net = grid(false);
-  for (const [x, y] of comps[0]) net[y][x] = true;
-  const walkCost = (x: number, y: number) => {
-    const g = get(x, y);
-    if (!isLand(x, y) || noStreet[y][x] || /[~R]/.test(g)) return Infinity;
-    if (g === 'r') return 10;
-    if (/[MQJ]/.test(g)) return 8;
-    if (/[Ti]/.test(g)) return 3;
-    return 1;
-  };
-  for (const c of comps.slice(1)) {
-    if (c.length < 5) { for (const [x, y] of c) set(x, y, '.'); continue; }
-    const link = cheapest(c, (x, y) => net[y][x], walkCost, 40);
-    for (const [x, y] of c) net[y][x] = true;
-    if (!link) continue;
-    for (const [x, y] of link) { if (!isStreet(x, y)) set(x, y, '='); net[y][x] = true; }
+  if (p.kind !== 'area' && p.on !== 'sea') {
+    roof(at.x, at.y, at.w);
+    for (let y = at.y; y < at.y + at.h; y++) for (let x = at.x; x < at.x + at.w; x++) { foot[y][x] = true; if (/[TiQO]/.test(get(x, y))) set(x, y, '.'); }
   }
 }
-/* stubs: a street that goes one or two tiles past a corner and stops */
-for (let pass = 0; pass < 2; pass++) {
-  const ends: XY[] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (get(x, y) === '=' && N4.filter(([a, b]) => isStreet(x + a, y + b)).length === 1) ends.push([x, y]);
-  for (const [x, y] of ends) {
-    const [a, b] = N4.find(([a, b]) => isStreet(x + a, y + b))!;
-    if (N4.filter(([c, d]) => isStreet(x + a + c, y + b + d)).length >= 3) set(x, y, '.');
-  }
-}
-
-/* ---------- 8. by hand ---------- */
-for (const c of CLEAR) for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) if (isLand(x, y) && !/[=v,r]/.test(get(x, y))) set(x, y, c.to || '.');
-for (const p of PAINT) p.rows.forEach((line, dy) => [...line].forEach((ch, dx) => { if (ch !== ' ') set(p.x + dx, p.y + dy, ch); }));
-
-/* ---------- 9. a path from every door to the street ---------- */
+/* the doors not right on a street get their few steps of footpath */
 for (const p of PLACES) {
   const at = placed[p.id];
   if (!at || !at.door || p.on === 'sand') continue;
@@ -424,6 +352,9 @@ for (const p of PLACES) {
     for (let k = 0; k < 3; k++) set(b.x + 9 + k, b.y + 3, 'N');
   }
 }
+for (const [x, y] of tunnels) { reserved[y][x] = true; reserved[y + 1][x] = true; foot[y][x] = true; }
+
+/* ---------- 9. people, signs and things, by their places ---------- */
 const spots: Record<string, [number, number]> = {};
 const STAND: Record<string, RegExp> = { land: /[.f_v,]/, sand: /[:]/, any: /[.f_v,:]/, sea: /~/ };
 for (const s of SPOTS) {
@@ -438,8 +369,10 @@ for (const s of SPOTS) {
   const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && !roofed[y][x] && (!pathed[y][x] || !!s.walk);
   const found = rings(tx, ty, 6, (x, y) => {
     if (!open(x, y) || !ok.test(get(x, y))) return false;
-    /* it must be reachable: at least one walkable tile next to it */
-    if (!N4.some(([ax, ay]) => inside(x + ax, y + ay) && !foot[y + ay][x + ax] && STEP_ON.test(get(x + ax, y + ay)))) return false;
+    /* two ways to reach it, so nothing placed later can shut it in, and it must not shut in a spot placed before */
+    const walk = (a: number, b: number) => inside(a, b) && !foot[b][a] && STEP_ON.test(get(a, b));
+    if (N4.filter(([ax, ay]) => walk(x + ax, y + ay)).length < 2) return false;
+    if (N4.some(([ax, ay]) => inside(x + ax, y + ay) && spotted[y + ay][x + ax] && !N4.some(([bx, by]) => (x + ax + bx !== x || y + ay + by !== y) && walk(x + ax + bx, y + ay + by)))) return false;
     spots[s.id] = [x, y]; reserved[y][x] = true; foot[y][x] = true; spotted[y][x] = true;
     return true;
   });
@@ -448,32 +381,30 @@ for (const s of SPOTS) {
 /* a tree just below someone would hide him behind its crown */
 const UNDER: Record<string, string> = { T: '.', i: '.', O: '.', P: ':', I: ':', p: ',', Q: 'M', J: 'M' };
 for (const [x, y] of Object.values(spots)) for (let d = 1; d <= 2; d++) { const g = get(x, y + d); if (UNDER[g]) set(x, y + d, UNDER[g]); }
-/* footpaths through the pineta and up to the Tomba di Cicerone, from the people and signs there to the street */
+/* the people and signs off the streets (in the pineta, by the Tomba di Cicerone) get a footpath to them */
 for (const id of ['zendavid', 'sign-pineta', 'motorino-pineta', 'sign-tomba', 'turista']) {
   const sp = spots[id];
   if (!sp) continue;
-  const by = N4.map(([a, b]): XY => [sp[0] + a, sp[1] + b]).find(([x, y]) => inside(x, y) && !foot[y][x] && /[.f,]/.test(get(x, y)));
+  const by = N4.map(([a, b]): XY => [sp[0] + a, sp[1] + b]).find(([x, y]) => inside(x, y) && !foot[y][x] && /[.f,_]/.test(get(x, y)));
   if (by && pathToStreet(by[0], by[1], 40) == null) misses.push(id + ' (no path to a street)');
-}
-/* the tunnels' mouths, where the railway goes into the hill */
-const tunnels: [number, number][] = [];
-for (const r of osm.rail) if (r.tunnel) for (const e of [r.pts[0], r.pts[r.pts.length - 1]]) {
-  const [x, y] = tileOf(e);
-  const t: [number, number] = [x, y - 1];
-  if (inside(x, y) && isLand(x, y) && !tunnels.some((q) => Math.abs(q[0] - t[0]) < 3 && Math.abs(q[1] - t[1]) < 3) && free(x, y - 1) && free(x, y)) {
-    tunnels.push(t); reserved[y - 1][x] = true; reserved[y][x] = true; foot[y - 1][x] = true;
-  }
 }
 
 /* ---------- 10. the town around: houses along the streets of every neighbourhood ---------- */
+const TOWN: { x0: number; y0: number; x1: number; y1: number; kinds: string[]; every: number }[] = [
+  { x0: 19, y0: 34, x1: 40, y1: 62, kinds: ['house', 'house', 'condo'], every: 0.6 },           /* Vindicio */
+  { x0: 40, y0: 4, x1: 99, y1: 22, kinds: ['house', 'condo', 'house'], every: 0.5 },            /* Penitro, Rio Fresco */
+  { x0: 40, y0: 22, x1: 99, y1: 50, kinds: ['house', 'condo', 'shop', 'house'], every: 0.85 },  /* Castellone and the centre */
+  { x0: 99, y0: 13, x1: 165, y1: 27, kinds: ['condo', 'house', 'condo'], every: 0.65 },         /* Santo Janni, Via Amendola */
+  { x0: 148, y0: 29, x1: 165, y1: 56, kinds: ['house', 'house'], every: 0.55 }                  /* Gianola */
+];
 const houses: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = [];
 /* first the houses with the door right on a street, then the ones a short path away */
-for (const far of [0, 3]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
+for (const far of [0, 2]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
   if (noise(x, y, 16) > z.every) continue;
   const kind = z.kinds[Math.floor(noise(x, y, 13) * z.kinds.length)], w = kind === 'condo' ? 4 : 3, h = kind === 'condo' ? 3 : 2;
   let fits = true;
   for (let a = y; a < y + h && fits; a++) for (let b = x; b < x + w && fits; b++) if (!free(b, a) || !/[.fT]/.test(get(b, a))) fits = false;
-  /* room to walk around it */
+  /* room to walk around it: no building, railway, sea or hill right next to it */
   for (let a = y - 1; a <= y + h && fits; a++) for (let b = x - 1; b <= x + w && fits; b++) if (!inside(b, a) || foot[a][b] || /[~rRMQJ]/.test(get(b, a))) fits = false;
   for (let a = y - 2; a < y && fits; a++) for (let b = x; b < x + w && fits; b++) if (inside(b, a) && spotted[a][b]) fits = false;
   const dx = x + Math.floor(w / 2);
@@ -486,8 +417,8 @@ for (const far of [0, 3]) for (const z of TOWN) for (let y = z.y0; y < z.y1; y++
   for (let a = y - 1; a <= y + h; a++) for (let b = x - 1; b <= x + w; b++) if (inside(b, a)) reserved[a][b] = true;
   for (let a = y; a < y + h; a++) for (let b = x; b < x + w; b++) set(b, a, '.');
 }
-/* ---------- 11. the centre is paved: pavements along its streets ---------- */
-const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 56, y0: 28, x1: 118, y1: 60 }];
+/* ---------- 11. the centre is paved: pavements along its streets, no scraps of grass between them ---------- */
+const URBAN: { x0: number; y0: number; x1: number; y1: number }[] = [{ x0: 52, y0: 33, x1: 100, y1: 52 }];
 for (const z of URBAN) {
   const pave: XY[] = [];
   for (let y = z.y0; y < z.y1; y++) for (let x = z.x0; x < z.x1; x++) {
@@ -497,18 +428,18 @@ for (const z of URBAN) {
     if (near) pave.push([x, y]);
   }
   for (const [x, y] of pave) set(x, y, '_');
-  /* the scraps of grass left between quays, streets and pavements are paved too */
   const inZ = (x: number, y: number) => x >= z.x0 && x < z.x1 && y >= z.y0 && y < z.y1;
   for (const c of components((x, y) => inZ(x, y) && /[.f]/.test(get(x, y)))) if (c.length <= 6) for (const [x, y] of c) set(x, y, '_');
 }
-/* ---------- 12. the countryside: olive groves and a few trees where the town thins out ---------- */
+/* ---------- 12. the countryside: olive trees in rows you can walk between, a few lone trees ---------- */
 const nearStreet = (x: number, y: number) => N4.some(([a, b]) => /[=v,r_]/.test(get(x + a, y + b)));
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   if (get(x, y) !== '.' || green[y][x] || !free(x, y) || foot[y][x] || nearStreet(x, y)) continue;
-  const n = noise(x, y, 18), grove = noise(Math.floor(x / 6), Math.floor(y / 5), 19) < 0.45;
-  if (grove && n < 0.16) set(x, y, 'O'); else if (n < 0.025) set(x, y, 'T');
+  const grove = noise(Math.floor(x / 7), Math.floor(y / 6), 19) < 0.5;
+  if (grove && y % 3 === 1 && x % 2 === 0) set(x, y, 'O'); else if (noise(x, y, 18) < 0.02) set(x, y, 'T');
 }
 if (misses.length) console.log('NOT PLACED:', misses.join(' | '));
+if (problems.length) console.log('PROBLEMS:\n  ' + problems.slice(0, 40).join('\n  '));
 
 /* ---------- out ---------- */
 const rows = G.map((r) => r.join(''));

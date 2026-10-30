@@ -92,29 +92,32 @@ tests/
 tools/
   sim.ts                   simulatore di bilanciamento
   golden.mjs               genera i golden
-  formia/                  la mappa di Formia da OpenStreetMap: extract.mjs, build.ts, paint.ts, show.ts, where.ts, drift.ts
+  formia/                  la mappa di Formia: network.ts (strade e ferrovia disegnate a mano), build.ts (il generatore),
+                           playable.ts e audit.ts (controlli), extract.mjs, paint.ts, show.ts, where.ts, drift.ts
 ```
 
 ## La mappa di Formia
 
-- **È Formia vera:** costa, strade, ferrovia (con la galleria sotto Castellone), spiagge, pinete e parchi vengono da OpenStreetMap; i luoghi stanno dove sono davvero. Antonio è il protagonista: si parte da casa sua, Parco la Fontana in via Giovanni Amendola 1, e i posti dove va con gli amici (l'Eclipse beach di Nicola Spadea a Vindicio, la pineta di Vindicio, la Birreria Morgana a Mola) hanno persone e attività. Il resto della città fa da contorno.
-- **Come è fatta:** `tools/formia/build.ts` legge `tools/formia/osm-extract.json` (© OpenStreetMap contributors, ODbL) e, tramite `formia-projection.ts`, disegna il terreno, in quest'ordine:
-  1. mare (con la costa lisciata), colline, verde, spiagge e rive: banchine di pietra in città, scogli e calette, sabbia a Vindicio e Gianola;
-  2. ferrovia;
-  3. i luoghi di `formia-places.ts`, ciascuno sulla casella libera più vicina alla sua posizione reale. Vanno **prima** delle strade, così restano dove sono davvero e sono le strade a girargli attorno;
-  4. strade: principali, con nome e le vie più lunghe dei quartieri;
-  5. un vialetto da ogni porta fino alla strada;
-  6. le persone e le cose ("spot"): mai su un edificio, su un vialetto o subito dietro un tetto;
-  7. le case di contorno, allineate lungo le vie;
-  8. i marciapiedi del centro e gli uliveti in campagna (mai dentro la pineta o i parchi).
-
-  Dietro le spiagge corre il lungomare lastricato, e dalla pineta e dalla Tomba di Cicerone partono dei sentieri fino alla strada.
+- **È Formia vera, resa giocabile:** costa, spiagge, pinete e parchi vengono da OpenStreetMap; strade e ferrovia sono disegnate a mano sul modello di quelle vere (l'Appia, via Vitruvio, il lungomare, via Amendola); i luoghi stanno vicino a dove sono davvero, con la porta su una strada. Antonio è il protagonista: si parte da casa sua, Parco la Fontana in via Giovanni Amendola 1, e i posti dove va con gli amici (l'Eclipse beach di Nicola Spadea a Vindicio, la pineta di Vindicio, la Birreria Morgana a Mola) hanno persone e attività. Il resto della città fa da contorno.
+- **Come è fatta:** è una mappa da gioco disegnata sulla geografia vera.
+  - **Dati veri, da OpenStreetMap:** costa, spiagge, pineta, parchi e colline vengono da `tools/formia/osm-extract.json` (© OpenStreetMap contributors, ODbL), proiettati con `formia-projection.ts`. La costa è lisciata: niente moli sottili, isolette o insenature di una casella.
+  - **Scheletro giocabile, a mano:** ferrovia e strade sono in `tools/formia/network.ts`, come elenchi di angoli in caselle, e corrono dritte da un angolo all'altro. La ferrovia è una sola linea, dalla galleria nella collina a ovest al bordo est, passando davanti alla stazione; dove una strada la incrocia c'è un passaggio a livello. Le strade (Appia, lungomare, via Vitruvio, le vie dei quartieri, via Amendola…) si toccano in caselle comuni, quindi sono un'unica rete senza vicoli ciechi. I sentieri della pineta sono `PATHS`.
+  - **I luoghi vengono dopo le strade:** ognuno di `formia-places.ts` va sulla casella libera più vicina alla posizione vera da cui la sua porta dà su una strada (o, se non c'è, su un vialetto di pochi passi). Quelli del centro hanno `tile`, una casella scelta a mano, perché stazione, Comune, piazza, bar e Morgana sono composti insieme alle strade.
+  - **Poi il resto:** persone e cose accanto ai loro posti (mai su un edificio, su un vialetto, dietro un tetto, o in un angolo da cui chiuderebbero un altro); le case di contorno lungo le vie; i marciapiedi del centro; gli ulivi in campagna, in file con lo spazio per passare.
 
   Tutto finisce in `formia-ground.ts`.
-- **Strade e ferrovia ad angolo retto:** come su una mappa da gioco, ogni tratto diventa una scala di gradini larghi (`zline`), non una diagonale a scalini di una casella. Le carreggiate doppie e il secondo binario si scartano (`thin`); i pezzi rimasti staccati si uniscono alla rete con il percorso più corto e i moncherini si tolgono. Così si va ovunque a piedi per strada.
-- **Per cambiarla:** modifica `formia-places.ts` (luoghi e "spot" di una casella: persone, cartelli, oggetti, motorini), `tools/formia/paint.ts` (ritocchi a mano sul terreno) o il generatore, poi `npx tsx tools/formia/build.ts`. Se un luogo non trova posto lo stampa come `NOT PLACED`. `npx tsx tools/formia/show.ts x0 x1 y0 y1` mostra un pezzo di mappa con le coordinate; `npx tsx tools/formia/where.ts` dove cadono i luoghi reali; `npx tsx tools/formia/drift.ts` di quante caselle ogni luogo si è spostato dalla sua posizione vera. Dopo, `npm test` (il controllo delle mappe dice se qualcuno è finito irraggiungibile) e `npm run golden`, perché il disegno della mappa cambia.
+- **Per cambiarla:**
+  - **Strade e ferrovia:** in `tools/formia/network.ts`. `npx tsx tools/formia/build.ts --base` stampa costa e verde con le coordinate, per disegnarci sopra.
+  - **Luoghi e spot** (persone, cartelli, oggetti, motorini): in `formia-places.ts`.
+  - **Ritocchi a mano sul terreno:** in `tools/formia/paint.ts`.
+  - **Poi:** `npx tsx tools/formia/build.ts`, che stampa `NOT PLACED` e `PROBLEMS` se un luogo non trova posto o una strada finisce in mare.
+  - **Per controllare:**
+    - `npx tsx tools/formia/audit.ts`: strade in un pezzo, vicoli ciechi, binari interrotti, quanto si cammina da casa a ogni posto;
+    - `npx tsx tools/formia/show.ts x0 x1 y0 y1`: un pezzo di mappa;
+    - `npx tsx tools/formia/drift.ts`: di quanto si è spostato ogni luogo;
+    - `npm test`: controlla anche che strade e ferrovia restino continue (`tools/formia/playable.ts`). Poi `npm run golden`, perché il disegno cambia.
 - **Scala:** circa 33 m per casella in centro, di più nei tratti in mezzo; le spiagge di Vindicio e Gianola sono allargate di qualche casella verso il mare, sennò a questa scala sarebbero strisce.
-- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia4`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
+- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia5`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
 
 ## Il giro di Formia
 

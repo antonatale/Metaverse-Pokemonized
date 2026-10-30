@@ -22,6 +22,9 @@ export interface PlaceSpec {
   reach?: number;
   /** it stands on sand (the lidi) or in the water (boats) */
   on?: 'sand' | 'sea';
+  /** a top-left tile picked by hand on the playable map, instead of the free spot nearest to `at`:
+      the centre, where the buildings, the square and the streets are composed together (see tools/formia/network.ts) */
+  tile?: [number, number];
 }
 /** something on one tile: a sign, a person, a lost thing, a scooter; at a real place or next to one */
 export interface SpotSpec {
@@ -41,22 +44,22 @@ export const PLACES: PlaceSpec[] = [
   { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true },
   { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250] },
   /* ---------- Mola ---------- */
-  { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], reach: 4 },
-  { id: 'morgana', kind: 'pub', w: 5, h: 3, at: [41.25819, 13.61234], door: true, room: 2 },
+  { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], tile: [93, 38] },
+  { id: 'morgana', kind: 'pub', w: 5, h: 3, at: [41.25819, 13.61234], door: true, tile: [91, 33] },
   { id: 'chiesa-mola', kind: 'church', w: 4, h: 3, at: [41.2598, 13.6162], door: true },
-  { id: 'gelati', kind: 'shop', w: 4, h: 3, at: [41.2578, 13.6098], door: true },
-  { id: 'bar', kind: 'bar', w: 4, h: 3, at: [41.2584, 13.6110], door: true },
-  { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true },
+  { id: 'gelati', kind: 'shop', w: 4, h: 3, at: [41.2578, 13.6098], door: true, tile: [82, 38] },
+  { id: 'bar', kind: 'bar', w: 4, h: 3, at: [41.2584, 13.6110], door: true, tile: [86, 33] },
+  { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true, tile: [87, 38] },
   { id: 'traghetto', kind: 'ferry', w: 5, h: 3, at: [41.2554, 13.6118], on: 'sea', reach: 6 },
   /* ---------- the centre: station, town hall, Piazza della Vittoria ---------- */
-  { id: 'stazione', kind: 'station', w: 9, h: 3, at: [41.25875, 13.60613], door: true },
-  { id: 'comune', kind: 'palazzo', w: 8, h: 3, at: [41.2562, 13.6050], door: true },
-  { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 5, at: [41.2551, 13.6062], room: 1 },
-  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 6, h: 4, at: [41.2560, 13.6084] },
-  { id: 'forno', kind: 'shop', w: 4, h: 3, at: [41.2567, 13.6070], door: true, reach: 12 },
+  { id: 'stazione', kind: 'station', w: 9, h: 3, at: [41.25875, 13.60613], door: true, tile: [72, 33] },
+  { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 7, at: [41.2551, 13.6062], tile: [67, 41] },
+  { id: 'comune', kind: 'palazzo', w: 8, h: 3, at: [41.2562, 13.6050], door: true, tile: [68, 38] },
+  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 3, h: 5, at: [41.2560, 13.6084], tile: [77, 43] },
+  { id: 'forno', kind: 'shop', w: 4, h: 3, at: [41.2567, 13.6070], door: true, tile: [60, 33] },
   /* ---------- Castellone ---------- */
-  { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true },
-  { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], reach: 4 },
+  { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true, tile: [57, 42] },
+  { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], tile: [62, 42] },
   /* ---------- Vindicio: the Tomba di Cicerone, the beach, the Eclipse, the pineta ---------- */
   { id: 'tomba', kind: 'tomb', w: 3, h: 3, at: [41.2516, 13.5787] },
   /* the Eclipse beach, Nicola Spadea's lido on the lungomare of Vindicio: the lido at the back, the beach in front */
@@ -90,7 +93,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'costanzo-morgana', near: { place: 'morgana', dx: 1, dy: 4 } },
   { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
   { id: 'vicina', near: { place: 'casa', dx: 5, dy: 5 } },
-  { id: 'capotreno', near: { place: 'stazione', dx: 2, dy: 3 } },
+  { id: 'capotreno', near: { place: 'stazione', dx: 9, dy: 2 } },
   { id: 'turista', near: { place: 'tomba', dx: 4, dy: 2 } },
   { id: 'anziano', near: { place: 'torre-castellone', dx: 2, dy: 2 } },
   { id: 'fornaia', near: { place: 'forno', dx: 1, dy: 3 } },
