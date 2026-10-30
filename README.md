@@ -1,6 +1,6 @@
 # Lotte tra Amici
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia per le strade di Formia. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
+Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia nella Formia vera (mappa da OpenStreetMap): si parte da casa, a Parco la Fontana, e si va all'Eclipse a Vindicio, in pineta, da Morgana, con attività e minigiochi nei posti di tutti i giorni. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
 
 ## Come avviarlo
 
@@ -37,3 +37,4 @@ La prima volta, per i test end-to-end serve anche `npx playwright install chromi
 
 - I progressi della storia e il libretto sono salvati nel `localStorage` del browser, quindi sono legati alla pagina e al browser in cui giochi. Le chiavi sono le stesse della versione in un file solo: i vecchi salvataggi restano validi se apri la nuova pagina dallo stesso indirizzo.
 - Struttura del progetto, convenzioni e dove si trova ogni parte del gioco: [CLAUDE.md](CLAUDE.md).
+- La mappa di Formia è generata da dati © OpenStreetMap contributors (ODbL 1.0): vedi `tools/formia/`.

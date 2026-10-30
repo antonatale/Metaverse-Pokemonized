@@ -33,7 +33,12 @@ src/
     types.ts               i cinque tipi in ciclo (TYPES, TYPE_ORDER)
     tuning.ts              numeri di bilanciamento (TUNE, K, CRIT)
     items.ts               le cose che Antonio perde (ITEMS) e dove le ritrova (FOUND)
-    maps/                  formia.ts, circolo.ts, legend.ts (cosa significa ogni carattere), types.ts, index.ts (MAPS)
+    maps/                  le mappe (index.ts: MAPS) e legend.ts (cosa significa ogni carattere)
+      formia.ts            Formia vera: persone, cartelli, oggetti persi, quartieri, motorino (RIDES)
+      formia-places.ts     i luoghi con le coordinate reali e i testi (casa, Eclipse, Morgana, stazione…)
+      formia-ground.ts     GENERATO da tools/formia/build.ts: terreno, posizioni risolte, case di contorno
+      formia-projection.ts dalle coordinate reali alle caselle
+      casa.ts, circolo.ts  interni: l'appartamento di Antonio, i campi coperti del Bruno Zauli
     covi.ts, gates.ts      i covi (palestre) con spille e frasi; le uscite dalle città
   battle/                  motore di lotta: puro, senza DOM, stato JSON con l'RNG dentro
     index.ts               API (ENGINE): newBattle, intro, beginTurn, playTurn, needs, available, moveLabel, snap, ai…
@@ -45,7 +50,9 @@ src/
     state.ts, rng.ts, events.ts, types.ts
   story/                   logica della modalità storia, senza disegno
     maps.ts                mappe preparate, collisioni, oggetti persi, quartieri, covi, percorso più breve
-    movement.ts            passi, rotazioni, porte e warp
+    movement.ts            passi, rotazioni, porte, warp e viaggi (travel)
+    activities.ts          le attività per Formia: elenco, volte fatte, record
+    run.ts                 lo stato della corsetta in pineta
   save/
     story-progress.ts      salvataggio della storia  (chiave lotte-tra-amici:storia:v1)
     libretto.ts            vittorie, sconfitte, voti (chiave lotte-tra-amici:libretto:v2)
@@ -68,19 +75,39 @@ src/
     home.ts                home (scheda del personaggio, boss, tipi, libretto) e foglio "Nuova sfida"
     battle-screen.ts       schermo di lotta: riproduce gli eventi del motore, passaggio del telefono, risultato, scheda
     effects.ts             effetti della lotta (affondi, proiettili, coriandoli, striscioni…)
-    story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu, ciclo dei frame
+    story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu (con il Diario
+                           di Formia), motorino, ciclo dei frame
+    activities.ts          le attività: beach volley, lettino, gelato, quiz da Morgana
+    run.ts                 la corsetta in pineta: bandierine, cronometro nell'HUD
     icons.ts, dom.ts
   styles/                  CSS diviso per sezione; index.css = font + app.css; l'ordine degli @import è la cascata
   assets/fonts/            Atkinson Hyperlegible, Lilita One, Patrick Hand (woff2, OFL)
 tests/
   unit/                    Vitest
   golden/                  scenari e registratori usati dai golden (lotte deterministiche, finto canvas, finto document)
-  fixtures/                i golden: impronte di 2040 lotte, 168 stringhe SVG, 184 sequenze di disegno
-  e2e/                     Playwright: twin.ts gira ogni scenario sul vecchio e sul nuovo e confronta
+  fixtures/                i golden: impronte di 2040 lotte, 168 stringhe SVG, le sequenze di disegno del canvas
+  e2e/                     Playwright: harness.ts (orologio finto, seme), playthrough.spec.ts (partite intere,
+                           storia, attività, casa e motorino), audio.spec.ts
 tools/
   sim.ts                   simulatore di bilanciamento
   golden.mjs               genera i golden
+  formia/                  la mappa di Formia da OpenStreetMap: extract.mjs, build.ts, paint.ts, show.ts, where.ts
 ```
+
+## La mappa di Formia
+
+- **È Formia vera:** costa, strade, ferrovia (con la galleria sotto Castellone), spiagge, pinete e parchi vengono da OpenStreetMap; i luoghi stanno dove sono davvero. Antonio è il protagonista: si parte da casa sua, Parco la Fontana in via Giovanni Amendola 1, e i posti dove va con gli amici (l'Eclipse beach di Nicola Spadea a Vindicio, la pineta di Vindicio, la Birreria Morgana a Mola) hanno persone e attività. Il resto della città fa da contorno.
+- **Come è fatta:** `tools/formia/build.ts` legge `tools/formia/osm-extract.json` (© OpenStreetMap contributors, ODbL) e, tramite `formia-projection.ts`, disegna il terreno. Poi sistema ogni luogo di `formia-places.ts` sulla casella libera più vicina alla sua posizione reale (niente strade, binari o mare sotto, una casella percorribile davanti alla porta), aggiunge le case di contorno nei quartieri e gli uliveti in campagna, e scrive tutto in `formia-ground.ts`.
+- **Per cambiarla:** modifica `formia-places.ts` (luoghi e "spot" di una casella: persone, cartelli, oggetti, motorini), `tools/formia/paint.ts` (ritocchi a mano sul terreno) o il generatore, poi `npx tsx tools/formia/build.ts`. Se un luogo non trova posto lo stampa come `NOT PLACED`. `npx tsx tools/formia/show.ts x0 x1 y0 y1` mostra un pezzo di mappa con le coordinate; `npx tsx tools/formia/where.ts` dove cadono i luoghi reali. Dopo, `npm test` (il controllo delle mappe dice se qualcuno è finito irraggiungibile) e `npm run golden`, perché il disegno della mappa cambia.
+- **Scala:** circa 33 m per casella in centro, di più nei tratti in mezzo; le spiagge di Vindicio e Gianola sono allargate di qualche casella verso il mare, sennò a questa scala sarebbero strisce.
+- **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia3`), con spille, compagnia e oggetti ritrovati.
+
+## Attività, casa e motorino
+
+- **Attività** (`story/activities.ts`): beach volley con Valentin e lettino da Nicola all'Eclipse, corsetta in pineta con Zendavid, quiz da Morgana, gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
+- **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
+- **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
+- **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana e in piazza della Vittoria (`RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
 
 ## Come gira
 
