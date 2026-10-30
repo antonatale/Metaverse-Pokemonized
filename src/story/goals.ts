@@ -15,6 +15,8 @@ export interface Stop {
   text: string;
   /** where */
   where: string;
+  /** what people around town say about it */
+  tip: string;
   /** the map and the tile to go to: a person, a lost thing */
   map: string; x: number; y: number;
   done(): boolean;
@@ -31,35 +33,37 @@ function areaOf(map: string, x: number, y: number): string {
   const a = (MAPS[map].areas || []).find((q) => x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h);
   return a ? a.name : MAPS[map].name;
 }
-const doing = (id: string, who: string): Stop => {
+const doing = (id: string, who: string, tip: string): Stop => {
   const a = activity(id), [x, y] = npcAt('formia', who);
-  return { id, text: a.name, where: a.where, map: 'formia', x, y, done: () => timesDone(id) > 0 };
+  return { id, text: a.name, where: a.where, tip, map: 'formia', x, y, done: () => timesDone(id) > 0 };
 };
-const covo = (id: string, map: string): Stop => {
+const covo = (id: string, map: string, tip: string): Stop => {
   const cv = COVI[id], [x, y] = npcAt(map, cv.leader);
-  return { id: 'covo-' + id, text: 'Sfida ' + C[cv.leader].name, where: cv.name, map, x, y, done: () => !!st.beaten[id] };
+  return { id: 'covo-' + id, text: 'Sfida ' + C[cv.leader].name, where: cv.name, tip, map, x, y, done: () => !!st.beaten[id] };
 };
 const lost = (id: string): Stop => {
-  const it = (MAPS.formia.items || []).find((q) => q.id === id)!;
-  return { id: 'item-' + id, text: 'Ritrova ' + ITEMS[it.move].name, where: 'Dalle parti di: ' + areaOf('formia', it.x, it.y), map: 'formia', x: it.x, y: it.y, done: () => !!st.found[id] };
+  const it = (MAPS.formia.items || []).find((q) => q.id === id)!, area = areaOf('formia', it.x, it.y);
+  return { id: 'item-' + id, text: 'Ritrova ' + ITEMS[it.move].name, where: 'Dalle parti di: ' + area, tip: 'Ho visto qualcosa di tuo per terra, zona ' + area + '. Mi sa che ' + (it.pron === 'li' ? 'erano ' : 'era ') + ITEMS[it.move].name + '.',
+    map: 'formia', x: it.x, y: it.y, done: () => !!st.found[id] };
 };
 const [tx, ty] = npcAt('formia', 'capotreno');
 
 export const STOPS: Stop[] = [
-  doing('padel', 'andrea'),
-  covo('circolo', 'circolo'),
-  doing('quiz', 'oste'),
-  doing('gelato', 'gelataio'),
-  covo('piazza', 'formia'),
+  doing('padel', 'andrea', 'Andrea ti aspetta al Bruno Zauli: ha calcolato che a padel oggi vince lui.'),
+  covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
+  doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.'),
+  doing('gelato', 'gelataio', 'A Mola, vicino al porto, il gelataio ha un pistacchio che non ti dico.'),
+  covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   lost('caricabatterie'),
   lost('appunti'),
-  doing('lettino', 'nicola'),
-  doing('volley', 'valentin'),
+  doing('lettino', 'nicola', 'All\'Eclipse, a Vindicio, Nicola Spadea ti tiene il lettino in prima fila.'),
+  doing('volley', 'valentin', 'All\'Eclipse Valentin cerca gente per il beach volley.'),
   lost('portafoglio'),
-  doing('corsa', 'zendavid'),
+  doing('corsa', 'zendavid', 'Zendavid corre in pineta, a Vindicio. Con le cuffie, ovviamente.'),
   lost('passaporto'),
   /* the end of the tour, until the next city exists */
-  { id: 'torino', text: 'Il treno per Torino', where: 'Stazione di Formia', map: 'formia', x: tx, y: ty, done: () => false }
+  { id: 'torino', text: 'Il treno per Torino', where: 'Stazione di Formia', tip: 'Hai fatto tutto il giro di Formia! In stazione il capotreno sa qualcosa del treno per Torino.',
+    map: 'formia', x: tx, y: ty, done: () => false }
 ];
 
 export function nextStop(): Stop { return STOPS.find((s) => !s.done())!; }

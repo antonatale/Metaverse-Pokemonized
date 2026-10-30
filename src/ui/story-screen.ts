@@ -234,6 +234,7 @@ function talkTo(p: Person) {
   if (n.covo) leaderTalk(n.covo);
   else if (n.gate) gateTalk(n.gate, n.name);
   else if (n.activity) offerActivity(n);
+  else if (n.hint) say((n.lines || []).concat(nextStop().tip), n.name);
   else say(n.lines || ['…'], n.name);
 }
 export function useDoor(b: Building) {

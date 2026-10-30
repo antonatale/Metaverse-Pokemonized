@@ -358,6 +358,16 @@ test('the tour of Formia', async ({ browser }) => {
     await until(r.page, () => window.WORLD._debug.pos().dialog);
     await talkThrough(r.page);
     r.keep('goal', (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' '));
+    /* the neighbour knows where to go next */
+    await goTo(r.page, 'npc', 'vicina');
+    await r.page.keyboard.press('Enter'); await r.page.clock.runFor(200);
+    const said: string[] = [];
+    for (let k = 0; k < 6 && await r.page.evaluate(() => window.WORLD._debug.pos().dialog); k++) {
+      await r.page.clock.runFor(400);
+      said.push(await r.page.evaluate(() => window.WORLD._debug.pos().text));
+      await r.page.keyboard.press('Enter'); await r.page.clock.runFor(200);
+    }
+    r.keep('tip', said.join(' | '));
     await r.page.click('#wgoal'); await r.page.clock.runFor(300);
     r.keep('menu', await r.page.locator('.tour').innerText());
     await r.shot('menu', { fullPage: true });
@@ -369,6 +379,7 @@ test('the tour of Formia', async ({ browser }) => {
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => String(run.data.find((x) => x.name === n)!.value);
   expect(get(first, 'goal')).toContain('Padel con Andrea');
+  expect(get(first, 'tip')).toContain('Andrea ti aspetta al Bruno Zauli');
   expect(get(first, 'menu')).toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Quiz su Formia da Morgana');
   expect(get(later, 'title').toLowerCase()).toContain('2 su 12');

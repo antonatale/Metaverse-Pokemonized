@@ -69,6 +69,8 @@ export interface Npc {
   gate?: string;
   /** offers something to do together (see story/activities.ts) */
   activity?: string;
+  /** after the lines, a tip about the next stop of the tour (see story/goals.ts) */
+  hint?: boolean;
   /** there only once this friend is in Antonio's squad (he hangs out with him), or only until then (he leaves his covo) */
   with?: FriendId;
   unless?: FriendId;
