@@ -24,11 +24,12 @@ export let S = null as unknown as BattleState;
 /* =================== BATTLE SHELL =================== */
 export let arena: HTMLElement;
 let dialog: HTMLElement, whoEl: HTMLElement, txtEl: HTMLElement, pad: HTMLElement, turnbar: HTMLElement, padSide = 0, padOn = false, pending: Record<number, string> = {}, needQ: number[] = [];
-function sideName(i: number): string { return fighter(S.sides[i].id).name; }
+/** a side's name: the one Antonio gave his creature, or the character's */
+function sideName(i: number): string { return S.sides[i].nick || fighter(S.sides[i].id).name; }
 function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) : (i === 0 ? 'Tu' : 'CPU'); }
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
-  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
+  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><span></span></div></div>' +
     '<div class="box-f"><span class="type t-' + c.type.toLowerCase() + '" id="ty-' + i + '">' + c.type + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
@@ -329,7 +330,7 @@ function showResult() {
   } else if (r === 'win') {
     var w = S.sides[S.winner!], l = S.sides[1 - S.winner!];
     star = w.id;
-    stamp = 'Vince ' + fighter(w.id).name;
+    stamp = 'Vince ' + sideName(S.winner!);
     if (S.mode === 'pvp') sub = 'Giocatore ' + (S.winner! + 1);
     else sub = S.winner === 0 ? 'Hai vinto' : 'Ha vinto il computer';
     first = [S.winner!, fighter(w.id).lines.win]; second = [1 - S.winner!, fighter(l.id).lines.ko];

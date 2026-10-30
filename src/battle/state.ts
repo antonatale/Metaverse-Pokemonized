@@ -14,7 +14,10 @@ export function eff(a: TypeName | null, d: TypeName | null): number {
 export function beaterOf(t: string): TypeName | null { for (const k in TYPES) if (TYPES[k as TypeName].beats === t) return k as TypeName; return null; }
 
 /* ---------- lookups ---------- */
-export function ch(side: Side): Character { return fighter(side.id); }
+export function ch(side: Side): Character { return side.nick ? nicked(fighter(side.id), side.nick) : fighter(side.id); }
+/* a creature with the name Antonio gave it: the same character, under another name */
+const named: Record<string, Character> = {};
+function nicked(c: Character, nick: string): Character { const k = c.id + '|' + nick; return named[k] || (named[k] = Object.assign({}, c, { name: nick })); }
 /** a side's numbers: its own in story battles (level, abilities), the character's otherwise */
 export function statsOf(side: Side): Stats { return side.stats || ch(side).stats; }
 export function move(c: Character, id: string): Move | null { for (let i = 0; i < c.moves.length; i++) if (c.moves[i].id === id) return c.moves[i]; return null; }
@@ -42,6 +45,7 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.stats) side.stats = { hp: o.stats.hp, atk: o.stats.atk, def: o.stats.def, spe: o.stats.spe };
   if (o && o.lvl) side.lvl = o.lvl;
   if (o && o.known) side.known = o.known.slice();
+  if (o && o.nick) side.nick = o.nick;
   if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
   return side;
 }

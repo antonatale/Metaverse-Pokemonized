@@ -11,7 +11,7 @@ import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, curren
 import { press, release, update, halt, mover, busy, travel } from '../story/movement';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
-import { resize, invalidate, drawWorld, preview, overview, townMap } from '../render/world-view';
+import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity } from './activities';
@@ -22,8 +22,8 @@ import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES } from '../data/creatures';
 import { SHOPS } from '../data/growth';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money } from '../story/growth';
-import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam } from './team';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see } from '../story/growth';
+import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
 import { wildGone } from '../story/maps';
@@ -237,6 +237,16 @@ function interact() {
   var a = M.at[key(x, y)];
   if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else say(a.s.text); }
   else if (a && a.kind === 'door') useDoor(a.b);
+  else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
+}
+/* Antonio turns to his creature: it says its cry, and how it is doing */
+function followerTalk() {
+  var key = leadCreature()!, mon = creatureOf(key)!, sp = SPECIES[mon.sp], name = nameOf(key), lv = level(key).lv, area = areaName();
+  var moods = [name + ' ti guarda contento.', name + ' saltella sul posto.', name + ' annusa l\'aria di ' + (area || 'Formia') + '.', name + ' segue con gli occhi un gabbiano.'];
+  if (darkness(new Date()) > 0.5) moods.push(name + ' sbadiglia: si è fatto tardi.');
+  if (M.inside) moods.push(name + ' si guarda intorno: qui dentro è tutto nuovo.');
+  var soon = sp.evolve && sp.evolve.at - lv <= 2 ? name + ' sembra irrequieto: tra poco cambierà forma.' : null;
+  say(['«' + sp.cry.entry + '»', soon || moods[Math.floor(Math.random() * moods.length)]], name);
 }
 /* one of Antonio's lost things: picked up for good */
 /* ---------- the bed at home: at night, sleep until the morning; by day, a nap until the evening ---------- */
@@ -320,6 +330,7 @@ function safeMoves() { return foundItems().map(function (it) { return it.move; }
 /* ---------- the creatures of Formia: a wild one, the first one ---------- */
 function wildTalk(p: Person) {
   var w = p.n.wild!, sp = SPECIES[w.sp], lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
+  see(w.sp); save();
   say([sp.wild + ', livello ' + lv + '!', sp.text], null, [{ label: 'Lotta!', fn: function () {
     pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, function (key) {
       hide();
@@ -417,7 +428,7 @@ function openMenu() {
       return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
         esc(s0.where + (done ? ' · fatto' : next ? ' · prossima tappa' : '')) + '</small></span></li>';
     }).join('') + '</ul></div>' +
-      teamHtml() +
+      teamHtml() + dexHtml() +
     '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
     '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
       var got = !!st.found[it.id], nm = ITEMS[it.move].name;

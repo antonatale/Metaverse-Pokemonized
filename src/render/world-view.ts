@@ -103,6 +103,8 @@ function placeBehind() {
   var at = around.filter(function (c) { return !blocked(M, c[0], c[1]) && !M.at[key(c[0], c[1])]; })[0] || [st.x, st.y];
   fol = { map: M.id, x: at[0], y: at[1], fx: at[0], fy: at[1], t0: 0 };
 }
+/** where Antonio's creature is standing on the map he is on, for talking to it */
+export function followerAt(): [number, number] | null { return fol && fol.map === M.id && leadCreature() ? [fol.x, fol.y] : null; }
 function follower(now: number): Drawn | null {
   var uid = leadCreature(), img = uid ? creatureImage(idOf(uid) as SpeciesId) : null;
   if (!img) return null;

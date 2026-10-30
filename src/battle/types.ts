@@ -59,13 +59,14 @@ export interface Side {
   /** the fighter's numbers at its level (with Antonio's abilities), and the level */
   stats?: Stats;
   lvl?: number;
-  /** a creature: the moves it knows */
+  /** a creature: the moves it knows, and the name Antonio gave it */
   known?: string[];
+  nick?: string;
   /** Antonio's abilities: his chance a turn to lose a thing, and to get an idea from the AI */
   perk?: { lose: number; idea: number };
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; perk?: { lose: number; idea: number } }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; perk?: { lose: number; idea: number } }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
 export interface StoryTag { covo?: string; wild?: string; sp?: string; key?: string; foeLv?: number }
 

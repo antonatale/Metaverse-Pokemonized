@@ -1,10 +1,10 @@
 import { st, save } from '../save/story-progress';
 import type { TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
-import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, type ItemId, type SkillId } from '../data/growth';
+import { SPECIES, STARTERS, CMOVES, isSpecies, knownAt, type SpeciesId } from '../data/creatures';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, type ItemId, type SkillId } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, type Growth } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, type Growth } from '../story/growth';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
@@ -125,17 +125,18 @@ export function teamHtml(): string {
     var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
     if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
     else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
-    return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(c.name) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
+    return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
       '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
       (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
-      (mon && leadCreature() !== key ? '<button class="btn small" type="button" data-lead="' + key + '">Dietro di me</button>' : '') +
-      (has('caffe') ? '<button class="btn small" type="button" data-caffe="' + key + '">Caffè</button>' : '') + '</li>';
+      (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : has('caffe') ? '<button class="btn small" type="button" data-caffe="' + key + '">Caffè</button>' : '') + '</li>';
   }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') + '</div>' +
     '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella', 'caffe'] as ItemId[]).map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
     }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone; il caffè al bar di Mola.</p></div>';
 }
 export function wireTeam(reopen: () => void) {
+  each(document.querySelectorAll('[data-cr]'), function (b) { b.addEventListener('click', function () { openCreature(b.getAttribute('data-cr')!, reopen); }); });
+  each(document.querySelectorAll('[data-dex]'), function (b) { b.addEventListener('click', function () { openSpecies(b.getAttribute('data-dex') as SpeciesId, reopen); }); });
   each(document.querySelectorAll('[data-lead]'), function (b) {
     b.addEventListener('click', function () { setLead(b.getAttribute('data-lead')!); save(); closeSheet(); reopen(); });
   });
@@ -165,4 +166,68 @@ export function openSkills(back: () => void) {
     setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-sk]:not([disabled])') || $('sk-x'); if (b) b.focus(); }, 30);
   };
   render();
+}
+
+/* ---------- a creature's page: its numbers, its moves, its forms, its name ---------- */
+/** the forms of a creature, from the first */
+function chainOf(id: SpeciesId): SpeciesId[] {
+  var first = id, found = true;
+  while (found) {
+    found = false;
+    for (var k in SPECIES) { var o = SPECIES[k as SpeciesId]; if (o.evolve && o.evolve.into === first) { first = o.id; found = true; } }
+  }
+  var out: SpeciesId[] = [first];
+  while (SPECIES[out[out.length - 1]].evolve) out.push(SPECIES[out[out.length - 1]].evolve!.into);
+  return out;
+}
+function chainHtml(id: SpeciesId, lit: (sp: SpeciesId) => boolean): string {
+  return '<div class="chain">' + chainOf(id).map(function (sp, k, all) {
+    var prev = k ? SPECIES[all[k - 1]].evolve!.at : 0, on = lit(sp);
+    return (k ? '<span class="chain-at">Lv ' + prev + ' →</span>' : '') + '<span class="chain-c' + (sp === id ? ' now' : '') + (on ? '' : ' dark') + '"><span class="art">' + creature(sp, 'smirk', '', '0 16 200 184') + '</span><small>' + esc(on ? SPECIES[sp].name : '???') + '</small></span>';
+  }).join('') + '</div>';
+}
+export function openCreature(key: string, back: () => void) {
+  var mon = creatureOf(key);
+  if (!mon) return;
+  var sp = SPECIES[mon.sp], l = level(key), s = atLevel(sp.stats, l.lv), known = knownAt(mon.sp, l.lv);
+  var next = sp.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0];
+  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
+    '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184') + '</span><div class="cr-info">' +
+    '<p>' + (mon.nick ? esc(sp.name) + ' · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
+    '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' +
+    '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
+    '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.</p>' +
+    '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { return '<li><span><b>' + esc(CMOVES[m].name) + '</b><small>' + esc(CMOVES[m].text) + '</small></span></li>'; }).join('') + '</ul>' +
+    (next ? '<p class="hint">Al livello ' + next[0] + ' impara ' + esc(CMOVES[next[1]].name) + (known.length >= 4 ? ' (al posto di ' + esc(CMOVES[known[0]].name) + ')' : '') + '.</p>' : '') + '</div>' +
+    '<div class="pickrow"><h3>Forme</h3>' + chainHtml(mon.sp, function (x) { return dexOf(x) > 0 || x === mon!.sp; }) + '</div>' +
+    '<div class="pickrow"><h3>Nome</h3><form class="nick" id="cr-f"><input id="cr-nick" maxlength="12" autocomplete="off" aria-label="Nome di ' + esc(sp.name) + '" placeholder="' + esc(sp.name) + '" value="' + esc(mon.nick || '') + '"><button class="btn" type="submit">Salva</button></form></div>' +
+    '<div class="menu-actions">' + (leadCreature() !== key ? '<button class="btn" type="button" id="cr-lead">Dietro di me</button>' : '') + (has('caffe') ? '<button class="btn" type="button" id="cr-caffe">Un caffè (' + has('caffe') + ')</button>' : '') + '</div></div>');
+  $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
+  $('cr-f').addEventListener('submit', function (e) { e.preventDefault(); setNick(key, ($('cr-nick') as HTMLInputElement).value); save(); renderHud(); openCreature(key, back); });
+  if ($('cr-lead')) $('cr-lead').addEventListener('click', function () { setLead(key); save(); openCreature(key, back); });
+  if ($('cr-caffe')) $('cr-caffe').addEventListener('click', function () {
+    var g = drinkCoffee(key);
+    save(); closeSheet(); renderHud();
+    if (g) growthSay(g, [nameOf(key) + ' beve un caffè: +' + g.xp + ' punti esperienza.']);
+  });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('#cr-x'); if (b) b.focus(); }, 30);
+}
+
+/* ---------- the creature diary: every species, seen or had ---------- */
+export function dexHtml(): string {
+  var ids = Object.keys(SPECIES) as SpeciesId[], seen = ids.filter(function (id) { return dexOf(id) > 0; }).length, had = ids.filter(function (id) { return dexOf(id) === 2; }).length;
+  return '<div class="pickrow"><h3>Diario delle creature · ' + had + ' avute, ' + seen + ' viste su ' + ids.length + '</h3><div class="dex">' + ids.map(function (id) {
+    var d = dexOf(id), sp = SPECIES[id];
+    return '<button class="dex-c' + (d === 2 ? ' got' : d ? ' seen' : '') + '" type="button" data-dex="' + id + '"' + (d ? '' : ' disabled aria-label="Creatura ancora sconosciuta"') + ' style="--tc:var(--t-' + sp.type.toLowerCase() + ')">' +
+      '<span class="art">' + creature(id, 'smirk', '', '0 16 200 184') + '</span><small>' + (d ? esc(sp.name) : '???') + '</small></button>';
+  }).join('') + '</div><p class="hint">Le creature si vedono lottandoci contro; quelle catturate o cresciute con te sono a colori.</p></div>';
+}
+export function openSpecies(id: SpeciesId, back: () => void) {
+  var sp = SPECIES[id], d = dexOf(id), mine = (st.mons || []).filter(function (m) { return m.sp === id; }).length;
+  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sp-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="sp-t">' + esc(sp.name) + '</h2><button class="tb-btn" type="button" id="sp-x">Indietro</button></div>' +
+    '<div class="cr-top"><span class="cr-art' + (d === 2 ? '' : ' seen') + '">' + creature(id, 'smirk', '', '0 16 200 184') + '</span><div class="cr-info"><p><span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · ' + esc(sp.where) + '</p>' +
+    '<small>' + (d === 2 ? (mine ? 'Nella tua squadra: ' + mine : 'L\'hai avuta: ora è cresciuta in un\'altra forma') : 'Vista in lotta, mai presa') + '</small></div></div>' +
+    '<p class="hint">' + esc(sp.text) + '</p><div class="pickrow"><h3>Forme</h3>' + chainHtml(id, function (x) { return dexOf(x) > 0; }) + '</div></div>');
+  $('sp-x').addEventListener('click', function () { closeSheet(); back(); });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('#sp-x'); if (b) b.focus(); }, 30);
 }

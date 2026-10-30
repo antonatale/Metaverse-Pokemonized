@@ -482,12 +482,17 @@ test('creatures of Formia', async ({ browser }) => {
     await talkThrough(p, 20);
     /* the one caught walks behind Antonio from now on */
     await p.keyboard.press('m'); await p.clock.runFor(300);
-    if (await p.locator('[data-lead="c2"]').count()) { await p.click('[data-lead="c2"]'); await p.clock.runFor(300); }
+    if (await p.locator('[data-cr="c2"]').count()) {
+      await p.click('[data-cr="c2"]'); await p.clock.runFor(300);
+      await r.shot('creature');
+      await p.fill('#cr-nick', 'Cri'); await p.click('#cr-f .btn'); await p.clock.runFor(300);
+      await p.click('#cr-lead'); await p.clock.runFor(300);
+    }
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
   const sc = second.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; money: number; bag: Record<string, number>; lead?: string };
   expect(sc.money).toBeLessThan(120);
   expect(sc.bag.retino2).toBeLessThan(3);
-  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']); expect(sc.lead).toBe('c2'); }
+  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']); expect(sc.lead).toBe('c2'); expect((sc.mons[1] as { nick?: string }).nick).toBe('Cri'); }
   else expect(sc.mons.length).toBe(1);
 });
