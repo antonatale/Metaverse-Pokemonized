@@ -26,7 +26,7 @@ import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStar
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
-import { wildGone } from '../story/maps';
+import { wildGone, wildNow } from '../story/maps';
 import { soundButton } from './sound';
 import { music, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
@@ -329,13 +329,17 @@ function challenge(id: string) {
 function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
 /* ---------- the creatures of Formia: a wild one, the first one ---------- */
 function wildTalk(p: Person) {
-  var w = p.n.wild!, sp = SPECIES[w.sp], lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
+  var w = wildNow(p.n)!, sp = SPECIES[w.sp], lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
+  /* one in thirty-two is golden */
+  var gold = Math.random() < 1 / 32;
   see(w.sp); save();
-  say([sp.wild + ', livello ' + lv + '!', sp.text], null, [{ label: 'Lotta!', fn: function () {
+  say([sp.wild + ', livello ' + lv + '!'].concat(gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : [sp.text]), null, [{ label: 'Lotta!', fn: function () {
     pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, function (key) {
       hide();
-      startBattle({ a: idOf(key), b: w.sp, mode: 'cpu', story: { wild: p.n.id, sp: w.sp, key: key, foeLv: lv }, safe: safeMoves(),
-        sideA: sideOf(key), sideB: foeSide(w.sp, lv), wild: true, bag: battleBag() });
+      var foe = foeSide(w.sp, lv);
+      if (gold) foe.gold = true;
+      startBattle({ a: idOf(key), b: w.sp, mode: 'cpu', story: { wild: p.n.id, sp: w.sp, key: key, foeLv: lv, gold: gold }, safe: safeMoves(),
+        sideA: sideOf(key), sideB: foe, wild: true, bag: battleBag() });
     });
   } }, { label: 'Lascia stare', fn: null }]);
 }
@@ -368,9 +372,9 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
     var sp = SPECIES[tag.sp as keyof typeof SPECIES];
     if (res.won || res.caught) wildGone[tag.wild] = Date.now();
     if (res.caught) {
-      addCreature(sp.id, lv); save();
+      addCreature(sp.id, lv, tag.gold); save();
       sfx('badge');
-      say([sp.name + ' entra nella tua squadra, al livello ' + lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, lv, true, false); });
+      say([sp.name + (tag.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, lv, true, false); });
     } else rewards(key, lv, res.won, false, res.won ? undefined : function () { say([sp.name + ' è ancora lì. Puoi riprovare quando vuoi.']); });
     return;
   }

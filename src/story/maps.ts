@@ -3,6 +3,8 @@ import type { Area, Building, Dir, Ground, LostItem, MapDef, Npc, Sign, Warp } f
 import { COVI, type Covo } from '../data/covi';
 import { T, hash } from '../render/canvas/draw';
 import { st } from '../save/story-progress';
+import { darkness } from './daytime';
+import type { SpeciesId } from '../data/creatures';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -80,6 +82,11 @@ export function areaName(): string {
 }
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)); }
+/** the wild creature on a spot right now: some come out only at night (the little owls), when the cicadas sleep */
+export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
+  if (!n.wild) return null;
+  return n.wild.night && darkness(new Date()) > 0.5 ? n.wild.night : n.wild;
+}
 /** wild creatures beaten or caught leave for a while: two minutes, then another one is there */
 export const wildGone: Record<string, number> = {};
 export function wildHere(id: string): boolean { var t = wildGone[id]; return !t || Date.now() - t > 120000; }

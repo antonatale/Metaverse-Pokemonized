@@ -233,6 +233,8 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - Le mosse sono numeri (`CMOVES`, con `fx`: alza o abbassa Attacco e Difesa, confonde, cura) e le esegue `genericMove` in `battle/moves.ts`. Una creatura lotta con le ultime quattro mosse imparate.
   - **La prima creatura** si sceglie dal guardaparco di Gianola (`starter: true` sull'Npc): è la prima tappa del giro.
   - **Le selvatiche** sono Npc con `wild` (specie e livelli) e saltellano sulla mappa. Dopo una lotta vinta o una cattura spariscono per due minuti (`wildGone` in `story/maps.ts`).
+  - **Giorno e notte:** di notte le cicale dormono e al loro posto escono le civettine (`wild.night`, scelto da `wildNow` in `story/maps.ts`): al Parco Gramsci e in pineta.
+  - **Dorate:** una selvatica su 32 è dorata (`gold`): stessi numeri, colori d'oro e scintille. Se la catturi resta dorata (`mons[].gold`).
   - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
   - **Scheda di ogni creatura** (Squadra → Scheda, `openCreature` in `ui/team.ts`): numeri al suo livello, mosse, la prossima da imparare, le forme, il nome. Il nome che le dà Antonio (`nick`) vale anche in lotta: il lato ha `nick` e `ch()` restituisce il personaggio con quel nome.
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.

@@ -18,7 +18,8 @@ function tcOf(key: string) { return 'var(--t-' + fighter(idOf(key)).type.toLower
 /** a fighter's picture: a friend's face, or the creature */
 export function portrait(key: string): string {
   var id = idOf(key);
-  return isSpecies(id) ? creature(id, 'smirk', '', '10 26 180 170') : SPR.person(id, 'smirk', '', SPR.thumb(id));
+  var mon = creatureOf(key);
+  return isSpecies(id) ? creature(id, 'smirk', '', '10 26 180 170', undefined, !!(mon && mon.gold)) : SPR.person(id, 'smirk', '', SPR.thumb(id));
 }
 function xpBar(key: string): string {
   var l = level(key), need = toNext(l.lv), pct = l.lv >= MAX_LEVEL ? 100 : Math.round(100 * l.xp / need);
@@ -192,8 +193,8 @@ export function openCreature(key: string, back: () => void) {
   var sp = SPECIES[mon.sp], l = level(key), s = atLevel(sp.stats, l.lv), known = knownAt(mon.sp, l.lv);
   var next = sp.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0];
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
-    '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184') + '</span><div class="cr-info">' +
-    '<p>' + (mon.nick ? esc(sp.name) + ' · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
+    '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184', undefined, !!mon.gold) + '</span><div class="cr-info">' +
+    '<p>' + (mon.nick ? esc(sp.name) + (mon.gold ? ' dorata' : '') + ' · ' : mon.gold ? 'Dorata · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
     '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' +
     '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
     '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.</p>' +

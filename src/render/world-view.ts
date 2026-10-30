@@ -2,7 +2,7 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
@@ -322,7 +322,7 @@ export function drawWorld(now: number) {
   M.people.filter(present).forEach(function (p) {
     if (p.n.wild) {
       /* a wild creature hops on the spot now and then */
-      var img = creatureImage(p.n.wild.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
+      var img = creatureImage(wildNow(p.n)!.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
       if (img) people.push({ yb: (p.y + 1) * T - hop, x: p.x * T, img: img });
       return;
     }

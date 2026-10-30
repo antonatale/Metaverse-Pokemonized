@@ -9,7 +9,7 @@ import type { SideOpts } from '../battle';
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
    a friend's id, or a creature's uid ('c1', 'c2', …). */
 
-export function creatureOf(key: string): { uid: string; sp: SpeciesId; nick?: string } | null {
+export function creatureOf(key: string): { uid: string; sp: SpeciesId; nick?: string; gold?: boolean } | null {
   return (st.mons || []).filter(function (m) { return m.uid === key; })[0] || null;
 }
 /** who fights: Antonio, a friend, or the species of a creature */
@@ -36,7 +36,7 @@ export function hasStarter(): boolean { return !!st.seen.starter; }
 /** how one of Antonio's fighters comes on in a story battle: its numbers at its level, its moves, his abilities */
 export function sideOf(key: string): SideOpts {
   var lv = level(key).lv, mon = creatureOf(key), sk = st.skills || {};
-  if (mon) return { stats: atLevel(SPECIES[mon.sp].stats, lv), lvl: lv, known: knownAt(mon.sp, lv), nick: mon.nick };
+  if (mon) return { stats: atLevel(SPECIES[mon.sp].stats, lv), lvl: lv, known: knownAt(mon.sp, lv), nick: mon.nick, gold: mon.gold };
   var base = fighter(idOf(key)).stats;
   if (key === 'antonio') return { stats: withSkills(atLevel(base, lv), sk), lvl: lv, perk: perksFor(sk) };
   return { stats: atLevel(base, lv), lvl: lv };
@@ -114,12 +114,12 @@ export function leadCreature(): string | null {
 }
 export function setLead(uid: string) { st.lead = uid; }
 /** a new creature for Antonio, at a level: the one he starts with, or one he has caught */
-export function addCreature(sp: SpeciesId, lv: number): string {
+export function addCreature(sp: SpeciesId, lv: number, gold?: boolean): string {
   st.mons = st.mons || [];
   var n = st.mons.length + 1;
   while (st.mons.some(function (m) { return m.uid === 'c' + n; })) n++;
   var uid = 'c' + n;
-  st.mons.push({ uid: uid, sp: sp });
+  st.mons.push(gold ? { uid: uid, sp: sp, gold: true } : { uid: uid, sp: sp });
   own(sp);
   st.lv = st.lv || {}; st.lv[uid] = { lv: lv, xp: 0 };
   return uid;

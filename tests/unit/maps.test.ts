@@ -102,7 +102,10 @@ for (const [id, m] of Object.entries(MAPS)) {
       const ids = new Set<string>();
       (m.npcs || []).forEach((n) => {
         expect(ids.has(n.id), 'two people called ' + n.id).toBe(false); ids.add(n.id);
-        if (n.wild) { expect(SPECIES[n.wild.sp], n.id).toBeDefined(); expect(n.wild.lv[0]).toBeLessThanOrEqual(n.wild.lv[1]); return; }
+        if (n.wild) {
+          for (const w of [n.wild, n.wild.night]) if (w) { expect(SPECIES[w.sp], n.id).toBeDefined(); expect(w.lv[0]).toBeLessThanOrEqual(w.lv[1]); }
+          return;
+        }
         if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
         else if (n.look) expect(LOOKS[n.look] && !!n.name, n.id + ' needs a name and a known look').toBeTruthy();
         else expect(typeof n.seed === 'number' && !!n.name, n.id + ' needs a name and a seed').toBe(true);

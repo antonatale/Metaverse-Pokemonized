@@ -33,7 +33,7 @@ export interface StoryProgress {
   /** what he carries: nets, tielle, coffees */
   bag?: Record<string, number>;
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them */
-  mons?: { uid: string; sp: SpeciesId; nick?: string }[];
+  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean }[];
   /** the creature diary: 1 for a species seen, 2 for one he has had */
   dex?: Record<string, number>;
   /** the creature that walks behind him on the map (his first one when missing) */

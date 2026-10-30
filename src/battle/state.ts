@@ -46,6 +46,7 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.lvl) side.lvl = o.lvl;
   if (o && o.known) side.known = o.known.slice();
   if (o && o.nick) side.nick = o.nick;
+  if (o && o.gold) side.gold = true;
   if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
   return side;
 }

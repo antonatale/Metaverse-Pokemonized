@@ -167,13 +167,17 @@ function owl(sp: Species): [string, Face] {
 }
 const BODIES = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl };
 
-/** a creature as an SVG: in battle with every expression (data-expr picks one), or, with only, a still picture */
-export function creature(id: SpeciesId, expr?: string, cls?: string, vb?: string, only?: string): string {
-  var sp = SPECIES[id], bf = BODIES[sp.art.body](sp), k = sp.art.size;
+/* a golden one: the same creature in the colours of gold, very rare in the wild */
+const GOLD = { main: '#f2c94c', dark: '#b8860b', belly: '#fff1b8' };
+function goldOf(sp: Species): Species { return Object.assign({}, sp, { art: Object.assign({}, sp.art, GOLD) }); }
+const SPARKS = [[34, 60, 7], [168, 84, 6], [150, 30, 5], [46, 150, 5]].map(function (p) { return '<path d="M' + p[0] + ' ' + (p[1] - p[2]) + ' L' + (p[0] + p[2] * 0.3) + ' ' + (p[1] - p[2] * 0.3) + ' L' + (p[0] + p[2]) + ' ' + p[1] + ' L' + (p[0] + p[2] * 0.3) + ' ' + (p[1] + p[2] * 0.3) + ' L' + p[0] + ' ' + (p[1] + p[2]) + ' L' + (p[0] - p[2] * 0.3) + ' ' + (p[1] + p[2] * 0.3) + ' L' + (p[0] - p[2]) + ' ' + p[1] + ' L' + (p[0] - p[2] * 0.3) + ' ' + (p[1] - p[2] * 0.3) + 'Z" fill="#fff6c8" stroke="' + INK + '" stroke-width="1.6"/>'; }).join('');
+/** a creature as an SVG: in battle with every expression (data-expr picks one), or, with only, a still picture; gold for a golden one */
+export function creature(id: SpeciesId, expr?: string, cls?: string, vb?: string, only?: string, gold?: boolean): string {
+  var sp = gold ? goldOf(SPECIES[id]) : SPECIES[id], bf = BODIES[sp.art.body](sp), k = sp.art.size;
   var faces = only ? '<g>' + faceGroup(bf[1], only) + '</g>' : EXPRS.map(function (x) { return '<g class="ex ex-' + x + '">' + faceGroup(bf[1], x) + '</g>'; }).join('');
   return '<svg xmlns="http://www.w3.org/2000/svg" class="spr spr-c spr-' + id + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 200 200') + '" data-expr="' + (expr || 'smirk') + '" role="img" aria-label="' + sp.name + '">' +
     '<ellipse cx="100" cy="190" rx="' + (54 * k) + '" ry="7" fill="' + INK + '" opacity=".14"/>' +
-    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + faces + '</g></svg>';
+    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + faces + '</g>' + (gold ? SPARKS : '') + '</svg>';
 }
 /** the rules that show one expression at a time (also in styles/sprites.css) */
 export const CREATURE_CSS = '.spr-c .ex{display:none}' + EXPRS.map(function (x) { return '.spr-c[data-expr="' + x + '"] .ex-' + x; }).join(',') + '{display:inline}';

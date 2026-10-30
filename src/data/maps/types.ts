@@ -82,8 +82,8 @@ export interface Npc {
   /** there only once this friend is in Antonio's squad (he hangs out with him), or only until then (he leaves his covo) */
   with?: FriendId;
   unless?: FriendId;
-  /** a wild creature of Formia, and the levels it may have when met */
-  wild?: { sp: SpeciesId; lv: [number, number] };
+  /** a wild creature of Formia, and the levels it may have when met; another one in its place at night */
+  wild?: { sp: SpeciesId; lv: [number, number]; night?: { sp: SpeciesId; lv: [number, number] } };
   /** gives Antonio his first creature (the guardaparco of Gianola) */
   starter?: boolean;
   /** sells things (data/growth.ts SHOPS) */
