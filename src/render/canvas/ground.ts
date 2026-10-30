@@ -276,6 +276,13 @@ const DECO: Record<string, DecoFn> = {
     rr(c, X + 9, Y + 14, T - 18, 12, 2); c.fillStyle = towel; c.fill();
     c.fillStyle = '#ffffff'; c.globalAlpha = 0.7; c.fillRect(X + 9, Y + 18, T - 18, 2); c.globalAlpha = 1;
   },
+  /* a pub table seen from above: four stools, the round top, two mugs */
+  table: function (c, X, Y, P) {
+    [[5, 5], [T - 5, 5], [5, T - 5], [T - 5, T - 5]].forEach(function (q) { circle(c, X + q[0], Y + q[1], 3.6); fillStroke(c, P.wood2, P.ink, 1.2); });
+    circle(c, X + 16, Y + 16, 11); fillStroke(c, P.wood, P.ink, 1.6);
+    c.strokeStyle = P.wood2; c.lineWidth = 1; c.beginPath(); c.arc(X + 16, Y + 16, 7, 0.4, 2.4); c.stroke();
+    circle(c, X + 12, Y + 14, 3); fillStroke(c, '#ffd166', P.ink, 1.1); circle(c, X + 20, Y + 18, 3); fillStroke(c, '#c96b2c', P.ink, 1.1);
+  },
   /* the line of buoys that marks off the swimmers from the boats and the windsurfs */
   buoy: function (c, X, Y, P, x, y) {
     c.strokeStyle = P.foam; c.globalAlpha = 0.8; c.lineWidth = 1.4; c.setLineDash([3, 3]);

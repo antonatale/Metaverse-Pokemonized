@@ -38,7 +38,8 @@ src/
       formia-places.ts     i luoghi con le coordinate reali e i testi (casa, Eclipse, Morgana, stazione…)
       formia-ground.ts     GENERATO da tools/formia/build.ts: terreno, posizioni risolte, case di contorno
       formia-projection.ts dalle coordinate reali alle caselle
-      casa.ts, circolo.ts  interni: l'appartamento di Antonio, i campi coperti del Bruno Zauli
+      casa.ts, circolo.ts, interni: l'appartamento di Antonio, i campi coperti del Bruno Zauli,
+      morgana.ts           la Birreria Morgana (bancone, tavoli, palco del quiz)
     covi.ts, gates.ts      i covi (palestre) con spille e frasi; le uscite dalle città
   battle/                  motore di lotta: puro, senza DOM, stato JSON con l'RNG dentro
     index.ts               API (ENGINE): newBattle, intro, beginTurn, playTurn, needs, available, moveLabel, snap, ai…
@@ -156,6 +157,7 @@ tools/
 - **Attività** (`story/activities.ts`): all'Eclipse la lezione di windsurf con Nicola Spadea (campione di windsurf: si tiene la vela nelle raffiche), il beach volley con Valentin e il lettino dal bar del lido; poi la corsetta in pineta con Zendavid, il padel con Andrea, il quiz da Morgana e il gelato sul lungomare. Le propone una persona sulla mappa (`activity` sull'Npc); `ui/activities.ts` e `ui/run.ts` le fanno giocare; volte e record si salvano nella storia (`done`, `best`, campi facoltativi) e si vedono nel "Diario di Formia" del menu.
 - **Aggiungerne una:** una voce in `ACTIVITIES`, un caso in `play()` di `ui/activities.ts`, `activity: 'id'` su chi la propone in `formia.ts`, e un pezzo nel test `activities around Formia`.
 - **Casa:** il portone di Parco la Fontana porta in `casa.ts`. Mobili e finestra sono cartelli `quiet` (si usano, ma non si disegna il cartello di legno).
+- **Morgana:** la porta in via Tullia porta in `morgana.ts`: bancone, tavoli, palco con il microfono. Il quiz lo propone l'oste dietro il bancone; Costanzo, quando è in compagnia, sta a un tavolo. Il giro di Formia punta alla porta da fuori e all'oste da dentro.
 - **Motorino:** parcheggiato sotto casa, all'Eclipse, da Morgana, in piazza della Vittoria, al Bruno Zauli e in pineta (`SCOOTERS` e `RIDES` in `formia.ts`, cartelli `ride`): si sale e si sceglie dove andare.
 - **Cartelli:** quelli dei posti principali dicono anche da che parte sono gli altri (← Vindicio · Mola →).
 

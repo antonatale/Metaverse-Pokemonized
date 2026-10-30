@@ -242,8 +242,8 @@ const TOWN_LABELS: [string, string][] = [['Casa', 'casa'], ['Eclipse', 'eclipse'
 /** where Antonio is on the Formia map: indoors, at the door he went in by */
 function whereOnFormia(): [number, number] {
   if (st.map === 'formia') return [st.x, st.y];
-  const door = st.map === 'casa' ? FORMIA_AT.casa.door : st.map === 'circolo' ? FORMIA_AT.tennis.door : null;
-  return door ? [door[0], door[1] + 1] : [st.x, st.y];
+  const b = (prepare('formia').buildings || []).find(function (q) { return q.to === st.map; });
+  return b ? [b.door[0], b.door[1] + 1] : [st.x, st.y];
 }
 export function townMap(el: HTMLElement) {
   /* drawn at the size it is shown, so labels and the marker stay readable on a phone */

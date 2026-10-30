@@ -288,12 +288,21 @@ test('activities around Formia', async ({ browser }) => {
     await choose(p, 'Prendi un lettino');
     await talkThrough(p);
     await talkThrough(p);
-    /* Morgana: a drink and the quiz, always the first answer */
+    /* Morgana: in through the door, a drink at the counter and the quiz, always the first answer */
+    await goTo(p, 'door', 'morgana');
+    await walk(p, ['up']);
+    await p.clock.runFor(600);
+    r.keep('inside morgana', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await r.shot('morgana');
     await talkTo(p, 'oste');
     await choose(p, 'Siediti al tavolo');
     await choose(p, 'Una rossa');
     await talkThrough(p);
     for (let q = 0; q < 5; q++) { await choose(p, ''); await talkThrough(p); }
+    /* and out again into via Tullia */
+    await walk(p, (await p.evaluate(() => window.WORLD._debug.route(5, 7))) || []);
+    await walk(p, ['down']);
+    await p.clock.runFor(600);
     /* a gelato on the lungomare */
     await talkTo(p, 'gelataio');
     await choose(p, 'Prendi un gelato');
@@ -310,6 +319,7 @@ test('activities around Formia', async ({ browser }) => {
   expect(get('volley end')).toContain('Fine: 1 scambio');
   const st = get('state') as unknown as { done: Record<string, number>; best: Record<string, number> };
   expect(get('windsurf')).toMatch(/Fine: \d+ m di planata/);
+  expect(get('inside morgana')).toBe('morgana');
   expect(st.done).toEqual({ corsa: 1, volley: 1, windsurf: 1, lettino: 1, quiz: 1, gelato: 1 });
   expect(st.best.volley).toBe(1);
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);

@@ -60,7 +60,7 @@ const buildings: Building[] = [
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli».', 'Dentro si allenano i velocisti. Si entra solo con il tesserino.'] }),
   building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
-  building('morgana', { label: 'MORGANA', msg: ['Birreria Morgana, in via Tullia.', 'La sera è qui che ci si ritrova.'] }),
+  building('morgana', { label: 'MORGANA', to: 'morgana', tx: 5, ty: 7, tdir: 'up' }),
   building('chiesa-mola', { msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, nel borgo di Mola.'] }),
   building('gelati', { label: 'GELATI', awning: '#8fd0f6', roof: '#c3a6ff', msg: ['Gelateria. Due gusti? Limone e fragola, il classico.'] }),
   building('bar', { msg: ['Il bar è pieno: c\'è la partita.'] }),
@@ -124,7 +124,6 @@ const signs: Sign[] = [
 const npcs: Npc[] = [
   npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza', unless: 'costanzo' }),
   /* friends who joined the squad leave their covo and turn up where Antonio and the others hang out */
-  npc('costanzo-morgana', { person: 'costanzo', name: 'costanzo', dir: 'down', with: 'costanzo', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] }),
   npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', with: 'forchetta', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
   npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
@@ -135,7 +134,6 @@ const npcs: Npc[] = [
   npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', activity: 'volley', lines: ['Weee! Antonio, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
   npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
   npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
-  npc('oste', { name: 'Al bancone', seed: 82, dir: 'down', activity: 'quiz', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] }),
   npc('vicina', { name: 'Vicina di casa', seed: 15, dir: 'left', hint: true, lines: ['Antonio! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
   npc('capotreno', { name: 'Capotreno', seed: 21, dir: 'down', gate: 'torino' }),
   npc('turista', { name: 'Turista', seed: 22, dir: 'left', lines: ['Dicono che Cicerone parlasse tantissimo.', 'Ho conosciuto uno in piazza che lo batte.'] }),

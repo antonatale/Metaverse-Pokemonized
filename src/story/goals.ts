@@ -33,9 +33,9 @@ function areaOf(map: string, x: number, y: number): string {
   const a = (MAPS[map].areas || []).find((q) => x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h);
   return a ? a.name : MAPS[map].name;
 }
-const doing = (id: string, who: string, tip: string): Stop => {
-  const a = activity(id), [x, y] = npcAt('formia', who);
-  return { id, text: a.name, where: a.where, tip, map: 'formia', x, y, done: () => timesDone(id) > 0 };
+const doing = (id: string, who: string, tip: string, map = 'formia'): Stop => {
+  const a = activity(id), [x, y] = npcAt(map, who);
+  return { id, text: a.name, where: a.where, tip, map, x, y, done: () => timesDone(id) > 0 };
 };
 const covo = (id: string, map: string, tip: string): Stop => {
   const cv = COVI[id], [x, y] = npcAt(map, cv.leader);
@@ -51,7 +51,7 @@ const [tx, ty] = npcAt('formia', 'capotreno');
 export const STOPS: Stop[] = [
   doing('padel', 'andrea', 'Andrea ti aspetta al Bruno Zauli: ha calcolato che a padel oggi vince lui.'),
   covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
-  doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.'),
+  doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),
   doing('gelato', 'gelataio', 'A Mola, vicino al porto, il gelataio ha un pistacchio che non ti dico.'),
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   lost('caricabatterie'),
