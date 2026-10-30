@@ -446,7 +446,8 @@ test('creatures of Formia', async ({ browser }) => {
     await talkThrough(p, 20);
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
     await p.keyboard.press('m'); await p.clock.runFor(300);
-    await r.shot('team', { fullPage: true });
+    await p.locator('.team').scrollIntoViewIfNeeded();
+    await r.shot('team');
     r.keep('team', await p.locator('.team').innerText());
   });
   const sf = first.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; lv: Record<string, { lv: number; xp: number }>; money: number };

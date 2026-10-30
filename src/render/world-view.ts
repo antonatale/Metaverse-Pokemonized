@@ -102,7 +102,7 @@ function itemSprite(kind: string, s: number): Sprite {
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
-    if (e.img) { c.drawImage(e.img, e.x - 6, e.yb - 46, 44, 44); return; }
+    if (e.img) { c.drawImage(e.img, e.x - 10, e.yb - 52, 52, 52); return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
     var img = e.w![e.d!][e.f || 0]; c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s);
   };
