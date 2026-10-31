@@ -237,10 +237,11 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - Da lì Attacco, Difesa e Velocità crescono del 2,5% a livello, i PS dell'1%.
   - L'esperienza arriva dalle lotte (un terzo se si perde), dalle attività (20 ad Antonio) e dal caffè.
   - I capi dei covi hanno un livello (`level` in `covi.ts`): Costanzo 6, Forchetta 9. Gli amici battuti si uniscono a quel livello.
-- **Abilità di Antonio:** un punto a ogni livello, da spendere nel menu (Squadra → Abilità).
-  - Muscoli, Pelle dura e Scatto alzano i numeri.
-  - Memoria di ferro gli fa perdere meno le cose, Prompt engineer gli fa venire più idee: sono le probabilità di `beginTurn`, passate al motore come `perk`.
-  - Contrattare abbassa i prezzi.
+- **Abilità di Antonio** (`SKILLS` in `data/growth.ts`): un punto a ogni livello, da spendere nel menu (Squadra → Abilità). Non alzano i numeri: cambiano il gioco. Tre strade:
+  - **Esploratore di Formia:** Passo felpato (un terzo di incontri in meno a grado, `meetChance`), Occhio da pescatore (le creature rare più spesso, le dorate il doppio, `luck`), Gambe da Mennea (si cammina più svelti, `stepTime` e `setPace` in `story/movement.ts`).
+  - **Allenatore di creature:** Allenatore (+15% di esperienza alle creature, `trainerXp`), Mano ferma (retini più sicuri: `net` sul lato di Antonio), Legame (una volta a lotta un colpo che manderebbe KO una creatura può lasciarla a 1 PS: `endure` sul lato).
+  - **Formiano doc:** Ultima difesa (quando scende in campo per le creature KO, Antonio ha Attacco e Difesa più alti, `lastStand`), Memoria di ferro e Prompt engineer (le probabilità di `beginTurn`, passate al motore come `perk`), Amico di tutti (prezzi più bassi e attività che rendono di più).
+  - Le abilità di prima (Muscoli, Pelle dura, Scatto, Contrattare) non ci sono più: i punti spesi lì tornano da spendere, perché `pointsLeft` conta solo le abilità di `SKILLS`.
 - **Creature di Formia** (`data/creatures.ts`): animali e piante della città, disegnati per questo gioco, con una magia loro.
   - **La leggenda:** si racconta che Formia fosse la città dei giganti Lestrigoni dell'Odissea e del loro re Lamo, dove approdarono le navi di Ulisse. Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi, e da lì nascono le creature. Lo racconta il guardaparco, e ogni creatura ha la sua storia legata a un posto (le mura dei giganti di Castellone, il golfo, i venti, la luna di Gianola, gli ulivi, Maranola).
   - **La magia di ogni tipo** (`MAGIC` in `render/svg/creatures.ts`):
@@ -282,7 +283,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **I negozi** (`SHOPS`): reti e retini dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).
   - **Cosa fanno:** la tiella cura 40 PS in lotta. Il caffè si beve subito al bancone del bar (`coffee` in `ui/team.ts`): 60 punti esperienza a chi sceglie Antonio, senza passare dal menu. Un caffè già pagato in un salvataggio vecchio si beve lì gratis.
 - **Nel motore** solo le lotte della storia usano queste cose; quelle libere restano identiche e i golden delle 2040 lotte non cambiano.
-  - Ogni lato può avere `stats`, `lvl`, `known` (le mosse di una creatura) e `perk`.
+  - Ogni lato può avere `stats`, `lvl`, `known` (le mosse di una creatura), `perk`, `endure` (il legame: resta a 1 PS una volta, con quella probabilità) e `net` (quanto prendono meglio i suoi retini).
   - La lotta può essere `wild`, con una `bag`: retino e retino da pesca solo contro una selvatica, la tiella sempre. Si usano prima delle mosse.
   - Il risultato `catch` chiude la lotta con la creatura nel retino.
   - **Dopo la lotta** la schermata della storia (`afterBattle`) riceve chi ha lottato, il livello dell'avversario e la borsa rimasta, poi dà esperienza e soldi, dice le mosse imparate e mostra l'evoluzione (`ui/team.ts`).

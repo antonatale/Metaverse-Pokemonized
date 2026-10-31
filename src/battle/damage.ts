@@ -61,6 +61,9 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   let dmg = Math.max(1, Math.round(p.base * roll * (crit ? (foe.id === 'andrea' ? TUNE.critAndrea : 1.5) : 1) * (opt.mult || 1)));
   let sturdy = false;
   if (foe.id === 'forchetta' && !foe.sturdy && dmg >= foe.hp && foe.hp > 1) { dmg = foe.hp - 1; foe.sturdy = true; sturdy = true; }
+  /* a creature bound to Antonio may hold on, once (story battles only: the others have no endure) */
+  let held = false;
+  if (foe.endure && !foe.sturdy && dmg >= foe.hp && foe.hp > 1 && rand(s) < foe.endure) { dmg = foe.hp - 1; foe.sturdy = true; held = true; }
   foe.hp = Math.max(0, foe.hp - dmg);
   me.st.dmg += dmg; if (crit) me.st.crits++;
   if (!opt.noLunge) ev.push(anim(i, 'lunge'));
@@ -72,6 +75,7 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   if (p.notes.indexOf('filo') >= 0 && !opt.quiet) ev.push(say('Costanzo cambia argomento e perde il filo: −20%.'));
   if (p.notes.indexOf('calc') >= 0) { ev.push(say('Andrea ha già i dati su questa mossa: −' + Math.round(100 - TUNE.calc * 100) + '%.')); }
   if (sturdy) { ev.push(say('Forchetta resta in piedi con 1 PS!')); ev.push(line(j, CHARS.forchetta.lines.sturdy)); }
+  if (held) ev.push(say(ch(foe).name + ' non vuole deludere Antonio: resta in piedi con 1 PS!'));
   if (foe.id === 'andrea' && foe.hp > 0) foe.seen[id] = (foe.seen[id] || 0) + 1;
   if (foe.id === 'zendavid' && foe.hp > 0 && !zenOn(s, foe) && foe.anx < 3) {
     foe.anx++;

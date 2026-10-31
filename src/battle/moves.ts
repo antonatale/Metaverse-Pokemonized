@@ -217,7 +217,7 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       ev.push(anim(i, 'net'));
       /* the more worn out the creature, the easier: a third of the times at full health, almost always near the end */
       const rate = isSpecies(foe.id) ? SPECIES[foe.id].catchRate || 1 : 1;
-      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1) * rate);
+      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1) * rate * (s.sides[i].net || 1));
       if (rand(s) < chance) s.caught = true;
       else { ev.push(anim(j, 'dodge')); ev.push(say(ch(foe).name + ' scappa dal retino!')); }
       break;

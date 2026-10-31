@@ -49,6 +49,8 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.gold) side.gold = true;
   if (o && o.hp != null) side.hp = Math.max(1, Math.min(side.max, Math.round(o.hp)));
   if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
+  if (o && o.endure) side.endure = o.endure;
+  if (o && o.net) side.net = o.net;
   return side;
 }
 export function newBattle(o: NewBattle): BattleState {

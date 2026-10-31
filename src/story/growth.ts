@@ -2,7 +2,7 @@ import { st } from '../save/story-progress';
 import type { FighterId } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
-import { START_LEVEL, MAX_LEVEL, toNext, atLevel, withSkills, perksFor, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
+import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
 import type { SideOpts } from '../battle';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
@@ -35,11 +35,17 @@ export function hasStarter(): boolean { return !!st.seen.starter; }
 
 /** how one of Antonio's fighters comes on in a story battle: its numbers at its level, its moves, his abilities */
 export function sideOf(key: string): SideOpts {
-  var lv = level(key).lv, mon = creatureOf(key), sk = st.skills || {};
-  if (mon) return { stats: atLevel(SPECIES[mon.sp].stats, lv), lvl: lv, known: knownAt(mon.sp, lv), nick: mon.nick, gold: mon.gold };
-  var base = fighter(idOf(key)).stats;
-  if (key === 'antonio') return { stats: withSkills(atLevel(base, lv), sk), lvl: lv, perk: perksFor(sk) };
-  return { stats: atLevel(base, lv), lvl: lv };
+  var lv = level(key).lv, mon = creatureOf(key), sk = st.skills || {}, o: SideOpts;
+  if (mon) {
+    o = { stats: atLevel(SPECIES[mon.sp].stats, lv), lvl: lv, known: knownAt(mon.sp, lv), nick: mon.nick, gold: mon.gold };
+    if (bond(sk)) o.endure = bond(sk);
+  } else {
+    o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
+    if (key === 'antonio') o.perk = perksFor(sk);
+  }
+  /* whoever is in, the nets are Antonio's */
+  if (netHand(sk) > 1) o.net = netHand(sk);
+  return o;
 }
 /** a foe at a level: a covo leader, or a wild creature */
 export function foeSide(id: FighterId, lv: number): SideOpts {

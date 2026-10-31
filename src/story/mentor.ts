@@ -72,7 +72,7 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
 /** the first time something happens, Cicero explains it (once) */
 export const TIPS: Record<string, string[]> = {
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
-  level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: Muscoli, Pelle dura, Scatto, Memoria, Prompt engineer o Contrattare.'],
+  level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
   money: ['I primi euro! Il pescatore di Mola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
   wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],

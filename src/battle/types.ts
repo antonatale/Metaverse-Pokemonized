@@ -66,9 +66,13 @@ export interface Side {
   gold?: boolean;
   /** Antonio's abilities: his chance a turn to lose a thing, and to get an idea from the AI */
   perk?: { lose: number; idea: number };
+  /** a creature's bond with Antonio: the chance, once a battle, to hold on at 1 HP instead of going down */
+  endure?: number;
+  /** how much better this side's nets catch (Antonio's steady hand) */
+  net?: number;
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
 export interface StoryTag { covo?: string; wild?: string; trainer?: string; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string }
 

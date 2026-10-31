@@ -2,7 +2,7 @@ import { st, save } from '../save/story-progress';
 import type { TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, knownAt, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, type ItemId, type SkillId } from '../data/growth';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, type ItemId, type SkillId, type Branch } from '../data/growth';
 import { beaterOf } from '../battle';
 import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, type Growth } from '../story/growth';
 import { SPR } from '../render/svg';
@@ -10,6 +10,7 @@ import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
 import { say, sheet, closeSheet, renderHud, mentorTip } from './story-screen';
 import { sfx } from '../audio';
+import { setPace } from '../story/movement';
 
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
    money, new moves, a new form), the shops, the team and the bag in the menu, Antonio's abilities. */
@@ -95,6 +96,7 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
     trainer's battle: the trainer pays at the end) */
 export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void, noMoney?: boolean) {
   var xp = xpFor(foeLv, won, covo), cash = won && !noMoney ? moneyFor(foeLv, covo) : 0, name = nameOf(key);
+  if (creatureOf(key)) xp = trainerXp(xp, st.skills || {});
   var g = gainXp(key, xp);
   if (cash) earn(cash);
   save(); renderHud();
@@ -166,19 +168,23 @@ export function wireTeam(reopen: () => void) {
   });
   each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
 }
+/** the three ways of being Antonio */
+const BRANCH: Record<Branch, string> = { Esploratore: 'Esploratore di Formia', Allenatore: 'Allenatore di creature', Formiano: 'Formiano doc' };
 export function openSkills(back: () => void) {
   var render = function () {
     var left = pointsLeft();
     var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sk-t"><div class="sheet-h"><h2 id="sk-t">Abilità di Antonio</h2><button class="tb-btn" type="button" id="sk-x">Indietro</button></div>' +
-      '<p class="hint">' + (left ? 'Hai ' + left + (left === 1 ? ' punto' : ' punti') + ' da spendere: uno a ogni livello.' : 'Un punto a ogni livello: vinci lotte e fai attività per salire.') + '</p><ul class="skills">' +
-      SKILLS.map(function (s) {
-        var g = grade(s.id), full = g >= s.max;
-        return '<li><span><b>' + esc(s.name) + ' <span class="pips" aria-label="grado ' + g + ' su ' + s.max + '">' + Array.from({ length: s.max }, function (_, k) { return '<i class="' + (k < g ? 'on' : '') + '"></i>'; }).join('') + '</span></b><small>' + esc(s.text) + '</small></span>' +
-          '<button class="btn" type="button" data-sk="' + s.id + '"' + (!left || full ? ' disabled' : '') + '>' + (full ? 'Al massimo' : '+1') + '</button></li>';
-      }).join('') + '</ul></div>');
+      '<p class="hint">' + (left ? 'Hai ' + left + (left === 1 ? ' punto' : ' punti') + ' da spendere: uno a ogni livello.' : 'Un punto a ogni livello: vinci lotte e fai attività per salire.') + '</p>' +
+      (['Esploratore', 'Allenatore', 'Formiano'] as Branch[]).map(function (br) {
+        return '<div class="pickrow"><h3>' + esc(BRANCH[br]) + '</h3><ul class="skills">' + SKILLS.filter(function (s) { return s.branch === br; }).map(function (s) {
+          var g = grade(s.id), full = g >= s.max;
+          return '<li><span><b>' + esc(s.name) + ' <span class="pips" aria-label="grado ' + g + ' su ' + s.max + '">' + Array.from({ length: s.max }, function (_, k) { return '<i class="' + (k < g ? 'on' : '') + '"></i>'; }).join('') + '</span></b><small>' + esc(s.text) + '</small></span>' +
+            '<button class="btn" type="button" data-sk="' + s.id + '"' + (!left || full ? ' disabled' : '') + '>' + (full ? 'Al massimo' : '+1') + '</button></li>';
+        }).join('') + '</ul></div>';
+      }).join('') + '</div>');
     $('sk-x').addEventListener('click', function () { closeSheet(); back(); });
     each(o.querySelectorAll('[data-sk]'), function (b) {
-      b.addEventListener('click', function () { if (takeSkill(b.getAttribute('data-sk') as SkillId)) { sfx('pickup'); save(); render(); } });
+      b.addEventListener('click', function () { if (takeSkill(b.getAttribute('data-sk') as SkillId)) { sfx('pickup'); save(); setPace(); render(); } });
     });
     setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-sk]:not([disabled])') || $('sk-x'); if (b) b.focus(); }, 30);
   };

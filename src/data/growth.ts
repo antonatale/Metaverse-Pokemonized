@@ -21,25 +21,50 @@ export function xpFor(foeLv: number, won: boolean, covo: boolean): number {
 export function moneyFor(foeLv: number, covo: boolean): number { return covo ? 80 : 3 + foeLv; }
 
 /* ---------- Antonio's abilities: a point every level, up to the ranks of each ---------- */
-export type SkillId = 'forza' | 'scorza' | 'scatto' | 'memoria' | 'prompt' | 'affari';
-export interface Skill { id: SkillId; name: string; text: string; max: number }
+/* Not numbers going up: powers that change how the story plays. Three ways of being Antonio: the explorer of Formia
+   (fewer meetings in the grass, rarer creatures, a quicker step), the trainer (creatures that grow faster, surer
+   nets, creatures that hold on for him), the man of Formia (who fights for himself when the creatures are down,
+   his memory, his AI, his friends in every shop). The story asks for them where they act (story/growth.ts, the
+   story screen, the battle's side options). */
+export type SkillId = 'passo' | 'fortuna' | 'svelto' | 'allenatore' | 'mano' | 'legame' | 'ultima' | 'memoria' | 'prompt' | 'amici';
+export type Branch = 'Esploratore' | 'Allenatore' | 'Formiano';
+export interface Skill { id: SkillId; branch: Branch; name: string; text: string; max: number }
 export const SKILLS: Skill[] = [
-  { id: 'forza', name: 'Muscoli', text: 'Palestra al Bruno Zauli: +6% di Attacco a ogni grado.', max: 3 },
-  { id: 'scorza', name: 'Pelle dura', text: '+6% di Difesa e +5% di PS a ogni grado.', max: 3 },
-  { id: 'scatto', name: 'Scatto', text: 'Le ripetute sulla pista di Mennea: +6% di Velocità a ogni grado.', max: 3 },
-  { id: 'memoria', name: 'Memoria di ferro', text: 'Perde meno le cose: dal 15% a turno all\'11%, al 7%, al 3%.', max: 3 },
-  { id: 'prompt', name: 'Prompt engineer', text: 'L\'IA gli suggerisce idee più spesso: dal 25% a turno al 30%, al 35%, al 40%.', max: 3 },
-  { id: 'affari', name: 'Contrattare', text: 'Nei negozi di Formia paga il 10% in meno a ogni grado.', max: 2 }
+  { id: 'passo', branch: 'Esploratore', name: 'Passo felpato', text: 'Nell\'erba alta e tra gli scogli le creature ti sentono meno: un terzo di incontri in meno a grado.', max: 2 },
+  { id: 'fortuna', branch: 'Esploratore', name: 'Occhio da pescatore', text: 'Le creature rare saltano fuori più spesso, e quelle dorate il doppio a ogni grado.', max: 2 },
+  { id: 'svelto', branch: 'Esploratore', name: 'Gambe da Mennea', text: 'Le ripetute sulla pista del Bruno Zauli: cammini più svelto per Formia.', max: 2 },
+  { id: 'allenatore', branch: 'Allenatore', name: 'Allenatore', text: 'Le tue creature guadagnano il 15% di esperienza in più a ogni grado.', max: 3 },
+  { id: 'mano', branch: 'Allenatore', name: 'Mano ferma', text: 'Lanci meglio il retino: le catture riescono il 20% più spesso a ogni grado.', max: 2 },
+  { id: 'legame', branch: 'Allenatore', name: 'Legame', text: 'Le tue creature non vogliono deluderti: una volta a lotta, un colpo che le manderebbe KO può lasciarle a 1 PS (15% a grado).', max: 3 },
+  { id: 'ultima', branch: 'Formiano', name: 'Ultima difesa', text: 'Quando le tue creature sono KO e scendi in campo tu: Attacco e Difesa +15% a grado.', max: 2 },
+  { id: 'memoria', branch: 'Formiano', name: 'Memoria di ferro', text: 'Nelle lotte perdi meno le cose: dal 15% a turno all\'11%, al 7%, al 3%.', max: 3 },
+  { id: 'prompt', branch: 'Formiano', name: 'Prompt engineer', text: 'L\'IA ti suggerisce idee più spesso: dal 25% a turno al 30%, al 35%, al 40%.', max: 3 },
+  { id: 'amici', branch: 'Formiano', name: 'Amico di tutti', text: 'Formia ti conosce: nei negozi paghi il 10% in meno e le attività rendono il 25% in più, a ogni grado.', max: 2 }
 ];
-/** Antonio's numbers with his abilities */
-export function withSkills(s: Stats, sk: Partial<Record<SkillId, number>>): Stats {
-  const r = (k: SkillId) => sk[k] || 0;
-  return { hp: Math.round(s.hp * (1 + 0.05 * r('scorza'))), atk: Math.round(s.atk * (1 + 0.06 * r('forza'))), def: Math.round(s.def * (1 + 0.06 * r('scorza'))), spe: Math.round(s.spe * (1 + 0.06 * r('scatto'))) };
+type Grades = Partial<Record<SkillId, number>>;
+/** Antonio's numbers when he steps in for his creatures, with his last stand */
+export function lastStand(s: Stats, sk: Grades): Stats {
+  const k = 1 + 0.15 * (sk.ultima || 0);
+  return { hp: s.hp, atk: Math.round(s.atk * k), def: Math.round(s.def * k), spe: s.spe };
 }
 /** his chances a turn to lose a thing, and to get an idea from the AI */
-export function perksFor(sk: Partial<Record<SkillId, number>>): { lose: number; idea: number } {
+export function perksFor(sk: Grades): { lose: number; idea: number } {
   return { lose: Math.max(0, 0.15 - 0.04 * (sk.memoria || 0)), idea: 0.25 + 0.05 * (sk.prompt || 0) };
 }
+/** the chance a step in a hiding place meets a creature, out of 1 */
+export function meetChance(rate: number, sk: Grades): number { return (1 - (sk.passo || 0) / 3) / rate; }
+/** how much more often the rare creatures (weight 1) and the golden ones come out */
+export function luck(sk: Grades): { rare: number; gold: number } { return { rare: 1 + (sk.fortuna || 0), gold: Math.pow(2, sk.fortuna || 0) }; }
+/** a step on the map, in ms */
+export function stepTime(sk: Grades): number { return 165 - 20 * (sk.svelto || 0); }
+/** experience for a creature, with the trainer */
+export function trainerXp(xp: number, sk: Grades): number { return Math.round(xp * (1 + 0.15 * (sk.allenatore || 0))); }
+/** the nets thrown by a steady hand */
+export function netHand(sk: Grades): number { return 1 + 0.2 * (sk.mano || 0); }
+/** the chance a creature holds on at 1 HP, once a battle */
+export function bond(sk: Grades): number { return 0.15 * (sk.legame || 0); }
+/** euro from an activity, with friends everywhere */
+export function friendsPay(n: number, sk: Grades): number { return Math.round(n * (1 + 0.25 * (sk.amici || 0))); }
 
 /* ---------- things to buy around Formia, and what they do ---------- */
 export type ItemId = 'retino' | 'retino2' | 'tiella' | 'caffe';
@@ -58,4 +83,4 @@ export const SHOPS: Record<string, Shop> = {
   bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe'] }
 };
 /** the price with Antonio's bargaining */
-export function priceOf(it: ItemId, sk: Partial<Record<SkillId, number>>): number { return Math.max(1, Math.round(WARES[it].price * (1 - 0.1 * (sk.affari || 0)))); }
+export function priceOf(it: ItemId, sk: Grades): number { return Math.max(1, Math.round(WARES[it].price * (1 - 0.1 * (sk.amici || 0)))); }

@@ -8,7 +8,7 @@ import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
 import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel } from '../story/movement';
+import { press, release, update, halt, mover, busy, travel, setPace } from '../story/movement';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
@@ -22,7 +22,7 @@ import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, type Hiding } from '../data/encounters';
-import { SHOPS } from '../data/growth';
+import { SHOPS, meetChance, luck, lastStand } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
@@ -360,6 +360,7 @@ function fightOn(key?: string) {
   var go = function (k: string) {
     hide();
     var a = sideOf(k), b = foeSide(foe.sp, foe.lv);
+    if (k === 'antonio') a.stats = lastStand(a.stats!, st.skills || {});
     if (f.hp[k] != null) a.hp = f.hp[k];
     if (f.foeHp != null) b.hp = f.foeHp;
     if (foe.gold) b.gold = true;
@@ -419,15 +420,17 @@ export function stepped(): boolean {
   var h = hidingAt(st.x, st.y);
   if (!h) return false;
   if (calm > 0) { calm--; return false; }
-  if (Math.random() * RATE >= 1) return false;
+  if (Math.random() >= meetChance(RATE, st.skills || {})) return false;
   calm = CALM;
   meet(h);
   return true;
 }
 /** a creature of that hiding place jumps out: by day or by night, now and then a golden one */
 function meet(h: Hiding) {
-  var night = darkness(new Date()) > 0.5, m = pickMeet((night && h.night) || h.day, Math.random());
-  var lv = m.lv[0] + Math.floor(Math.random() * (m.lv[1] - m.lv[0] + 1)), gold = Math.random() < 1 / 48;
+  /* Antonio's eye for the rare ones: the creatures of weight 1 come out more often, the golden ones too */
+  var night = darkness(new Date()) > 0.5, lk = luck(st.skills || {});
+  var m = pickMeet(((night && h.night) || h.day).map(function (x) { return x.w <= 1 ? { sp: x.sp, lv: x.lv, w: x.w * lk.rare } : x; }), Math.random());
+  var lv = m.lv[0] + Math.floor(Math.random() * (m.lv[1] - m.lv[0] + 1)), gold = Math.random() < lk.gold / 48;
   halt();
   sfx('meet');
   if (!reduced) { root.classList.remove('meet'); void root.offsetWidth; root.classList.add('meet'); setTimeout(function () { root.classList.remove('meet'); }, 900); }
@@ -667,7 +670,7 @@ function open(quiet?: boolean) {
   root.hidden = false;
   window.scrollTo(0, 0);
   setScreen('world');
-  setMap(st.map);
+  setMap(st.map); setPace();
   resize(); renderHud();
   music('world');
   var go = function () {

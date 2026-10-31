@@ -10,9 +10,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
-7. **Abilità meno scontate.** Non +Attacco/+Difesa, ma poteri che cambiano il gioco: meno incontri, più catture,
-   creature che crescono più in fretta, prezzi, Antonio che resiste quando lotta da solo… File: `data/growth.ts`
-   (`SKILLS`), `ui/team.ts` (`openSkills`).
 8. **Livelli ed evoluzioni delle iniziali fatti meglio**: curva dell'esperienza, livelli dell'evoluzione, schermata
    del livello con le statistiche che crescono, scelta della mossa da dimenticare quando se ne impara una quinta.
 9. **Creature più coinvolgenti**: carattere, legame con Antonio (cresce lottando e passeggiando, in lotta le fa
@@ -31,3 +28,4 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **Incontri nascosti, come nei Pokémon**: erba alta e pozze tra gli scogli, con creature diverse per zona e per ora del giorno. Idea per dopo: altre specie selvatiche (meduse e ricci in acqua bassa, una lucertola dei muretti a secco, un pipistrello della Grotta della Janara) e un oggetto o un'abilità che tiene lontane le creature.
 - **Sfondi delle lotte disegnati, a schermo intero**: dodici scene di Formia in SVG (Vindicio, pineta, porto, Mola, Castellone, monti, golfo, Gianola, Caposele, piazza della Vittoria, circolo, Morgana), di giorno e di notte; le foto sono state tolte.
 - **Antonio sulla mappa ha la faccia delle lotte** (e così gli amici): la testa è il loro ritratto. Idea per dopo: un ritratto di lato e di spalle disegnato apposta, e i vestiti del corpo presi dal ritratto (catenina, orecchino).
+- **Abilità che cambiano il gioco**: tre strade (Esploratore, Allenatore, Formiano doc) con dieci abilità: meno incontri, creature rare e dorate, passo più svelto, esperienza alle creature, retini più sicuri, creature che resistono a 1 PS, Antonio più forte quando lotta da solo, prezzi e attività.

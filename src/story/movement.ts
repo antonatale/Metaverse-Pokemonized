@@ -1,12 +1,16 @@
 import type { Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
+import { stepTime } from '../data/growth';
 import { DV, M, key, blocked, setMap } from './maps';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
 import { root, dialog, running, useDoor, renderPlace, renderHud, stepped } from '../ui/story-screen';
 
 /* Walking on the map, one tile at a time: a tap turns, holding walks; doors and warps take you elsewhere. */
-export const STEP = 165, TURN_HOLD = 110;
+export const TURN_HOLD = 110;
+/** how long a step takes: quicker with Antonio's legs (setPace, when the story opens and when he trains them) */
+export let STEP = 165;
+export function setPace() { STEP = stepTime(st.skills || {}); }
 export interface Mover { fx: number; fy: number; tx: number; ty: number; t0: number }
 
 let held: Dir | null = null, pressedAt = 0, lastBump = '', walking = false;

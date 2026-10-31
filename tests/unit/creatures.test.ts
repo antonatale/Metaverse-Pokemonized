@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SPECIES, CMOVES, STARTERS, knownAt, type SpeciesId } from '../../src/data/creatures';
-import { atLevel, toNext, xpFor, SKILLS, withSkills, perksFor, WARES, SHOPS, START_LEVEL } from '../../src/data/growth';
+import { atLevel, toNext, xpFor, SKILLS, lastStand, meetChance, stepTime, trainerXp, luck, perksFor, WARES, SHOPS, START_LEVEL } from '../../src/data/growth';
 import { CHARS } from '../../src/data/characters';
 import { ENGINE as E, type BattleState } from '../../src/battle';
 
@@ -71,9 +71,13 @@ describe('growing up', () => {
     expect(toNext(6)).toBeGreaterThan(toNext(5));
     expect(xpFor(10, true, false)).toBeGreaterThan(xpFor(10, false, false));
   });
-  it('turns abilities into numbers and chances', () => {
-    expect(withSkills(CHARS.antonio.stats, {})).toEqual(CHARS.antonio.stats);
-    expect(withSkills(CHARS.antonio.stats, { forza: 3 }).atk).toBeGreaterThan(CHARS.antonio.stats.atk);
+  it('turns abilities into powers', () => {
+    expect(lastStand(CHARS.antonio.stats, {})).toEqual(CHARS.antonio.stats);
+    expect(lastStand(CHARS.antonio.stats, { ultima: 2 }).atk).toBeGreaterThan(CHARS.antonio.stats.atk);
+    expect(meetChance(9, { passo: 2 })).toBeLessThan(meetChance(9, {}));
+    expect(stepTime({ svelto: 2 })).toBeLessThan(stepTime({}));
+    expect(trainerXp(100, { allenatore: 2 })).toBe(130);
+    expect(luck({ fortuna: 1 }).gold).toBe(2);
     expect(perksFor({})).toEqual({ lose: 0.15, idea: 0.25 });
     expect(perksFor({ memoria: 3, prompt: 3 }).lose).toBeLessThan(0.05);
     for (const sk of SKILLS) expect(sk.max).toBeGreaterThan(0);
@@ -168,5 +172,29 @@ describe('the hiding places of the wild creatures', () => {
     const two = [{ sp: 'cicalina' as const, lv: [1, 1] as [number, number], w: 1 }, { sp: 'olivella' as const, lv: [1, 1] as [number, number], w: 3 }];
     expect(pickMeet(two, 0.1).sp).toBe('cicalina');
     expect(pickMeet(two, 0.5).sp).toBe('olivella');
+  });
+});
+
+describe('the bond and the steady hand', () => {
+  it('let a creature hold on at 1 HP once, and nets catch more often', () => {
+    let held = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const s = E.newBattle({ a: 'cicalina', b: 'muraglione', seed, sideA: { stats: atLevel(SPECIES.cicalina.stats, 3), lvl: 3, known: knownAt('cicalina', 3), endure: 1 },
+        sideB: { stats: atLevel(SPECIES.muraglione.stats, 40), lvl: 40, known: knownAt('muraglione', 40) } });
+      const ev = playOut(s, (st) => E.ai(st, 0));
+      if (s.sides[0].sturdy) held++;
+      expect(ev.phase).toBe('over');
+    }
+    expect(held).toBeGreaterThan(20);
+    const caught = (net: number) => {
+      let n = 0;
+      for (let seed = 1; seed <= 200; seed++) {
+        const s = E.newBattle({ a: 'antonio', b: 'granchione', seed, wild: true, bag: { retino: 1 }, sideA: { net }, sideB: { stats: atLevel(SPECIES.granchione.stats, 20), lvl: 20, known: knownAt('granchione', 20) } });
+        E.intro(s); E.beginTurn(s); E.playTurn(s, { 0: 'retino' });
+        if (s.result === 'catch') n++;
+      }
+      return n;
+    };
+    expect(caught(1.4)).toBeGreaterThan(caught(1));
   });
 });

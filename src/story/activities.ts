@@ -1,5 +1,6 @@
 import { st, save } from '../save/story-progress';
 import { gainXp, earn, type Growth } from './growth';
+import { friendsPay } from '../data/growth';
 
 /* Things to do around Formia, in the places where Antonio and his friends actually go. Each one is offered by
    someone on the map (an Npc with `activity`), played by ui/activities.ts, and remembered in the save:
@@ -47,7 +48,7 @@ export function record(id: string, score?: number): boolean {
     better = b == null || (a.lower ? score < b : score > b);
     if (better) st.best[id] = score;
   }
-  const g = gainXp('antonio', XP), cash = PAY[id] && score != null ? PAY[id](score) : 0;
+  const g = gainXp('antonio', XP), cash = PAY[id] && score != null ? friendsPay(PAY[id](score), st.skills || {}) : 0;
   if (cash) earn(cash);
   save();
   if (rewardHook) rewardHook(g, cash);
