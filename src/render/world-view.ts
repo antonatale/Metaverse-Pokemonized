@@ -10,7 +10,6 @@ import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
 import { cicero } from './svg/cicero';
-import { standalone, thumb } from './svg';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
@@ -81,23 +80,9 @@ function chunk(cx: number, cy: number): HTMLCanvasElement {
   while (cache.order.length > 12) delete cache.chunks[cache.order.shift()!];
   return c0;
 }
-/* the friends' faces on the map (Antonio's first) are their portraits of the battles: an image each, made once;
-   until it has loaded they have the plain head */
-var heads: Record<string, { img: HTMLImageElement; ok: boolean }> = {};
-function headOf(id: string): HTMLImageElement | null {
-  var h = heads[id];
-  if (!h) {
-    var img = new Image(), e = { img: img, ok: false };
-    heads[id] = e;
-    img.onload = function () { e.ok = true; };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(standalone(id, 'smirk', thumb(id)));
-    return null;
-  }
-  return h.ok ? h.img : null;
-}
 function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker {
-  var head = n.person ? headOf(n.person) : null, id = (n.person || n.look || ('npc' + n.seed)) + '@' + s + (head ? '+face' : '');
-  return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : n.look ? LOOKS[n.look] : townsperson(n.seed!), s, head || undefined));
+  var id = (n.person || n.look || ('npc' + n.seed)) + '@' + s;
+  return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
 }
 /* the wild creatures on the map: their battle picture, as an image (it loads once, and until then they are not drawn) */
 var monImg: Partial<Record<SpeciesId, { img: HTMLImageElement; ok: boolean }>> = {};

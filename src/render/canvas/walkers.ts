@@ -14,27 +14,32 @@ export interface PersonLook {
   beard?: string;
   phones?: boolean;
   stripes?: string[];
+  /* the touches that make someone recognisable from above (Antonio's): a gold chain, an earring, thick brows,
+     a crooked smile */
+  chain?: string;
+  earring?: string;
+  brows?: string;
+  smirk?: boolean;
 }
 type HairLook = PersonLook['hair'];
 
 /* ---------- people seen from above ---------- */
 const DIRS: Dir[] = ['down', 'left', 'right', 'up'];
-/** four directions × three frames (standing, left foot, right foot); with a head (a friend's portrait, as an image)
-    the face seen from the front and the sides is the one of the battles */
-export function walker(spec: PersonLook, s: number, head?: CanvasImageSource): Record<Dir, HTMLCanvasElement[]> {
+/** four directions × three frames (standing, left foot, right foot) */
+export function walker(spec: PersonLook, s: number): Record<Dir, HTMLCanvasElement[]> {
   var out = {} as Record<Dir, HTMLCanvasElement[]>;
   DIRS.forEach(function (d) {
     out[d] = [0, 1, 2].map(function (f) {
       var cv = mk(T * s, 44 * s), c = cv.getContext('2d')!;
       c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round';
       if (d === 'right') { c.translate(T, 0); c.scale(-1, 1); }
-      drawWalker(c, spec, d === 'right' ? 'left' : d, f, head);
+      drawWalker(c, spec, d === 'right' ? 'left' : d, f);
       return cv;
     });
   });
   return out;
 }
-function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number, head?: CanvasImageSource) {
+function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
   var ink = STICKER_INK, bob = f ? -1 : 0, side = d === 'left', back = d === 'up';
   c.translate(0, 4);
   ell(c, 16, 38, 9, 3); c.fillStyle = 'rgba(20,24,40,.22)'; c.fill();
@@ -68,22 +73,12 @@ function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number, head?: CanvasImage
     circle(c, 7.4, 30 + sw, 1.9); fillStroke(c, S.skin, ink, 1.2); circle(c, 24.6, 30 - sw, 1.9); fillStroke(c, S.skin, ink, 1.2);
   }
   if (S.phones) neckPhones(c, d);
-  /* the portrait's head, a little big, as a sticker: from the front, and turned a bit to the side */
-  if (head && !back) {
-    var hs = 30, hx = side ? 1.5 : 1, hy = -6;
-    c.save();
-    if (side) { c.translate(16, 0); c.scale(0.92, 1); c.translate(-16, 0); }
-    c.drawImage(head, hx, hy, hs, hs);
-    c.restore();
-    return;
-  }
-  /* head (from behind, as big as the portrait's) */
-  if (head) { c.save(); c.translate(16, 11); c.scale(1.25, 1.25); c.translate(-16, -11); }
+  if (S.chain && !back) { c.strokeStyle = S.chain; c.lineWidth = 1.3; c.beginPath(); if (side) { c.moveTo(11, 19.6); c.quadraticCurveTo(11.8, 22.8, 15.2, 21.6); } else { c.moveTo(11.6, 20.4); c.quadraticCurveTo(16, 25.8, 20.4, 20.4); } c.stroke(); }
+  /* head */
   circle(c, 16, 12, 9.6); fillStroke(c, S.skin, ink, 1.6);
   if (S.beard && !back) { c.save(); circle(c, 16, 12, 9.6); c.clip(); c.fillStyle = S.beard; c.globalAlpha = 0.42; c.beginPath(); c.ellipse(side ? 12 : 16, 19, side ? 6 : 8.5, 5.2, 0, 0, Math.PI * 2); c.fill(); c.restore(); c.globalAlpha = 1; }
   hairFront(c, S, d);
   if (!back) face(c, S, d);
-  if (head) c.restore();
 }
 function torsoDetail(c: Ctx, S: PersonLook, d: Dir, bx: number, bw: number) {
   var ink = STICKER_INK;
@@ -121,8 +116,39 @@ function hairBack(c: Ctx, S: PersonLook, _d: Dir) {
   c.strokeStyle = H.hi!; c.lineWidth = 0.9;
   for (var k = 0; k < 9; k++) { var a = k / 9 * Math.PI * 2; c.beginPath(); c.arc(16 + Math.cos(a) * 11, 12 + Math.sin(a) * 11, 2, 0, 4.2); c.stroke(); }
 }
+/** a cloud of curls with one outline around it all: circles [x, y, r] */
+function cloud(c: Ctx, pts: number[][], color: string) {
+  c.strokeStyle = STICKER_INK; c.lineWidth = 3;
+  pts.forEach(function (p) { circle(c, p[0], p[1], p[2]); c.stroke(); });
+  c.fillStyle = color;
+  pts.forEach(function (p) { circle(c, p[0], p[1], p[2]); c.fill(); });
+}
+/* big curly hair, a lot of it, like Antonio's: over the top and the sides, a few curls on the forehead */
+function bigCurls(c: Ctx, H: HairLook, d: Dir) {
+  var pts: number[][] = [], k, a;
+  if (d === 'up') {
+    for (k = 0; k < 16; k++) { a = k / 16 * Math.PI * 2; pts.push([16 + Math.cos(a) * 10.4, 11 + Math.sin(a) * 10.4, 3.4]); }
+    pts.push([16, 11, 10.2]);
+  } else if (d === 'left') {
+    /* seen from the side: the face is on the left, the curls over the top and down the back of the head */
+    for (k = 0; k <= 9; k++) { a = Math.PI * (1.12 + 1.1 * k / 9); pts.push([16.5 + Math.cos(a) * 10, 10.5 + Math.sin(a) * 10, 3.2]); }
+    pts.push([24.8, 14.6, 2.9], [23.2, 17.6, 2.4], [10.2, 6.6, 2.3], [13.2, 4.8, 2.5], [19.5, 8, 6.6]);
+  } else {
+    /* from the front: a crown of curls, the sides down to the ears, a few curls on the forehead, the face free */
+    for (k = 0; k <= 10; k++) { a = Math.PI * (0.97 + 1.06 * k / 10); pts.push([16 + Math.cos(a) * 10.2, 11 + Math.sin(a) * 10.2, 3.3]); }
+    pts.push([11, 2, 3.1], [16, 1.1, 3.3], [21, 2, 3.1], [11.2, 6.6, 2.3], [14.4, 5.8, 2.4], [17.8, 5.9, 2.4], [20.9, 6.7, 2.3], [16, 4.6, 6.2], [6.6, 12.8, 2.3], [25.4, 12.8, 2.3]);
+  }
+  cloud(c, pts, H.color);
+  if (H.hi) {
+    c.strokeStyle = H.hi; c.lineWidth = 0.9; c.globalAlpha = 0.85;
+    var sw = d === 'up' ? [[11, 6], [16, 3], [21, 7], [13, 12], [19, 12]] : d === 'left' ? [[13, 3], [19, 4], [22, 9]] : [[10, 4], [16, 2], [22, 4], [14, 7]];
+    sw.forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.4, 0, 4.4); c.stroke(); });
+    c.globalAlpha = 1;
+  }
+}
 function hairFront(c: Ctx, S: PersonLook, d: Dir) {
   var H = S.hair, ink = STICKER_INK, back = d === 'up', side = d === 'left', st = H.style;
+  if (st === 'bigcurls') { bigCurls(c, H, d); return; }
   c.save();
   if (st === 'buzz') {
     c.beginPath(); c.arc(16, 12, 9.6, Math.PI * 1.05, Math.PI * 1.95); if (back) { c.arc(16, 12, 9.6, 0, Math.PI); }
@@ -178,6 +204,8 @@ function face(c: Ctx, S: PersonLook, d: Dir) {
     circle(c, 9.4, 14.2, 1.3); c.fillStyle = ink; c.fill();
     c.beginPath(); c.moveTo(6.6, 14.6); c.quadraticCurveTo(5, 16.4, 6.8, 17.2); c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
     circle(c, 11.6, 17.4, 1.8); c.fillStyle = 'rgba(234,120,110,.35)'; c.fill();
+    if (S.brows) { c.strokeStyle = S.brows; c.lineWidth = 1.5; c.beginPath(); c.moveTo(7.8, 11.8); c.lineTo(11, 11.3); c.stroke(); }
+    if (S.smirk) { c.strokeStyle = ink; c.lineWidth = 1.1; c.beginPath(); c.moveTo(6.9, 18.6); c.quadraticCurveTo(8.2, 19.2, 9.6, 18.1); c.stroke(); }
     glasses(c, S, d);
     return;
   }
@@ -185,7 +213,12 @@ function face(c: Ctx, S: PersonLook, d: Dir) {
   circle(c, 19.6, 14.4, 1.35); c.fill();
   circle(c, 10.2, 17.4, 1.9); c.fillStyle = 'rgba(234,120,110,.35)'; c.fill();
   circle(c, 21.8, 17.4, 1.9); c.fill();
-  c.beginPath(); c.moveTo(14.6, 18.6); c.quadraticCurveTo(16, 19.6, 17.4, 18.6); c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
+  c.beginPath();
+  /* a crooked smile, one side up; or the plain one */
+  if (S.smirk) { c.moveTo(14.2, 18.9); c.quadraticCurveTo(16.4, 19.7, 18.5, 18); } else { c.moveTo(14.6, 18.6); c.quadraticCurveTo(16, 19.6, 17.4, 18.6); }
+  c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
+  if (S.brows) { c.strokeStyle = S.brows; c.lineWidth = 1.5; c.beginPath(); c.moveTo(10.7, 11.9); c.lineTo(13.9, 11.5); c.moveTo(18.1, 11.1); c.lineTo(21.3, 11.5); c.stroke(); }
+  if (S.earring) { circle(c, 6.9, 16, 1.2); fillStroke(c, S.earring, ink, 0.8); }
   glasses(c, S, d);
 }
 function glasses(c: Ctx, S: PersonLook, d: Dir) {
@@ -215,7 +248,8 @@ function glasses(c: Ctx, S: PersonLook, d: Dir) {
 
 /* the six friends, matching their portraits */
 export const PEOPLE: Record<FriendId, PersonLook> = {
-  antonio: { skin: '#ddae93', hair: { style: 'curls', color: '#1d1512', hi: '#9a8a7c' }, top: '#414c72', top2: '#2a3252', style: 'hoodie', pants: '#2b2f3a', shoes: '#f3f3f3' },
+  antonio: { skin: '#ddae93', hair: { style: 'bigcurls', color: '#1d1512', hi: '#9a8a7c' }, top: '#414c72', top2: '#2a3252', style: 'hoodie', pants: '#2b2f3a', shoes: '#f3f3f3',
+    chain: '#e0b44c', earring: '#f2c14e', brows: '#2b201a', smirk: true },
   costanzo: { skin: '#e6bea5', hair: { style: 'wavy', color: '#2a1d16', hi: '#9a7c68' }, top: '#25272f', top2: '#14151a', style: 'turtleneck', pants: '#1c1d22', shoes: '#f0f0f0', glasses: 'thin' },
   andrea: { skin: '#e3b99d', hair: { style: 'quiff', color: '#1d1613', hi: '#7a6b60' }, top: '#25262c', top2: '#3a3c45', style: 'tee', pants: '#26324a', shoes: '#e9e9e9' },
   valentin: { skin: '#edc4ab', hair: { style: 'mane', color: '#7b4d33', hi: '#e6b98c' }, top: '#ddd6c6', top2: '#1c1c21', style: 'jacket', pants: '#3b3f4b', shoes: '#f3f3f3', glasses: 'green' },

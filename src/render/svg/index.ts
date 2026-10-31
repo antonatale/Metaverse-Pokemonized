@@ -56,12 +56,6 @@ export function person(id: string, expr?: string, cls?: string, vb?: string): st
   return s + '</svg>';
 }
 
-/** a portrait that stands on its own, with its parts and rules inside (for an image: the friends' heads on the map) */
-export function standalone(id: string, expr?: string, vb?: string): string {
-  var c = CH[id as FriendId];
-  if (!c) return '';
-  return person(id, expr, '', vb).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/(<svg [^>]*>)/, '$1<style>' + CSS + '</style><defs>' + SHARED + GRADIENTS + buildChar(c) + '</defs>');
-}
 /** the minimal document install() needs (a fake one in the golden test) */
 export interface DefsDoc {
   getElementById(id: string): unknown;
