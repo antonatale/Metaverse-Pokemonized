@@ -8,7 +8,8 @@ const ANIM: Record<string, string> = {
   robot: 'robot', robotFail: 'robotFail', robotFix: 'robotFix', lost: 'lost', found: 'found', ai: 'ai', reveal: 'reveal',
   banner: 'banner', speech: 'speech', glint: 'shimmer', fox: 'whoosh', pump: 'shimmer', confetti: 'party',
   flyAway: 'plane', flyBack: 'planeBack', glowGreen: 'shimmer', ball: 'ball', cryptic: 'confused',
-  bark: 'bark', laugh: 'laugh', cricket: 'cricket', confused: 'confused', phOn: 'headphones', phOff: 'click', notes: 'notes'
+  bark: 'bark', laugh: 'laugh', cricket: 'cricket', confused: 'confused', phOn: 'headphones', phOff: 'click', notes: 'notes',
+  magic: 'magic', magicUp: 'magicUp', net: 'net', caught: 'caught'
 };
 export function cueBattle(ev: BattleEvent) {
   if (ev.k === 'anim') { const n = ANIM[ev.a]; if (n) sfx(n); }

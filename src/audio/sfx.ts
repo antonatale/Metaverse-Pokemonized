@@ -71,6 +71,23 @@ const FX: Record<string, Fx> = {
   headphones(c, out, t) { tone(c, out, 90, t, 0.25, { type: 'sine', gain: 0.18, sustain: 0.6, release: 0.15 }); FX.shimmer(c, out, t + 0.05); },
   notes(c, out, t) { arp(c, out, t, ['G5', 'B5', 'D6', 'G6'], 0.09, { type: 'square', gain: 0.05, cutoff: 3000, decay: 0.03, sustain: 0.6 }); },
 
+  /* ---------- the creatures of Formia: their magic, the net, and a cry for each kind of body ---------- */
+  magic(c, out, t) {
+    arp(c, out, t, ['C6', 'E6', 'G6', 'B6', 'D7'], 0.04, { type: 'sine', gain: 0.12, decay: 0.03, sustain: 0.6, vibrato: 12 });
+    hiss(c, out, t + 0.05, 0.25, { type: 'highpass', freq: 6000, gain: 0.08 });
+  },
+  magicUp(c, out, t) { ['C5', 'E5', 'G5', 'C6'].forEach(function (n, i) { tone(c, out, hz(n), t + i * 0.03, 0.5, { type: 'triangle', gain: 0.07, attack: 0.12, sustain: 0.7, release: 0.25, vibrato: 8 }); }); },
+  net(c, out, t) { hiss(c, out, t, 0.3, { freq: 900, to: 3200, q: 0.9, gain: 0.5 }); tone(c, out, 500, t + 0.25, 0.06, { type: 'triangle', gain: 0.12 }); },
+  caught(c, out, t) { arp(c, out, t, ['G5', 'C6', 'E6', 'G6'], 0.09, { type: 'square', gain: 0.06, cutoff: 5000, decay: 0.03, sustain: 0.7 }); FX.magic(c, out, t + 0.36); },
+  'cry-octo'(c, out, t) { ['G4', 'C5', 'E5'].forEach(function (n, i) { tone(c, out, hz(n), t + i * 0.07, 0.06, { type: 'sine', to: hz(n) * 1.4, gain: 0.22, decay: 0.03, sustain: 0.5 }); }); },
+  'cry-lizard'(c, out, t) { tone(c, out, 260, t, 0.18, { type: 'triangle', to: 520, gain: 0.25, decay: 0.06, sustain: 0.6, vibrato: 25 }); },
+  'cry-bird'(c, out, t) { [0, 0.2].forEach(function (d) { tone(c, out, 1300, t + d, 0.16, { type: 'square', to: 760, gain: 0.07, cutoff: 3000, decay: 0.05, sustain: 0.6, vibrato: 30 }); }); },
+  'cry-cicada'(c, out, t) { for (let k = 0; k < 8; k++) tone(c, out, 3800, t + k * 0.035, 0.022, { type: 'square', gain: 0.05, cutoff: 7000, decay: 0.01, sustain: 0.5 }); },
+  'cry-olive'(c, out, t) { tone(c, out, 880, t, 0.4, { type: 'sine', gain: 0.16, decay: 0.15, sustain: 0.3, release: 0.2 }); tone(c, out, 1320, t + 0.08, 0.35, { type: 'sine', gain: 0.1, decay: 0.15, sustain: 0.3 }); },
+  'cry-urchin'(c, out, t) { for (let k = 0; k < 4; k++) hiss(c, out, t + k * 0.06, 0.03, { freq: 5000 - k * 600, q: 3, gain: 0.25 }); },
+  'cry-crab'(c, out, t) { [0, 0.13].forEach(function (d) { hiss(c, out, t + d, 0.04, { freq: 1800, q: 2, gain: 0.45 }); tone(c, out, 700, t + d, 0.04, { type: 'square', gain: 0.06, cutoff: 2500 }); }); },
+  'cry-owl'(c, out, t) { [0, 0.32].forEach(function (d) { tone(c, out, 420, t + d, 0.24, { type: 'sine', to: 380, gain: 0.22, attack: 0.04, sustain: 0.7, release: 0.1 }); }); },
+
   /* ---------- story ---------- */
   scooter(c, out, t) { tone(c, out, 70, t, 0.9, { type: 'sawtooth', to: 150, gain: 0.09, cutoff: 900, attack: 0.05, sustain: 0.8, release: 0.2, vibrato: 30 }); hiss(c, out, t, 0.8, { type: 'lowpass', freq: 600, gain: 0.2, attack: 0.1 }); },
   step(c, out, t) { hiss(c, out, t, 0.05, { type: 'lowpass', freq: 900 + wobble() * 300, gain: 0.5 }); },

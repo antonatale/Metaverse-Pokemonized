@@ -1,6 +1,8 @@
 import { CHARS as C, type CharId, type FighterId, type FriendId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { MAGIC, runeIcon } from '../render/svg/creatures';
+import { SPECIES, isSpecies } from '../data/creatures';
+import { sfx } from '../audio';
 import { PHOTOS } from '../data/photos';
 import type { TypeName } from '../data/types';
 import { COVI } from '../data/covi';
@@ -252,6 +254,8 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
 }
 function stepEvent(ev: BattleEvent): Promise<unknown> {
   cueBattle(ev);
+  /* a creature speaking is its cry */
+  if (ev.k === 'line') { var sid = S.sides[ev.who].id; if (isSpecies(sid)) sfx('cry-' + SPECIES[sid].art.body); }
   switch (ev.k) {
     case 'say': return say(ev.text);
     case 'line': return say(ev.text, ev.who);

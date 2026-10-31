@@ -327,6 +327,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Musica per schermata:** `home` (avvio, ritorno alla home), `world` (apertura della storia), `battle`/`boss` (inizio lotta), `victory`/`defeat` (risultato, una volta sola).
 - **Effetti della lotta:** escono da `cueBattle(ev)`, chiamato per ogni evento riprodotto in `ui/battle-screen.ts`. Il motore non sa niente del suono.
 - **Mai `Math.random` nell'audio:** il seme delle lotte nasce da `Math.random`, e un suono non deve cambiare una lotta. Per le piccole variazioni c'è `wobble()` in `synth.ts`.
+- **Le creature:** ognuna ha il suo verso, uno per tipo di corpo (`cry-octo`, `cry-bird`, `cry-owl`…). Suona quando la creatura parla in lotta (`stepEvent` in `ui/battle-screen.ts`). Gli incantesimi hanno `magic` e `magicUp`, il retino `net`, la cattura `caught`.
 - **Nuovo brano:** aggiungilo in `tracks.ts`, con battute da 16 passi (il test unitario le controlla). `tests/e2e/audio.spec.ts` lo renderizza offline e controlla che non sia muto e non distorca.
 
 ## Convenzioni
