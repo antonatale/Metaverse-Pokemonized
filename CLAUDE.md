@@ -19,6 +19,7 @@ Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrat
 | `npm run test:e2e:dist` | le stesse partite sul file singolo di `dist/` aperto da disco |
 | `npm run test:all` | Vitest + Playwright |
 | `npm run sim` | simulatore di bilanciamento (vedi sotto) |
+| `npx tsx tools/sim-story.ts` | bilanciamento della storia: quanto spesso una creatura o un amico a un livello batte un altro (`polpino:8 forchetta:9` per uno scontro solo) |
 | `npm run golden` | rigenera i golden dal codice attuale, dopo un cambio voluto |
 
 ## Dove si trova ogni parte
@@ -352,6 +353,10 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Vantaggio di tipo:** conta il tipo del **personaggio**, non quello della mossa. Ciclo Calma → Caos → Cervello → Chiacchiera → Cuore → Calma. Chi ha il vantaggio fa ×1,12 (`TUNE.se`) e subisce ×0,9 (`TUNE.nve`).
 - **Mosse con `uses` limitati:** servono a evitare lotte infinite a colpi di cure. Non vanno tolti.
 - **Battuta:** l'etichetta dice "40% di far ridere", ma la probabilità è 0,45 e il bilanciamento è stato simulato con 0,45. Se si corregge, va corretta l'etichetta (`battle/labels.ts`), non la probabilità.
+- **Creature e livelli della storia:** vanno tarati con `tools/sim-story.ts`.
+  - Gli starter battono le selvatiche di pari livello quasi sempre: servono ad allenarsi e catturare.
+  - Contro i covi conta il tipo: chi ha il vantaggio vince spesso, chi è svantaggiato deve salire di livello.
+  - Le cure delle creature hanno 2 usi, così nessuno vince solo curandosi.
 - **Prima di cambiare un numero**, prova con `npm run sim -- '{"antonio":{"atk":95}}'`. Gli override riguardano statistiche, mosse (`{"zendavid":{"moves":{"battuta":{"chance":0.4}}}}`) e `TUNE`. Poi modifica `src/data/`, controlla, e rigenera i golden apposta con `npm run golden`.
 
 ## Test
