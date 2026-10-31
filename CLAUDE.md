@@ -253,8 +253,12 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - Le selvatiche hanno due forme (al 18): Cicalina in pineta e al Parco Gramsci, Riccetto a Gianola, Granchietto sugli scogli della Scogliera, Olivella negli uliveti, Civettina sui Monti Aurunci.
   - Le mosse sono numeri (`CMOVES`, con `fx`: alza o abbassa Attacco e Difesa, confonde, cura) e le esegue `genericMove` in `battle/moves.ts`. Una creatura lotta con le ultime quattro mosse imparate.
   - **La prima creatura** si sceglie dal guardaparco di Gianola (`starter: true` sull'Npc): è la prima tappa del giro.
-  - **Le selvatiche** sono Npc con `wild` (specie e livelli) e saltellano sulla mappa. Dopo una lotta vinta o una cattura spariscono per due minuti (`wildGone` in `story/maps.ts`).
-  - **Giorno e notte:** di notte le cicale dormono e al loro posto escono le civettine (`wild.night`, scelto da `wildNow` in `story/maps.ts`): al Parco Gramsci e in pineta.
+  - **Le selvatiche non si vedono:** si nascondono nell'erba alta (`E`, disegnata con i ciuffi che coprono i piedi di Antonio e della sua creatura) e nelle pozze tra gli scogli (`A`), come nei Pokémon. A ogni passo lì dentro una volta su `RATE` (9) ne salta fuori una, mai nei `CALM` (3) passi dopo un incontro: lo schermo lampeggia, si sente il fruscio (`meet`) e si sceglie tra «Lotta!» e «Scappa» (`stepped` e `meet` in `ui/story-screen.ts`).
+    - **Dove e chi** (`data/encounters.ts`): ogni zona ha la sua tabella, di giorno e di notte, con i pesi. Parco Gramsci (Cicalina, di notte Civettina), pineta di Vindicio (Cicalina, di notte Civettina), uliveti (Olivella), monti Aurunci (Civettina, Olivella e, rara, la forma evoluta), le pozze di Gianola (Riccetto, Granchietto) e della Scogliera (Granchietto, raro il Granchione).
+    - **Sulla mappa:** le zone sono macchie disegnate dal generatore (passo 12b di `tools/formia/build.ts`) intorno agli spot di `HIDING` in `formia-places.ts`; il centro e il raggio di ognuna finiscono in `FORMIA_HIDING`, e `hidingAt` in `story/maps.ts` dice in quale zona è Antonio.
+    - Gli incontri cominciano quando Antonio ha almeno una creatura. Nei test si fa saltare fuori una creatura con `WORLD._debug.meet('gianola')`.
+  - **La leggenda** (Lamo) è l'unica selvatica che si vede: un Npc con `wild` e `legend`. Dopo una lotta vinta o una cattura sparisce per due minuti (`wildGone` in `story/maps.ts`).
+  - **Giorno e notte:** di notte le cicale dormono e nell'erba alta escono le civettine (la tabella `night` di ogni zona).
   - **Dorate:** una selvatica su 32 è dorata (`gold`): stessi numeri, colori d'oro e scintille. Se la catturi resta dorata (`mons[].gold`).
   - **La leggenda: Lamo, il re dei Lestrigoni**, gigante di pietra con la corona (`giant` nei disegni), livello 35, tipo Caos. Ha mosse sue: Masso dei giganti, Furia dei Lestrigoni, Ruggito di Lamo, Porte di Telepilo.
     - Esce solo di notte, sotto le mura poligonali di Castellone, quando Antonio ha le due spille, finché non lo cattura (`legend` sull'Npc, `legendHere` in `story/maps.ts`).
@@ -264,9 +268,12 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Scheda di ogni creatura** (Squadra → Scheda, `openCreature` in `ui/team.ts`): numeri al suo livello, mosse, la prossima da imparare, le forme, il nome. Il nome che le dà Antonio (`nick`) vale anche in lotta: il lato ha `nick` e `ch()` restituisce il personaggio con quel nome.
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.
   - **Chi ti segue:** la creatura principale (`st.lead`, altrimenti la prima) cammina un passo dietro Antonio su tutte le mappe, anche dentro, e prende la casella che lui ha appena lasciato (`follower` in `render/world-view.ts`). Dopo una porta, un warp o il motorino si rimette dietro di lui. È solo disegno e non blocca il passo; se Antonio si gira verso di lei e preme Invio, dice il suo verso e come sta (`followerTalk`). Nel menu, Squadra → «Dietro di me», si sceglie chi segue.
+- **Chi lotta con chi:** le creature lottano con le creature, le persone con le persone.
+  - **Selvatiche e allenatori** (`fight`, `fightOn`, `fightAfter` in `ui/story-screen.ts`): scendono in campo le creature di Antonio, una dopo l'altra. Ognuna tiene i PS che le restano, e anche la creatura avversaria tiene i suoi. Quando sono tutte KO, Antonio può scendere in campo lui («Lotto io!») o scappare. Dopo una sconfitta in queste lotte la schermata del risultato ha solo «Continua»: si decide sulla mappa.
+  - **Covi:** lottano le persone, cioè Antonio e gli amici che si sono uniti (`st.squad`).
+  - Senza creature gli allenatori non sfidano Antonio e le selvatiche non saltano fuori.
 - **Allenatori** (`data/trainers.ts`): persone già sulla mappa con `trainer` sull'Npc. Prima dicono le loro frasi, poi sfidano Antonio con le loro creature una dopo l'altra:
   - l'animatore dell'oratorio (Lv 6–7), il bambino dell'Eclipse (7), lo studente della Vitruvio Pollione (10–11), la guida del museo (17–19), il signore di Castellone con il Muraglione (22–28);
-  - il lottatore di Antonio tiene i PS che gli restano da una lotta all'altra (`hp` sul lato). Se va KO se ne manda un altro della squadra, e anche la creatura avversaria tiene i suoi PS (`duel` in `ui/story-screen.ts`);
   - in battaglia si legge «L'animatore dell'oratorio manda in campo Olivella!» (`trainer` nella lotta);
   - la prima vittoria paga il premio (`st.beaten['tr-<id>']`), poi c'è sempre la rivincita per l'esperienza.
 - **Economia:**
@@ -279,7 +286,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - Il risultato `catch` chiude la lotta con la creatura nel retino.
   - **Dopo la lotta** la schermata della storia (`afterBattle`) riceve chi ha lottato, il livello dell'avversario e la borsa rimasta, poi dà esperienza e soldi, dice le mosse imparate e mostra l'evoluzione (`ui/team.ts`).
 - **Salvataggi:** campi nuovi e facoltativi in `lotte-tra-amici:storia:v1` (`lv`, `skills`, `money`, `bag`, `mons`, `seen.starter`). Un salvataggio vecchio parte dal livello 5, senza soldi e senza creature.
-- **Test:** `tests/unit/creatures.test.ts` controlla i dati, le lotte tra creature a ogni livello, la cattura e la crescita. La partita `creatures of Formia` sceglie Polpino, lotta con un Riccetto, compra i retini a Mola e cattura una Cicalina.
+- **Test:** `tests/unit/creatures.test.ts` controlla i dati, le lotte tra creature a ogni livello, la cattura e la crescita. La partita `creatures of Formia` sceglie Polpino, lotta con un Riccetto uscito dalle pozze di Gianola, compra i retini a Mola e cattura quello che esce dall'erba alta del Parco Gramsci.
 
 ## Foto vere di Formia dietro le lotte
 

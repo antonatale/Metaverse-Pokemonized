@@ -168,7 +168,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },
   { id: 'passaporto', near: { place: 'tomba', dx: 1, dy: 4 } },
   { id: 'portafoglio', near: { place: 'eclipse-spiaggia', dx: 10, dy: 2 }, on: 'sand' },
-  /* the wild creatures of Formia, where they live: the easy ones near home, the strong ones up in the Aurunci */
+  /* where the wild creatures of Formia live (the hiding places of HIDING): the easy ones near home, the strong ones
+     up in the Aurunci */
   { id: 'selv-gramsci', near: { place: 'parco-gramsci', dx: 2, dy: 1 } },
   { id: 'selv-gianola-1', tile: [156, 62], on: 'sand' },
   { id: 'selv-gianola-2', tile: [158, 66], on: 'sand' },
@@ -182,4 +183,19 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-monti-2', tile: [75, 9] },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
   { id: 'selv-lamo', tile: [48, 35] }
+];
+/* where the wild creatures hide, out of sight (data/encounters.ts says which ones, by the id): the generator paints
+   tall grass on the grass ('E') and rock pools on the sand ('A') out to about r tiles around each spot */
+export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand' }[] = [
+  { id: 'gramsci', spot: 'selv-gramsci', r: 3, on: 'grass' },
+  { id: 'gianola', spot: 'selv-gianola-1', r: 3, on: 'sand' },
+  { id: 'gianola', spot: 'selv-gianola-2', r: 3, on: 'sand' },
+  { id: 'pineta', spot: 'selv-pineta-1', r: 3, on: 'grass' },
+  { id: 'pineta', spot: 'selv-pineta-2', r: 3, on: 'grass' },
+  { id: 'scogliera', spot: 'selv-scogli-1', r: 3, on: 'sand' },
+  { id: 'scogliera', spot: 'selv-scogli-2', r: 3, on: 'sand' },
+  { id: 'ulivi', spot: 'selv-ulivi-1', r: 4, on: 'grass' },
+  { id: 'ulivi', spot: 'selv-ulivi-2', r: 4, on: 'grass' },
+  { id: 'monti', spot: 'selv-monti-1', r: 4, on: 'grass' },
+  { id: 'monti', spot: 'selv-monti-2', r: 4, on: 'grass' }
 ];

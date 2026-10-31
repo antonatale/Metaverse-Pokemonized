@@ -10,14 +10,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
-2. **Umani contro umani, creature contro creature.** Con selvatiche e allenatori lottano le creature; Antonio scende
-   in campo solo quando sono tutte KO. Nei covi (Forchetta, Costanzo) lottano gli umani: Antonio e gli amici che si
-   sono uniti. File: `ui/team.ts` (`pickFighter`), `ui/story-screen.ts` (`challenge`, `wildTalk`, `duel`).
-3. **Incontri nascosti, secondo il terreno, come nei Pokémon.** Le selvatiche non si vedono: camminando nell'erba
-   alta, sulla sabbia, sugli scogli, negli uliveti, nella macchia dei monti, a ogni passo c'è una probabilità di
-   incontro, con specie diverse per terreno e per ora (di notte le civette). Serve un carattere di mappa nuovo per
-   l'erba alta, disegnato in `render/canvas/ground.ts`, messo in `tools/formia/paint.ts`/`build.ts`; il passo è in
-   `story/movement.ts`. La leggenda (Lamo) resta visibile.
 4. **Sfondi delle lotte disegnati, a schermo intero su PC**, al posto delle foto (che non piacciono): scene
    stilizzate in SVG per zona (Vindicio, porto, Mola, Castellone, Gianola, monti, centro…), di giorno e di notte.
    File: `data/photos.ts` → sfondi SVG, `ui/battle-screen.ts`, `styles/battle.css`.
@@ -40,3 +32,5 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 - **Cicerone compare solo quando serve** (nuovo capitolo, prima volta di qualcosa, quando Antonio sembra perso da quattro minuti, tasto C), poi svanisce: sulla mappa e nell'angolo.
 - **Il caffè si beve al bancone** del bar di Mola, scegliendo subito chi lo beve; niente più caffè nel menu.
+- **Umani contro umani, creature contro creature**: con selvatiche e allenatori lottano le creature, una dopo l'altra; Antonio scende in campo solo quando sono tutte KO. Nei covi lottano Antonio e gli amici.
+- **Incontri nascosti, come nei Pokémon**: erba alta e pozze tra gli scogli, con creature diverse per zona e per ora del giorno. Idea per dopo: altre specie selvatiche (meduse e ricci in acqua bassa, una lucertola dei muretti a secco, un pipistrello della Grotta della Janara) e un oggetto o un'abilità che tiene lontane le creature.

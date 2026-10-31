@@ -18,6 +18,9 @@ body.in-world { overflow: hidden; }
 /* asleep in the bed at home: the screen goes dark, slowly */
 #world.sleep { background: var(--m-night); }
 #world.sleep canvas { opacity: 0; transition-duration: .6s; }
+/* a wild creature jumps out: the screen flashes twice, as the grass parts */
+#world.meet canvas { animation: meetFlash .9s steps(1, end); }
+@keyframes meetFlash { 0%, 22%, 50% { filter: brightness(1.9) saturate(.4); } 11%, 33%, 66%, 100% { filter: none; } }
 .whud { position: absolute; z-index: 2; top: max(10px, env(safe-area-inset-top, 0px)); left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; align-items: center; gap: 8px; pointer-events: none; }
 .whud > * { pointer-events: auto; }
 .wplace { min-width: 0; padding: 5px 11px 4px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); font: 18px/1.1 var(--font-display); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

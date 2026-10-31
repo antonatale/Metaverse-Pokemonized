@@ -5,6 +5,8 @@ import { T, hash } from '../render/canvas/draw';
 import { st } from '../save/story-progress';
 import { darkness } from './daytime';
 import type { SpeciesId } from '../data/creatures';
+import { HIDINGS, type Hiding } from '../data/encounters';
+import { FORMIA_HIDING } from '../data/maps/formia-ground';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -88,6 +90,18 @@ function legendHere(n: Npc): boolean { return st.badges.length >= 2 && !(st.dex 
 export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
   if (!n.wild) return null;
   return n.wild.night && darkness(new Date()) > 0.5 ? n.wild.night : n.wild;
+}
+/** the hiding place of wild creatures Antonio is standing in (tall grass, rock pools), with its table, or null */
+export function hidingAt(x: number, y: number): Hiding | null {
+  if (M.id !== 'formia') return null;
+  var d = M.cell(x, y).deco;
+  if (d !== 'tall' && d !== 'pools') return null;
+  var best: Hiding | null = null, bd = Infinity;
+  FORMIA_HIDING.forEach(function (h) {
+    var k = Math.hypot(h.x - x, h.y - y);
+    if (k <= h.r + 2 && k < bd && HIDINGS[h.id]) { bd = k; best = HIDINGS[h.id]; }
+  });
+  return best;
 }
 /** wild creatures beaten or caught leave for a while: two minutes, then another one is there */
 export const wildGone: Record<string, number> = {};

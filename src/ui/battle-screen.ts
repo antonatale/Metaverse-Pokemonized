@@ -372,7 +372,8 @@ function showResult() {
   [first, second].forEach(function (q) { if (q) h += '<p class="say"><small>' + esc(sideName(q[0])) + '</small>«' + esc(q[1]) + '»</p>'; });
   h += '<div class="res-stats"><div><span>Turni</span><strong>' + S.turn + '</strong></div><div><span>Danni</span><strong>' + me.dmg + '</strong></div><div><span>Critici</span><strong>' + me.crits + '</strong></div><div><span>Cure</span><strong>' + me.heals + '</strong></div></div>' +
     '<div class="res-actions">' + (story
-      ? (storyWon ? '<button class="btn primary wide" type="button" id="st-go">Continua</button>'
+      /* a lost battle with creatures goes on on the map (another creature, or Antonio himself): no retry here */
+      ? (storyWon || !story.covo ? '<button class="btn primary wide" type="button" id="st-go">Continua</button>'
         : '<button class="btn primary" type="button" id="st-retry">Riprova</button><button class="btn" type="button" id="st-go">Torna a ' + esc(storyCity(story)) + '</button>')
       : '<button class="btn primary" type="button" id="again">Rivincita</button><button class="btn" type="button" id="change">Cambia sfida</button><button class="btn wide" type="button" id="back">Torna ai personaggi</button>') +
     '</div></div></div>';

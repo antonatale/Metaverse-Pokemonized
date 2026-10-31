@@ -3,7 +3,7 @@ import { st, save } from '../save/story-progress';
 import { DV, M, key, blocked, setMap } from './maps';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
-import { root, dialog, running, useDoor, renderPlace, renderHud } from '../ui/story-screen';
+import { root, dialog, running, useDoor, renderPlace, renderHud, stepped } from '../ui/story-screen';
 
 /* Walking on the map, one tile at a time: a tap turns, holding walks; doors and warps take you elsewhere. */
 export const STEP = 165, TURN_HOLD = 110;
@@ -51,7 +51,7 @@ function arrived(): boolean {
   if (a && a.kind === 'door' && a.b.to) { warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
   if (a && a.kind === 'warp') { warp(a.w.to, a.w.tx, a.w.ty, a.w.tdir); return true; }
   save(); renderPlace();
-  return false;
+  return stepped();
 }
 /** to another map, or another part of this one, with a fade (doors, warps, the scooter) */
 export function travel(to: string, x: number, y: number, dir?: Dir) { warp(to, x, y, dir); }

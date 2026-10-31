@@ -151,3 +151,22 @@ describe('Lamo, the legend', () => {
     expect(n.legend).toBe(true);
   });
 });
+
+describe('the hiding places of the wild creatures', () => {
+  it('are painted on the map, each with a table of creatures that exist', async () => {
+    const { HIDINGS, pickMeet } = await import('../../src/data/encounters');
+    const { FORMIA_HIDING, FORMIA_ROWS } = await import('../../src/data/maps/formia-ground');
+    expect(FORMIA_HIDING.length).toBeGreaterThan(5);
+    for (const h of FORMIA_HIDING) {
+      const t = HIDINGS[h.id];
+      expect(t, h.id).toBeDefined();
+      for (const m of t.day.concat(t.night || [])) { expect(SPECIES[m.sp], h.id).toBeDefined(); expect(m.lv[0]).toBeLessThanOrEqual(m.lv[1]); }
+      let n = 0;
+      for (let y = h.y - h.r; y <= h.y + h.r; y++) for (let x = h.x - h.r; x <= h.x + h.r; x++) if ((FORMIA_ROWS[y] || '')[x] === (t.on === 'erba' ? 'E' : 'A')) n++;
+      expect(n, h.id + ' at ' + h.x + ',' + h.y).toBeGreaterThan(8);
+    }
+    const two = [{ sp: 'cicalina' as const, lv: [1, 1] as [number, number], w: 1 }, { sp: 'olivella' as const, lv: [1, 1] as [number, number], w: 3 }];
+    expect(pickMeet(two, 0.1).sp).toBe('cicalina');
+    expect(pickMeet(two, 0.5).sp).toBe('olivella');
+  });
+});

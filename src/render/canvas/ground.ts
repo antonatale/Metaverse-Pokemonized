@@ -173,7 +173,36 @@ export function paintGround(map: GroundMap, P: Palette, s: number, rect?: Rect):
   return cv;
 }
 
+/** the blades of tall grass in front of someone standing in it, drawn over their feet (X, Y: the tile's corner) */
+export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
+  for (var k = 0; k < 3; k++) {
+    var bx = X + 6 + k * 10, by = Y + T + 1;
+    c.beginPath();
+    c.moveTo(bx - 5, by); c.quadraticCurveTo(bx - 4, by - 5, bx - 6, by - 9); c.quadraticCurveTo(bx - 1, by - 5, bx, by - 12);
+    c.quadraticCurveTo(bx + 2, by - 5, bx + 6, by - 9); c.quadraticCurveTo(bx + 4, by - 4, bx + 5, by); c.closePath();
+    fillStroke(c, k % 2 ? P.leaf2 : P.hedge, P.ink, 1.2);
+  }
+}
 const DECO: Record<string, DecoFn> = {
+  /* tall grass, where the wild creatures hide: four tufts of long blades that fill the tile */
+  tall: function (c, X, Y, P, x, y) {
+    for (var k = 0; k < 4; k++) {
+      var bx = X + 8 + (k % 2) * 15 + (hash(x, y, 130 + k) - 0.5) * 4, by = Y + 15 + Math.floor(k / 2) * 14 + hash(x, y, 140 + k) * 2;
+      c.beginPath();
+      c.moveTo(bx - 6, by + 1); c.quadraticCurveTo(bx - 5, by - 6, bx - 8, by - 11); c.quadraticCurveTo(bx - 2, by - 6, bx - 1, by - 14);
+      c.quadraticCurveTo(bx + 2, by - 6, bx + 7, by - 11); c.quadraticCurveTo(bx + 5, by - 5, bx + 6, by + 1); c.closePath();
+      fillStroke(c, k % 3 ? P.hedge : P.leaf2, P.ink, 1.2);
+    }
+  },
+  /* rock pools between low rocks on the beach: sea urchins and little crabs hide in them */
+  pools: function (c, X, Y, P, x, y) {
+    var r = hash(x, y, 150) * 6;
+    ell(c, X + 13 + r, Y + 17, 8, 5); fillStroke(c, P.sea, P.ink, 1.2);
+    c.fillStyle = P.sea2; ell(c, X + 12 + r, Y + 16, 4, 1.4); c.fill();
+    [[4, 7, 3.6], [26, 9, 3], [24, 26, 4], [6, 26, 2.8]].forEach(function (q) { ell(c, X + q[0], Y + q[1], q[2], q[2] * 0.75); fillStroke(c, P.rock, P.ink, 1.1); });
+    c.strokeStyle = P.leaf2; c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(X + 17 + r, Y + 21); c.quadraticCurveTo(X + 14 + r, Y + 18, X + 18 + r, Y + 13); c.stroke();
+  },
   flowers: function (c, X, Y, P, x, y) {
     for (var k = 0; k < 3; k++) {
       var fx = X + 6 + hash(x, y, 90 + k) * 20, fy = Y + 6 + hash(x, y, 95 + k) * 20, col = k % 2 ? P['flower-a'] : P['flower-b'];

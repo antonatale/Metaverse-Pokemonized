@@ -1,6 +1,6 @@
 import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
-import { T, hash, palette, paintGround, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
+import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, present, blocked, key, DV, wildNow, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf } from '../story/growth';
@@ -363,6 +363,10 @@ export function drawWorld(now: number) {
   people.sort(function (a, b) { return a.yb - b.yb; });
   var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
   drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now, lampsOn(dk), lit);
+  /* in the tall grass the blades hide Antonio's feet, and his creature's */
+  [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {
+    if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P);
+  });
   ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
   /* a glint on the lost things, gulls over the water */
   M.items.forEach(function (it) {

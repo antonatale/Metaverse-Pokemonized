@@ -6,7 +6,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 declare global {
   interface Window {
-    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; overview(id: string, s: number): string }; state(): unknown };
+    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -423,8 +423,8 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(later, 'title').toLowerCase()).toContain('3 su 13');
 });
 
-/* the creatures of Formia: the first one from the guardaparco, a wild one fought, the team in the menu; then money
-   spent on nets at Mola and a wild one caught */
+/* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
+   the menu; then money spent on nets at Mola and one out of the tall grass caught */
 test('creatures of Formia', async ({ browser }) => {
   const first = await play(browser, 'creatures', { seed: 5 }, async (r) => {
     const p = r.page;
@@ -436,10 +436,12 @@ test('creatures of Formia', async ({ browser }) => {
     await r.shot('starters');
     await p.click('.starter[data-sp="polpino"]'); await p.clock.runFor(300);
     await talkThrough(p);
-    await talkTo(p, 'selv-gianola-1');
+    /* a Riccetto jumps out of the rock pools of Gianola: with one creature, it goes straight in */
+    await p.evaluate(() => window.WORLD._debug.meet('gianola')); await p.clock.runFor(300);
+    await talkThrough(p);
+    await r.shot('meet');
     await choose(p, 'Lotta!');
-    await r.shot('pick');
-    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    await p.clock.runFor(800);
     await fight(r, 'wild', 2);
     r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
     await p.click('#st-go'); await p.clock.runFor(800);
@@ -466,9 +468,10 @@ test('creatures of Formia', async ({ browser }) => {
     for (let k = 0; k < 3; k++) { await p.click('[data-it="retino2"]'); await p.clock.runFor(200); }
     await r.shot('shop');
     await p.click('#shop-x'); await p.clock.runFor(200);
-    await talkTo(p, 'selv-gramsci');
+    await p.evaluate(() => window.WORLD._debug.meet('gramsci')); await p.clock.runFor(300);
+    await talkThrough(p);
     await choose(p, 'Lotta!');
-    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    await p.clock.runFor(800);
     for (let turn = 0; turn < 12; turn++) {
       await toPrompt(p);
       if (await battleOver(p)) break;
@@ -493,7 +496,7 @@ test('creatures of Formia', async ({ browser }) => {
   const sc = second.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; money: number; bag: Record<string, number>; lead?: string };
   expect(sc.money).toBeLessThan(120);
   expect(sc.bag.retino2).toBeLessThan(3);
-  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']); expect(sc.lead).toBe('c2'); expect((sc.mons[1] as { nick?: string }).nick).toBe('Cri'); }
+  if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons[0].sp).toBe('gabbi'); expect(sc.mons[1].sp).toMatch(/^(cicalina|olivella)$/); expect(sc.lead).toBe('c2'); expect((sc.mons[1] as { nick?: string }).nick).toBe('Cri'); }
   else expect(sc.mons.length).toBe(1);
 });
 
@@ -507,7 +510,7 @@ test('a trainer of Formia', async ({ browser }) => {
     await p.clock.runFor(1500);
     await talkTo(p, 'animatore');
     await choose(p, 'Sfida!');
-    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    await p.clock.runFor(800);
     for (let fightNo = 0; fightNo < 2; fightNo++) {
       await fight(r, 'duel' + fightNo, 1);
       await p.click('#st-go'); await p.clock.runFor(800);

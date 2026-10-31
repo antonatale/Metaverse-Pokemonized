@@ -18,7 +18,7 @@ export const OPENING: string[] = [
   'Il tuo sogno lo conosco: Formia, poi Torino, poi Chicago. Per prendere il treno per Torino ti servono le due spille di Formia: Forchetta e Costanzo le difendono nei loro covi.',
   'Ma a Formia c\'è una magia antica. Si racconta che qui vivessero i giganti Lestrigoni: la loro magia è rimasta nelle pietre, nel mare e negli ulivi, e ne nascono creature. Una lotterà con te.',
   'Come si gioca: frecce o WASD per camminare, Invio per parlare con la gente, M per il menu. Nel menu trovi la squadra, la borsa, il diario e la mappa.',
-  'Le lotte sono a turni: scegli una mossa alla volta. I tipi girano in cerchio (Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma) e chi ha il vantaggio fa più danno.',
+  'Le lotte sono a turni: scegli una mossa alla volta. Le creature lottano con le creature, le persone con le persone. I tipi girano in cerchio (Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma) e chi ha il vantaggio fa più danno.',
   'Lottando si sale di livello e si guadagnano euro: con gli euro compri retini, tielle e caffè nei negozi della città.',
   'In alto a sinistra c\'è sempre la prossima tappa, con la freccia. Io resto qui in basso: quando hai un dubbio premi C, o tocca il mio ritratto. Prima tappa: Gianola, dal guardaparco. Andiamo!'
 ];
@@ -27,7 +27,7 @@ export const OPENING: string[] = [
 export const CHAPTERS: Record<string, { title: string; intro: string[]; done: string[] }> = {
   starter: { title: 'La prima creatura',
     intro: ['Prima regola del viaggio: non si parte mai da soli.', 'Al Parco di Gianola, sotto la villa del mio vecchio conoscente Mamurra, il guardaparco custodisce tre creature appena nate. Vai a sceglierne una: segui la freccia, verso est.'],
-    done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'Le selvatiche le trovi a Gianola, al Parco Gramsci, in pineta, sugli scogli, negli uliveti e sui monti: battile per allenarti, o catturale con un retino.'] },
+    done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'Le selvatiche non si vedono: si nascondono nell\'erba alta (Parco Gramsci, pineta, uliveti, monti) e nelle pozze tra gli scogli (Gianola, la Scogliera). Passaci in mezzo e salteranno fuori: battile per allenarti, o catturale con un retino.'] },
   padel: { title: 'Una partita al Bruno Zauli',
     intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche euro.'],
     done: ['Ben giocato. Ogni livello di Antonio vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },
@@ -74,9 +74,9 @@ export const TIPS: Record<string, string[]> = {
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
   level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: Muscoli, Pelle dura, Scatto, Memoria, Prompt engineer o Contrattare.'],
   money: ['I primi euro! Il pescatore di Mola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
-  night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: al Parco Gramsci e in pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
-  wild: ['Una creatura selvatica! Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],
-  trainer: ['Un allenatore: manda le sue creature una dopo l\'altra. La tua tiene i PS che le restano; se cade, puoi mandarne un\'altra della squadra.'],
+  night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
+  wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],
+  trainer: ['Un allenatore: manda le sue creature una dopo l\'altra, e tu le tue. Ognuna tiene i PS che le restano; se cadono tutte, puoi scendere in campo tu.'],
   evolve: ['Hai visto? È la magia dei Lestrigoni: a un certo livello una creatura cambia forma, e diventa più forte.'],
   catch: ['Presa! Le creature catturate entrano nella squadra: nel menu puoi darle un nome e scegliere chi ti segue.'],
   lamo: ['Ora che hai conquistato Formia ti dico un segreto. Si racconta che di notte, sotto le mura di Castellone, si svegli Lamo, il re dei Lestrigoni.',

@@ -30,5 +30,7 @@ export const LEGEND: Record<string, Ground> = {
   /* a table outside the Gelateria Lavezzi */
   'd': { g: 'stone', deco: 'cafe', solid: true },
   /* the quay of Mola: nets spread out to dry (you can walk over them) */
-  'e': { g: 'stone', deco: 'nets' }
+  'e': { g: 'stone', deco: 'nets' },
+  /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
+  'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' }
 };

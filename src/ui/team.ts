@@ -63,8 +63,9 @@ function pickFrom(title: string, hint: string, keys: string[], go: (key: string)
   each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-key')!); }); });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
 }
-export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void, out?: string[]) {
-  var keys = team().filter(function (k) { return !out || out.indexOf(k) < 0; }), best = beaterOf(foeType);
+/** one of these to send into battle (the only one goes straight in) */
+export function pickFighter(title: string, foeType: TypeName, keys: string[], go: (key: string) => void) {
+  var best = beaterOf(foeType);
   if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
   pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best);
 }

@@ -183,18 +183,8 @@ const npcs: Npc[] = [
   npc('bambino', { trainer: 'bambino', name: 'Bambino', seed: 42, dir: 'left', lines: ['Ho perso il secchiello.', 'Pure tu perdi sempre le cose?'] }),
   npc('guardaparco', { name: 'Guardaparco', seed: 44, dir: 'right', starter: true, lines: ['La villa era di Mamurra, un cavaliere di Formia: il prefetto del genio di Giulio Cesare.', 'Il porticciolo romano, qui sotto, forse era una peschiera. Oggi è area marina protetta: niente pesca e niente motori.'] }),
   npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
-  /* the wild creatures of Formia: they come back a while after being beaten or caught */
-  npc('selv-gramsci', { dir: 'down', wild: { sp: 'cicalina', lv: [2, 4], night: { sp: 'civettina', lv: [3, 5] } } }),
-  npc('selv-gianola-1', { dir: 'left', wild: { sp: 'riccetto', lv: [3, 5] } }),
-  npc('selv-gianola-2', { dir: 'left', wild: { sp: 'riccetto', lv: [4, 6] } }),
-  npc('selv-pineta-1', { dir: 'down', wild: { sp: 'cicalina', lv: [4, 6], night: { sp: 'civettina', lv: [5, 7] } } }),
-  npc('selv-pineta-2', { dir: 'down', wild: { sp: 'cicalina', lv: [5, 7], night: { sp: 'civettina', lv: [6, 8] } } }),
-  npc('selv-scogli-1', { dir: 'right', wild: { sp: 'granchietto', lv: [6, 8] } }),
-  npc('selv-scogli-2', { dir: 'left', wild: { sp: 'granchietto', lv: [7, 9] } }),
-  npc('selv-ulivi-1', { dir: 'down', wild: { sp: 'olivella', lv: [7, 9] } }),
-  npc('selv-ulivi-2', { dir: 'down', wild: { sp: 'olivella', lv: [8, 10] } }),
-  npc('selv-monti-1', { dir: 'down', wild: { sp: 'civettina', lv: [9, 12] } }),
-  npc('selv-monti-2', { dir: 'down', wild: { sp: 'civettina', lv: [10, 13] } }),
+  /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
+     sight: Lamo, at night, under the walls of Castellone */
   npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: true })
 ];
 
