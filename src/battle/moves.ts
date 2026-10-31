@@ -5,6 +5,7 @@ import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
 import { ch, mv, addMod, available, beaterOf, zenOn } from './state';
 import type { Move } from '../data/characters';
+import { SPECIES, isSpecies } from '../data/creatures';
 import { applyHit, heal, confuse } from './damage';
 
 /* ---------- moves: what each one does, character by character ---------- */
@@ -215,7 +216,8 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       s.bag![id] = (s.bag![id] || 0) - 1;
       ev.push(anim(i, 'net'));
       /* the more worn out the creature, the easier: a third of the times at full health, almost always near the end */
-      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1));
+      const rate = isSpecies(foe.id) ? SPECIES[foe.id].catchRate || 1 : 1;
+      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1) * rate);
       if (rand(s) < chance) s.caught = true;
       else { ev.push(anim(j, 'dodge')); ev.push(say(ch(foe).name + ' scappa dal retino!')); }
       break;

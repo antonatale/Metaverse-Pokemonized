@@ -456,7 +456,7 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
     if (st.squad.indexOf(cv0.leader) < 0) { st.squad.push(cv0.leader); joinAt(cv0.leader, cv0.level); }
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true); }); });
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true, function () { if (st.badges.length >= 2) mentorTip('lamo'); }); }); });
   } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, cv0!.level, true, false); });
   else say(cv0.lose, cv0.leader, null, function () { rewards(key, cv0!.level, false, true); });
 }

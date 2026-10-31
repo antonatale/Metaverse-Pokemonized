@@ -194,7 +194,8 @@ const npcs: Npc[] = [
   npc('selv-ulivi-1', { dir: 'down', wild: { sp: 'olivella', lv: [7, 9] } }),
   npc('selv-ulivi-2', { dir: 'down', wild: { sp: 'olivella', lv: [8, 10] } }),
   npc('selv-monti-1', { dir: 'down', wild: { sp: 'civettina', lv: [9, 12] } }),
-  npc('selv-monti-2', { dir: 'down', wild: { sp: 'civettina', lv: [10, 13] } })
+  npc('selv-monti-2', { dir: 'down', wild: { sp: 'civettina', lv: [10, 13] } }),
+  npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: true })
 ];
 
 const item = (id: string, move: string, pron: string, t: string): LostItem => { const [x, y] = spot(id); return { id, move, x, y, pron, text: t }; };

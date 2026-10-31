@@ -179,5 +179,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-ulivi-1', tile: [10, 41] },
   { id: 'selv-ulivi-2', tile: [22, 44] },
   { id: 'selv-monti-1', tile: [66, 6] },
-  { id: 'selv-monti-2', tile: [75, 9] }
+  { id: 'selv-monti-2', tile: [75, 9] },
+  /* Lamo, king of the giants, under the polygonal walls of Castellone */
+  { id: 'selv-lamo', tile: [48, 35] }
 ];

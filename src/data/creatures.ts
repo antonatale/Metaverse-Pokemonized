@@ -15,10 +15,11 @@ export type SpeciesId =
   | 'ramarrino' | 'ramarrone' | 'muraglione'
   | 'gabbi' | 'gabbianotto' | 'gabbiammiraglio'
   | 'cicalina' | 'cicalona' | 'olivella' | 'olivastro' | 'riccetto' | 'riccione'
-  | 'granchietto' | 'granchione' | 'civettina' | 'civettona';
+  | 'granchietto' | 'granchione' | 'civettina' | 'civettona'
+  | 'lamo';
 
 /** how a creature is drawn (render/svg/creatures.ts): its body, its colours, and what grows on it with each form */
-export type Body = 'octo' | 'lizard' | 'bird' | 'cicada' | 'olive' | 'urchin' | 'crab' | 'owl';
+export type Body = 'octo' | 'lizard' | 'bird' | 'cicada' | 'olive' | 'urchin' | 'crab' | 'owl' | 'giant';
 export interface CreatureArt { body: Body; main: string; dark: string; belly: string; accent: string; size: number }
 
 export interface Species {
@@ -39,6 +40,8 @@ export interface Species {
   text: string;
   where: string;
   art: CreatureArt;
+  /** the legendary one: harder to catch with a net (1 for everyone else) */
+  catchRate?: number;
 }
 
 /* ---------- the moves of the creatures: plain numbers, done by battle/moves.ts (genericMove) ---------- */
@@ -75,7 +78,12 @@ export const CMOVES: Record<string, Move> = {
   pinza: atk('pinza', 'Pinza dei giganti', 85, 'Danno alto, va a segno 85 volte su 100.', { acc: 0.85 }),
   occhiata: { id: 'occhiata', name: 'Occhio del futuro', kind: 'status', text: 'Vede il colpo prima che arrivi, e il punto debole: la Difesa avversaria cala per 2 turni.', fx: { foe: 'defDown' } },
   notturno: atk('notturno', 'Volo notturno', 75, 'Danno medio-alto.'),
-  saggezza: { id: 'saggezza', name: 'Saggezza antica', kind: 'buff', text: 'Attacco +30% per 3 turni.', fx: { self: 'atkUp' } }
+  saggezza: { id: 'saggezza', name: 'Saggezza antica', kind: 'buff', text: 'Attacco +30% per 3 turni.', fx: { self: 'atkUp' } },
+  /* the king of the giants */
+  masso: atk('masso', 'Masso dei giganti', 110, 'Scaglia un masso, come contro le navi di Ulisse: va a segno 8 volte su 10.', { acc: 0.8 }),
+  furia: atk('furia', 'Furia dei Lestrigoni', 80, 'Danno alto, e una volta su tre confonde.', { fx: { conf: 0.3 } }),
+  ruggito: { id: 'ruggito', name: 'Ruggito di Lamo', kind: 'status', text: 'Un ruggito che scuote il golfo: l\'Attacco avversario cala per 3 turni.', fx: { foe: 'atkDown' } },
+  telepilo: { id: 'telepilo', name: 'Porte di Telepilo', kind: 'heal', uses: 2, text: 'Chiude le porte della sua città: recupera il 25% dei PS e la Difesa sale.', fx: { heal: 0.25, self: 'defUp' } }
 };
 
 /* ---------- the species ---------- */
@@ -245,6 +253,17 @@ export const SPECIES: Record<SpeciesId, Species> = {
     cry: { entry: 'Chiù. So già tutto.', win: 'Come previsto.', ko: 'Torno sui monti…' },
     text: 'Conosce tutte le leggende di Formia, anche quelle che nessuno ricorda più. E tutti i sentieri degli Aurunci.',
     where: 'Monti Aurunci', art: { body: 'owl', main: '#946642', dark: '#5a3c22', belly: '#e2c9a2', accent: '#ffd166', size: 0.92 }
+  }),
+  /* the legend itself: Lamus, king of the Laestrygonians, the giant who threw boulders at Ulysses' ships. He
+     comes out only at night on the polygonal walls of Castellone (the giants' walls, they say), once Antonio has
+     both pins of Formia, and a net holds him only rarely */
+  lamo: S({
+    id: 'lamo', name: 'Lamo', wild: 'Lamo, il re dei Lestrigoni,', type: 'Caos', stage: 3, catchRate: 0.35,
+    stats: { hp: 150, atk: 138, def: 128, spe: 100 },
+    learn: [[1, 'furia'], [1, 'ruggito'], [1, 'masso'], [1, 'telepilo']],
+    cry: { entry: 'CHI OSA SVEGLIARE IL RE DI TELEPILO?', win: 'Formia era mia, e lo è ancora.', ko: 'Torno… nella leggenda…' },
+    text: 'Il re dei giganti Lestrigoni, quello che scagliava massi contro le navi di Ulisse. Si racconta che dorma sotto le mura di Castellone e che esca solo di notte, davanti a chi ha conquistato Formia.',
+    where: 'Le mura di Castellone, di notte', art: { body: 'giant', main: '#9a8f7c', dark: '#5e5546', belly: '#c9bfa8', accent: '#e0b44c', size: 1 }
   })
 };
 /** the three to start with, in the order they are offered */

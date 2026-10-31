@@ -81,7 +81,9 @@ export function areaName(): string {
   return a ? a.name : '';
 }
 /** is this person around now? some come and go with Antonio's squad */
-export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)); }
+export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)); }
+/** the legend comes out at night, before whoever has conquered Formia, until it is caught */
+function legendHere(n: Npc): boolean { return st.badges.length >= 2 && !(st.dex && n.wild && st.dex[n.wild.sp] === 2) && darkness(new Date()) > 0.5; }
 /** the wild creature on a spot right now: some come out only at night (the little owls), when the cicadas sleep */
 export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
   if (!n.wild) return null;

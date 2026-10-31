@@ -78,7 +78,9 @@ export const TIPS: Record<string, string[]> = {
   wild: ['Una creatura selvatica! Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],
   trainer: ['Un allenatore: manda le sue creature una dopo l\'altra. La tua tiene i PS che le restano; se cade, puoi mandarne un\'altra della squadra.'],
   evolve: ['Hai visto? È la magia dei Lestrigoni: a un certo livello una creatura cambia forma, e diventa più forte.'],
-  catch: ['Presa! Le creature catturate entrano nella squadra: nel menu puoi darle un nome e scegliere chi ti segue.']
+  catch: ['Presa! Le creature catturate entrano nella squadra: nel menu puoi darle un nome e scegliere chi ti segue.'],
+  lamo: ['Ora che hai conquistato Formia ti dico un segreto. Si racconta che di notte, sotto le mura di Castellone, si svegli Lamo, il re dei Lestrigoni.',
+    'È fortissimo e non si fa prendere facilmente: portaci la squadra migliore e tanti retini da pesca. Se è giorno, dormi a casa fino a sera.']
 };
 /** a tip, the first time only: null after */
 export function tipOnce(id: string): string[] | null {

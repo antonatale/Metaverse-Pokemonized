@@ -257,6 +257,10 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Le selvatiche** sono Npc con `wild` (specie e livelli) e saltellano sulla mappa. Dopo una lotta vinta o una cattura spariscono per due minuti (`wildGone` in `story/maps.ts`).
   - **Giorno e notte:** di notte le cicale dormono e al loro posto escono le civettine (`wild.night`, scelto da `wildNow` in `story/maps.ts`): al Parco Gramsci e in pineta.
   - **Dorate:** una selvatica su 32 è dorata (`gold`): stessi numeri, colori d'oro e scintille. Se la catturi resta dorata (`mons[].gold`).
+  - **La leggenda: Lamo, il re dei Lestrigoni**, gigante di pietra con la corona (`giant` nei disegni), livello 35, tipo Caos. Ha mosse sue: Masso dei giganti, Furia dei Lestrigoni, Ruggito di Lamo, Porte di Telepilo.
+    - Esce solo di notte, sotto le mura poligonali di Castellone, quando Antonio ha le due spille, finché non lo cattura (`legend` sull'Npc, `legendHere` in `story/maps.ts`).
+    - Il retino lo tiene molto più di rado (`catchRate` 0,35).
+    - Cicerone ne svela il segreto alla seconda spilla.
   - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
   - **Scheda di ogni creatura** (Squadra → Scheda, `openCreature` in `ui/team.ts`): numeri al suo livello, mosse, la prossima da imparare, le forme, il nome. Il nome che le dà Antonio (`nick`) vale anche in lotta: il lato ha `nick` e `ch()` restituisce il personaggio con quel nome.
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.

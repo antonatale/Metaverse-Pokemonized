@@ -133,3 +133,21 @@ describe('Cicero, the guide', () => {
     expect(advice()[0]).toMatch(/^Capitolo 1 di \d+/);
   });
 });
+
+describe('Lamo, the legend', () => {
+  it('is caught far less often than the others, and only comes out for whoever has conquered Formia', async () => {
+    let lamo = 0, other = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      for (const sp of ['lamo', 'granchione'] as const) {
+        const s = E.newBattle({ a: 'antonio', b: sp, seed, wild: true, bag: { retino2: 1 }, sideB: { stats: atLevel(SPECIES[sp].stats, 30), lvl: 30, known: knownAt(sp, 30) } });
+        E.intro(s); E.beginTurn(s); E.playTurn(s, { 0: 'retino2' });
+        if (s.result === 'catch') { if (sp === 'lamo') lamo++; else other++; }
+      }
+    }
+    expect(lamo).toBeLessThan(other * 0.6);
+    expect(lamo).toBeGreaterThan(0);
+    const { MAPS } = await import('../../src/data/maps');
+    const n = (MAPS.formia.npcs || []).find((q) => q.wild && q.wild.sp === 'lamo')!;
+    expect(n.legend).toBe(true);
+  });
+});

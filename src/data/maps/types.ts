@@ -90,6 +90,8 @@ export interface Npc {
   shop?: string;
   /** has creatures and challenges Antonio (data/trainers.ts) */
   trainer?: string;
+  /** the legend of Formia: there only at night, once Antonio has both pins, until he has caught it */
+  legend?: boolean;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

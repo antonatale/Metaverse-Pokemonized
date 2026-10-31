@@ -166,7 +166,24 @@ function owl(sp: Species): [string, Face] {
   if (st === 2) s += '<circle cx="116" cy="104" r="17" fill="none" stroke="#e0b44c" stroke-width="3.5"/><path d="M132 110 Q140 130 132 146" fill="none" stroke="#e0b44c" stroke-width="2"/>';
   return [s, { eyes: [[84, 104], [116, 104]], r: 13, mouth: null, w: 0, iris: a.accent, lid: a.main, rune: [100, 158] }];
 }
-const BODIES = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl };
+/* the king of the giants: a body of polygonal stones like the walls of Castellone, a beard of moss, a gold crown */
+function giant(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += path('M70 150 L66 188 L92 188 L94 150Z', a.dark, 4) + path('M106 150 L108 188 L134 188 L130 150Z', a.dark, 4);
+  s += path('M40 80 Q26 110 30 142 L46 146 Q50 118 58 100Z', a.main, 4) + path('M160 80 Q174 110 170 142 L154 146 Q150 118 142 100Z', a.main, 4);
+  s += ell(36, 148, 13, 11, a.dark) + ell(164, 148, 13, 11, a.dark);
+  s += path('M48 76 L152 76 L140 156 L60 156Z', a.main, 4);
+  [[58, 82, 82, 80, 86, 104, 62, 108], [86, 80, 114, 80, 112, 102, 90, 104], [118, 80, 142, 82, 138, 108, 116, 104], [64, 112, 92, 108, 96, 132, 68, 136],
+   [100, 108, 134, 112, 132, 136, 104, 134], [70, 140, 100, 138, 102, 154, 72, 154], [106, 140, 134, 140, 130, 154, 108, 154]].forEach(function (q) {
+    s += path('M' + q[0] + ' ' + q[1] + ' L' + q[2] + ' ' + q[3] + ' L' + q[4] + ' ' + q[5] + ' L' + q[6] + ' ' + q[7] + 'Z', a.belly, 2.4, ' opacity=".9"');
+  });
+  s += path('M72 46 Q72 20 100 18 Q128 20 128 46 L126 76 Q100 86 74 76Z', a.main, 4);
+  s += path('M74 72 Q78 104 100 110 Q122 104 126 72 Q112 84 100 84 Q88 84 74 72Z', '#6f9a54', 3.5);
+  s += path('M74 28 L80 6 L90 20 L100 2 L110 20 L120 6 L126 28Z', a.accent, 3.5) + ell(100, 16, 4, 4, '#e8473a', 2) + ell(84, 20, 3, 3, '#3f7ccf', 1.8) + ell(116, 20, 3, 3, '#3f7ccf', 1.8);
+  s += path('M80 54 L94 58 M120 54 L106 58', 'none', 4);
+  return [s, { eyes: [[87, 64], [113, 64]], r: 8, mouth: [100, 80], w: 14, iris: a.accent, lid: a.main, rune: [100, 124] }];
+}
+const BODIES = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl, giant: giant };
 
 /* ---------- magic: each type has its own, the creatures carry it ----------
    An aura behind them, a rune on the forehead or the chest, motes of light in the air; from the second form a magic
