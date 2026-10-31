@@ -8,7 +8,7 @@ import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, tak
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
-import { say, sheet, closeSheet, renderHud } from './story-screen';
+import { say, sheet, closeSheet, renderHud, mentorTip } from './story-screen';
 import { sfx } from '../audio';
 
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
@@ -82,6 +82,8 @@ export function rewards(key: string, foeLv: number, won: boolean, covo: boolean,
   var g = gainXp(key, xp);
   if (cash) earn(cash);
   save(); renderHud();
+  if (cash) mentorTip('money');
+  if (key === 'antonio' && g.to > g.from) mentorTip('level');
   growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' Antonio incassa ' + cash + ' €.' : '')], then);
 }
 function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
@@ -92,7 +94,7 @@ function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
     '<div class="evo"><span>' + creature(from, 'worried', '', '0 16 200 184') + '</span><b aria-hidden="true">→</b><span>' + creature(to, 'cool', '', '0 16 200 184') + '</span></div>' +
     '<p>La magia di Formia l\'ha cambiato: ' + esc(a.name) + ' è diventato <b>' + esc(b.name) + '</b>. ' + esc(b.text) + '</p>' +
     '<button class="btn primary" type="button" id="ev-ok">Continua</button></div>', 'result');
-  $('ev-ok').addEventListener('click', function () { closeSheet(); if (then) then(); });
+  $('ev-ok').addEventListener('click', function () { closeSheet(); mentorTip('evolve'); if (then) then(); });
   setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);
 }
 

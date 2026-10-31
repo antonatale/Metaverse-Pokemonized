@@ -89,3 +89,18 @@
 .arena-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 18%, transparent), color-mix(in srgb, var(--paper) 50%, transparent) 70%, color-mix(in srgb, var(--paper) 62%, transparent)); }
 .photo-credit { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-width: min(50vw, 380px); margin: 1px auto 0; color: var(--muted); font: 9.5px/1.25 var(--font-body); text-align: center; text-decoration: none; overflow: hidden; }
 .clock:has(.photo-credit) { flex-direction: column; gap: 2px; min-width: 0; }
+/* ---------- Cicero, the guide: his corner, his word, his ghost in the dialog ---------- */
+.wcic { position: absolute; z-index: 3; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 76px; padding: 2px; border: 2px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); cursor: pointer; }
+.wcic .ghost { display: block; width: 100%; height: 100%; animation: ghostFloat 3.2s ease-in-out infinite; }
+.wcic.talking { border-color: var(--t-cervello); box-shadow: 0 0 0 3px var(--t-cervello), 3px 3px 0 var(--shadow); }
+.wcic-say { position: absolute; z-index: 3; left: calc(max(12px, env(safe-area-inset-left, 0px)) + 82px); bottom: calc(60px + env(safe-area-inset-bottom, 0px)); max-width: min(480px, 56vw); margin: 0; padding: 9px 13px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); box-shadow: 3px 3px 0 var(--shadow); font-size: 14.5px; line-height: 1.4; animation: sayIn .3s ease-out; }
+.wcic-say::before { content: ""; position: absolute; left: -9px; bottom: 16px; width: 14px; height: 14px; background: var(--card); border-left: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: rotate(45deg); }
+.wcic-say > b:first-child { font-family: var(--font-display); font-weight: normal; margin-right: 4px; }
+.wcic-say small { color: var(--muted); }
+.wcic-say.out { opacity: 0; transition: opacity .5s; }
+.wdialog.mentor { padding-left: 92px; min-height: 96px; }
+.wghost { position: absolute; left: 8px; bottom: 6px; width: 76px; height: 88px; }
+.wghost .ghost { width: 100%; height: 100%; animation: ghostFloat 3.2s ease-in-out infinite; }
+@keyframes ghostFloat { 50% { transform: translateY(-4px); } }
+@keyframes sayIn { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .wcic .ghost, .wghost .ghost, .wcic-say { animation: none; } }

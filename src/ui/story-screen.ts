@@ -24,6 +24,8 @@ import { SPECIES } from '../data/creatures';
 import { SHOPS } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { photoFor } from '../data/photos';
+import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
+import { cicero } from '../render/svg/cicero';
 import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, team, earn } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
@@ -51,7 +53,8 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I soldi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
-    '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
+    '<button class="wcic" type="button" id="wcic" aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
+    '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
       return '<button type="button" data-d="' + d + '" aria-label="' + DLABEL[d] + '"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ARROW[d] + '"/></svg></button>';
@@ -89,6 +92,7 @@ function build() {
   dlg.addEventListener('click', function (e) { if ((e.target as Element).closest && (e.target as Element).closest('.wopts')) return; if (dialog) advance(); });
   cv.addEventListener('click', function () { if (dialog) advance(); });
   $('wmenu').addEventListener('click', openMenu);
+  $('wcic').addEventListener('click', function () { mentorTalk(); });
   $('wgoal').addEventListener('click', openMenu);
   window.addEventListener('resize', resize);
   built = true;
@@ -134,6 +138,10 @@ var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
 const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 export function renderGoal() {
+  if (running && !dialog && st.seen.intro && !overlayOpen()) {
+    var cn = chapterNow();
+    if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
+  }
   var el = $('wgoal'), h = heading(M.id);
   if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
   var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
@@ -168,6 +176,7 @@ export function installStoryKeys() {
       if (dialog && dialog.showingOpts) return;          /* the focused option button takes it */
       e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) interact();
     } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
+    else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); e.stopImmediatePropagation(); mentorTalk(); }
   });
   document.addEventListener('keyup', function (e) { var d = KEYMAP[e.key]; if (d) release(d); });
 }
@@ -183,6 +192,8 @@ export function say(lines: string | string[], who?: string | null, opts?: Dialog
 function show() {
   var d = dialog!, line = d.lines[d.i];
   dlg.hidden = false;
+  var ghost = d.who === CICERO;
+  dlg.classList.toggle('mentor', ghost); $('wghost').hidden = !ghost;
   if (d.who) {
     var friend = !!C[d.who as CharId];
     dlgWho.hidden = false;
@@ -332,6 +343,7 @@ function challenge(id: string) {
 function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
 /* ---------- the creatures of Formia: a wild one, the first one ---------- */
 function wildTalk(p: Person) {
+  mentorTip('wild');
   var w = wildNow(p.n)!, sp = SPECIES[w.sp], lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
   /* one in thirty-two is golden */
   var gold = Math.random() < 1 / 32;
@@ -351,6 +363,7 @@ function wildTalk(p: Person) {
     and the health the others have left */
 var duel: { id: string; who: string; idx: number; foeHp: number | null; down: string[]; hp: Record<string, number> } | null = null;
 function trainerTalk(id: string, who: string, lines: string[]) {
+  mentorTip('trainer');
   var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id];
   say(lines.concat(beaten ? tr.after : tr.intro).concat(['Creature: ' + tr.team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, [
     { label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { duel = { id: id, who: who, idx: 0, foeHp: null, down: [], hp: {} }; duelBattle(); } },
@@ -423,6 +436,8 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   var tag = res.tag, key = tag.key || 'antonio', lv = tag.foeLv || 5;
   keepBag(res.bag); save(); renderHud();
   if (res.quit) { duel = null; say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
+  if (!res.won && !res.caught) mentorTip('loss');
+  if (res.caught) mentorTip('catch');
   if (tag.trainer && duel) { duelAfter(res, key); return; }
   if (tag.wild) {
     var sp = SPECIES[tag.sp as keyof typeof SPECIES];
@@ -530,6 +545,7 @@ export let running = false;
 let raf = 0;
 function frame(now: number) {
   if (!running) return;
+  if (!M.inside && st.seen.intro && !st.seen['cic-night'] && darkness(new Date()) > 0.6) mentorTip('night');
   raf = requestAnimationFrame(frame);
   update(now);
   checkRun(now);
@@ -540,15 +556,34 @@ function start() { if (running) return; running = true; raf = requestAnimationFr
 function stop() { running = false; cancelAnimationFrame(raf); halt(); }
 function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); if (root) { root.hidden = true; $('wtoast').hidden = true; } document.body.classList.remove('in-world'); }
 
+/* the story starts: the ghost of Cicero appears and explains the journey, how to play, and the first step */
 function intro() {
-  st.seen.intro = true; save();
-  say(['Formia, casa: Parco la Fontana, in via Amendola. Da qui parte il viaggio: Formia, poi Torino, poi Chicago.',
-    'In città ci sono due covi: Costanzo fa comizi in piazza della Vittoria, Forchetta gioca nei campi coperti del Bruno Zauli.',
-    'Sfida gli amici nei loro covi: chi batti ti dà la sua spilla ed entra nella compagnia.',
-    'E poi c\'è la Formia di tutti i giorni: l\'Eclipse a Vindicio, la pineta, una serata da Morgana. Il motorino è parcheggiato sotto casa.',
-    'E occhio: Antonio ha perso quattro cose in giro per Formia. Ritrovale e nelle lotte non le perderà più.',
-    'Se non sai dove andare, in alto c\'è la prossima tappa del giro di Formia: segui la freccia.']);
+  st.seen.intro = true; st.seen['cap-starter'] = true; save();
+  say(OPENING, CICERO);
 }
+/* ---------- Cicero, in the background ---------- */
+/** asked: where Antonio is in the story, the challenge ahead, whether the team is ready */
+function mentorTalk() {
+  if (!running || dialog || busy || overlayOpen()) return;
+  say(advice(), CICERO);
+}
+/* a word from the corner, without stopping the game: one at a time, each for a few seconds */
+var bubbleQ: string[] = [], bubbleT: ReturnType<typeof setTimeout> | undefined;
+function bubble(html: string) {
+  if (!built) return;
+  var el = $('wcic-say');
+  if (!el.hidden) { bubbleQ.push(html); return; }
+  el.innerHTML = '<b>Cicerone</b> ' + html;
+  el.hidden = false; el.classList.remove('out');
+  $('wcic').classList.add('talking');
+  clearTimeout(bubbleT);
+  bubbleT = setTimeout(function () {
+    el.classList.add('out');
+    bubbleT = setTimeout(function () { el.hidden = true; $('wcic').classList.remove('talking'); var n = bubbleQ.shift(); if (n) bubble(n); }, 500);
+  }, Math.min(14000, 4500 + html.length * 45));
+}
+/** the first time something happens, Cicero explains it from the corner */
+export function mentorTip(id: string) { var t = tipOnce(id); if (t) { save(); bubble(esc(t.join(' '))); } }
 
 function open(quiet?: boolean) {
   build();

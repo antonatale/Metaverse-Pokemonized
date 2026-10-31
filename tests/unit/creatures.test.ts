@@ -123,3 +123,13 @@ describe('the trainers of Formia', () => {
     expect(ev.some((e) => e.k === 'say' && e.text.indexOf('manda in campo Olivella') >= 0)).toBe(true);
   });
 });
+
+describe('Cicero, the guide', () => {
+  it('has a chapter for every stop of the tour, and says something useful when asked', async () => {
+    const { CHAPTERS, OPENING, advice } = await import('../../src/story/mentor');
+    const { STOPS } = await import('../../src/story/goals');
+    for (const s of STOPS) { expect(CHAPTERS[s.id], 'no chapter for ' + s.id).toBeDefined(); expect(CHAPTERS[s.id].intro.length).toBeGreaterThan(0); }
+    expect(OPENING.length).toBeLessThanOrEqual(10);
+    expect(advice()[0]).toMatch(/^Capitolo 1 di \d+/);
+  });
+});

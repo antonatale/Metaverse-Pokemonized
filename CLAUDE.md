@@ -128,6 +128,18 @@ tools/
 - **Scala:** circa 33 m per casella in centro, di più nei tratti in mezzo; le spiagge di Vindicio e Gianola sono allargate di qualche casella verso il mare, sennò a questa scala sarebbero strisce.
 - **Salvataggi:** chi aveva una partita sulle mappe di prima riparte da casa (`seen.formia6`, l'ultima volta che le caselle sono cambiate), con spille, compagnia e oggetti ritrovati. Se rigeneri la mappa e le posizioni cambiano molto, aggiungi un nuovo `formiaN` in `save/story-progress.ts`.
 
+## Il mentore: il fantasma di Cicerone
+
+- **Chi è:** Marco Tullio Cicerone, morto a Formia nel 43 a.C., con la tomba sull'Appia; e «cicerone» vuol dire guida. È la guida di Antonio per tutto il viaggio (`story/mentor.ts`, disegnato in `render/svg/cicero.ts`).
+- **All'inizio** (storia da zero) appare lui: si presenta, racconta il sogno (Formia → Torino → Chicago) e la leggenda delle creature, spiega i comandi, i tipi, i livelli, gli euro, e dà la prima tappa (`OPENING`).
+- **In sottofondo:**
+  - galleggia trasparente accanto ad Antonio sulla mappa;
+  - in basso a sinistra ha il suo angolo, con una nuvoletta che non ferma il gioco;
+  - a ogni capitolo (le tappe del giro, `CHAPTERS`) dice com'è andato quello finito e presenta la sfida dopo, con quanto è difficile;
+  - la prima volta che succede qualcosa (sconfitta, primo livello, primi soldi, notte, creatura selvatica, allenatore, evoluzione, cattura) lo spiega una volta sola (`TIPS`, segnati in `st.seen['cic-…']`).
+- **Quando vuoi** (tasto C o il suo ritratto) dice il capitolo, cosa fare e, per i covi, se la squadra è pronta, confrontando il livello più alto della squadra con quello del capo (`advice`).
+- **Nei dialoghi** quando parla lui compare il suo ritratto.
+
 ## Il giro di Formia
 
 - **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): la prima creatura dal guardaparco di Gianola, padel con Andrea, Forchetta, Morgana, il gelato, Costanzo, gli oggetti persi, l'Eclipse, la pineta, la Tomba di Cicerone e, alla fine, il treno per Torino. Il percorso va da casa verso ovest.

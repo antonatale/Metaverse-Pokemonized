@@ -9,6 +9,7 @@ import { run } from '../story/run';
 import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
+import { cicero } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
@@ -21,7 +22,7 @@ const CH = 12;   /* tiles per side of a cached piece of ground */
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
-interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string }
+interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null }
 /** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
 interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
@@ -96,6 +97,18 @@ function creatureImage(sp: SpeciesId): HTMLImageElement | null {
   }
   return m.ok ? m.img : null;
 }
+/* the ghost of Cicero floats near Antonio, a little behind him, see-through: his guide, always there */
+var ghostImg: { img: HTMLImageElement; ok: boolean } | null = null;
+function ghost(now: number, pp: { x: number; y: number }): Drawn | null {
+  if (!ghostImg) {
+    var img = new Image(), g = { img: img, ok: false };
+    ghostImg = g; img.onload = function () { g.ok = true; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cicero());
+  }
+  if (!ghostImg.ok || !st.seen.intro) return null;
+  var bob = reduced ? 0 : Math.sin(now / 900) * 4, sway = reduced ? 0 : Math.sin(now / 2300) * 3;
+  return { yb: pp.y + T * 0.35 + bob, x: pp.x - 26 + sway, img: ghostImg.img, alpha: 0.55, size: 34 };
+}
 /* Antonio's creature walks behind him: at each of his steps it moves to the tile he has just left. After a door,
    a warp or a scooter ride it is put behind him again */
 var fol: { map: string; x: number; y: number; fx: number; fy: number; t0: number } | null = null, folStep = -1;
@@ -124,7 +137,7 @@ function itemSprite(kind: string, s: number): Sprite {
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
-    if (e.img) { c.drawImage(e.img, e.x - 10, e.yb - 52, 52, 52); return; }
+    if (e.img) { var z = e.size || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
     var img = e.w![e.d!][e.f || 0]; c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s);
   };
@@ -342,6 +355,8 @@ export function drawWorld(now: number) {
   people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
   var fw = follower(now);
   if (fw) people.push(fw);
+  var gh = ghost(now, pp);
+  if (gh) people.push(gh);
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
