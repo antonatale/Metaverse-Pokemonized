@@ -140,9 +140,24 @@ tools/
 - **Quando lo chiami** (tasto C, scritto anche in basso) dice il capitolo, cosa fare e, per i covi, se la squadra è pronta, confrontando il livello più alto della squadra con quello del capo (`advice`).
 - **Nei dialoghi** quando parla lui compare il suo ritratto.
 
+## La trama: le Pietre di Telepilo
+
+- **Cosa** (`story/plot.ts`, dialoghi in `ui/plot.ts`): Cicerone chiamava Formia «la Telepilo dei Lestrigoni». Nel gioco si racconta che le porte della città dei giganti erano chiuse da un sigillo di tre pietre, nascoste quando l'antica Formiae fu abbandonata e nacquero Castellone e Mola (che nel 1862 ripresero il nome di Formia). Il fantasma di Lucio Mamurra, il formiano più ricco del suo tempo (la villa di Gianola), le vuole per svegliare Lamo e rifare di Formia «la città dei Mamurra»; i suoi uomini scavano. Antonio, con Cicerone, le trova prima di lui. Il sogno Formia → Torino → Chicago resta, ma è il finale, non tutta la storia.
+- **I passi** sono tappe del giro (`STOPS` in `story/goals.ts`, con `plot()`), mescolate alle altre:
+  1. Gli scavi di Gianola: un uomo di Mamurra scava nella villa; lotta con le sue creature (`mamurr-scavi`). Poi Cicerone racconta chi era Mamurra.
+  2. L'Archivio della Torre di Mola: l'archivista racconta la leggenda e dove sono le pietre (`trama-archivio`).
+  3. Il Cisternone: un uomo con la torcia cerca di forzare la porta (`mamurr-cisterna`).
+  4. La signora del teatro chiede quante torri avevano le mura di Castellone (dodici; il signore di Castellone lo dice): la Pietra delle Mura.
+  5. Le peschiere di Caposele: un sub di Mamurra ha la Pietra del Mare (`mamurr-peschiere`).
+  6. La Tomba di Cicerone: tre domande su Formia (l'anno della sua morte, il nome del comune prima del 1862, il patrono), poi la Pietra della Voce.
+  7. Il fantasma di Mamurra, alla sua villa, con tre creature evolute (`mamurra`). Vinto lui, il sigillo è salvo e di notte esce Lamo.
+- **Le persone della trama** stanno sulla mappa con `when` sull'Npc (`after`/`until`: chiavi di `st.seen` o di `st.beaten`, lette da `flag`): gli uomini di Mamurra hanno l'aspetto `mamurriano` (giacca grigia, cravatta d'oro, occhiali scuri), Mamurra è un fantasma dorato (`ghost: 'mamurra'`, disegnato in `render/svg/cicero.ts`, anche nei dialoghi).
+- **Le pietre** si vedono nel menu (`stonesHtml`) e ognuna ha la sua schermata quando si trova. Cicerone, chiamato con C, dice anche quanto sono forti le creature degli uomini di Mamurra (`PLOT_FOE` in `story/mentor.ts`).
+- **Test:** la partita `the stones of Telepilo` risolve l'indovinello del teatro e le domande alla tomba.
+
 ## Il giro di Formia
 
-- **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): la prima creatura dal guardaparco di Gianola, padel con Andrea, Forchetta, Morgana, il gelato, Costanzo, gli oggetti persi, l'Eclipse, la pineta, la Tomba di Cicerone e, alla fine, il treno per Torino. Il percorso va da casa verso ovest.
+- **Cos'è:** il filo che tiene insieme la storia. `story/goals.ts` mette in fila le tappe (`STOPS`): la prima creatura dal guardaparco di Gianola, gli scavi di Mamurra, padel con Andrea, Forchetta, l'Archivio della Torre di Mola, Morgana, il gelato, Costanzo, il Cisternone e la signora del teatro, gli oggetti persi, le peschiere di Caposele, l'Eclipse, la pineta, la Tomba di Cicerone, Mamurra e, alla fine, il treno per Torino.
 - **Prossima tappa:** è la prima non ancora fatta; si può comunque fare tutto in qualsiasi ordine. Si vede in tre posti:
   - nell'HUD, sotto il nome del posto, con una freccia che punta verso la tappa (`renderGoal` in `ui/story-screen.ts`);
   - sulla mappa, come una freccia gialla che rimbalza sopra la persona, la cosa o la porta (`drawWorld`);
@@ -219,6 +234,9 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Maranola:** il presepe vivente nei vicoli, da più di quarant'anni. Fonti: siti di eventi.
 - **Cucina:** tiella (la pizza bassa ripiena del golfo), spaghetti alla formiana con cozze, vongole e canocchie, olive di Gaeta, mozzarella di bufala, ciambelle all'anice. Fonti: Gazzetta del Gusto, guide gastronomiche.
 - **I Lestrigoni a Formia** (la leggenda delle creature): Cicerone, in una lettera ad Attico, chiama Formia «la Telepilo dei Lestrigoni». Ovidio riprende l'episodio nel XIV libro delle Metamorfosi. La gens degli Aelii Lamiae diceva di discendere da Lamo, re dei Lestrigoni. Il nome si fa derivare dal greco *hormiai*, «approdo». Che Formia sia davvero la città dei Lestrigoni non è provato (il Ministero della Cultura ha riportato ipotesi diverse): nel gioco è detto «si racconta». Fonti: tuttostoria.net, meteoweb, cultura.gov.it.
+- **Castellone, Mola e il nome di Formia:** i due borghi nacquero sulle rovine di Formiae nel tempo delle incursioni saracene (le fonti non concordano sui dettagli; i Saraceni del Garigliano furono sconfitti nel 915). Nel 1819 furono uniti nel comune di Mola e Castellone; con il regio decreto del 13 marzo 1862 il comune prese il nome di Formia. Fonti: Gazzetta Ufficiale del Regno d'Italia (2 aprile 1862), Wikipedia, viefrancigenedelsud.it.
+- **Mamurra:** Lucio Mamurra, cavaliere di Formiae, prefetto del genio di Cesare, famoso per la sua ricchezza; Catullo lo chiama «decoctor Formianus» (lo scialacquatore di Formia), Orazio nella satira del viaggio a Brindisi (I, 5, 37) chiama Formia «Mamurrarum urbs». Che la villa di Gianola fosse sua è l'attribuzione tradizionale (vedi Gianola). Le Pietre di Telepilo e il suo fantasma sono invenzioni del gioco. Fonti: Wikipedia, Perseus (Orazio, Sat. I, 5), note a Catullo 43 (Kent State University).
+- **Cicerone** morì nel 43 a.C. vicino alla sua villa di Formia. Fonte: Wikipedia.
 - **Incerti, quindi non usati:** la «Porta degli Spagnoli» (le fonti non concordano se sia a Castellone o a Mola), il «molo Azzurra» per i traghetti, l'indirizzo preciso del Cisternone.
 
 ## Attività, casa e motorino
@@ -267,9 +285,9 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Giorno e notte:** di notte le cicale dormono e nell'erba alta escono le civettine (la tabella `night` di ogni zona).
   - **Dorate:** una selvatica su 32 è dorata (`gold`): stessi numeri, colori d'oro e scintille. Se la catturi resta dorata (`mons[].gold`).
   - **La leggenda: Lamo, il re dei Lestrigoni**, gigante di pietra con la corona (`giant` nei disegni), livello 35, tipo Caos. Ha mosse sue: Masso dei giganti, Furia dei Lestrigoni, Ruggito di Lamo, Porte di Telepilo.
-    - Esce solo di notte, sotto le mura poligonali di Castellone, quando Antonio ha le due spille, finché non lo cattura (`legend` sull'Npc, `legendHere` in `story/maps.ts`).
+    - Esce solo di notte, sotto le mura poligonali di Castellone, quando Antonio ha battuto Mamurra (la fine della trama), finché non lo cattura (`legend` sull'Npc, `legendHere` in `story/maps.ts`).
     - Il retino lo tiene molto più di rado (`catchRate` 0,35).
-    - Cicerone ne svela il segreto alla seconda spilla.
+    - Cicerone ne svela il segreto dopo la vittoria su Mamurra.
   - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
   - **Scheda di ogni creatura** (Squadra → Scheda, `openCreature` in `ui/team.ts`): numeri al suo livello, mosse, la prossima da imparare, le forme, il nome. Il nome che le dà Antonio (`nick`) vale anche in lotta: il lato ha `nick` e `ch()` restituisce il personaggio con quel nome.
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.

@@ -26,7 +26,9 @@ import { SHOPS, meetChance, luck, lastStand } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
-import { cicero } from '../render/svg/cicero';
+import { cicero, mamurra } from '../render/svg/cicero';
+import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
+import { MAMURRA } from '../story/plot';
 import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
@@ -193,9 +195,10 @@ export function say(lines: string | string[], who?: string | null, opts?: Dialog
 function show() {
   var d = dialog!, line = d.lines[d.i];
   dlg.hidden = false;
-  var ghost = d.who === CICERO;
+  var ghost = d.who === CICERO || d.who === MAMURRA;
   dlg.classList.toggle('mentor', ghost); $('wghost').hidden = !ghost;
-  if (ghost) cicAppear(Infinity);
+  if (ghost) $('wghost').innerHTML = d.who === CICERO ? cicero('', 'talk') : mamurra();
+  if (d.who === CICERO) cicAppear(Infinity);
   if (d.who) {
     var friend = !!C[d.who as CharId];
     dlgWho.hidden = false;
@@ -251,7 +254,7 @@ function interact() {
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
   var a = M.at[key(x, y)];
-  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else say(a.s.text); }
+  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else if (!plotSign(a.s)) say(a.s.text); }
   else if (a && a.kind === 'door') useDoor(a.b);
   else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
 }
@@ -312,6 +315,7 @@ function pickUp(it: LostItem) {
 function talkTo(p: Person) {
   p.dir = OPP[st.dir];
   var n = p.n;
+  if (plotTalk(n)) return;
   if (n.covo) leaderTalk(n.covo);
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
@@ -400,7 +404,7 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
       if (first) earn(tr!.prize);
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(tr!.win.concat(first ? ['Antonio vince ' + tr!.prize + ' €.'] : []), f.who);
+      say(tr!.win.concat(first ? ['Antonio vince ' + tr!.prize + ' €.'] : []), f.who, null, function () { plotAfter(f.id); });
     }, true);
     return;
   }
@@ -507,7 +511,7 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
     if (st.squad.indexOf(cv0.leader) < 0) { st.squad.push(cv0.leader); joinAt(cv0.leader, cv0.level); }
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true, function () { if (st.badges.length >= 2) mentorTip('lamo'); }); }); });
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true); }); });
   } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, cv0!.level, true, false); });
   else say(cv0.lose, cv0.leader, null, function () { rewards(key, cv0!.level, false, true); });
 }
@@ -554,7 +558,7 @@ function openMenu() {
       return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
         esc(s0.where + (done ? ' · fatto' : next ? ' · prossima tappa' : '')) + '</small></span></li>';
     }).join('') + '</ul></div>' +
-      teamHtml() + dexHtml() +
+      stonesHtml() + teamHtml() + dexHtml() +
     '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
     '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
       var got = !!st.found[it.id], nm = ITEMS[it.move].name;

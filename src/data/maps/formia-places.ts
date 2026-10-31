@@ -182,7 +182,14 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-monti-1', tile: [66, 6] },
   { id: 'selv-monti-2', tile: [75, 9] },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
-  { id: 'selv-lamo', tile: [48, 35] }
+  { id: 'selv-lamo', tile: [48, 35] },
+  /* the plot (story/plot.ts): Mamurra's men where the stones of Telepilo are, the archivist in the Torre di Mola,
+     the ghost of Mamurra at his villa */
+  { id: 'mamurr-scavi', near: { place: 'mamurra', dx: -1, dy: 3 } },
+  { id: 'archivista', tile: [92, 39] },
+  { id: 'mamurr-cisterna', near: { place: 'cisternone', dx: 1, dy: 2 } },
+  { id: 'mamurr-peschiere', at: [41.2510, 13.5981] },
+  { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } }
 ];
 /* where the wild creatures hide, out of sight (data/encounters.ts says which ones, by the id): the generator paints
    tall grass on the grass ('E') and rock pools on the sand ('A') out to about r tiles around each spot */

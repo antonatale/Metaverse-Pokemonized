@@ -52,6 +52,40 @@ export const TRAINERS: Record<string, Trainer> = {
     lose: ['La storia non si improvvisa. Torna quando sarai più forte.'],
     after: ['Le mie creature si ricordano di te. Un\'altra lezione?']
   },
+  /* the plot (story/plot.ts): Mamurra's men, who look for the stones of Telepilo, and Mamurra himself */
+  'mamurr-scavi': {
+    id: 'mamurr-scavi', title: 'L\'uomo con la pala', prize: 30,
+    team: [{ sp: 'riccetto', lv: 6 }, { sp: 'granchietto', lv: 7 }],
+    intro: ['Il capo ci paga per cercare le Pietre di Telepilo, nella sua vecchia villa. E tu qui non ci devi stare.', 'Vuoi lottare? Queste le ho prese tra gli scogli, qui sotto.'],
+    win: ['Va bene, va bene! Me ne vado.', 'Ma il capo non è uno che si arrende. È qui da duemila anni.'],
+    lose: ['Te l\'avevo detto. Torna a casa, ragazzino.'],
+    after: ['Ancora tu?']
+  },
+  'mamurr-cisterna': {
+    id: 'mamurr-cisterna', title: 'L\'uomo con la torcia', prize: 45,
+    team: [{ sp: 'cicalina', lv: 10 }, { sp: 'olivella', lv: 11 }],
+    intro: ['La Pietra delle Mura è qui sotto, nel Cisternone: settemila metri cubi d\'acqua e una pietra.', 'Il capo la vuole entro stasera. Togliti di mezzo.'],
+    win: ['Quella porta non si apre! Ci ho provato tutta la notte.', 'Dice la vecchia del teatro che ci vuole una parola. Io la parola non la so.'],
+    lose: ['Stanotte la porta la sfondo.'],
+    after: ['Ancora tu?']
+  },
+  'mamurr-peschiere': {
+    id: 'mamurr-peschiere', title: 'Il sub con la muta', prize: 60,
+    team: [{ sp: 'riccetto', lv: 13 }, { sp: 'granchietto', lv: 14 }],
+    intro: ['Questa l\'ho tirata su da una peschiera romana: è fredda come il mare d\'inverno, e brilla.', 'La Pietra del Mare. Il capo me la pagherà oro. Prova a prenderla.'],
+    win: ['Tienila, tienila! Mi scotta le mani.', 'Il capo dice che la terza la tiene un morto. Uno che parlava tanto.'],
+    lose: ['Il mare è mio, ragazzino.'],
+    after: ['Ancora tu?']
+  },
+  mamurra: {
+    id: 'mamurra', title: 'Il fantasma di Mamurra', prize: 200,
+    team: [{ sp: 'granchione', lv: 21 }, { sp: 'olivastro', lv: 22 }, { sp: 'civettona', lv: 24 }],
+    intro: ['Lucio Mamurra, cavaliere di Formia, prefetto del genio di Gaio Giulio Cesare. Questa era la mia villa.', 'Catullo mi chiamava «lo scialacquatore di Formia», e Orazio chiamava Formia «la città dei Mamurra». Avevano ragione: Formia era mia.',
+      'Con le tre pietre sveglierò Lamo, e i giganti costruiranno per me: ville, moli, cemento fino al mare.', 'Dammi le pietre. O devo prenderle con le mie creature?'],
+    win: ['Impossibile… battuto da un ragazzo con la felpa.', 'Le pietre restano a Formia. Ma ogni volta che passerai davanti alle rovine della mia villa, ricordati di me.'],
+    lose: ['Le pietre saranno mie. Torna quando avrai il coraggio.'],
+    after: ['…']
+  },
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150,
     team: [{ sp: 'ramarrone', lv: 22 }, { sp: 'granchione', lv: 24 }, { sp: 'muraglione', lv: 28 }],

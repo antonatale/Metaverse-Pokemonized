@@ -90,8 +90,13 @@ export interface Npc {
   shop?: string;
   /** has creatures and challenges Antonio (data/trainers.ts) */
   trainer?: string;
-  /** the legend of Formia: there only at night, once Antonio has both pins, until he has caught it */
+  /** the legend of Formia: there only at night, once the seal of Telepilo is safe, until he has caught it */
   legend?: boolean;
+  /** part of the plot (story/plot.ts): there only after a thing has happened, and until another has (a flag: a key
+      of st.seen, or of st.beaten such as 'tr-mamurra') */
+  when?: { after?: string; until?: string };
+  /** a ghost of Formia, drawn see-through (render/svg/cicero.ts) instead of a person */
+  ghost?: 'mamurra';
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

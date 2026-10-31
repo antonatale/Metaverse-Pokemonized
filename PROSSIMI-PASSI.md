@@ -13,10 +13,10 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 9. **Creature più coinvolgenti, il resto**: poteri sulla mappa che aprono strade (le creature del mare nuotano fino ai
    blocchi del porticciolo di Gianola, quelle dei muri si arrampicano sulle mura di Castellone, quelle che volano
    vedono dall'alto), altre specie selvatiche, una mossa per tipo di terreno. Carattere e legame sono fatti.
-10. **Una trama più ricca e missioni più complesse**, legate alle radici di Formia: i Lestrigoni e re Lamo, Cicerone,
-    Mamurra di Gianola («Formia, la città dei Mamurra» di Orazio), Castellone e Mola che erano due paesi e nel 1862
-    tornarono a chiamarsi Formia. Il sogno Formia → Torino → Chicago è solo una parte. File: `story/goals.ts`,
-    `story/mentor.ts`, `data/maps/formia.ts`.
+10. **La trama, il seguito**: dopo le Pietre di Telepilo (fatte), un secondo atto: Torino e poi Chicago come capitoli
+    veri (una mappa di Torino, il cancello del treno in `data/gates.ts` è già il punto d'aggancio); altre missioni a
+    più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
+    Maranola a Natale); scelte nei dialoghi che cambiano qualcosa.
 11. **Pesca dal molo** (un'attività per guadagnare) e **rivincite nei covi** con il livello che cresce.
 
 ## Fatti
@@ -29,3 +29,4 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **Antonio sulla mappa più simile a lui**, ma stilizzato (come chiesto dopo una prima prova con la testa del ritratto, che risultava tagliata): ricci grandi, felpa blu, catenina e orecchino d'oro, sopracciglia, sorriso storto.
 - **Abilità che cambiano il gioco**: tre strade (Esploratore, Allenatore, Formiano doc) con dieci abilità: meno incontri, creature rare e dorate, passo più svelto, esperienza alle creature, retini più sicuri, creature che resistono a 1 PS, Antonio più forte quando lotta da solo, prezzi e attività.
 - **Crescita delle creature**: la schermata del livello dice cosa cresce, si sceglie la mossa da dimenticare, l'ultima forma delle iniziali (al 26) vuole il legame; ogni creatura ha un legame con Antonio (cuori, cresce lottando, passeggiando, parlandole) e un carattere.
+- **Una trama legata alle radici di Formia**: le Pietre di Telepilo. Il fantasma di Mamurra e i suoi uomini cercano le tre pietre del sigillo della città dei Lestrigoni; Antonio le trova con Cicerone (scavi di Gianola, Archivio della Torre di Mola, Cisternone e l'indovinello della signora del teatro, peschiere di Caposele, tre domande alla Tomba di Cicerone) e affronta Mamurra alla sua villa; poi esce Lamo. Il sogno Torino → Chicago è il finale.

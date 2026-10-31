@@ -185,7 +185,18 @@ const npcs: Npc[] = [
   npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
   /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
      sight: Lamo, at night, under the walls of Castellone */
-  npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: true })
+  npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: true }),
+  /* the plot: the stones of Telepilo (story/plot.ts) */
+  npc('mamurr-scavi', { trainer: 'mamurr-scavi', look: 'mamurriano', name: 'Uomo con la pala', dir: 'left', when: { after: 'starter', until: 'tr-mamurr-scavi' },
+    lines: ['Qui si scava, ragazzino. Scavi privati.'] }),
+  npc('archivista', { name: 'Archivista della Torre', seed: 41, dir: 'down',
+    lines: ['Questa torre è quello che resta del castello angioino di Mola: fu costruita dopo il sacco del 1289, sopra le terme romane.', 'Oggi dentro c\'è l\'Archivio storico della città. Carte, mappe, leggende: se cerchi qualcosa di Formia, è qui.'] }),
+  npc('mamurr-cisterna', { trainer: 'mamurr-cisterna', look: 'mamurriano', name: 'Uomo con la torcia', dir: 'down', when: { after: 'trama-archivio', until: 'tr-mamurr-cisterna' },
+    lines: ['Il Cisternone è chiuso. Per te, almeno.'] }),
+  npc('mamurr-peschiere', { trainer: 'mamurr-peschiere', look: 'mamurriano', name: 'Sub con la muta', dir: 'down', when: { after: 'trama-archivio', until: 'tr-mamurr-peschiere' },
+    lines: ['Mi sono immerso tutta la mattina tra le peschiere romane. E guarda cosa ho trovato.'] }),
+  npc('mamurra', { trainer: 'mamurra', ghost: 'mamurra', name: 'Mamurra', dir: 'down', when: { after: 'pietra-voce', until: 'tr-mamurra' },
+    lines: ['Ah, il ragazzo di Cicerone. Ti aspettavo.'] })
 ];
 
 const item = (id: string, move: string, pron: string, t: string): LostItem => { const [x, y] = spot(id); return { id, move, x, y, pron, text: t }; };

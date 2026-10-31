@@ -419,8 +419,8 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(first, 'tip')).toContain('guardaparco di Gianola');
   expect(get(first, 'menu')).toContain('Padel con Andrea');
   expect(get(first, 'menu')).toContain('Sfida Forchetta');
-  expect(get(later, 'goal')).toContain('Quiz su Formia da Morgana');
-  expect(get(later, 'title').toLowerCase()).toContain('3 su 13');
+  expect(get(later, 'goal')).toContain('Chi scava nella villa di Mamurra?');
+  expect(get(later, 'title').toLowerCase()).toContain('3 su 20');
 });
 
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
@@ -524,4 +524,41 @@ test('a trainer of Formia', async ({ browser }) => {
   const st = r.data.find((x) => x.name === 'state')!.value as { beaten: Record<string, boolean>; money: number };
   expect(st.beaten['tr-animatore']).toBe(true);
   expect(st.money).toBe(25);
+});
+
+/* the plot: the lady of the theatre's riddle gives the stone of the walls, Cicero's three questions at his tomb the
+   stone of the voice; then Mamurra is waiting at his villa */
+test('the stones of Telepilo', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurr-scavi': true, 'tr-mamurr-cisterna': true }, found: {},
+    seen: { intro: true, starter: true, 'trama-archivio': true, 'pietra-mare': true, 'cap-starter': true }, mons: [{ uid: 'c1', sp: 'ramarrone' }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'plot', { seed: 14, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkTo(p, 'teatro');
+    await r.shot('riddle');
+    await choose(p, 'Dodici');
+    await talkThrough(p);
+    await p.clock.runFor(300);
+    r.keep('stone', await p.locator('.award h2').innerText());
+    await p.click('#st-ok'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await goTo(p, 'sign', 'Tomba di Cicerone');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    for (const a of ['Nel 43 avanti Cristo', 'Mola e Castellone', 'Sant\'Erasmo']) { await choose(p, a); await talkThrough(p); }
+    await p.clock.runFor(300);
+    await r.shot('voice');
+    await p.click('#st-ok'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    r.keep('menu', await p.locator('.pickrow', { hasText: 'Pietre di Telepilo' }).innerText());
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('stone'))).toContain('Pietra delle Mura');
+  expect(String(get('menu')).toLowerCase()).toContain('3 su 3');
+  const st = get('state') as { seen: Record<string, boolean> };
+  expect(st.seen['pietra-mura']).toBe(true);
+  expect(st.seen['pietra-voce']).toBe(true);
 });

@@ -259,7 +259,9 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
 /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
 export const LOOKS: Record<string, PersonLook> = {
-  nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' }
+  nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
+  /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
+  mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' }
 };
 /* generic townsfolk, varied by a seed */
 export function townsperson(seed: number): PersonLook {

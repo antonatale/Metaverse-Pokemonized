@@ -4,6 +4,7 @@ import { COVI, type Covo } from '../data/covi';
 import { T, hash } from '../render/canvas/draw';
 import { st } from '../save/story-progress';
 import { darkness } from './daytime';
+import { flag } from './plot';
 import type { SpeciesId } from '../data/creatures';
 import { HIDINGS, type Hiding } from '../data/encounters';
 import { FORMIA_HIDING } from '../data/maps/formia-ground';
@@ -83,9 +84,13 @@ export function areaName(): string {
   return a ? a.name : '';
 }
 /** is this person around now? some come and go with Antonio's squad */
-export function present(p: Person): boolean { return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)); }
-/** the legend comes out at night, before whoever has conquered Formia, until it is caught */
-function legendHere(n: Npc): boolean { return st.badges.length >= 2 && !(st.dex && n.wild && st.dex[n.wild.sp] === 2) && darkness(new Date()) > 0.5; }
+export function present(p: Person): boolean {
+  var w = p.n.when;
+  return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
+    (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
+}
+/** the legend comes out at night, once the seal of Telepilo is safe (Mamurra beaten), until it is caught */
+function legendHere(n: Npc): boolean { return flag('tr-mamurra') && !(st.dex && n.wild && st.dex[n.wild.sp] === 2) && darkness(new Date()) > 0.5; }
 /** the wild creature on a spot right now: some come out only at night (the little owls), when the cicadas sleep */
 export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
   if (!n.wild) return null;

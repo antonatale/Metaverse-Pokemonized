@@ -108,6 +108,7 @@ for (const [id, m] of Object.entries(MAPS)) {
         }
         if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
         else if (n.look) expect(LOOKS[n.look] && !!n.name, n.id + ' needs a name and a known look').toBeTruthy();
+        else if (n.ghost) expect(!!n.name, n.id + ' needs a name').toBe(true);
         else expect(typeof n.seed === 'number' && !!n.name, n.id + ' needs a name and a seed').toBe(true);
         if (n.covo) expect(COVI[n.covo] && COVI[n.covo].leader === n.person, 'covo of ' + n.id).toBeTruthy();
         if (n.gate) expect(GATES[n.gate], 'gate of ' + n.id).toBeDefined();

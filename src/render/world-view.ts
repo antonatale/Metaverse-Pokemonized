@@ -9,7 +9,7 @@ import { run } from '../story/run';
 import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
-import { cicero } from './svg/cicero';
+import { cicero, mamurra } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
@@ -110,6 +110,16 @@ function ghost(now: number, pp: { x: number; y: number }): Drawn | null {
   if (!ghostImg.ok || !a) return null;
   var bob = reduced ? 0 : Math.sin(now / 900) * 4, sway = reduced ? 0 : Math.sin(now / 2300) * 3, rise = reduced ? 0 : (1 - a) * 10;
   return { yb: pp.y + T * 0.35 + bob - rise, x: pp.x - 26 + sway, img: ghostImg.img, alpha: 0.6 * a, size: 34 };
+}
+/* Mamurra's ghost, on the map */
+var mamImg: { img: HTMLImageElement; ok: boolean } | null = null;
+function mamurraImage(): HTMLImageElement | null {
+  if (!mamImg) {
+    var img = new Image(), g = { img: img, ok: false };
+    mamImg = g; img.onload = function () { g.ok = true; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(mamurra());
+  }
+  return mamImg.ok ? mamImg.img : null;
 }
 /* Antonio's creature walks behind him: at each of his steps it moves to the tile he has just left. After a door,
    a warp or a scooter ride it is put behind him again */
@@ -344,6 +354,12 @@ export function drawWorld(now: number) {
   ctx.globalAlpha = 1;
   var people: Drawn[] = [];
   M.people.filter(present).forEach(function (p) {
+    if (p.n.ghost) {
+      /* a ghost of Formia floats over its spot, see-through */
+      var gi = mamurraImage(), fl = reduced ? 0 : Math.sin(now / 800) * 3;
+      if (gi) people.push({ yb: (p.y + 1) * T + fl, x: p.x * T, img: gi, alpha: 0.85, size: 40 });
+      return;
+    }
     if (p.n.wild) {
       /* a wild creature hops on the spot now and then */
       var img = creatureImage(wildNow(p.n)!.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;

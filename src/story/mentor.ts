@@ -3,6 +3,7 @@ import { COVI } from '../data/covi';
 import { CHARS as C } from '../data/characters';
 import { STOPS, nextStop, type Stop } from './goals';
 import { team, level } from './growth';
+import { TRAINERS } from '../data/trainers';
 
 /* Antonio's guide: the ghost of Marcus Tullius Cicero, who died at Formia in 43 BC and has his tomb on the Appia
    (and in Italian a guide is still a "cicerone"). He opens the story explaining how things work, then stays in the
@@ -17,6 +18,7 @@ export const OPENING: string[] = [
   'Sì, proprio quello. Qui a Formia avevo la villa, qui sono morto nel 43 avanti Cristo, e sull\'Appia c\'è la mia tomba. Da allora faccio il cicerone: la guida, appunto.',
   'Il tuo sogno lo conosco: Formia, poi Torino, poi Chicago. Per prendere il treno per Torino ti servono le due spille di Formia: Forchetta e Costanzo le difendono nei loro covi.',
   'Ma a Formia c\'è una magia antica. Si racconta che qui vivessero i giganti Lestrigoni: la loro magia è rimasta nelle pietre, nel mare e negli ulivi, e ne nascono creature. Una lotterà con te.',
+  'E non sei l\'unico ad averlo capito: di notte qualcuno scava tra le rovine della villa di Mamurra, a Gianola. Un nome che conosco bene. Non mi piace per niente.',
   'Come si gioca: frecce o WASD per camminare, Invio per parlare con la gente, M per il menu. Nel menu trovi la squadra, la borsa, il diario e la mappa.',
   'Le lotte sono a turni: scegli una mossa alla volta. Le creature lottano con le creature, le persone con le persone. I tipi girano in cerchio (Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma) e chi ha il vantaggio fa più danno.',
   'Lottando si sale di livello e si guadagnano euro: con gli euro compri retini, tielle e caffè nei negozi della città.',
@@ -28,6 +30,27 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
   starter: { title: 'La prima creatura',
     intro: ['Prima regola del viaggio: non si parte mai da soli.', 'Al Parco di Gianola, sotto la villa del mio vecchio conoscente Mamurra, il guardaparco custodisce tre creature appena nate. Vai a sceglierne una: segui la freccia, verso est.'],
     done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'Le selvatiche non si vedono: si nascondono nell\'erba alta (Parco Gramsci, pineta, uliveti, monti) e nelle pozze tra gli scogli (Gianola, la Scogliera). Passaci in mezzo e salteranno fuori: battile per allenarti, o catturale con un retino.'] },
+  'trama-scavi': { title: 'Gli scavi di Gianola',
+    intro: ['A Gianola, tra le rovine della villa di Mamurra, qualcuno scava con la pala. Quella era la villa di un uomo che voleva sempre di più.', 'Ora hai una creatura: andiamo a vedere chi è. Le creature lottano con le creature.'],
+    done: ['Uomini di Mamurra, e cercano le Pietre di Telepilo. Questa storia è più grande di un giro per Formia.'] },
+  'trama-archivio': { title: 'Le Pietre di Telepilo',
+    intro: ['Nella Torre di Mola c\'è l\'Archivio storico della città: carte, mappe, leggende. Chiedi all\'archivista delle Pietre di Telepilo.'],
+    done: ['Tre pietre: delle mura, del mare, della voce. E Mamurra le vuole tutte.'] },
+  'trama-cisterna': { title: 'L\'uomo del Cisternone',
+    intro: ['A Castellone uno degli uomini di Mamurra cerca di entrare nel Cisternone: una cisterna romana del primo secolo avanti Cristo, sotto le case del borgo. Fermalo.'],
+    done: ['La porta non si apre con la forza: ci vuole una parola.'] },
+  'trama-mura': { title: 'La parola delle mura',
+    intro: ['La signora del teatro abita dentro il teatro romano: chi meglio di lei conosce le pietre di Castellone?'],
+    done: ['La Pietra delle Mura è con te. Ne mancano due.'] },
+  'trama-mare': { title: 'Le peschiere di Caposele',
+    intro: ['A Caposele, lungo il mare, ci sono le peschiere romane: vasche di pietra dove i Romani allevavano i pesci. Un sub di Mamurra ci si immerge da giorni.'],
+    done: ['La Pietra del Mare! Ne manca una, e so bene dov\'è.'] },
+  'trama-voce': { title: 'La Pietra della Voce',
+    intro: ['La terza pietra la custodisce un oratore. Sono io, Antonio. Vieni alla mia tomba, sull\'Appia: ti farò tre domande su Formia.'],
+    done: ['Hai tutte e tre le pietre. Ora Mamurra verrà a cercarti.'] },
+  'trama-mamurra': { title: 'Il fantasma di Mamurra',
+    intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
+    done: ['Il sigillo di Telepilo è salvo. Formia ti deve un favore.'] },
   padel: { title: 'Una partita al Bruno Zauli',
     intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche euro.'],
     done: ['Ben giocato. Ogni livello di Antonio vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },
@@ -93,6 +116,12 @@ export function tipOnce(id: string): string[] | null {
 function best(): number { return Math.max.apply(null, team().map(function (k) { return level(k).lv; })); }
 /** a covo's level, when the stop is a covo */
 function covoOf(s: Stop): number | null { var id = s.id.indexOf('covo-') === 0 ? s.id.slice(5) : null; return id && COVI[id] ? COVI[id].level : null; }
+/** the battles of the plot: whose creatures, and the strongest of them */
+const PLOT_FOE: Record<string, string> = { 'trama-scavi': 'mamurr-scavi', 'trama-cisterna': 'mamurr-cisterna', 'trama-mare': 'mamurr-peschiere', 'trama-mamurra': 'mamurra' };
+function plotFoe(s: Stop): { who: string; lv: number } | null {
+  var tr = PLOT_FOE[s.id] ? TRAINERS[PLOT_FOE[s.id]] : null;
+  return tr ? { who: tr.title.replace(/^(L'|Il |La )/, function (m) { return m.toLowerCase(); }), lv: Math.max.apply(null, tr.team.map(function (t) { return t.lv; })) } : null;
+}
 /** what Cicero says when asked: the chapter, the challenge, and whether the team is ready */
 export function advice(): string[] {
   var s = nextStop(), ch = CHAPTERS[s.id], done = STOPS.filter(function (x) { return x.done(); }).length;
@@ -101,6 +130,11 @@ export function advice(): string[] {
   if (lv) {
     var b = best(), who = C[COVI[s.id.slice(5)].leader].name;
     out.push(b >= lv ? 'La tua squadra arriva al livello ' + b + ' e ' + who + ' è al ' + lv + ': sei pronto.' : 'La tua squadra arriva al livello ' + b + ', ' + who + ' è al ' + lv + ': allenati ancora un po\' con le creature selvatiche, poi sfidalo.');
+  }
+  var pf = plotFoe(s);
+  if (pf && team().some(function (k) { return k !== 'antonio'; })) {
+    var c = Math.max.apply(null, (st.mons || []).map(function (m) { return level(m.uid).lv; }));
+    out.push(c >= pf.lv ? 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': puoi farcela.' : 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': allenati nell\'erba alta, prima.');
   }
   if (!st.seen.starter && s.id !== 'starter') out.push('E non dimenticare: al Parco di Gianola il guardaparco ha una creatura per te.');
   return out;
