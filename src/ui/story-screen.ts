@@ -23,6 +23,7 @@ import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from
 import { SPECIES } from '../data/creatures';
 import { SHOPS } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
+import { photoFor } from '../data/photos';
 import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, team, earn } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
@@ -323,7 +324,7 @@ function challenge(id: string) {
   var cv0 = COVI[id];
   pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, function (key) {
     hide();
-    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level }, safe: safeMoves(),
+    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level, photo: photoFor(M.id, areaName()) }, safe: safeMoves(),
       sideA: sideOf(key), sideB: foeSide(cv0.leader, cv0.level), bag: battleBag() });
   });
 }
@@ -340,7 +341,7 @@ function wildTalk(p: Person) {
       hide();
       var foe = foeSide(w.sp, lv);
       if (gold) foe.gold = true;
-      startBattle({ a: idOf(key), b: w.sp, mode: 'cpu', story: { wild: p.n.id, sp: w.sp, key: key, foeLv: lv, gold: gold }, safe: safeMoves(),
+      startBattle({ a: idOf(key), b: w.sp, mode: 'cpu', story: { wild: p.n.id, sp: w.sp, key: key, foeLv: lv, gold: gold, photo: photoFor(M.id, areaName()) }, safe: safeMoves(),
         sideA: sideOf(key), sideB: foe, wild: true, bag: battleBag() });
     });
   } }, { label: 'Lascia stare', fn: null }]);
@@ -365,7 +366,7 @@ function duelBattle(key?: string) {
     if (d.hp[k] != null) a.hp = d.hp[k];
     if (d.foeHp != null) b.hp = d.foeHp;
     see(foe.sp); save();
-    startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', story: { trainer: d.id, sp: foe.sp, key: k, foeLv: foe.lv }, trainer: tr.title, safe: safeMoves(), sideA: a, sideB: b, bag: battleBag() });
+    startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', story: { trainer: d.id, sp: foe.sp, key: k, foeLv: foe.lv, photo: photoFor(M.id, areaName()) }, trainer: tr.title, safe: safeMoves(), sideA: a, sideB: b, bag: battleBag() });
   };
   if (key) go(key);
   else pickFighter('Chi mandi contro ' + SPECIES[foe.sp].name + '?', SPECIES[foe.sp].type, go, d.down);

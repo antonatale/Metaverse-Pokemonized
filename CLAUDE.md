@@ -265,6 +265,21 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Salvataggi:** campi nuovi e facoltativi in `lotte-tra-amici:storia:v1` (`lv`, `skills`, `money`, `bag`, `mons`, `seen.starter`). Un salvataggio vecchio parte dal livello 5, senza soldi e senza creature.
 - **Test:** `tests/unit/creatures.test.ts` controlla i dati, le lotte tra creature a ogni livello, la cattura e la crescita. La partita `creatures of Formia` sceglie Polpino, lotta con un Riccetto, compra i retini a Mola e cattura una Cicalina.
 
+## Foto vere di Formia dietro le lotte
+
+- **Cosa:** le lotte della storia hanno dietro una foto vera della zona in cui avvengono, scattata da terra. È un po' sbiadita nel colore della pagina, e il credito sta sotto il contatore dei turni (`data/photos.ts`, `photoHtml` in `ui/battle-screen.ts`).
+- **Quale foto:** la sceglie `photoFor(mappa, zona)` dalla zona dove si trova Antonio quando parte la lotta.
+  - Il porto: porto, Mola, centro, Caposele, Vindicio e i suoi lidi.
+  - La Porta dell'Orologio: Castellone.
+  - Formia vista da Maranola: monti, Rio Fresco, campagna, Tomba di Cicerone.
+  - Il golfo al tramonto da Castellonorato: via Amendola, Acqualonga, Santo Janni, il Bruno Zauli, Don Bosco, Parco Gramsci, casa.
+  - La cisterna della villa di Mamurra: Gianola.
+- **Licenze:** tutte senza diritti d'autore su Wikimedia Commons.
+  - Pubblico dominio (autore Dom dom 70): il porto, la Porta dell'Orologio, Maranola, Castellonorato.
+  - CC0 (autore rafle50): la cisterna di Mamurra.
+  - Per Vindicio e Gianola c'erano solo foto con licenze che chiedono l'attribuzione (CC BY, CC BY-SA), quindi per Vindicio si usa il porto, la più vicina libera.
+- **Formato:** le foto stanno in `src/assets/photos`, ridotte a 880 px e compresse (circa 400 KB in tutto). Nella build finiscono incorporate nel file unico.
+
 ## Giorno e notte
 
 - **L'ora di Formia** (`story/daytime.ts`): di base è quella di fuori, dall'orologio del dispositivo. Alba e tramonto sono quelli veri di Formia per quel giorno, calcolati da latitudine, longitudine, equazione del tempo e ora legale (il 30 ottobre: 6:38 e 17:00). Il buio cresce da un quarto d'ora prima del tramonto a un'ora dopo, e al contrario all'alba.
@@ -347,7 +362,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **CSP della cornice:** script esterni solo da cdnjs, jsdelivr o unpkg; fogli di stile solo da Google Fonts; niente immagini esterne. Il resto deve essere inline o generato in codice, e Phaser va benissimo incorporato nel bundle singlefile.
 - **Font:** dopo la prima pubblicazione va verificato che i font incorporati (`@font-face` con URL `data:`) si carichino davvero nella cornice. Se no, pubblica `dist-google-fonts/index.html`.
-- **Limite della pagina:** 16 MB. Oggi il file è di circa 580 KB.
+- **Limite della pagina:** 16 MB. Oggi il file è di circa 1,1 MB (le foto delle lotte sono circa 550 KB in base64).
 - **Origine nuova:** un nuovo Artifact è una nuova origine, quindi salvataggi e libretto ripartono vuoti.
 
 ## Verso Phaser

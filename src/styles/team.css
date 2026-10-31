@@ -84,3 +84,8 @@
 @keyframes evoIn { 0% { transform: scale(.3) rotate(-25deg); filter: brightness(3); opacity: 0; } 100% { transform: none; filter: none; opacity: 1; } }
 @keyframes rays { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .evolve .evo span, .evolve .evo span::before { animation: none !important; } }
+/* a real photo of the part of Formia where the story's battle is, washed in the colour of the page */
+.arena-photo { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: center 45%; }
+.arena-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 18%, transparent), color-mix(in srgb, var(--paper) 50%, transparent) 70%, color-mix(in srgb, var(--paper) 62%, transparent)); }
+.photo-credit { display: block; max-width: min(52vw, 360px); margin: 1px auto 0; color: var(--muted); font: 10px/1.3 var(--font-body); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clock:has(.photo-credit) { flex-direction: column; gap: 2px; min-width: 0; }
