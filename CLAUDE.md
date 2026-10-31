@@ -269,16 +269,22 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **Cosa:** le lotte della storia hanno dietro una foto vera della zona in cui avvengono, scattata da terra. È un po' sbiadita nel colore della pagina, e il credito sta sotto il contatore dei turni (`data/photos.ts`, `photoHtml` in `ui/battle-screen.ts`).
 - **Quale foto:** la sceglie `photoFor(mappa, zona)` dalla zona dove si trova Antonio quando parte la lotta.
-  - Il porto: porto, Mola, centro, Caposele, Vindicio e i suoi lidi.
-  - La Porta dell'Orologio: Castellone.
-  - Formia vista da Maranola: monti, Rio Fresco, campagna, Tomba di Cicerone.
-  - Il golfo al tramonto da Castellonorato: via Amendola, Acqualonga, Santo Janni, il Bruno Zauli, Don Bosco, Parco Gramsci, casa.
-  - La cisterna della villa di Mamurra: Gianola.
-- **Licenze:** tutte senza diritti d'autore su Wikimedia Commons.
-  - Pubblico dominio (autore Dom dom 70): il porto, la Porta dell'Orologio, Maranola, Castellonorato.
-  - CC0 (autore rafle50): la cisterna di Mamurra.
-  - Per Vindicio e Gianola c'erano solo foto con licenze che chiedono l'attribuzione (CC BY, CC BY-SA), quindi per Vindicio si usa il porto, la più vicina libera.
-- **Formato:** le foto stanno in `src/assets/photos`, ridotte a 880 px e compresse (circa 400 KB in tutto). Nella build finiscono incorporate nel file unico.
+  | Foto | Zone | Autore | Licenza |
+  |---|---|---|---|
+  | La spiaggia di Vindicio | Vindicio, Eclipse, pineta | trolvag | CC BY-SA 3.0 |
+  | Le peschiere romane sul lungomare | Caposele | Sailko | CC BY 3.0 |
+  | Il porto di Formia | porto | Dom dom 70 | pubblico dominio |
+  | Formia dalla stazione | centro, piazza della Vittoria, stazione, Lavezzi | Gobbler | CC BY-SA 3.0 |
+  | Via Abate Tosti | Mola, Morgana, piazza San Giovanni | Gobbler | CC BY-SA 3.0 |
+  | La Porta dell'Orologio | Castellone | Dom dom 70 | pubblico dominio |
+  | Formia dal borgo di Maranola | monti, Rio Fresco, campagna, Tomba di Cicerone | Dom dom 70 | pubblico dominio |
+  | Il golfo al tramonto da Castellonorato | via Amendola, Acqualonga, Santo Janni, Bruno Zauli, Don Bosco, Parco Gramsci, casa | Dom dom 70 | pubblico dominio |
+  | Il porticciolo romano di Gianola | Gianola | Luigi Versaggi | CC BY-SA 2.5 |
+- **Licenze:** sono tutte libere, su Wikimedia Commons. Quelle Creative Commons chiedono di citare l'autore e la licenza.
+  - In ogni lotta, sotto il contatore dei turni, c'è il credito: titolo, autore, licenza e il link alla pagina del file.
+  - Le foto sono solo ridotte e compresse; le CC BY-SA restano sotto la loro licenza.
+  - Se ne aggiungi, controlla licenza e autore sulla pagina del file.
+- **Formato:** le foto stanno in `src/assets/photos`, ridotte a 880 px (circa 720 KB in tutto). Nella build finiscono incorporate nel file unico.
 
 ## Giorno e notte
 
@@ -362,7 +368,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 - **CSP della cornice:** script esterni solo da cdnjs, jsdelivr o unpkg; fogli di stile solo da Google Fonts; niente immagini esterne. Il resto deve essere inline o generato in codice, e Phaser va benissimo incorporato nel bundle singlefile.
 - **Font:** dopo la prima pubblicazione va verificato che i font incorporati (`@font-face` con URL `data:`) si carichino davvero nella cornice. Se no, pubblica `dist-google-fonts/index.html`.
-- **Limite della pagina:** 16 MB. Oggi il file è di circa 1,1 MB (le foto delle lotte sono circa 550 KB in base64).
+- **Limite della pagina:** 16 MB. Oggi il file è di circa 1,5 MB (le foto delle lotte sono quasi 1 MB in base64).
 - **Origine nuova:** un nuovo Artifact è una nuova origine, quindi salvataggi e libretto ripartono vuoti.
 
 ## Verso Phaser

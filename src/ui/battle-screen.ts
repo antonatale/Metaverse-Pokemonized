@@ -44,7 +44,7 @@ function photoHtml(): string {
 }
 function creditHtml(): string {
   var ph = S.story && S.story.photo ? PHOTOS[S.story.photo] : null;
-  return ph ? '<a class="photo-credit" href="' + esc(ph.page) + '" target="_blank" rel="noopener">Foto: ' + esc(ph.title) + ' · ' + esc(ph.author) + ' · ' + esc(ph.license) + '</a>' : '';
+  return ph ? '<a class="photo-credit" href="' + esc(ph.page) + '" target="_blank" rel="noopener" title="Wikimedia Commons, ' + esc(ph.license) + ': ridotta e compressa per il gioco">Foto: ' + esc(ph.title) + ' · ' + esc(ph.author) + ' · ' + esc(ph.license) + '</a>' : '';
 }
 function renderShell() {
   var a = S.sides[0].id, b = S.sides[1].id;
