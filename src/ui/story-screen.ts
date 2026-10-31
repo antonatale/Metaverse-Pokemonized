@@ -24,7 +24,7 @@ import { SPECIES, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, type Hiding } from '../data/encounters';
 import { SHOPS } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
-import { photoFor } from '../data/photos';
+import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero } from '../render/svg/cicero';
 import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn } from '../story/growth';
@@ -339,7 +339,7 @@ function challenge(id: string) {
   var cv0 = COVI[id];
   pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, (st.squad as string[]).slice(), function (key) {
     hide();
-    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level, photo: photoFor(M.id, areaName()) }, safe: safeMoves(),
+    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
       sideA: sideOf(key), sideB: foeSide(cv0.leader, cv0.level), bag: battleBag() });
   });
 }
@@ -364,9 +364,9 @@ function fightOn(key?: string) {
     if (f.foeHp != null) b.hp = f.foeHp;
     if (foe.gold) b.gold = true;
     see(foe.sp); save();
-    var place = photoFor(M.id, areaName());
+    var place = sceneFor(M.id, areaName());
     startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: a, sideB: b, bag: battleBag(),
-      story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, photo: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, photo: place },
+      story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
       wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined });
   };
   if (key) { go(key); return; }

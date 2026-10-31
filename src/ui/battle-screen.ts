@@ -3,7 +3,8 @@ import { fighter } from '../data/fighters';
 import { MAGIC, runeIcon } from '../render/svg/creatures';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { sfx } from '../audio';
-import { PHOTOS } from '../data/photos';
+import { scene, sceneInfo } from '../render/svg/scenes';
+import { darkness } from '../story/daytime';
 import type { TypeName } from '../data/types';
 import { COVI } from '../data/covi';
 import { ENGINE as E, type BattleEvent, type BattleState, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
@@ -38,23 +39,24 @@ function boxHtml(i: number): string {
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><span></span></div></div>' +
     '<div class="box-f"><span class="type t-' + c.type.toLowerCase() + '" id="ty-' + i + '">' + c.type + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
-/* a story battle happens somewhere in Formia: a real photo of that part of town behind it, with its credit */
-function photoHtml(): string {
-  var ph = S.story && S.story.photo ? PHOTOS[S.story.photo] : null;
-  if (!ph) return '';
-  return '<div class="arena-photo" style="background-image:url(\'' + ph.src + '\')" role="img" aria-label="' + esc(ph.title) + '"></div>';
-}
-function creditHtml(): string {
-  var ph = S.story && S.story.photo ? PHOTOS[S.story.photo] : null;
-  return ph ? '<a class="photo-credit" href="' + esc(ph.page) + '" target="_blank" rel="noopener" title="Wikimedia Commons, ' + esc(ph.license) + ': ridotta e compressa per il gioco">Foto: ' + esc(ph.title) + ' · ' + esc(ph.author) + ' · ' + esc(ph.license) + '</a>' : '';
+/* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
+   the fighters stand on platforms of its ground */
+function sceneHtml(): string {
+  var id = S.story && S.story.scene;
+  battle.classList.toggle('has-scene', !!id);
+  if (!id) { battle.style.removeProperty('--plat'); return ''; }
+  var info = sceneInfo(id), dark = darkness(new Date()) > 0.5;
+  battle.style.setProperty('--plat', info.ground);
+  battle.classList.toggle('night', dark);
+  return '<div class="scene" role="img" aria-label="' + esc(info.title) + '">' + scene(id, dark) + '</div>';
 }
 function renderShell() {
   var a = S.sides[0].id, b = S.sides[1].id;
-  battle.innerHTML =
+  battle.innerHTML = sceneHtml() +
     '<div class="topbar"><button class="tb-btn" type="button" id="quit">Esci</button>' +
-    '<div class="clock" id="clock">' + (S.boss ? ico('clock') + '<span id="clock-t">2:00</span>' : '') + '<span class="turn" id="turn-t">Turno 1</span>' + creditHtml() + '</div>' +
+    '<div class="clock" id="clock">' + (S.boss ? ico('clock') + '<span id="clock-t">2:00</span>' : '') + '<span class="turn" id="turn-t">Turno 1</span></div>' +
     '<div class="tb-right">' + soundButton() + '<button class="tb-btn" type="button" id="info">Scheda</button></div></div>' +
-    '<div class="arena" id="arena">' + photoHtml() + boxHtml(1) +
+    '<div class="arena" id="arena">' + boxHtml(1) +
     '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk', '', undefined, S.sides[1].gold) + '</div></div></div>' +
     '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold) + '</div></div></div>' + boxHtml(0) + '</div>' +
     '<div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +

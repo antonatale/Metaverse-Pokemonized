@@ -84,11 +84,24 @@
 @keyframes evoIn { 0% { transform: scale(.3) rotate(-25deg); filter: brightness(3); opacity: 0; } 100% { transform: none; filter: none; opacity: 1; } }
 @keyframes rays { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .evolve .evo span, .evolve .evo span::before { animation: none !important; } }
-/* a real photo of the part of Formia where the story's battle is, washed in the colour of the page */
-.arena-photo { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: center 45%; }
-.arena-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 18%, transparent), color-mix(in srgb, var(--paper) 50%, transparent) 70%, color-mix(in srgb, var(--paper) 62%, transparent)); }
-.photo-credit { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-width: min(50vw, 380px); margin: 1px auto 0; color: var(--muted); font: 9.5px/1.25 var(--font-body); text-align: center; text-decoration: none; overflow: hidden; }
-.clock:has(.photo-credit) { flex-direction: column; gap: 2px; min-width: 0; }
+/* the drawn scene of Formia behind a story battle, over the whole screen (render/svg/scenes.ts) */
+.scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.scene .scene-art { display: block; width: 100%; height: 100%; }
+#battle.has-scene > :not(.scene) { position: relative; z-index: 1; }
+#battle.has-scene .arena { background: none; border-block-color: transparent; }
+#battle.has-scene .topbar { margin: 6px max(10px, env(safe-area-inset-left, 0px)) 0; border: 2px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--card) 90%, transparent); box-shadow: 3px 3px 0 var(--shadow); }
+/* the one in front of Antonio stands on a platform of the scene's ground */
+#battle.has-scene .spr-wrap.opp::after { left: 2%; right: 2%; bottom: -10px; height: 30%; max-height: 52px; background: var(--plat); border: 3px solid #1c2340; box-shadow: inset 0 -7px 0 rgba(0, 0, 0, .14); }
+#battle.has-scene.night .spr-wrap.opp::after { filter: brightness(.5) saturate(.8); }
+/* on a computer the battle takes more of the screen */
+@media (min-width: 900px) {
+  #battle.has-scene { max-width: 1120px; }
+  #battle.has-scene .arena { min-height: 46vh; }
+  #battle.has-scene .spr-wrap.me { width: min(38%, 330px); }
+  #battle.has-scene .spr-wrap.opp { width: min(28%, 250px); top: 46px; right: 8%; }
+  #battle.has-scene .box { width: min(40%, 300px); }
+  #battle.has-scene .pad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 /* ---------- Cicero, the guide: his corner, his word, his ghost in the dialog ---------- */
 .wcic { position: absolute; z-index: 3; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(52px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 76px; padding: 2px; border: 2px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); cursor: pointer; }
 .wcic .ghost { display: block; width: 100%; height: 100%; animation: ghostFloat 3.2s ease-in-out infinite; }

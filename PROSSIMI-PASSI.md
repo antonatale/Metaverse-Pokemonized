@@ -10,9 +10,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
-4. **Sfondi delle lotte disegnati, a schermo intero su PC**, al posto delle foto (che non piacciono): scene
-   stilizzate in SVG per zona (Vindicio, porto, Mola, Castellone, Gianola, monti, centro…), di giorno e di notte.
-   File: `data/photos.ts` → sfondi SVG, `ui/battle-screen.ts`, `styles/battle.css`.
 5. **Antonio sulla mappa uguale a quello delle lotte**: stessi capelli, barba, occhiali e vestiti del ritratto.
    File: `render/canvas/walkers.ts`, `render/svg/looks.ts`.
 7. **Abilità meno scontate.** Non +Attacco/+Difesa, ma poteri che cambiano il gioco: meno incontri, più catture,
@@ -34,3 +31,4 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **Il caffè si beve al bancone** del bar di Mola, scegliendo subito chi lo beve; niente più caffè nel menu.
 - **Umani contro umani, creature contro creature**: con selvatiche e allenatori lottano le creature, una dopo l'altra; Antonio scende in campo solo quando sono tutte KO. Nei covi lottano Antonio e gli amici.
 - **Incontri nascosti, come nei Pokémon**: erba alta e pozze tra gli scogli, con creature diverse per zona e per ora del giorno. Idea per dopo: altre specie selvatiche (meduse e ricci in acqua bassa, una lucertola dei muretti a secco, un pipistrello della Grotta della Janara) e un oggetto o un'abilità che tiene lontane le creature.
+- **Sfondi delle lotte disegnati, a schermo intero**: dodici scene di Formia in SVG (Vindicio, pineta, porto, Mola, Castellone, monti, golfo, Gianola, Caposele, piazza della Vittoria, circolo, Morgana), di giorno e di notte; le foto sono state tolte.
