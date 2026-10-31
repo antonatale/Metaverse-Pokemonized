@@ -8,7 +8,8 @@ import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
-import { creature } from './svg/creatures';
+import { creature, MAGIC } from './svg/creatures';
+import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
@@ -20,7 +21,7 @@ const CH = 12;   /* tiles per side of a cached piece of ground */
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
-interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement }
+interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null }
 /** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
 interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
@@ -113,7 +114,7 @@ function follower(now: number): Drawn | null {
   if (mover && mover.t0 !== folStep) { folStep = mover.t0; f.fx = f.x; f.fy = f.y; f.x = mover.fx; f.y = mover.fy; f.t0 = mover.t0; }
   var t = Math.min(1, (now - f.t0) / STEP), hop = reduced || t >= 1 ? 0 : Math.sin(t * Math.PI) * 3;
   /* just behind Antonio when they are on the same row */
-  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img };
+  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img, glow: MAGIC[SPECIES[idOf(uid!) as SpeciesId].type].col };
 }
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
@@ -203,7 +204,7 @@ var lightCv: HTMLCanvasElement | null = null, NIGHT_A = 0.76, NIGHT_Q = 3;
 function lampsOn(dk: number) { return Math.max(0, Math.min(1, (dk - 0.12) / 0.35)); }
 function rgba(hex: string, a: number) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
 /** darkens the frame by the hour: a sheet of night with holes where the lights are, then their warm glow */
-function drawNight(now: number, dk: number, sn: number, camX: number, camY: number, vw: number, vh: number, pp: { x: number; y: number }, lit: SceneItem[]) {
+function drawNight(now: number, dk: number, sn: number, camX: number, camY: number, vw: number, vh: number, pp: { x: number; y: number }, lit: SceneItem[], people: Drawn[]) {
   var W = cv.width, H = cv.height;
   if (sn > 0.01) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = sn * 0.16; ctx.fillStyle = P.dusk; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
   if (dk < 0.01) return;
@@ -225,6 +226,9 @@ function drawNight(now: number, dk: number, sn: number, camX: number, camY: numb
   cache.lights.forEach(function (l) { hole(l.x, l.y, l.r, l.a * on); });
   /* Antonio is never lost in the dark */
   hole(pp.x + T / 2, pp.y + T / 2, T * 2.4, 0.5);
+  /* the creatures glow in the dark with the colour of their magic, softly breathing */
+  var glowing = people.filter(function (e) { return !!e.glow && seen(e.x + 16, e.yb - 20, T * 2); });
+  glowing.forEach(function (e) { hole(e.x + 16, e.yb - 20, T * 1.7, 0.75 * on); });
   /* the lit windows shine through */
   lc.globalAlpha = on * 0.9;
   lit.forEach(function (it) { lc.drawImage(it.glow!, it.x, it.yb - it.spr.h, it.spr.cv.width / RS, it.spr.cv.height / RS); });
@@ -245,6 +249,11 @@ function drawNight(now: number, dk: number, sn: number, camX: number, camY: numb
   }
   /* the light of lamps and windows is warm: their pools are tinted, not only uncovered */
   lc.globalCompositeOperation = 'source-over';
+  glowing.forEach(function (e, k) {
+    var x = e.x + 16, y = e.yb - 20, r = T * (1.35 + (reduced ? 0 : Math.sin(now / 700 + k) * 0.12)), g = lc.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(e.glow!, 0.55 * on)); g.addColorStop(1, rgba(e.glow!, 0));
+    lc.fillStyle = g; lc.fillRect(x - r, y - r, r * 2, r * 2);
+  });
   cache.lights.forEach(function (l) {
     if (!l.warm || !seen(l.x, l.y, l.r)) return;
     var r = l.r * 0.8, g = lc.createRadialGradient(l.x, l.y, 0, l.x, l.y, r);
@@ -323,7 +332,7 @@ export function drawWorld(now: number) {
     if (p.n.wild) {
       /* a wild creature hops on the spot now and then */
       var img = creatureImage(wildNow(p.n)!.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
-      if (img) people.push({ yb: (p.y + 1) * T - hop, x: p.x * T, img: img });
+      if (img) people.push({ yb: (p.y + 1) * T - hop, x: p.x * T, img: img, glow: MAGIC[SPECIES[wildNow(p.n)!.sp].type].col });
       return;
     }
     var idle = p.n.person ? 0 : ((Math.floor(now / 700 + hash(p.x, p.y, 9) * 6) % 7) === 0 ? 1 : 0);
@@ -337,7 +346,7 @@ export function drawWorld(now: number) {
   people.sort(function (a, b) { return a.yb - b.yb; });
   var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
   drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now, lampsOn(dk), lit);
-  ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit); ctx.restore();
+  ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
   /* a glint on the lost things, gulls over the water */
   M.items.forEach(function (it) {
     if (st.found[it.id]) return;

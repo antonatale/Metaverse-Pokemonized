@@ -29,7 +29,7 @@ function xpBar(key: string): string {
 /* ---------- the first creature, from the guardaparco of Gianola ---------- */
 export function chooseStarter(done: (uid: string) => void) {
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sc-t"><div class="sheet-h"><h2 id="sc-t">Scegli la tua prima creatura</h2><button class="tb-btn" type="button" id="sc-x">Ci penso</button></div>' +
-    '<p class="hint">Tre cuccioli cercano casa. Quello che scegli verrà con te: crescerà con te, lotterà con te, e un giorno cambierà forma.</p><div class="starters">' +
+    '<p class="hint">Tre creature magiche, nate al Parco di Gianola, cercano casa. Quella che scegli verrà con te: crescerà con te, lotterà con te, e un giorno cambierà forma.</p><div class="starters">' +
     STARTERS.map(function (id) {
       var sp = SPECIES[id];
       return '<button class="starter" type="button" data-sp="' + id + '" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><span class="art">' + creature(id, 'grin', '', '0 16 200 184') + '</span>' +
@@ -87,9 +87,9 @@ function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
   sfx('badge');
   var a = SPECIES[from], b = SPECIES[to];
   sheet('<div class="award evolve" role="dialog" aria-modal="true" aria-labelledby="ev-t" style="--tc:var(--t-' + b.type.toLowerCase() + ')">' +
-    '<h2 id="ev-t">Cosa? ' + esc(a.name) + ' si evolve!</h2>' +
+    '<h2 id="ev-t">Cosa? Una luce avvolge ' + esc(a.name) + '!</h2>' +
     '<div class="evo"><span>' + creature(from, 'worried', '', '0 16 200 184') + '</span><b aria-hidden="true">→</b><span>' + creature(to, 'cool', '', '0 16 200 184') + '</span></div>' +
-    '<p>' + esc(a.name) + ' è diventato <b>' + esc(b.name) + '</b>. ' + esc(b.text) + '</p>' +
+    '<p>La magia di Formia l\'ha cambiato: ' + esc(a.name) + ' è diventato <b>' + esc(b.name) + '</b>. ' + esc(b.text) + '</p>' +
     '<button class="btn primary" type="button" id="ev-ok">Continua</button></div>', 'result');
   $('ev-ok').addEventListener('click', function () { closeSheet(); if (then) then(); });
   setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);

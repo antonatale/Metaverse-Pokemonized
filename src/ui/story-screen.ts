@@ -344,7 +344,9 @@ function wildTalk(p: Person) {
   } }, { label: 'Lascia stare', fn: null }]);
 }
 function starterTalk(who: string) {
-  say(['Ciao Antonio! Al Parco di Gianola sono nati tre cuccioli di creature di Formia.', 'Uno lo affiderei volentieri a te: lo fai crescere, e lui lotta con te.'], who, [
+  say(['Ciao Antonio! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
+    'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
+    'Al parco ne sono nate tre. Una la affiderei a te: cresce con te, lotta con te, e un giorno cambia forma.'], who, [
     { label: 'Fammeli vedere', fn: function () {
       chooseStarter(function (uid) {
         var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];

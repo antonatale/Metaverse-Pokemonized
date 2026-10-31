@@ -1,5 +1,7 @@
 import { CHARS as C, type CharId, type FighterId, type FriendId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
+import { MAGIC, runeIcon } from '../render/svg/creatures';
+import type { TypeName } from '../data/types';
 import { COVI } from '../data/covi';
 import { ENGINE as E, type BattleEvent, type BattleState, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
 import { SPR } from '../render/svg';
@@ -223,6 +225,16 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
       return pulse(m, 'glow', 500);
     case 'notes': notes(i); return sleep(300).then(function () { return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340); });
     case 'net': return projectile(i, j, '<div class="netball">' + ico('ball') + '</div>', '', 560, 40);
+    /* the creatures' magic: a rune of their type flies at the foe and bursts; raised on itself, it glows */
+    case 'magic': {
+      var t = ev.style as TypeName, mc = MAGIC[t] ? MAGIC[t].col : '#ffffff';
+      return projectile(i, j, '<div class="orb" style="--mc:' + mc + '">' + runeIcon(t, 40) + '</div>', '', 520, 34)
+        .then(function () { return popAt(j, '<div class="burst" style="--mc:' + mc + '"></div>', '', 0.5, 0.24, 420); });
+    }
+    case 'magicUp': {
+      var tu = ev.style as TypeName;
+      return Promise.all([pulse(m, 'glow', 800), popAt(i, '<div class="orb" style="--mc:' + (MAGIC[tu] ? MAGIC[tu].col : '#ffffff') + '">' + runeIcon(tu, 46) + '</div>', '', 0.5, 0.02, 850)]);
+    }
     case 'caught': m.classList.add('caught'); return sleep(800);
     default: return Promise.resolve();
   }

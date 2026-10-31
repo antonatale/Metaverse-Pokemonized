@@ -248,19 +248,24 @@ function cap(t: string) { return t.charAt(0).toUpperCase() + t.slice(1); }
 function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boolean {
   const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, fx = m.fx || {};
   let attacked = false;
+  const type = ch(me).type;
   if (m.kind === 'atk') {
     ev.push(expr(i, 'grin'));
-    const dmg = applyHit(s, i, m.id, ev); attacked = true;
+    ev.push(anim(i, 'magic', { style: type }));
+    const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
     if (dmg > 0 && m.drain && me.hp > 0) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
     if (dmg <= 0 || foe.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {
     ev.push(expr(i, 'grin'));
+    ev.push(anim(i, 'magicUp', { style: type }));
     heal(s, i, me.max * fx.heal, ev);
-  } else ev.push(expr(i, 'smirk'));
+  } else {
+    ev.push(expr(i, 'smirk'));
+    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: type }));
+  }
   if (fx.self) {
     const f = FX[fx.self];
     addMod(me, f.stat, f.mult, s.turn + f.turns, fx.self);
-    ev.push(anim(i, fx.self === 'atkUp' ? 'pump' : 'glowGreen'));
     ev.push(say(cap(f.text.replace('{n}', ch(me).name))));
   }
   if (fx.foe && foe.hp > 0) {

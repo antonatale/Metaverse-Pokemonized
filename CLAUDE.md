@@ -205,6 +205,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Lido Oriente:** lungomare Città di Ferrara 128. Fonte: spiagge.it.
 - **Maranola:** il presepe vivente nei vicoli, da più di quarant'anni. Fonti: siti di eventi.
 - **Cucina:** tiella (la pizza bassa ripiena del golfo), spaghetti alla formiana con cozze, vongole e canocchie, olive di Gaeta, mozzarella di bufala, ciambelle all'anice. Fonti: Gazzetta del Gusto, guide gastronomiche.
+- **I Lestrigoni a Formia** (la leggenda delle creature): Cicerone, in una lettera ad Attico, chiama Formia «la Telepilo dei Lestrigoni». Ovidio riprende l'episodio nel XIV libro delle Metamorfosi. La gens degli Aelii Lamiae diceva di discendere da Lamo, re dei Lestrigoni. Il nome si fa derivare dal greco *hormiai*, «approdo». Che Formia sia davvero la città dei Lestrigoni non è provato (il Ministero della Cultura ha riportato ipotesi diverse): nel gioco è detto «si racconta». Fonti: tuttostoria.net, meteoweb, cultura.gov.it.
 - **Incerti, quindi non usati:** la «Porta degli Spagnoli» (le fonti non concordano se sia a Castellone o a Mola), il «molo Azzurra» per i traghetti, l'indirizzo preciso del Cisternone.
 
 ## Attività, casa e motorino
@@ -227,7 +228,15 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - Muscoli, Pelle dura e Scatto alzano i numeri.
   - Memoria di ferro gli fa perdere meno le cose, Prompt engineer gli fa venire più idee: sono le probabilità di `beginTurn`, passate al motore come `perk`.
   - Contrattare abbassa i prezzi.
-- **Creature di Formia** (`data/creatures.ts`): animali e piante della città, disegnati per questo gioco.
+- **Creature di Formia** (`data/creatures.ts`): animali e piante della città, disegnati per questo gioco, con una magia loro.
+  - **La leggenda:** si racconta che Formia fosse la città dei giganti Lestrigoni dell'Odissea e del loro re Lamo, dove approdarono le navi di Ulisse. Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi, e da lì nascono le creature. Lo racconta il guardaparco, e ogni creatura ha la sua storia legata a un posto (le mura dei giganti di Castellone, il golfo, i venti, la luna di Gianola, gli ulivi, Maranola).
+  - **La magia di ogni tipo** (`MAGIC` in `render/svg/creatures.ts`):
+    - Calma è la luna, Caos il fulmine, Cervello la stella, Chiacchiera il canto, Cuore il cuore;
+    - ogni creatura ha un'aura, la runa del suo tipo sulla fronte o sul petto e scintille di luce che salgono (`MAGIC_CSS`);
+    - dalla seconda forma c'è un cerchio magico ai piedi, doppio nella terza.
+  - **In lotta** le loro mosse sono incantesimi: una runa del tipo vola e scoppia (`magic`), o si accende su chi la lancia (`magicUp`).
+  - **Di notte** le creature sulla mappa, selvatiche e quella che ti segue, brillano del colore della loro magia (`drawNight`).
+  - **L'evoluzione** è una luce che avvolge la creatura, con i raggi dietro la nuova forma.
   - Ci sono tre iniziali con tre forme (Polpino → Polpetto → Polpastro, Ramarrino → Ramarrone → Muraglione, Gabbì → Gabbianotto → Gabbiammiraglio, che si evolvono ai livelli 14 e 30).
   - Le selvatiche hanno due forme (al 18): Cicalina in pineta e al Parco Gramsci, Riccetto a Gianola, Granchietto sugli scogli della Scogliera, Olivella negli uliveti, Civettina sui Monti Aurunci.
   - Le mosse sono numeri (`CMOVES`, con `fx`: alza o abbassa Attacco e Difesa, confonde, cura) e le esegue `genericMove` in `battle/moves.ts`. Una creatura lotta con le ultime quattro mosse imparate.

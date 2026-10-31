@@ -1,4 +1,5 @@
 import { SPECIES, type SpeciesId, type Species } from '../../data/creatures';
+import type { TypeName } from '../../data/types';
 
 /* The creatures of Formia, drawn whole in one SVG each: no shared <defs>, so the same picture works in battle
    (expressions switch with data-expr, like the friends') and, as an image, on the map. Sticker style: flat colours
@@ -7,7 +8,7 @@ import { SPECIES, type SpeciesId, type Species } from '../../data/creatures';
 
 const INK = '#1c2340', BLUSH = '#ff8fa3';
 const EXPRS = ['smirk', 'grin', 'pout', 'worried', 'sleepy', 'cool'];
-interface Face { eyes: [number, number][]; r: number; mouth: [number, number] | null; w: number; iris?: string; lid: string }
+interface Face { eyes: [number, number][]; r: number; mouth: [number, number] | null; w: number; iris?: string; lid: string; rune: [number, number] }
 
 function ell(cx: number, cy: number, rx: number, ry: number, fill: string, sw = 4, extra = '') {
   return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="' + fill + '"' + (sw ? ' stroke="' + INK + '" stroke-width="' + sw + '"' : '') + extra + '/>';
@@ -70,7 +71,7 @@ function octo(sp: Species): [string, Face] {
   s += ell(100, 100, 52, 48, a.main) + ell(84, 82, 20, 13, a.belly, 0, ' opacity=".7"');
   if (st >= 2) [[66, 104, 5], [136, 98, 6], [122, 66, 4], [76, 66, 4.5]].forEach(function (p) { s += ell(p[0], p[1], p[2], p[2], a.dark, 0, ' opacity=".55"'); });
   if (st === 3) s += path('M72 58 L78 34 L90 50 L100 28 L110 50 L122 34 L128 58 Z', a.accent, 3.5) + ell(100, 44, 4, 4, '#e8473a', 2);
-  return [s, { eyes: [[83, 102], [117, 102]], r: 12, mouth: [100, 126], w: 18, lid: a.main }];
+  return [s, { eyes: [[83, 102], [117, 102]], r: 12, mouth: [100, 126], w: 18, lid: a.main, rune: [100, 76] }];
 }
 function lizard(sp: Species): [string, Face] {
   var a = sp.art, s = '', st = sp.stage;
@@ -86,7 +87,7 @@ function lizard(sp: Species): [string, Face] {
   if (st >= 2) s += path('M74 108 Q100 128 126 108 Q100 116 74 108Z', a.accent, 3);
   if (st === 3) s += path('M62 66 Q52 46 64 40 Q64 56 72 62Z', '#f4ecd8', 3) + path('M138 66 Q148 46 136 40 Q136 56 128 62Z', '#f4ecd8', 3);
   s += ell(100, 98, 22, 7, a.dark, 0, ' opacity=".25"');
-  return [s, { eyes: [[83, 82], [117, 82]], r: 11, mouth: [100, 102], w: 20, lid: a.main }];
+  return [s, { eyes: [[83, 82], [117, 82]], r: 11, mouth: [100, 102], w: 20, lid: a.main, rune: [100, 150] }];
 }
 function bird(sp: Species): [string, Face] {
   var a = sp.art, s = '', st = sp.stage;
@@ -99,7 +100,7 @@ function bird(sp: Species): [string, Face] {
   s += path('M90 98 Q100 92 110 98 L104 118 Q100 122 96 118 Z', a.accent, 3);
   if (st >= 2) s += ell(103, 112, 3, 3, '#e8473a', 0);
   if (st === 3) s += path('M52 66 Q100 20 148 66 Q100 52 52 66Z', '#1f2b5c', 4) + path('M60 63 Q100 50 140 63', 'none', 0, ' stroke="#ffcf3f" stroke-width="3"') + path('M96 40 v12 M90 46 h12 M92 52 q4 4 8 0', 'none', 0, ' stroke="#ffcf3f" stroke-width="2.6"');
-  return [s, { eyes: [[86, 84], [114, 84]], r: 9, mouth: null, w: 0, lid: a.main }];
+  return [s, { eyes: [[86, 84], [114, 84]], r: 9, mouth: null, w: 0, lid: a.main, rune: [100, 146] }];
 }
 function cicada(sp: Species): [string, Face] {
   var a = sp.art, s = '', st = sp.stage, wl = st === 1 ? 56 : 70;
@@ -112,7 +113,7 @@ function cicada(sp: Species): [string, Face] {
   [120, 138, 156].forEach(function (y) { s += path('M' + (76 + (y - 120) * 0.1) + ' ' + y + ' Q100 ' + (y + 7) + ' ' + (124 - (y - 120) * 0.1) + ' ' + y, 'none', 0, ' stroke="' + a.dark + '" stroke-width="3"'); });
   if (st === 2) s += path('M88 70 Q78 44 64 40 M112 70 Q122 44 136 40', 'none', 3.5);
   s += ell(100, 84, 44, 24, a.main);
-  return [s, { eyes: [[74, 82], [126, 82]], r: 12, mouth: [100, 96], w: 14, iris: '#a8402e', lid: a.main }];
+  return [s, { eyes: [[74, 82], [126, 82]], r: 12, mouth: [100, 96], w: 14, iris: '#a8402e', lid: a.main, rune: [100, 118] }];
 }
 function olive(sp: Species): [string, Face] {
   var a = sp.art, s = '';
@@ -121,13 +122,13 @@ function olive(sp: Species): [string, Face] {
     s += path('M108 56 Q130 40 146 50 Q128 64 108 56Z', a.accent, 3) + path('M106 60 Q84 42 66 50 Q84 66 106 60Z', a.accent, 3);
     s += ell(100, 130, 42, 54, a.main) + ell(84, 106, 10, 18, a.belly, 0, ' opacity=".6" transform="rotate(-20 84 106)"');
     s += ell(76, 182, 12, 6, a.dark, 3) + ell(124, 182, 12, 6, a.dark, 3);
-    return [s, { eyes: [[85, 128], [115, 128]], r: 10, mouth: [100, 150], w: 16, lid: a.main }];
+    return [s, { eyes: [[85, 128], [115, 128]], r: 10, mouth: [100, 150], w: 16, lid: a.main, rune: [100, 102] }];
   }
   s += path('M80 186 Q72 150 86 120 Q74 110 70 96 L130 96 Q126 110 114 120 Q128 150 120 186 Q110 178 100 186 Q90 178 80 186Z', a.main, 4);
   s += path('M90 140 Q96 150 92 162 M110 130 Q104 146 112 158', 'none', 0, ' stroke="' + a.dark + '" stroke-width="3"');
   [[100, 62, 40, 26], [66, 78, 24, 18], [134, 78, 24, 18], [100, 40, 26, 16]].forEach(function (b) { s += ell(b[0], b[1], b[2], b[3], a.accent); });
   [[74, 92], [128, 90], [110, 70], [86, 64]].forEach(function (o) { s += ell(o[0], o[1], 6, 8, '#4a2c4d', 2.5); });
-  return [s, { eyes: [[88, 124], [112, 124]], r: 9, mouth: [100, 146], w: 14, lid: a.main }];
+  return [s, { eyes: [[88, 124], [112, 124]], r: 9, mouth: [100, 146], w: 14, lid: a.main, rune: [100, 166] }];
 }
 function urchin(sp: Species): [string, Face] {
   var a = sp.art, s = '', n = sp.stage === 1 ? 18 : 26, r0 = 42, r1 = sp.stage === 1 ? 64 : 76;
@@ -138,7 +139,7 @@ function urchin(sp: Species): [string, Face] {
   }
   s += ell(100, 134, 44, 40, a.main) + ell(86, 118, 14, 9, a.belly, 0, ' opacity=".6"');
   if (sp.stage === 2) [[78, 150], [122, 150], [100, 160]].forEach(function (p) { s += ell(p[0], p[1], 3, 3, a.accent, 0); });
-  return [s, { eyes: [[86, 132], [114, 132]], r: 10, mouth: [100, 152], w: 16, lid: a.main }];
+  return [s, { eyes: [[86, 132], [114, 132]], r: 10, mouth: [100, 152], w: 16, lid: a.main, rune: [100, 110] }];
 }
 function crab(sp: Species): [string, Face] {
   var a = sp.art, s = '', st = sp.stage, cr = st === 1 ? 18 : 25;
@@ -150,7 +151,7 @@ function crab(sp: Species): [string, Face] {
   });
   s += path('M86 108 L82 82 M114 108 L118 82', 'none', 5);
   s += ell(100, 144, 56, 34, a.main) + ell(100, 150, 36, 18, a.belly, 0, ' opacity=".8"');
-  return [s, { eyes: [[82, 80], [118, 80]], r: 10, mouth: [100, 140], w: 18, lid: a.main }];
+  return [s, { eyes: [[82, 80], [118, 80]], r: 10, mouth: [100, 140], w: 18, lid: a.main, rune: [100, 160] }];
 }
 function owl(sp: Species): [string, Face] {
   var a = sp.art, s = '', st = sp.stage;
@@ -163,21 +164,66 @@ function owl(sp: Species): [string, Face] {
   s += ell(84, 104, 19, 18, a.belly, 0) + ell(116, 104, 19, 18, a.belly, 0);
   s += path('M94 116 L100 128 L106 116Z', '#e8a33c', 3);
   if (st === 2) s += '<circle cx="116" cy="104" r="17" fill="none" stroke="#e0b44c" stroke-width="3.5"/><path d="M132 110 Q140 130 132 146" fill="none" stroke="#e0b44c" stroke-width="2"/>';
-  return [s, { eyes: [[84, 104], [116, 104]], r: 13, mouth: null, w: 0, iris: a.accent, lid: a.main }];
+  return [s, { eyes: [[84, 104], [116, 104]], r: 13, mouth: null, w: 0, iris: a.accent, lid: a.main, rune: [100, 158] }];
 }
 const BODIES = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl };
 
+/* ---------- magic: each type has its own, the creatures carry it ----------
+   An aura behind them, a rune on the forehead or the chest, motes of light in the air; from the second form a magic
+   circle under the feet, doubled in the third. Calma is the moon, Caos the lightning, Cervello the star, Chiacchiera
+   the song, Cuore the heart. */
+export const MAGIC: Record<TypeName, { col: string; name: string }> = {
+  Calma: { col: '#8fd0f6', name: 'luna' }, Caos: { col: '#ffa04a', name: 'fulmine' }, Cervello: { col: '#c3a0ff', name: 'stella' },
+  Chiacchiera: { col: '#ffd84d', name: 'canto' }, Cuore: { col: '#ff8fc1', name: 'cuore' }
+};
+function glyph(t: TypeName, x: number, y: number, r: number): string {
+  if (t === 'Calma') return 'M' + (x + r * 0.25) + ' ' + (y - r) + ' A' + r + ' ' + r + ' 0 1 0 ' + (x + r * 0.25) + ' ' + (y + r) + ' A' + (r * 0.72) + ' ' + (r * 0.72) + ' 0 1 1 ' + (x + r * 0.25) + ' ' + (y - r) + 'Z';
+  if (t === 'Caos') return 'M' + (x + r * 0.25) + ' ' + (y - r) + ' L' + (x - r * 0.55) + ' ' + (y + r * 0.12) + ' L' + (x - r * 0.02) + ' ' + (y + r * 0.12) + ' L' + (x - r * 0.25) + ' ' + (y + r) + ' L' + (x + r * 0.6) + ' ' + (y - r * 0.2) + ' L' + (x + r * 0.06) + ' ' + (y - r * 0.2) + 'Z';
+  if (t === 'Cervello') return 'M' + x + ' ' + (y - r) + ' L' + (x + r * 0.28) + ' ' + (y - r * 0.28) + ' L' + (x + r) + ' ' + y + ' L' + (x + r * 0.28) + ' ' + (y + r * 0.28) + ' L' + x + ' ' + (y + r) + ' L' + (x - r * 0.28) + ' ' + (y + r * 0.28) + ' L' + (x - r) + ' ' + y + ' L' + (x - r * 0.28) + ' ' + (y - r * 0.28) + 'Z';
+  if (t === 'Chiacchiera') return 'M' + (x + r * 0.3) + ' ' + (y - r) + ' L' + (x + r * 0.3) + ' ' + (y + r * 0.45) + ' A' + (r * 0.42) + ' ' + (r * 0.34) + ' 0 1 1 ' + (x - r * 0.05) + ' ' + (y + r * 0.2) + ' L' + (x - r * 0.05) + ' ' + (y - r * 0.85) + ' Q' + (x + r * 0.9) + ' ' + (y - r * 0.7) + ' ' + (x + r * 0.75) + ' ' + (y - r * 0.15) + ' Q' + (x + r * 0.55) + ' ' + (y - r * 0.55) + ' ' + (x + r * 0.3) + ' ' + (y - r * 0.55) + 'Z';
+  return 'M' + x + ' ' + (y + r * 0.9) + ' C' + (x - r * 1.3) + ' ' + (y + r * 0.1) + ' ' + (x - r * 0.9) + ' ' + (y - r * 1.05) + ' ' + x + ' ' + (y - r * 0.4) + ' C' + (x + r * 0.9) + ' ' + (y - r * 1.05) + ' ' + (x + r * 1.3) + ' ' + (y + r * 0.1) + ' ' + x + ' ' + (y + r * 0.9) + 'Z';
+}
+/** a rune of a type on its own, for the spells in battle */
+export function runeIcon(t: TypeName, size: number): string {
+  var c = MAGIC[t].col;
+  return '<svg viewBox="0 0 40 40" width="' + size + '" height="' + size + '" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="' + c + '" opacity=".4"/>' +
+    '<path d="' + glyph(t, 20, 20, 12) + '" fill="' + c + '" stroke="' + INK + '" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+}
+function magic(sp: Species, rune: [number, number]): { back: string; rune: string; front: string } {
+  var m = MAGIC[sp.type], c = m.col, st = sp.stage, r = 9 + st * 1.5, gid = 'au-' + sp.type;
+  var back = '<defs><radialGradient id="' + gid + '"><stop offset="0" stop-color="' + c + '" stop-opacity=".7"/><stop offset=".6" stop-color="' + c + '" stop-opacity=".25"/><stop offset="1" stop-color="' + c + '" stop-opacity="0"/></radialGradient></defs>' +
+    '<ellipse class="aura" cx="100" cy="122" rx="' + (70 + st * 8) + '" ry="' + (64 + st * 7) + '" fill="url(#' + gid + ')"/>';
+  if (st >= 2) {
+    back += '<ellipse cx="100" cy="184" rx="' + (60 + st * 6) + '" ry="' + (11 + st) + '" fill="none" stroke="' + c + '" stroke-width="2.5" stroke-dasharray="7 5" opacity=".85"/>';
+    if (st === 3) back += '<ellipse cx="100" cy="184" rx="' + (52 + st * 6) + '" ry="' + (8 + st) + '" fill="none" stroke="' + c + '" stroke-width="1.6" opacity=".7"/>' +
+      [-1, 1].map(function (d) { return '<path d="' + glyph(sp.type, 100 + d * 66, 184, 5) + '" fill="' + c + '" stroke="' + INK + '" stroke-width="1.4"/>'; }).join('');
+  }
+  var runeSvg = '<circle cx="' + rune[0] + '" cy="' + rune[1] + '" r="' + (r + 4) + '" fill="' + c + '" opacity=".35"/>' +
+    '<path d="' + glyph(sp.type, rune[0], rune[1], r) + '" fill="' + c + '" stroke="' + INK + '" stroke-width="2.2" stroke-linejoin="round"/>' +
+    '<circle cx="' + (rune[0] - r * 0.25) + '" cy="' + (rune[1] - r * 0.3) + '" r="' + (r * 0.18) + '" fill="#ffffff" opacity=".9"/>';
+  var motes = [[28, 74], [172, 62], [158, 134], [40, 128], [100, 18], [20, 168]].slice(0, 2 + st).map(function (p, k) {
+    return '<path class="mg mg' + k + '" d="' + glyph(k % 2 ? sp.type : 'Cervello', p[0], p[1], 5.5 + (k % 3)) + '" fill="' + c + '" stroke="' + INK + '" stroke-width="1.3" opacity=".9"/>';
+  }).join('');
+  return { back: back, rune: runeSvg, front: motes };
+}
 /* a golden one: the same creature in the colours of gold, very rare in the wild */
 const GOLD = { main: '#f2c94c', dark: '#b8860b', belly: '#fff1b8' };
 function goldOf(sp: Species): Species { return Object.assign({}, sp, { art: Object.assign({}, sp.art, GOLD) }); }
 const SPARKS = [[34, 60, 7], [168, 84, 6], [150, 30, 5], [46, 150, 5]].map(function (p) { return '<path d="M' + p[0] + ' ' + (p[1] - p[2]) + ' L' + (p[0] + p[2] * 0.3) + ' ' + (p[1] - p[2] * 0.3) + ' L' + (p[0] + p[2]) + ' ' + p[1] + ' L' + (p[0] + p[2] * 0.3) + ' ' + (p[1] + p[2] * 0.3) + ' L' + p[0] + ' ' + (p[1] + p[2]) + ' L' + (p[0] - p[2] * 0.3) + ' ' + (p[1] + p[2] * 0.3) + ' L' + (p[0] - p[2]) + ' ' + p[1] + ' L' + (p[0] - p[2] * 0.3) + ' ' + (p[1] - p[2] * 0.3) + 'Z" fill="#fff6c8" stroke="' + INK + '" stroke-width="1.6"/>'; }).join('');
 /** a creature as an SVG: in battle with every expression (data-expr picks one), or, with only, a still picture; gold for a golden one */
 export function creature(id: SpeciesId, expr?: string, cls?: string, vb?: string, only?: string, gold?: boolean): string {
-  var sp = gold ? goldOf(SPECIES[id]) : SPECIES[id], bf = BODIES[sp.art.body](sp), k = sp.art.size;
+  var sp = gold ? goldOf(SPECIES[id]) : SPECIES[id], bf = BODIES[sp.art.body](sp), k = sp.art.size, mg = magic(sp, bf[1].rune);
   var faces = only ? '<g>' + faceGroup(bf[1], only) + '</g>' : EXPRS.map(function (x) { return '<g class="ex ex-' + x + '">' + faceGroup(bf[1], x) + '</g>'; }).join('');
   return '<svg xmlns="http://www.w3.org/2000/svg" class="spr spr-c spr-' + id + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 200 200') + '" data-expr="' + (expr || 'smirk') + '" role="img" aria-label="' + sp.name + '">' +
-    '<ellipse cx="100" cy="190" rx="' + (54 * k) + '" ry="7" fill="' + INK + '" opacity=".14"/>' +
-    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + faces + '</g>' + (gold ? SPARKS : '') + '</svg>';
+    mg.back + '<ellipse cx="100" cy="190" rx="' + (54 * k) + '" ry="7" fill="' + INK + '" opacity=".14"/>' +
+    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + mg.rune + faces + '</g>' + mg.front + (gold ? SPARKS : '') + '</svg>';
 }
 /** the rules that show one expression at a time (also in styles/sprites.css) */
 export const CREATURE_CSS = '.spr-c .ex{display:none}' + EXPRS.map(function (x) { return '.spr-c[data-expr="' + x + '"] .ex-' + x; }).join(',') + '{display:inline}';
+/** the magic moving: motes rising and fading, the aura breathing (also in styles/sprites.css) */
+export const MAGIC_CSS = '.spr-c .mg{animation:mote 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}' +
+  '.spr-c .mg1{animation-delay:-.8s}.spr-c .mg2{animation-delay:-1.6s}.spr-c .mg3{animation-delay:-2.4s}.spr-c .mg4{animation-delay:-1.2s}' +
+  '.spr-c .aura{animation:aura 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}' +
+  '@keyframes mote{0%,100%{transform:translateY(0) scale(1);opacity:.9}50%{transform:translateY(-7px) scale(.75);opacity:.45}}' +
+  '@keyframes aura{50%{opacity:.6;transform:scale(1.05)}}' +
+  '@media (prefers-reduced-motion:reduce){.spr-c .mg,.spr-c .aura{animation:none}}';

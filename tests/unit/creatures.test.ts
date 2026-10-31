@@ -80,3 +80,24 @@ describe('growing up', () => {
     for (const sh of Object.values(SHOPS)) for (const it of sh.sells) expect(WARES[it].price).toBeGreaterThan(0);
   });
 });
+
+describe('the magic of the creatures', () => {
+  it('grows a creature into its next form, and writes it in the diary', async () => {
+    const { addCreature, gainXp, creatureOf, dexOf } = await import('../../src/story/growth');
+    const uid = addCreature('polpino', 13);
+    const g = gainXp(uid, 200);
+    expect(g.to).toBeGreaterThanOrEqual(14);
+    expect(g.evolved).toEqual({ from: 'polpino', to: 'polpetto' });
+    expect(creatureOf(uid)!.sp).toBe('polpetto');
+    expect(dexOf('polpetto')).toBe(2);
+  });
+  it('has a magic for every type, and every creature carries it', async () => {
+    const { MAGIC, creature } = await import('../../src/render/svg/creatures');
+    for (const id of ids) {
+      expect(MAGIC[SPECIES[id].type].col).toMatch(/^#[0-9a-f]{6}$/);
+      const svg = creature(id);
+      expect(svg).toContain('class="aura"');
+      expect(svg).toContain('class="mg mg0"');
+    }
+  });
+});

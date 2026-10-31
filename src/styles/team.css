@@ -71,3 +71,16 @@
 .dex-c:not(.seen):not(.got) .art svg { filter: brightness(0); opacity: .18; }
 .dex-c small { font: 12px/1.2 var(--font-display); color: var(--ink); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dex-c[disabled] { cursor: default; opacity: .8; }
+/* in battle: the creatures' spells */
+.orb { line-height: 0; filter: drop-shadow(0 0 6px var(--mc, #fff)) drop-shadow(0 0 12px var(--mc, #fff)); }
+.burst { width: 86px; height: 86px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, var(--mc, #fff) 30%, transparent 70%); opacity: .85; }
+/* an evolution: the old form fades into light, the new one comes out of it, with rays of its magic behind */
+.evolve .evo span { position: relative; overflow: hidden; }
+.evolve .evo span:first-child { animation: evoOut 1.4s ease-in forwards; }
+.evolve .evo span:last-child { animation: evoIn 1.4s cubic-bezier(.2, .9, .3, 1.2) .5s both; }
+.evolve .evo span:last-child::before { content: ""; position: absolute; inset: -40%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .55) 0deg 10deg, transparent 10deg 30deg); animation: rays 6s linear infinite; }
+.evolve .evo span svg { position: relative; }
+@keyframes evoOut { 60% { filter: brightness(2.6); } 100% { filter: brightness(1.6) grayscale(.6); opacity: .55; } }
+@keyframes evoIn { 0% { transform: scale(.3) rotate(-25deg); filter: brightness(3); opacity: 0; } 100% { transform: none; filter: none; opacity: 1; } }
+@keyframes rays { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .evolve .evo span, .evolve .evo span::before { animation: none !important; } }
