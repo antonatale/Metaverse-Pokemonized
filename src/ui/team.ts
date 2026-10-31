@@ -1,10 +1,10 @@
 import { st, save } from '../save/story-progress';
 import type { TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
-import { SPECIES, STARTERS, CMOVES, isSpecies, knownAt, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, type ItemId, type SkillId, type Branch } from '../data/growth';
+import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, type ItemId, type SkillId, type Branch } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, type Growth } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, type Growth } from '../story/growth';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
@@ -42,7 +42,7 @@ export function chooseStarter(done: (uid: string) => void) {
       var sp = b.getAttribute('data-sp') as SpeciesId;
       closeSheet();
       st.seen.starter = true;
-      var uid = addCreature(sp, 5);
+      var uid = addCreature(sp, 5, false, 40);
       save(); renderHud(); sfx('badge');
       done(uid);
     });
@@ -83,20 +83,43 @@ function coffee() {
 }
 
 /* ---------- what a battle brings ---------- */
-/** says what a fighter got: levels, new moves, ability points; then its new form, if it evolves */
+/** a fighter's numbers at a level (a creature with its character) */
+function statsAt(key: string, id: string, lv: number) {
+  var mon = creatureOf(key);
+  return mon ? withNature(atLevel(SPECIES[id as SpeciesId].stats, lv), mon.nat) : atLevel(fighter(idOf(key)).stats, lv);
+}
+/** says what a fighter got: levels (and what they bring), new moves, ability points; then its new form, if it
+    evolves, and the moves it wants to learn in place of one it knows */
 export function growthSay(g: Growth, first: string[], then?: () => void) {
-  var who = fighter(g.evolved ? g.evolved.from : idOf(g.key)).name, lines = first.slice();
-  if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '!');
+  var id = g.evolved ? g.evolved.from : idOf(g.key), who = nameOf(g.key), lines = first.slice();
+  if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '! ' + statGain(statsAt(g.key, id, g.from), statsAt(g.key, id, g.to)) + '.');
   g.learned.forEach(function (m) { lines.push(who + ' impara ' + CMOVES[m].name + '!'); });
   if (g.key === 'antonio' && g.to > g.from) lines.push('Antonio ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
+  if (g.waiting && g.to > g.from) lines.push(who + ' potrebbe diventare ' + SPECIES[g.waiting].name + ', ma deve fidarsi ancora di più di te: lotta insieme a lui, portalo a spasso, offrigli un caffè.');
   if (g.to > g.from) sfx('badge');
-  say(lines, null, null, function () { if (g.evolved) evolve(g.evolved.from, g.evolved.to, then); else if (then) then(); });
+  say(lines, null, null, function () {
+    var learn = function () { askLearn(g.key, g.pending, function () { if (then) then(); }); };
+    if (g.evolved) evolve(g.evolved.from, g.evolved.to, learn); else learn();
+  });
+}
+/** a move to learn when four are known already: which one to forget, or none */
+function askLearn(key: string, list: string[], then: () => void) {
+  if (!list.length) { then(); return; }
+  var m = list[0], rest = list.slice(1), who = nameOf(key), next = function () { askLearn(key, rest, then); };
+  say([who + ' vuole imparare ' + CMOVES[m].name + '. ' + CMOVES[m].text, 'Ma conosce già quattro mosse. Ne dimentica una?'], null,
+    movesOf(key).map(function (old) {
+      return { label: 'Dimentica ' + CMOVES[old].name, fn: function () {
+        swapMove(key, old, m); save();
+        say(['Uno, due e… puf! ' + who + ' ha dimenticato ' + CMOVES[old].name + ' e ha imparato ' + CMOVES[m].name + '!'], null, null, next);
+      } };
+    }).concat([{ label: 'Non imparare ' + CMOVES[m].name, fn: function () { say([who + ' non ha imparato ' + CMOVES[m].name + '.'], null, null, next); } }]));
 }
 /** after a story battle: experience for who fought (a third when lost), money for a win (not in the middle of a
     trainer's battle: the trainer pays at the end) */
 export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void, noMoney?: boolean) {
   var xp = xpFor(foeLv, won, covo), cash = won && !noMoney ? moneyFor(foeLv, covo) : 0, name = nameOf(key);
-  if (creatureOf(key)) xp = trainerXp(xp, st.skills || {});
+  /* a creature grows faster with a trainer, and every battle fought together brings it closer to Antonio */
+  if (creatureOf(key)) { xp = trainerXp(xp, st.skills || {}); addBond(key, won ? 4 : 2); }
   var g = gainXp(key, xp);
   if (cash) earn(cash);
   save(); renderHud();
@@ -212,16 +235,18 @@ function chainHtml(id: SpeciesId, lit: (sp: SpeciesId) => boolean): string {
 export function openCreature(key: string, back: () => void) {
   var mon = creatureOf(key);
   if (!mon) return;
-  var sp = SPECIES[mon.sp], l = level(key), s = atLevel(sp.stats, l.lv), known = knownAt(mon.sp, l.lv);
+  var sp = SPECIES[mon.sp], l = level(key), s = withNature(atLevel(sp.stats, l.lv), mon.nat), known = movesOf(key), h = hearts(key);
   var next = sp.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0];
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
     '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184', undefined, !!mon.gold) + '</span><div class="cr-info">' +
     '<p>' + (mon.nick ? esc(sp.name) + (mon.gold ? ' dorata' : '') + ' · ' : mon.gold ? 'Dorata · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
     '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' +
     '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
-    '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.</p>' +
+    '<p class="bondline"><span class="hearts" aria-label="Legame: ' + h + ' cuori su 5">' + [0, 1, 2, 3, 4].map(function (k) { return '<i class="' + (k < h ? 'on' : '') + '">♥</i>'; }).join('') + '</span>' +
+      '<small>' + esc(['Ancora diffidente', 'Comincia a fidarsi', 'Ti vuole bene', 'Non ti lascia mai', 'Inseparabili', 'Inseparabili'][h]) + (mon.nat ? ' · ' + esc(natureText(mon.nat)) : '') + '</small></p>' +
+    '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.' + (sp.evolve && sp.evolve.bond ? ' Per cambiare forma, oltre al livello ' + sp.evolve.at + ', deve fidarsi di te (tre cuori).' : '') + '</p>' +
     '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { return '<li><span><b>' + esc(CMOVES[m].name) + '</b><small>' + esc(CMOVES[m].text) + '</small></span></li>'; }).join('') + '</ul>' +
-    (next ? '<p class="hint">Al livello ' + next[0] + ' impara ' + esc(CMOVES[next[1]].name) + (known.length >= 4 ? ' (al posto di ' + esc(CMOVES[known[0]].name) + ')' : '') + '.</p>' : '') + '</div>' +
+    (next ? '<p class="hint">Al livello ' + next[0] + ' vorrà imparare ' + esc(CMOVES[next[1]].name) + (known.length >= 4 ? ': sceglierai tu quale mossa dimenticare' : '') + '.</p>' : '') + '</div>' +
     '<div class="pickrow"><h3>Forme</h3>' + chainHtml(mon.sp, function (x) { return dexOf(x) > 0 || x === mon!.sp; }) + '</div>' +
     '<div class="pickrow"><h3>Nome</h3><form class="nick" id="cr-f"><input id="cr-nick" maxlength="12" autocomplete="off" aria-label="Nome di ' + esc(sp.name) + '" placeholder="' + esc(sp.name) + '" value="' + esc(mon.nick || '') + '"><button class="btn" type="submit">Salva</button></form></div>' +
     '<div class="menu-actions">' + (leadCreature() !== key ? '<button class="btn" type="button" id="cr-lead">Dietro di me</button>' : '') + '</div></div>');

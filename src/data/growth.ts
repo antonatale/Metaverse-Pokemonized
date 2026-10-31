@@ -84,3 +84,32 @@ export const SHOPS: Record<string, Shop> = {
 };
 /** the price with Antonio's bargaining */
 export function priceOf(it: ItemId, sk: Grades): number { return Math.max(1, Math.round(WARES[it].price * (1 - 0.1 * (sk.amici || 0)))); }
+
+/* ---------- the character of a creature: every one has its own ---------- */
+export interface Nature { name: string; up?: keyof Stats; down?: keyof Stats; text: string }
+export const NATURES: Record<string, Nature> = {
+  coraggioso: { name: 'Coraggioso', up: 'atk', down: 'def', text: 'si butta nella mischia' },
+  prudente: { name: 'Prudente', up: 'def', down: 'atk', text: 'para prima di colpire' },
+  svelto: { name: 'Svelto', up: 'spe', down: 'def', text: 'non sta mai fermo' },
+  robusto: { name: 'Robusto', up: 'hp', down: 'spe', text: 'regge tutto, con calma' },
+  furbo: { name: 'Furbo', up: 'spe', down: 'hp', text: 'sa sempre dove scappare' },
+  sereno: { name: 'Sereno', text: 'prende la vita come viene' }
+};
+const STAT_NAME: Record<keyof Stats, string> = { hp: 'PS', atk: 'Attacco', def: 'Difesa', spe: 'Velocità' };
+/** a creature's numbers with its character: +10% in one, −10% in another */
+export function withNature(s: Stats, nat?: string): Stats {
+  var n = nat ? NATURES[nat] : null, out = { hp: s.hp, atk: s.atk, def: s.def, spe: s.spe };
+  if (n && n.up) out[n.up] = Math.round(out[n.up] * 1.1);
+  if (n && n.down) out[n.down] = Math.round(out[n.down] * 0.9);
+  return out;
+}
+/** the character in words: "Coraggioso (+Attacco, −Difesa): si butta nella mischia" */
+export function natureText(nat?: string): string {
+  var n = nat ? NATURES[nat] : null;
+  if (!n) return '';
+  return n.name + (n.up ? ' (+' + STAT_NAME[n.up] + ', −' + STAT_NAME[n.down!] + ')' : '') + ': ' + n.text;
+}
+/** what a level brings, in words: "PS +1, Attacco +3, Difesa +2, Velocità +2" */
+export function statGain(a: Stats, b: Stats): string {
+  return (['hp', 'atk', 'def', 'spe'] as (keyof Stats)[]).map(function (k) { return STAT_NAME[k] + ' +' + (b[k] - a[k]); }).join(', ');
+}

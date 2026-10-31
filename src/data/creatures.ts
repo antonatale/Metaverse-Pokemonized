@@ -33,7 +33,8 @@ export interface Species {
   stats: Stats;
   /** the moves it learns, by level: it fights with the last four it has learned */
   learn: [number, string][];
-  evolve?: { at: number; into: SpeciesId };
+  /** the next form, from a level; the last forms of the first creatures also need Antonio's bond (0–100) */
+  evolve?: { at: number; into: SpeciesId; bond?: number };
   /** what it says coming on, winning, going down */
   cry: { entry: string; win: string; ko: string };
   /** a page of the creature diary, and where it lives */
@@ -103,7 +104,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
     id: 'polpetto', name: 'Polpetto', wild: 'Un Polpetto selvatico', type: 'Cervello', stage: 2,
     stats: { hp: 110, atk: 112, def: 104, spe: 110 },
     learn: [[1, 'botta'], [1, 'spruzzo'], [6, 'tentacolata'], [12, 'mimetismo'], [18, 'abbraccio'], [26, 'mareggiata'], [34, 'genio']],
-    evolve: { at: 30, into: 'polpastro' },
+    evolve: { at: 26, into: 'polpastro', bond: 60 },
     cry: { entry: 'Polpè! Polpè!', win: 'Otto a zero!', ko: 'Polpè…' },
     text: 'Il suo inchiostro brilla al buio: nelle notti senza luna i pescatori di Mola lo seguono per ritrovare il porto.',
     where: 'Gli scogli del golfo', art: { body: 'octo', main: '#e05b48', dark: '#a8392e', belly: '#ffb59a', accent: '#fff3e8', size: 0.9 }
@@ -129,7 +130,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
     id: 'ramarrone', name: 'Ramarrone', wild: 'Un Ramarrone selvatico', type: 'Calma', stage: 2,
     stats: { hp: 112, atk: 106, def: 112, spe: 92 },
     learn: [[1, 'botta'], [1, 'sole'], [6, 'coda'], [12, 'scaglie'], [18, 'morso'], [26, 'frana'], [34, 'muraglia']],
-    evolve: { at: 30, into: 'muraglione' },
+    evolve: { at: 26, into: 'muraglione', bond: 60 },
     cry: { entry: 'Ramarrò!', win: 'Calma e sangue freddo.', ko: 'Torno sul mio muro…' },
     text: 'Ha la gola azzurra dei ramarri adulti. Quando si arrabbia, sulle pietre dell\'acropoli si accendono rune color luna.',
     where: 'Le mura di Castellone', art: { body: 'lizard', main: '#46b85a', dark: '#277a3b', belly: '#dcef8c', accent: '#3f7ccf', size: 0.9 }
@@ -155,7 +156,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
     id: 'gabbianotto', name: 'Gabbianotto', wild: 'Un Gabbianotto selvatico', type: 'Caos', stage: 2,
     stats: { hp: 104, atk: 116, def: 94, spe: 122 },
     learn: [[1, 'beccata'], [1, 'furto'], [6, 'strillo'], [10, 'picchiata'], [18, 'raffica'], [26, 'libeccio'], [34, 'genio']],
-    evolve: { at: 30, into: 'gabbiammiraglio' },
+    evolve: { at: 26, into: 'gabbiammiraglio', bond: 60 },
     cry: { entry: 'Gabbianoooo!', win: 'Il panino è mio!', ko: 'Volo via…' },
     text: 'Plana sopra i traghetti per Ponza e Ventotene portando i messaggi dei venti. Ha la macchia rossa sul becco dei gabbiani adulti.',
     where: 'Il porto e il lungomare', art: { body: 'bird', main: '#f6f6f2', dark: '#8a94a0', belly: '#ffffff', accent: '#ffcf3f', size: 0.9 }

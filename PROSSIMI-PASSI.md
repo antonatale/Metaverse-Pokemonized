@@ -10,10 +10,9 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
-8. **Livelli ed evoluzioni delle iniziali fatti meglio**: curva dell'esperienza, livelli dell'evoluzione, schermata
-   del livello con le statistiche che crescono, scelta della mossa da dimenticare quando se ne impara una quinta.
-9. **Creature più coinvolgenti**: carattere, legame con Antonio (cresce lottando e passeggiando, in lotta le fa
-   resistere), poteri sulla mappa che aprono strade (Polpino nuota, Ramarrino si arrampica, Gabbì vola).
+9. **Creature più coinvolgenti, il resto**: poteri sulla mappa che aprono strade (le creature del mare nuotano fino ai
+   blocchi del porticciolo di Gianola, quelle dei muri si arrampicano sulle mura di Castellone, quelle che volano
+   vedono dall'alto), altre specie selvatiche, una mossa per tipo di terreno. Carattere e legame sono fatti.
 10. **Una trama più ricca e missioni più complesse**, legate alle radici di Formia: i Lestrigoni e re Lamo, Cicerone,
     Mamurra di Gianola («Formia, la città dei Mamurra» di Orazio), Castellone e Mola che erano due paesi e nel 1862
     tornarono a chiamarsi Formia. Il sogno Formia → Torino → Chicago è solo una parte. File: `story/goals.ts`,
@@ -29,3 +28,4 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **Sfondi delle lotte disegnati, a schermo intero**: dodici scene di Formia in SVG (Vindicio, pineta, porto, Mola, Castellone, monti, golfo, Gianola, Caposele, piazza della Vittoria, circolo, Morgana), di giorno e di notte; le foto sono state tolte.
 - **Antonio sulla mappa ha la faccia delle lotte** (e così gli amici): la testa è il loro ritratto. Idea per dopo: un ritratto di lato e di spalle disegnato apposta, e i vestiti del corpo presi dal ritratto (catenina, orecchino).
 - **Abilità che cambiano il gioco**: tre strade (Esploratore, Allenatore, Formiano doc) con dieci abilità: meno incontri, creature rare e dorate, passo più svelto, esperienza alle creature, retini più sicuri, creature che resistono a 1 PS, Antonio più forte quando lotta da solo, prezzi e attività.
+- **Crescita delle creature**: la schermata del livello dice cosa cresce, si sceglie la mossa da dimenticare, l'ultima forma delle iniziali (al 26) vuole il legame; ogni creatura ha un legame con Antonio (cuori, cresce lottando, passeggiando, parlandole) e un carattere.

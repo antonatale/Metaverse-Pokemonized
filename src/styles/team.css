@@ -121,3 +121,10 @@
 @keyframes ghostFloat { 50% { transform: translateY(-4px); } }
 @keyframes sayIn { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .wcic, .wcic .ghost, .wghost .ghost, .wcic-say { animation: none; } }
+
+/* the bond between Antonio and a creature: five hearts, and its character */
+.bondline { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 8px 0 0; }
+.hearts { display: inline-flex; gap: 2px; font-size: 19px; line-height: 1; }
+.hearts i { font-style: normal; color: var(--track); -webkit-text-stroke: 1px var(--line); }
+.hearts i.on { color: var(--t-cuore); }
+.bondline small { color: var(--muted); font-size: 13px; }

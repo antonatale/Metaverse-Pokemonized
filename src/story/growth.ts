@@ -2,14 +2,15 @@ import { st } from '../save/story-progress';
 import type { FighterId } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
-import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
+import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
 import type { SideOpts } from '../battle';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
    a friend's id, or a creature's uid ('c1', 'c2', …). */
 
-export function creatureOf(key: string): { uid: string; sp: SpeciesId; nick?: string; gold?: boolean } | null {
+export type Mon = NonNullable<typeof st.mons>[number];
+export function creatureOf(key: string): Mon | null {
   return (st.mons || []).filter(function (m) { return m.uid === key; })[0] || null;
 }
 /** who fights: Antonio, a friend, or the species of a creature */
@@ -37,8 +38,10 @@ export function hasStarter(): boolean { return !!st.seen.starter; }
 export function sideOf(key: string): SideOpts {
   var lv = level(key).lv, mon = creatureOf(key), sk = st.skills || {}, o: SideOpts;
   if (mon) {
-    o = { stats: atLevel(SPECIES[mon.sp].stats, lv), lvl: lv, known: knownAt(mon.sp, lv), nick: mon.nick, gold: mon.gold };
-    if (bond(sk)) o.endure = bond(sk);
+    o = { stats: withNature(atLevel(SPECIES[mon.sp].stats, lv), mon.nat), lvl: lv, known: movesOf(key), nick: mon.nick, gold: mon.gold };
+    /* it holds on for Antonio: his ability, and the bond between them */
+    var e = bond(sk) + hearts(key) * 0.03;
+    if (e) o.endure = Math.round(e * 100) / 100;
   } else {
     o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
     if (key === 'antonio') o.perk = perksFor(sk);
@@ -53,21 +56,64 @@ export function foeSide(id: FighterId, lv: number): SideOpts {
   return { stats: atLevel(fighter(id).stats, lv), lvl: lv };
 }
 
-export interface Growth { key: string; xp: number; from: number; to: number; learned: string[]; evolved: { from: SpeciesId; to: SpeciesId } | null }
-/** experience for a fighter: the levels it goes up, the moves it learns, its new form if it evolves */
+export interface Growth {
+  key: string; xp: number; from: number; to: number;
+  /** moves learned straight away, and the ones that need one of four forgotten (the story screen asks) */
+  learned: string[]; pending: string[];
+  evolved: { from: SpeciesId; to: SpeciesId } | null;
+  /** a form it could take, but its bond with Antonio is not strong enough yet */
+  waiting: SpeciesId | null;
+}
+/* ---------- a creature's moves: the four it knows ---------- */
+export function movesOf(key: string): string[] {
+  var mon = creatureOf(key);
+  if (!mon) return [];
+  return mon.moves ? mon.moves.slice() : knownAt(mon.sp, level(key).lv);
+}
+/** one known move for a new one */
+export function swapMove(key: string, old: string, m: string) {
+  var mon = creatureOf(key);
+  if (!mon) return;
+  var ms = movesOf(key), k = ms.indexOf(old);
+  if (k >= 0) ms[k] = m; else if (ms.length < 4) ms.push(m);
+  mon.moves = ms;
+}
+/** a new move: learned if there is room, otherwise one to ask about (true) */
+function learn(mon: Mon, key: string, m: string, out: Growth) {
+  var ms = movesOf(key);
+  if (ms.indexOf(m) >= 0) return;
+  if (ms.length < 4) { ms.push(m); mon.moves = ms; out.learned.push(m); }
+  else out.pending.push(m);
+}
+/* ---------- the bond between Antonio and a creature: 0 to 100, five hearts ---------- */
+export function bondOf(key: string): number { var c = creatureOf(key); return c ? (c.bond != null ? c.bond : 30) : 0; }
+export function hearts(key: string): number { return Math.floor(bondOf(key) / 20); }
+export function addBond(key: string, n: number) { var c = creatureOf(key); if (c) c.bond = Math.max(0, Math.min(100, bondOf(key) + n)); }
+/** experience for a fighter: the levels it goes up, the moves it learns, its new form if it evolves (the last form
+    of the first creatures also needs the bond) */
 export function gainXp(key: string, xp: number): Growth {
   st.lv = st.lv || {};
   var cur = level(key), from = cur.lv, lv = cur.lv, have = cur.xp + xp;
   while (lv < MAX_LEVEL && have >= toNext(lv)) { have -= toNext(lv); lv++; }
   if (lv >= MAX_LEVEL) have = 0;
-  st.lv[key] = { lv: lv, xp: have };
-  var out: Growth = { key: key, xp: xp, from: from, to: lv, learned: [], evolved: null };
+  var out: Growth = { key: key, xp: xp, from: from, to: lv, learned: [], pending: [], evolved: null, waiting: null };
   var mon = creatureOf(key);
+  /* the moves it knew are the ones of its old level (an old save has none written down) */
+  if (mon && !mon.moves) mon.moves = knownAt(mon.sp, from);
+  st.lv[key] = { lv: lv, xp: have };
   if (mon) {
-    for (var l = from + 1; l <= lv; l++) out.learned = out.learned.concat(learnedAt(mon.sp, l));
-    var sp = mon.sp, first = mon.sp;
-    while (SPECIES[sp].evolve && lv >= SPECIES[sp].evolve!.at) sp = SPECIES[sp].evolve!.into;
-    if (sp !== first) { mon.sp = sp; own(sp); out.evolved = { from: first, to: sp }; }
+    for (var l = from + 1; l <= lv; l++) learnedAt(mon.sp, l).forEach(function (m) { learn(mon!, key, m, out); });
+    var sp = mon.sp, first = mon.sp, ev = SPECIES[sp].evolve;
+    while (ev && lv >= ev.at) {
+      if (ev.bond && bondOf(key) < ev.bond) { out.waiting = ev.into; break; }
+      sp = ev.into; ev = SPECIES[sp].evolve;
+    }
+    if (sp !== first) {
+      mon.sp = sp; own(sp); out.evolved = { from: first, to: sp };
+      /* a new form brings the next move of its line forward */
+      var next = SPECIES[sp].learn.filter(function (x) { return x[0] > lv && movesOf(key).indexOf(x[1]) < 0 && out.pending.indexOf(x[1]) < 0; })[0];
+      if (next) learn(mon, key, next[1], out);
+    }
   }
   return out;
 }
@@ -98,10 +144,11 @@ export function buy(it: ItemId): boolean {
   st.money = money() - p; st.bag = st.bag || {}; st.bag[it] = has(it) + 1;
   return true;
 }
-/** a coffee for one of the team: experience */
+/** a coffee for one of the team: experience (and a creature likes it) */
 export function drinkCoffee(key: string): Growth | null {
   if (!has('caffe')) return null;
   st.bag!.caffe = has('caffe') - 1;
+  addBond(key, 3);
   return gainXp(key, 60);
 }
 /** what goes into a battle, and what is left of it after */
@@ -120,12 +167,15 @@ export function leadCreature(): string | null {
 }
 export function setLead(uid: string) { st.lead = uid; }
 /** a new creature for Antonio, at a level: the one he starts with, or one he has caught */
-export function addCreature(sp: SpeciesId, lv: number, gold?: boolean): string {
+export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: number): string {
   st.mons = st.mons || [];
   var n = st.mons.length + 1;
   while (st.mons.some(function (m) { return m.uid === 'c' + n; })) n++;
-  var uid = 'c' + n;
-  st.mons.push(gold ? { uid: uid, sp: sp, gold: true } : { uid: uid, sp: sp });
+  var uid = 'c' + n, nats = Object.keys(NATURES);
+  /* every creature has its own character; one just caught trusts Antonio a little, the first one more */
+  var mon: Mon = { uid: uid, sp: sp, moves: knownAt(sp, lv), bond: bond != null ? bond : 20, nat: nats[Math.floor(Math.random() * nats.length)] };
+  if (gold) mon.gold = true;
+  st.mons.push(mon);
   own(sp);
   st.lv = st.lv || {}; st.lv[uid] = { lv: lv, xp: 0 };
   return uid;

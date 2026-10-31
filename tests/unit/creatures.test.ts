@@ -198,3 +198,22 @@ describe('the bond and the steady hand', () => {
     expect(caught(1.4)).toBeGreaterThan(caught(1));
   });
 });
+
+describe('growing up with Antonio', () => {
+  it('asks which move to forget, and waits for the bond before the last form', async () => {
+    const { addCreature, gainXp, creatureOf, movesOf, swapMove, addBond } = await import('../../src/story/growth');
+    const uid = addCreature('ramarrone', 25, false, 20);
+    expect(movesOf(uid).length).toBe(4);
+    const g = gainXp(uid, 400);
+    expect(g.to).toBeGreaterThanOrEqual(26);
+    expect(g.pending).toContain('frana');
+    expect(g.evolved).toBeNull();
+    expect(g.waiting).toBe('muraglione');
+    swapMove(uid, movesOf(uid)[0], 'frana');
+    expect(movesOf(uid)).toContain('frana');
+    addBond(uid, 50);
+    const h = gainXp(uid, 1);
+    expect(h.evolved).toEqual({ from: 'ramarrone', to: 'muraglione' });
+    expect(creatureOf(uid)!.sp).toBe('muraglione');
+  });
+});

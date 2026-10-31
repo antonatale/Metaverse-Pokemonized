@@ -453,7 +453,8 @@ test('creatures of Formia', async ({ browser }) => {
     r.keep('team', await p.locator('.team').innerText());
   });
   const sf = first.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; lv: Record<string, { lv: number; xp: number }>; money: number };
-  expect(sf.mons[0]).toEqual({ uid: 'c1', sp: 'polpino' });
+  expect(sf.mons[0]).toMatchObject({ uid: 'c1', sp: 'polpino' });
+  expect((sf.mons[0] as { bond?: number }).bond).toBeGreaterThan(40);
   expect(sf.lv.c1.lv > 5 || sf.lv.c1.xp > 0).toBe(true);
   expect(String(first.data.find((x) => x.name === 'team')!.value)).toContain('Polpino');
 

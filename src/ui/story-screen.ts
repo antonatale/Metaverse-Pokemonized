@@ -27,7 +27,7 @@ import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero } from '../render/svg/cicero';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn } from '../story/growth';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
@@ -256,9 +256,14 @@ function interact() {
   else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
 }
 /* Antonio turns to his creature: it says its cry, and how it is doing */
+var patted = 0;
 function followerTalk() {
-  var key = leadCreature()!, mon = creatureOf(key)!, sp = SPECIES[mon.sp], name = nameOf(key), lv = level(key).lv, area = areaName();
-  var moods = [name + ' ti guarda contento.', name + ' saltella sul posto.', name + ' annusa l\'aria di ' + (area || 'Formia') + '.', name + ' segue con gli occhi un gabbiano.'];
+  var key = leadCreature()!, mon = creatureOf(key)!, sp = SPECIES[mon.sp], name = nameOf(key), lv = level(key).lv, area = areaName(), h = hearts(key);
+  /* a word to it, now and then, brings it closer */
+  if (Date.now() - patted > 120000) { patted = Date.now(); addBond(key, 1); save(); }
+  var moods = h >= 3 ? [name + ' ti salta in braccio.', name + ' ti segue come un\'ombra: non ti lascerebbe mai.', name + ' fa le fusa, a modo suo.', name + ' ti guarda come se sapesse già dove andate.']
+    : h >= 1 ? [name + ' ti guarda contento.', name + ' saltella sul posto.', name + ' annusa l\'aria di ' + (area || 'Formia') + '.', name + ' segue con gli occhi un gabbiano.']
+    : [name + ' ti osserva, ancora un po\' diffidente.', name + ' si gira dall\'altra parte, ma resta vicino.', name + ' annusa l\'aria di ' + (area || 'Formia') + '.'];
   if (darkness(new Date()) > 0.5) moods.push(name + ' sbadiglia: si è fatto tardi.');
   if (M.inside) moods.push(name + ' si guarda intorno: qui dentro è tutto nuovo.');
   var soon = sp.evolve && sp.evolve.at - lv <= 2 ? name + ' sembra irrequieto: tra poco cambierà forma.' : null;
@@ -415,8 +420,11 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
 var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
+var walked = 0;
 export function stepped(): boolean {
   if (!st.mons || !st.mons.length) return false;
+  /* walking together brings Antonio and his creature closer */
+  if (++walked >= 40) { walked = 0; var lead = leadCreature(); if (lead) addBond(lead, 1); }
   var h = hidingAt(st.x, st.y);
   if (!h) return false;
   if (calm > 0) { calm--; return false; }
