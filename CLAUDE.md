@@ -133,12 +133,11 @@ tools/
 
 - **Chi è:** Marco Tullio Cicerone, morto a Formia nel 43 a.C., con la tomba sull'Appia; e «cicerone» vuol dire guida. È la guida di Antonio per tutto il viaggio (`story/mentor.ts`, disegnato in `render/svg/cicero.ts`).
 - **All'inizio** (storia da zero) appare lui: si presenta, racconta il sogno (Formia → Torino → Chicago) e la leggenda delle creature, spiega i comandi, i tipi, i livelli, gli euro, e dà la prima tappa (`OPENING`).
-- **In sottofondo:**
-  - galleggia trasparente accanto ad Antonio sulla mappa;
-  - in basso a sinistra ha il suo angolo, con una nuvoletta che non ferma il gioco;
-  - a ogni capitolo (le tappe del giro, `CHAPTERS`) dice com'è andato quello finito e presenta la sfida dopo, con quanto è difficile;
-  - la prima volta che succede qualcosa (sconfitta, primo livello, primi soldi, notte, creatura selvatica, allenatore, evoluzione, cattura) lo spiega una volta sola (`TIPS`, segnati in `st.seen['cic-…']`).
-- **Quando vuoi** (tasto C o il suo ritratto) dice il capitolo, cosa fare e, per i covi, se la squadra è pronta, confrontando il livello più alto della squadra con quello del capo (`advice`).
+- **Compare solo quando serve** (`cicPresence`, `ciceroShown` in `ui/story-screen.ts`): non segue Antonio. Quando ha qualcosa da dire appare trasparente accanto a lui sulla mappa e nel suo angolo in basso a sinistra, con una nuvoletta che non ferma il gioco; poi svanisce. Parla:
+  - a ogni capitolo (le tappe del giro, `CHAPTERS`): com'è andato quello finito e la sfida dopo, con quanto è difficile;
+  - la prima volta che succede qualcosa (sconfitta, primo livello, primi soldi, notte, creatura selvatica, allenatore, evoluzione, cattura), una volta sola (`TIPS`, segnati in `st.seen['cic-…']`);
+  - quando Antonio sembra perso: quattro minuti senza fare un passo avanti nel giro e senza sentirlo (`nudge`), gli ricorda la prossima tappa.
+- **Quando lo chiami** (tasto C, scritto anche in basso) dice il capitolo, cosa fare e, per i covi, se la squadra è pronta, confrontando il livello più alto della squadra con quello del capo (`advice`).
 - **Nei dialoghi** quando parla lui compare il suo ritratto.
 
 ## Il giro di Formia
@@ -273,7 +272,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Economia:**
   - **Gli euro** (`st.money`, nell'HUD) si guadagnano battendo creature (3 + livello), vincendo un covo la prima volta (80) e con le attività (scambi, risposte giuste, metri di planata).
   - **I negozi** (`SHOPS`): reti e retini dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).
-  - **Cosa fanno:** la tiella cura 40 PS in lotta, il caffè dà 60 punti esperienza dal menu.
+  - **Cosa fanno:** la tiella cura 40 PS in lotta. Il caffè si beve subito al bancone del bar (`coffee` in `ui/team.ts`): 60 punti esperienza a chi sceglie Antonio, senza passare dal menu. Un caffè già pagato in un salvataggio vecchio si beve lì gratis.
 - **Nel motore** solo le lotte della storia usano queste cose; quelle libere restano identiche e i golden delle 2040 lotte non cambiano.
   - Ogni lato può avere `stats`, `lvl`, `known` (le mosse di una creatura) e `perk`.
   - La lotta può essere `wild`, con una `bag`: retino e retino da pesca solo contro una selvatica, la tiella sempre. Si usano prima delle mosse.

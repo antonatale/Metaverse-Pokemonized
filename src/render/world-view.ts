@@ -14,7 +14,7 @@ import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
-import { root, cv, ctx } from '../ui/story-screen';
+import { root, cv, ctx, ciceroShown } from '../ui/story-screen';
 
 /* Drawing the story map: camera, cached pictures, everything sorted so people walk behind trees and roofs.
    This is the part a Phaser scene will take over; it only reads the story's state. */
@@ -97,7 +97,8 @@ function creatureImage(sp: SpeciesId): HTMLImageElement | null {
   }
   return m.ok ? m.img : null;
 }
-/* the ghost of Cicero floats near Antonio, a little behind him, see-through: his guide, always there */
+/* the ghost of Cicero appears near Antonio, a little behind him, see-through, only while he has something to say
+   (ciceroShown fades him in and out) */
 var ghostImg: { img: HTMLImageElement; ok: boolean } | null = null;
 function ghost(now: number, pp: { x: number; y: number }): Drawn | null {
   if (!ghostImg) {
@@ -105,9 +106,10 @@ function ghost(now: number, pp: { x: number; y: number }): Drawn | null {
     ghostImg = g; img.onload = function () { g.ok = true; };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(cicero());
   }
-  if (!ghostImg.ok || !st.seen.intro) return null;
-  var bob = reduced ? 0 : Math.sin(now / 900) * 4, sway = reduced ? 0 : Math.sin(now / 2300) * 3;
-  return { yb: pp.y + T * 0.35 + bob, x: pp.x - 26 + sway, img: ghostImg.img, alpha: 0.55, size: 34 };
+  var a = ciceroShown(now);
+  if (!ghostImg.ok || !a) return null;
+  var bob = reduced ? 0 : Math.sin(now / 900) * 4, sway = reduced ? 0 : Math.sin(now / 2300) * 3, rise = reduced ? 0 : (1 - a) * 10;
+  return { yb: pp.y + T * 0.35 + bob - rise, x: pp.x - 26 + sway, img: ghostImg.img, alpha: 0.6 * a, size: 34 };
 }
 /* Antonio's creature walks behind him: at each of his steps it moves to the tile he has just left. After a door,
    a warp or a scooter ride it is put behind him again */

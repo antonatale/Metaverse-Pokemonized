@@ -48,7 +48,7 @@ export const WARES: Record<ItemId, Ware> = {
   retino: { id: 'retino', name: 'Retino', price: 8, text: 'Per catturare una creatura selvatica: più è stanca, più è facile.' },
   retino2: { id: 'retino2', name: 'Retino da pesca', price: 20, text: 'Il retino dei pescatori di Mola: cattura molto più facilmente.' },
   tiella: { id: 'tiella', name: 'Tiella', price: 6, text: 'In lotta: una fetta di tiella fa recuperare 40 PS (e si usa il turno).' },
-  caffe: { id: 'caffe', name: 'Caffè', price: 3, text: 'Dal menu: un caffè dà 60 punti esperienza a chi lo beve.' }
+  caffe: { id: 'caffe', name: 'Caffè al bancone', price: 3, text: 'Si beve subito, al bancone: 60 punti esperienza a chi scegli tu.' }
 };
 /** the shops: who sells what */
 export interface Shop { name: string; hello: string; sells: ItemId[] }

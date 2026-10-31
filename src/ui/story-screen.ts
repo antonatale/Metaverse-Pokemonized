@@ -53,14 +53,14 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I soldi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
-    '<button class="wcic" type="button" id="wcic" aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
+    '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
     (['up', 'left', 'right', 'down'] as Dir[]).map(function (d) {
       return '<button type="button" data-d="' + d + '" aria-label="' + DLABEL[d] + '"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ARROW[d] + '"/></svg></button>';
     }).join('') +
     '</div><button class="abtn" type="button" id="wa" aria-label="Parla, leggi o conferma">A</button></div>' +
-    '<p class="whint">Frecce o WASD per camminare · Invio per parlare · M per il menu</p>';
+    '<p class="whint">Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone</p>';
   cv = $('wcv') as HTMLCanvasElement; ctx = cv.getContext('2d')!;
   dlg = $('wdialog'); dlgWho = $('wwho'); dlgTxt = $('wtxt'); dlgOpts = $('wopts');
   /* one pointer on the whole cross: sliding the thumb changes direction */
@@ -194,6 +194,7 @@ function show() {
   dlg.hidden = false;
   var ghost = d.who === CICERO;
   dlg.classList.toggle('mentor', ghost); $('wghost').hidden = !ghost;
+  if (ghost) cicAppear(Infinity);
   if (d.who) {
     var friend = !!C[d.who as CharId];
     dlgWho.hidden = false;
@@ -235,6 +236,7 @@ function closeDialog(next?: (() => void) | null) {
   var d = dialog; dialog = null;
   clearTimeout(typeTimer);
   dlg.hidden = true; dlgOpts.hidden = true; dlgOpts.innerHTML = ''; dlg.classList.remove('wait');
+  if (d && d.who === CICERO) cicPresence.until = performance.now();
   var fn = next || (d && d.done);
   if (fn) setTimeout(fn, 30);
 }
@@ -546,6 +548,7 @@ let raf = 0;
 function frame(now: number) {
   if (!running) return;
   if (!M.inside && st.seen.intro && !st.seen['cic-night'] && darkness(new Date()) > 0.6) mentorTip('night');
+  nudge(now);
   raf = requestAnimationFrame(frame);
   update(now);
   checkRun(now);
@@ -561,7 +564,23 @@ function intro() {
   st.seen.intro = true; st.seen['cap-starter'] = true; save();
   say(OPENING, CICERO);
 }
-/* ---------- Cicero, in the background ---------- */
+/* ---------- Cicero, when he is needed ---------- */
+/* He is not always there: he appears (on the map, beside Antonio, and in the corner) when he has something to say,
+   a new chapter, the first time of something, a word when Antonio seems lost, or when called with C; then he fades. */
+/** when the ghost is on screen, in performance.now() time: from when he appeared, until when he stays */
+export const cicPresence = { from: -1e9, until: -1e9 };
+const CIC_IN = 400, CIC_OUT = 900;
+function cicAppear(ms: number) {
+  var now = performance.now();
+  if (now > cicPresence.until + CIC_OUT) cicPresence.from = now;
+  cicPresence.until = Math.max(cicPresence.until, now + ms);
+  helpAt = now;
+}
+/** how visible the ghost is now, 0 to 1: fading in when he appears, out when he has finished */
+export function ciceroShown(now: number): number {
+  if (now > cicPresence.until + CIC_OUT) return 0;
+  return Math.max(0, Math.min(1, (now - cicPresence.from) / CIC_IN, (cicPresence.until + CIC_OUT - now) / CIC_OUT));
+}
 /** asked: where Antonio is in the story, the challenge ahead, whether the team is ready */
 function mentorTalk() {
   if (!running || dialog || busy || overlayOpen()) return;
@@ -571,16 +590,34 @@ function mentorTalk() {
 var bubbleQ: string[] = [], bubbleT: ReturnType<typeof setTimeout> | undefined;
 function bubble(html: string) {
   if (!built) return;
-  var el = $('wcic-say');
+  var el = $('wcic-say'), corner = $('wcic');
   if (!el.hidden) { bubbleQ.push(html); return; }
+  var long = Math.min(14000, 4500 + html.length * 45);
   el.innerHTML = '<b>Cicerone</b> ' + html;
   el.hidden = false; el.classList.remove('out');
-  $('wcic').classList.add('talking');
+  corner.hidden = false; corner.classList.remove('out'); corner.classList.add('talking');
+  cicAppear(long);
   clearTimeout(bubbleT);
   bubbleT = setTimeout(function () {
     el.classList.add('out');
-    bubbleT = setTimeout(function () { el.hidden = true; $('wcic').classList.remove('talking'); var n = bubbleQ.shift(); if (n) bubble(n); }, 500);
-  }, Math.min(14000, 4500 + html.length * 45));
+    bubbleT = setTimeout(function () {
+      el.hidden = true; corner.classList.remove('talking');
+      var n = bubbleQ.shift();
+      if (n) { bubble(n); return; }
+      corner.classList.add('out');
+      bubbleT = setTimeout(function () { corner.hidden = true; corner.classList.remove('out'); }, 500);
+    }, 500);
+  }, long);
+}
+/* when Antonio seems lost (a few minutes without a step forward on the tour, and without a word from him), Cicero
+   appears with the next stop */
+var helpAt = 0, helpDone = -1;
+function nudge(now: number) {
+  var d = stopsDone();
+  if (d !== helpDone || !helpAt) { helpDone = d; helpAt = now; return; }
+  if (now - helpAt < 240000 || dialog || overlayOpen() || busy || !st.seen.intro || M.inside || run) return;
+  helpAt = now;
+  bubble('Ti vedo un po\' perso. ' + esc(nextStop().tip) + ' <small>(C per i dettagli)</small>');
 }
 /** the first time something happens, Cicero explains it from the corner */
 export function mentorTip(id: string) { var t = tipOnce(id); if (t) { save(); bubble(esc(t.join(' '))); } }

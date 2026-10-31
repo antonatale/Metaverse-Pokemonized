@@ -50,19 +50,34 @@ export function chooseStarter(done: (uid: string) => void) {
 }
 
 /* ---------- who goes into battle ---------- */
-export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void, out?: string[]) {
-  var keys = team().filter(function (k) { return !out || out.indexOf(k) < 0; }), best = beaterOf(foeType);
-  if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
+/** one of a few of Antonio's team, from their pictures (with a mark on the ones that have the advantage) */
+function pickFrom(title: string, hint: string, keys: string[], go: (key: string) => void, best?: string | null) {
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
-    '<p class="hint">È di tipo ' + esc(foeType) + ': ha il vantaggio chi è di tipo ' + esc(best || '') + '.</p><div class="pickgrid">' +
+    '<p class="hint">' + esc(hint) + '</p><div class="pickgrid">' +
     keys.map(function (key) {
       var c = fighter(idOf(key));
-      return '<button class="pick" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span>' + esc(c.name) + ' <small class="lv">Lv ' + level(key).lv + '</small></span>' +
-        (c.type === best ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
+      return '<button class="pick" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + level(key).lv + '</small></span>' +
+        (best && c.type === best ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
     }).join('') + '</div></div>');
   $('pf-x').addEventListener('click', closeSheet);
   each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-key')!); }); });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
+}
+export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void, out?: string[]) {
+  var keys = team().filter(function (k) { return !out || out.indexOf(k) < 0; }), best = beaterOf(foeType);
+  if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
+  pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best);
+}
+/* ---------- a coffee at the counter of the bar: drunk there and then, by whoever Antonio picks ---------- */
+function coffee() {
+  var drink = function (key: string) {
+    var g = drinkCoffee(key);
+    save(); closeSheet(); renderHud();
+    if (g) growthSay(g, [nameOf(key) + ' beve un caffè al bancone: +' + g.xp + ' punti esperienza.']);
+  };
+  var keys = team();
+  if (keys.length <= 1) { drink(keys[0] || 'antonio'); return; }
+  pickFrom('Chi beve il caffè?', 'Un caffè al bancone dà subito 60 punti esperienza a chi lo beve.', keys, drink);
 }
 
 /* ---------- what a battle brings ---------- */
@@ -106,13 +121,17 @@ export function openShop(id: string) {
       '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : sh.hello) + '</p><p class="wallet">In tasca: <b>' + money() + ' €</b></p><ul class="wares">' +
       sh.sells.map(function (it) {
         var w = WARES[it], p = priceFor(it);
+        /* the coffee is drunk at the counter (one already paid for, from an old save, first) */
+        if (it === 'caffe') return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + '</small></span>' +
+          '<button class="btn" type="button" data-it="caffe"' + (money() < p && !has('caffe') ? ' disabled' : '') + '>' + (has('caffe') ? 'Bevi (già pagato)' : 'Bevi · ' + p + ' €') + '</button></li>';
         return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + ' Ne hai ' + has(it) + '.</small></span>' +
           '<button class="btn" type="button" data-it="' + it + '"' + (money() < p ? ' disabled' : '') + '>' + p + ' €</button></li>';
-      }).join('') + '</ul>' + (money() < Math.min.apply(null, sh.sells.map(priceFor)) ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
+      }).join('') + '</ul>' + (money() < Math.min.apply(null, sh.sells.map(priceFor)) && !has('caffe') ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
     $('shop-x').addEventListener('click', closeSheet);
     each(o.querySelectorAll('[data-it]'), function (b) {
       b.addEventListener('click', function () {
         var it = b.getAttribute('data-it') as ItemId;
+        if (it === 'caffe') { if (!has('caffe') && !buy(it)) return; sfx('pickup'); save(); renderHud(); coffee(); return; }
         if (!buy(it)) return;
         sfx('pickup'); save(); renderHud();
         render(WARES[it].name.toLowerCase());
@@ -132,11 +151,11 @@ export function teamHtml(): string {
     return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
       '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
       (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
-      (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : has('caffe') ? '<button class="btn small" type="button" data-caffe="' + key + '">Caffè</button>' : '') + '</li>';
+      (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : '') + '</li>';
   }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') + '</div>' +
-    '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella', 'caffe'] as ItemId[]).map(function (it) {
+    '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella'] as ItemId[]).map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
-    }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone; il caffè al bar di Mola.</p></div>';
+    }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
 }
 export function wireTeam(reopen: () => void) {
   each(document.querySelectorAll('[data-cr]'), function (b) { b.addEventListener('click', function () { openCreature(b.getAttribute('data-cr')!, reopen); }); });
@@ -145,13 +164,6 @@ export function wireTeam(reopen: () => void) {
     b.addEventListener('click', function () { setLead(b.getAttribute('data-lead')!); save(); closeSheet(); reopen(); });
   });
   each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
-  each(document.querySelectorAll('[data-caffe]'), function (b) {
-    b.addEventListener('click', function () {
-      var key = b.getAttribute('data-caffe')!, g = drinkCoffee(key);
-      save(); closeSheet(); renderHud();
-      if (g) growthSay(g, [fighter(idOf(key)).name + ' beve un caffè: +' + g.xp + ' punti esperienza.']);
-    });
-  });
 }
 export function openSkills(back: () => void) {
   var render = function () {
@@ -205,15 +217,10 @@ export function openCreature(key: string, back: () => void) {
     (next ? '<p class="hint">Al livello ' + next[0] + ' impara ' + esc(CMOVES[next[1]].name) + (known.length >= 4 ? ' (al posto di ' + esc(CMOVES[known[0]].name) + ')' : '') + '.</p>' : '') + '</div>' +
     '<div class="pickrow"><h3>Forme</h3>' + chainHtml(mon.sp, function (x) { return dexOf(x) > 0 || x === mon!.sp; }) + '</div>' +
     '<div class="pickrow"><h3>Nome</h3><form class="nick" id="cr-f"><input id="cr-nick" maxlength="12" autocomplete="off" aria-label="Nome di ' + esc(sp.name) + '" placeholder="' + esc(sp.name) + '" value="' + esc(mon.nick || '') + '"><button class="btn" type="submit">Salva</button></form></div>' +
-    '<div class="menu-actions">' + (leadCreature() !== key ? '<button class="btn" type="button" id="cr-lead">Dietro di me</button>' : '') + (has('caffe') ? '<button class="btn" type="button" id="cr-caffe">Un caffè (' + has('caffe') + ')</button>' : '') + '</div></div>');
+    '<div class="menu-actions">' + (leadCreature() !== key ? '<button class="btn" type="button" id="cr-lead">Dietro di me</button>' : '') + '</div></div>');
   $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
   $('cr-f').addEventListener('submit', function (e) { e.preventDefault(); setNick(key, ($('cr-nick') as HTMLInputElement).value); save(); renderHud(); openCreature(key, back); });
   if ($('cr-lead')) $('cr-lead').addEventListener('click', function () { setLead(key); save(); openCreature(key, back); });
-  if ($('cr-caffe')) $('cr-caffe').addEventListener('click', function () {
-    var g = drinkCoffee(key);
-    save(); closeSheet(); renderHud();
-    if (g) growthSay(g, [nameOf(key) + ' beve un caffè: +' + g.xp + ' punti esperienza.']);
-  });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('#cr-x'); if (b) b.focus(); }, 30);
 }
 
