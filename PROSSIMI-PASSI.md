@@ -17,7 +17,12 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     veri (una mappa di Torino, il cancello del treno in `data/gates.ts` è già il punto d'aggancio); altre missioni a
     più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
     Maranola a Natale); scelte nei dialoghi che cambiano qualcosa.
-11. **Pesca dal molo** (un'attività per guadagnare) e **rivincite nei covi** con il livello che cresce.
+11. **Pesca dal molo** (un'attività per guadagnare: un pescatore sul molo del porto, un mini-gioco a tempo come il
+    windsurf, `ui/activities.ts`) e **rivincite con gli amici** a livello più alto: i capi dei covi, battuti, lasciano
+    il covo e si uniscono ad Antonio (`unless` sull'Npc), quindi la rivincita va fatta altrove, per esempio un torneo
+    al Bruno Zauli dove gli amici lottano a livelli che crescono.
+12. **Da provare a fondo**: tutta la trama giocata dall'inizio alla fine senza salvataggi preparati (i test la
+    provano a pezzi), e il bilanciamento delle lotte con Mamurra (Granchione 21, Olivastro 19, Civettona 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
 ## Fatti
 
@@ -30,3 +35,4 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **Abilità che cambiano il gioco**: tre strade (Esploratore, Allenatore, Formiano doc) con dieci abilità: meno incontri, creature rare e dorate, passo più svelto, esperienza alle creature, retini più sicuri, creature che resistono a 1 PS, Antonio più forte quando lotta da solo, prezzi e attività.
 - **Crescita delle creature**: la schermata del livello dice cosa cresce, si sceglie la mossa da dimenticare, l'ultima forma delle iniziali (al 26) vuole il legame; ogni creatura ha un legame con Antonio (cuori, cresce lottando, passeggiando, parlandole) e un carattere.
 - **Una trama legata alle radici di Formia**: le Pietre di Telepilo. Il fantasma di Mamurra e i suoi uomini cercano le tre pietre del sigillo della città dei Lestrigoni; Antonio le trova con Cicerone (scavi di Gianola, Archivio della Torre di Mola, Cisternone e l'indovinello della signora del teatro, peschiere di Caposele, tre domande alla Tomba di Cicerone) e affronta Mamurra alla sua villa; poi esce Lamo. Il sogno Torino → Chicago è il finale.
+- **La creatura che ti segue trova cose per terra**: euro, tielle, retini, più spesso se il legame è forte.

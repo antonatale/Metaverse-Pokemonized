@@ -79,7 +79,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   mamurra: {
     id: 'mamurra', title: 'Il fantasma di Mamurra', prize: 200,
-    team: [{ sp: 'granchione', lv: 21 }, { sp: 'olivastro', lv: 22 }, { sp: 'civettona', lv: 24 }],
+    team: [{ sp: 'granchione', lv: 21 }, { sp: 'olivastro', lv: 19 }, { sp: 'civettona', lv: 23 }],
     intro: ['Lucio Mamurra, cavaliere di Formia, prefetto del genio di Gaio Giulio Cesare. Questa era la mia villa.', 'Catullo mi chiamava «lo scialacquatore di Formia», e Orazio chiamava Formia «la città dei Mamurra». Avevano ragione: Formia era mia.',
       'Con le tre pietre sveglierò Lamo, e i giganti costruiranno per me: ville, moli, cemento fino al mare.', 'Dammi le pietre. O devo prenderle con le mie creature?'],
     win: ['Impossibile… battuto da un ragazzo con la felpa.', 'Le pietre restano a Formia. Ma ogni volta che passerai davanti alle rovine della mia villa, ricordati di me.'],

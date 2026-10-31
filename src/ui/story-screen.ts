@@ -424,11 +424,13 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
 var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
-var walked = 0;
+var walked = 0, sniffed = 0;
 export function stepped(): boolean {
   if (!st.mons || !st.mons.length) return false;
   /* walking together brings Antonio and his creature closer */
   if (++walked >= 40) { walked = 0; var lead = leadCreature(); if (lead) addBond(lead, 1); }
+  /* and now and then, out in town, it finds something on the ground: the closer they are, the more often */
+  if (++sniffed >= 60 && M.id === 'formia') { sniffed = 0; var fl = leadCreature(); if (fl && Math.random() < 0.15 + 0.05 * hearts(fl)) sniff(fl); }
   var h = hidingAt(st.x, st.y);
   if (!h) return false;
   if (calm > 0) { calm--; return false; }
@@ -436,6 +438,15 @@ export function stepped(): boolean {
   calm = CALM;
   meet(h);
   return true;
+}
+/** what Antonio's creature digs up: a few euro, a slice of tiella, a net someone lost */
+function sniff(key: string) {
+  var r = Math.random(), name = nameOf(key), what: string;
+  if (r < 0.5) { var n = 3 + Math.floor(Math.random() * 10); earn(n); what = n + ' € caduti a qualcuno'; }
+  else if (r < 0.8) { st.bag = st.bag || {}; st.bag.tiella = (st.bag.tiella || 0) + 1; what = 'una fetta di tiella ancora incartata'; }
+  else { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + 1; what = 'un retino dimenticato'; }
+  save(); renderHud(); sfx('pickup');
+  notify('<b>' + esc(name) + '</b> annusa per terra e trova ' + esc(what) + '!');
 }
 /** a creature of that hiding place jumps out: by day or by night, now and then a golden one */
 function meet(h: Hiding) {

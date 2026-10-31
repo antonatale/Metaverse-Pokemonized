@@ -2,6 +2,8 @@
 
 Gioco di lotte a turni in stile Pokémon con sei amici e un boss (l'Esame di Controlli), più una modalità storia su una mappa di Formia vista dall'alto, dove Antonio cresce di livello, guadagna e spende soldi e ha una squadra di creature di Formia (originali, non i Pokémon veri). Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
 
+**Lavori in corso:** le richieste ancora da fare e le idee per le prossime sessioni sono in `PROSSIMI-PASSI.md`.
+
 Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrato a moduli **senza cambiare nulla**: stesse meccaniche, numeri, testi, animazioni e salvataggi. Il prossimo passo previsto è spostare gradualmente il rendering su Phaser (vedi in fondo).
 
 ## Comandi
@@ -273,6 +275,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Le mosse che conosce** sono quattro e si salvano (`mons[].moves`; un salvataggio vecchio parte dalle ultime quattro imparate). Quando ne impara una quinta, Antonio sceglie quale dimenticare, o di non impararla (`askLearn` in `ui/team.ts`).
   - **Salire di livello** dice anche cosa porta: «PS +1, Attacco +3, Difesa +2, Velocità +2» (`statGain`).
   - **Il legame** (`mons[].bond`, da 0 a 100, cinque cuori nella scheda): la prima creatura parte da 40, una catturata da 20. Cresce lottando insieme (+4 se vince, +2 se perde), camminando con quella che lo segue (+1 ogni 40 passi), parlandole (+1, ogni due minuti al massimo) e con un caffè (+3). In lotta ogni cuore dà il 3% di restare a 1 PS invece di andare KO (`endure`, insieme all'abilità Legame); la creatura che segue Antonio si comporta secondo i cuori.
+  - **Trova le cose:** fuori, ogni 60 passi la creatura che segue Antonio può trovare qualcosa per terra (qualche euro, una tiella, un retino): il 15% delle volte, più il 5% a cuore (`sniff` in `ui/story-screen.ts`).
   - **Il carattere** (`mons[].nat`, `NATURES` in `data/growth.ts`): Coraggioso, Prudente, Svelto, Robusto, Furbo o Sereno, a caso quando arriva: +10% in una statistica e −10% in un'altra (`withNature`).
   - Le selvatiche hanno due forme (al 18): Cicalina in pineta e al Parco Gramsci, Riccetto a Gianola, Granchietto sugli scogli della Scogliera, Olivella negli uliveti, Civettina sui Monti Aurunci.
   - Le mosse sono numeri (`CMOVES`, con `fx`: alza o abbassa Attacco e Difesa, confonde, cura) e le esegue `genericMove` in `battle/moves.ts`. Una creatura lotta con le quattro mosse che conosce.

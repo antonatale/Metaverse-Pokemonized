@@ -38,3 +38,7 @@ La prima volta, per i test end-to-end serve anche `npx playwright install chromi
 - I progressi della storia e il libretto sono salvati nel `localStorage` del browser, quindi sono legati alla pagina e al browser in cui giochi. Le chiavi sono le stesse della versione in un file solo: i vecchi salvataggi restano validi se apri la nuova pagina dallo stesso indirizzo.
 - Struttura del progetto, convenzioni e dove si trova ogni parte del gioco: [CLAUDE.md](CLAUDE.md).
 - La mappa di Formia è generata da dati © OpenStreetMap contributors (ODbL 1.0): vedi `tools/formia/`.
+
+## Prossimi passi
+
+Le richieste ancora da fare e le idee per le prossime sessioni sono in [PROSSIMI-PASSI.md](PROSSIMI-PASSI.md); com'è fatto il gioco è in [CLAUDE.md](CLAUDE.md).
