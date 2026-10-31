@@ -88,6 +88,8 @@ export interface Npc {
   starter?: boolean;
   /** sells things (data/growth.ts SHOPS) */
   shop?: string;
+  /** has creatures and challenges Antonio (data/trainers.ts) */
+  trainer?: string;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

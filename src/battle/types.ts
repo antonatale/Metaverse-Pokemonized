@@ -68,9 +68,9 @@ export interface Side {
   perk?: { lose: number; idea: number };
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number } }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
-export interface StoryTag { covo?: string; wild?: string; sp?: string; key?: string; foeLv?: number; gold?: boolean }
+export interface StoryTag { covo?: string; wild?: string; trainer?: string; sp?: string; key?: string; foeLv?: number; gold?: boolean }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }
@@ -104,9 +104,11 @@ export interface BattleState {
   bag?: Record<string, number>;
   /** the net held: the battle ends with the creature caught */
   caught?: boolean;
+  /** someone who sends creatures in, one after the other (data/trainers.ts) */
+  trainer?: string;
 }
 
-export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number> }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }

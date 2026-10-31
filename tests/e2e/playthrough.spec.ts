@@ -496,3 +496,28 @@ test('creatures of Formia', async ({ browser }) => {
   if (second.data.find((x) => x.name === 'stamp')!.value === 'Preso!') { expect(sc.mons.map((m) => m.sp)).toEqual(['gabbi', 'cicalina']); expect(sc.lead).toBe('c2'); expect((sc.mons[1] as { nick?: string }).nick).toBe('Cri'); }
   else expect(sc.mons.length).toBe(1);
 });
+
+/* a trainer: the animatore of the oratorio sends in his two creatures one after the other */
+test('a trainer of Formia', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true, starter: true }, found: {},
+    mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'trainer', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkTo(p, 'animatore');
+    await choose(p, 'Sfida!');
+    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(800);
+    for (let fightNo = 0; fightNo < 2; fightNo++) {
+      await fight(r, 'duel' + fightNo, 1);
+      await p.click('#st-go'); await p.clock.runFor(800);
+      await talkThrough(p, 20);
+      await p.clock.runFor(800);
+      if (await p.evaluate(() => document.body.classList.contains('in-battle'))) continue;
+    }
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const st = r.data.find((x) => x.name === 'state')!.value as { beaten: Record<string, boolean>; money: number };
+  expect(st.beaten['tr-animatore']).toBe(true);
+  expect(st.money).toBe(25);
+});

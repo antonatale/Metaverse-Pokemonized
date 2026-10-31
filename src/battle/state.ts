@@ -47,6 +47,7 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.known) side.known = o.known.slice();
   if (o && o.nick) side.nick = o.nick;
   if (o && o.gold) side.gold = true;
+  if (o && o.hp != null) side.hp = Math.max(1, Math.min(side.max, Math.round(o.hp)));
   if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
   return side;
 }
@@ -64,6 +65,7 @@ export function newBattle(o: NewBattle): BattleState {
   };
   if (mode === 'pvp') { s.sides[0].revealed = true; s.sides[1].revealed = true; }
   if (o.wild) s.wild = true;
+  if (o.trainer) s.trainer = o.trainer;
   if (o.bag) s.bag = Object.assign({}, o.bag);
   return s;
 }

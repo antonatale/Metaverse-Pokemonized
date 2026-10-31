@@ -22,7 +22,8 @@ import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES } from '../data/creatures';
 import { SHOPS } from '../data/growth';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see } from '../story/growth';
+import { TRAINERS } from '../data/trainers';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, team, earn } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
@@ -293,6 +294,7 @@ function talkTo(p: Person) {
   var n = p.n;
   if (n.covo) leaderTalk(n.covo);
   else if (n.wild) wildTalk(p);
+  else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
   else if (n.starter && !hasStarter()) starterTalk(n.name || '');
   else if (n.shop) say(n.lines || [SHOPS[n.shop].hello], n.name, [{ label: 'Compra', fn: function () { openShop(n.shop!); } }, { label: 'No, grazie', fn: null }]);
   else if (n.gate) gateTalk(n.gate, n.name);
@@ -343,6 +345,56 @@ function wildTalk(p: Person) {
     });
   } }, { label: 'Lascia stare', fn: null }]);
 }
+/* ---------- the trainers of Formia: their creatures one after the other ---------- */
+/** a trainer's battle in progress: which of their creatures is on, its health left, Antonio's fighters gone down
+    and the health the others have left */
+var duel: { id: string; who: string; idx: number; foeHp: number | null; down: string[]; hp: Record<string, number> } | null = null;
+function trainerTalk(id: string, who: string, lines: string[]) {
+  var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id];
+  say(lines.concat(beaten ? tr.after : tr.intro).concat(['Creature: ' + tr.team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, [
+    { label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { duel = { id: id, who: who, idx: 0, foeHp: null, down: [], hp: {} }; duelBattle(); } },
+    { label: 'Più tardi', fn: null }
+  ]);
+}
+/** the next battle of a trainer's: the same fighter after a win, the one Antonio picks after a loss */
+function duelBattle(key?: string) {
+  var d = duel!, tr = TRAINERS[d.id], foe = tr.team[d.idx];
+  var go = function (k: string) {
+    hide();
+    var a = sideOf(k), b = foeSide(foe.sp, foe.lv);
+    if (d.hp[k] != null) a.hp = d.hp[k];
+    if (d.foeHp != null) b.hp = d.foeHp;
+    see(foe.sp); save();
+    startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', story: { trainer: d.id, sp: foe.sp, key: k, foeLv: foe.lv }, trainer: tr.title, safe: safeMoves(), sideA: a, sideB: b, bag: battleBag() });
+  };
+  if (key) go(key);
+  else pickFighter('Chi mandi contro ' + SPECIES[foe.sp].name + '?', SPECIES[foe.sp].type, go, d.down);
+}
+function duelAfter(res: { won: boolean; hp?: [number, number] }, key: string) {
+  var d = duel!, tr = TRAINERS[d.id], foe = tr.team[d.idx];
+  if (res.won) {
+    d.hp[key] = res.hp ? res.hp[0] : 0; d.idx++; d.foeHp = null;
+    rewards(key, foe.lv, true, true, function () {
+      if (d.idx < tr.team.length) { say([tr.title + ' manda in campo ' + SPECIES[tr.team[d.idx].sp].name + '!'], null, null, function () { duelBattle(key); }); return; }
+      var first = !st.beaten['tr-' + d.id];
+      st.beaten['tr-' + d.id] = true;
+      if (first) earn(tr.prize);
+      save(); renderHud(); duel = null;
+      sfx('badge');
+      say(tr.win.concat(first ? ['Antonio vince ' + tr.prize + ' €.'] : []), d.who);
+    }, true);
+  } else {
+    d.down.push(key); d.foeHp = res.hp ? res.hp[1] : null;
+    var left = team().filter(function (k) { return d.down.indexOf(k) < 0; });
+    rewards(key, foe.lv, false, true, function () {
+      if (!left.length) { duel = null; say(tr.lose, d.who); return; }
+      say([nameOf(key) + ' non ce la fa più. Mandi un altro della squadra?'], null, [
+        { label: 'Manda un altro', fn: function () { duelBattle(); } },
+        { label: 'Mi arrendo', fn: function () { duel = null; say(tr.lose, d.who); } }
+      ]);
+    }, true);
+  }
+}
 function starterTalk(who: string) {
   say(['Ciao Antonio! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
     'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
@@ -365,11 +417,12 @@ export function sheet(html: string, cls?: string) {
 export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
 function face(id: string) { return SPR.person(id, 'smirk', '', SPR.thumb(id)); }
 /** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
-export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number> }) {
+export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; hp?: [number, number] }) {
   open(true);
   var tag = res.tag, key = tag.key || 'antonio', lv = tag.foeLv || 5;
   keepBag(res.bag); save(); renderHud();
-  if (res.quit) { say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
+  if (res.quit) { duel = null; say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
+  if (tag.trainer && duel) { duelAfter(res, key); return; }
   if (tag.wild) {
     var sp = SPECIES[tag.sp as keyof typeof SPECIES];
     if (res.won || res.caught) wildGone[tag.wild] = Date.now();

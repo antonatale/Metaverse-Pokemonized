@@ -50,8 +50,8 @@ export function chooseStarter(done: (uid: string) => void) {
 }
 
 /* ---------- who goes into battle ---------- */
-export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void) {
-  var keys = team(), best = beaterOf(foeType);
+export function pickFighter(title: string, foeType: TypeName, go: (key: string) => void, out?: string[]) {
+  var keys = team().filter(function (k) { return !out || out.indexOf(k) < 0; }), best = beaterOf(foeType);
   if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
     '<p class="hint">È di tipo ' + esc(foeType) + ': ha il vantaggio chi è di tipo ' + esc(best || '') + '.</p><div class="pickgrid">' +
@@ -75,9 +75,10 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
   if (g.to > g.from) sfx('badge');
   say(lines, null, null, function () { if (g.evolved) evolve(g.evolved.from, g.evolved.to, then); else if (then) then(); });
 }
-/** after a story battle: experience for who fought (a third when lost), money for a win */
-export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void) {
-  var xp = xpFor(foeLv, won, covo), cash = won ? moneyFor(foeLv, covo) : 0, name = fighter(idOf(key)).name;
+/** after a story battle: experience for who fought (a third when lost), money for a win (not in the middle of a
+    trainer's battle: the trainer pays at the end) */
+export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void, noMoney?: boolean) {
+  var xp = xpFor(foeLv, won, covo), cash = won && !noMoney ? moneyFor(foeLv, covo) : 0, name = nameOf(key);
   var g = gainXp(key, xp);
   if (cash) earn(cash);
   save(); renderHud();

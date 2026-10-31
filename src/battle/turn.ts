@@ -17,7 +17,7 @@ import { ai } from './ai';
 export function intro(s: BattleState): BattleEvent[] {
   const ev: BattleEvent[] = [], A = s.sides[0], B = s.sides[1], ca = ch(A), cb = ch(B);
   const key = [A.id, B.id].sort().join('|'), pair = PAIRS[key] as Record<string, string> | undefined;
-  ev.push(say(s.boss ? 'L\'Esame di Controlli sfida ' + ca.name + '!' : s.wild && isSpecies(B.id) ? SPECIES[B.id].wild + ' salta fuori!' : cb.name + ' sfida ' + ca.name + '!'));
+  ev.push(say(s.boss ? 'L\'Esame di Controlli sfida ' + ca.name + '!' : s.wild && isSpecies(B.id) ? SPECIES[B.id].wild + ' salta fuori!' : s.trainer ? s.trainer + ' manda in campo ' + cb.name + '!' : cb.name + ' sfida ' + ca.name + '!'));
   ev.push(expr(1, s.boss ? 'angry' : 'grin'));
   ev.push(line(1, pair && A.id !== B.id ? pair[B.id] : cb.lines.entry));
   ev.push(expr(1, s.boss ? 'idle' : 'smirk'));

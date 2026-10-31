@@ -101,3 +101,25 @@ describe('the magic of the creatures', () => {
     }
   });
 });
+
+describe('the trainers of Formia', () => {
+  it('are people on the map, with creatures that exist, and a prize', async () => {
+    const { TRAINERS } = await import('../../src/data/trainers');
+    const { MAPS } = await import('../../src/data/maps');
+    for (const tr of Object.values(TRAINERS)) {
+      const n = (MAPS.formia.npcs || []).find((q) => q.trainer === tr.id);
+      expect(n, 'nobody is ' + tr.id).toBeDefined();
+      expect(tr.team.length).toBeGreaterThan(0);
+      for (const t of tr.team) expect(SPECIES[t.sp]).toBeDefined();
+      expect(tr.prize).toBeGreaterThan(0);
+    }
+  });
+  it('send their creatures in with the health the last battle left', () => {
+    const s = E.newBattle({ a: 'polpino', b: 'olivella', seed: 4, trainer: 'L\'animatore dell\'oratorio',
+      sideA: { stats: atLevel(SPECIES.polpino.stats, 8), lvl: 8, known: knownAt('polpino', 8), hp: 30 }, sideB: { stats: atLevel(SPECIES.olivella.stats, 6), lvl: 6, known: knownAt('olivella', 6) } });
+    expect(s.sides[0].hp).toBe(30);
+    expect(s.sides[0].max).toBeGreaterThan(30);
+    const ev = E.intro(s);
+    expect(ev.some((e) => e.k === 'say' && e.text.indexOf('manda in campo Olivella') >= 0)).toBe(true);
+  });
+});

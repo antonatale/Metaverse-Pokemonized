@@ -19,7 +19,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number> }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -364,7 +364,8 @@ function showResult() {
   overlay.className = 'overlay result';
   overlay.innerHTML = h;
   overlay.hidden = false;
-  var cfg: BattleConfig = { a: A.id, b: B.id, mode: S.mode, story: story, safe: S.safe, sideA: A, sideB: B, wild: S.wild, bag: S.bag };
+  var cfg: BattleConfig = { a: A.id, b: B.id, mode: S.mode, story: story, safe: S.safe, sideA: { stats: A.stats, lvl: A.lvl, known: A.known, nick: A.nick, gold: A.gold, perk: A.perk },
+    sideB: { stats: B.stats, lvl: B.lvl, known: B.known, nick: B.nick, gold: B.gold, perk: B.perk }, wild: S.wild, bag: S.bag, trainer: S.trainer };
   if (story) {
     $('st-go').addEventListener('click', function () { backToWorld(story!, storyWon, false); });
     if ($('st-retry')) $('st-retry').addEventListener('click', function () { closeOverlay(); startBattle(cfg); });
@@ -405,7 +406,7 @@ function openSheet() {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -440,7 +441,7 @@ export function goHome() {
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
-  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined;
+  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, hp: [number, number] = S ? [S.sides[0].hp, S.sides[1].hp] : [0, 0];
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
@@ -449,7 +450,7 @@ function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
   closeOverlay();
   renderLibretto();
   S = null as unknown as BattleState;
-  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag });
+  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, hp: hp });
   else goHome();
 }
 /** the battle screen as one object, with the same names the old window.UI had */
