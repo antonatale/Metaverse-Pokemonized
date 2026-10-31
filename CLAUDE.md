@@ -174,6 +174,7 @@ tools/
   - l'Eclipse: ombrelloni con i lettini, gazebo, beach volley, le tavole da windsurf di Nicola sulla riva, i windsurf che scivolano nella baia e la fila di boe.
 - **Pineta di Vindicio:** è dove sta davvero, accanto al Lido Frungillo all'inizio di via Tito Scipione. Venendo da Gaeta si trovano La Scogliera, poi l'Eclipse, poi la pineta, poi il centro. È un'area `pines` di `formia-places.ts`, con i due sentieri di `PATHS`.
 - **Persone con un aspetto loro:** gli amici hanno `person`; chi è qualcuno senza essere nella compagnia ha `look`, come Nicola Spadea (`LOOKS` in `walkers.ts`).
+- **Antonio e gli amici hanno la faccia delle lotte:** sulla mappa la loro testa è il loro ritratto (`standalone` in `render/svg/index.ts`, un SVG che si regge da solo, caricato come immagine da `headOf` in `render/world-view.ts`), un po' grande, come un adesivo; da dietro hanno i capelli grandi come nel ritratto. Finché l'immagine non è caricata hanno la testa semplice di prima.
 
 ## I quartieri
 

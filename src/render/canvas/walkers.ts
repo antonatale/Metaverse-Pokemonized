@@ -19,21 +19,22 @@ type HairLook = PersonLook['hair'];
 
 /* ---------- people seen from above ---------- */
 const DIRS: Dir[] = ['down', 'left', 'right', 'up'];
-/** four directions × three frames (standing, left foot, right foot) */
-export function walker(spec: PersonLook, s: number): Record<Dir, HTMLCanvasElement[]> {
+/** four directions × three frames (standing, left foot, right foot); with a head (a friend's portrait, as an image)
+    the face seen from the front and the sides is the one of the battles */
+export function walker(spec: PersonLook, s: number, head?: CanvasImageSource): Record<Dir, HTMLCanvasElement[]> {
   var out = {} as Record<Dir, HTMLCanvasElement[]>;
   DIRS.forEach(function (d) {
     out[d] = [0, 1, 2].map(function (f) {
       var cv = mk(T * s, 44 * s), c = cv.getContext('2d')!;
       c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round';
       if (d === 'right') { c.translate(T, 0); c.scale(-1, 1); }
-      drawWalker(c, spec, d === 'right' ? 'left' : d, f);
+      drawWalker(c, spec, d === 'right' ? 'left' : d, f, head);
       return cv;
     });
   });
   return out;
 }
-function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
+function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number, head?: CanvasImageSource) {
   var ink = STICKER_INK, bob = f ? -1 : 0, side = d === 'left', back = d === 'up';
   c.translate(0, 4);
   ell(c, 16, 38, 9, 3); c.fillStyle = 'rgba(20,24,40,.22)'; c.fill();
@@ -67,11 +68,22 @@ function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
     circle(c, 7.4, 30 + sw, 1.9); fillStroke(c, S.skin, ink, 1.2); circle(c, 24.6, 30 - sw, 1.9); fillStroke(c, S.skin, ink, 1.2);
   }
   if (S.phones) neckPhones(c, d);
-  /* head */
+  /* the portrait's head, a little big, as a sticker: from the front, and turned a bit to the side */
+  if (head && !back) {
+    var hs = 30, hx = side ? 1.5 : 1, hy = -6;
+    c.save();
+    if (side) { c.translate(16, 0); c.scale(0.92, 1); c.translate(-16, 0); }
+    c.drawImage(head, hx, hy, hs, hs);
+    c.restore();
+    return;
+  }
+  /* head (from behind, as big as the portrait's) */
+  if (head) { c.save(); c.translate(16, 11); c.scale(1.25, 1.25); c.translate(-16, -11); }
   circle(c, 16, 12, 9.6); fillStroke(c, S.skin, ink, 1.6);
   if (S.beard && !back) { c.save(); circle(c, 16, 12, 9.6); c.clip(); c.fillStyle = S.beard; c.globalAlpha = 0.42; c.beginPath(); c.ellipse(side ? 12 : 16, 19, side ? 6 : 8.5, 5.2, 0, 0, Math.PI * 2); c.fill(); c.restore(); c.globalAlpha = 1; }
   hairFront(c, S, d);
   if (!back) face(c, S, d);
+  if (head) c.restore();
 }
 function torsoDetail(c: Ctx, S: PersonLook, d: Dir, bx: number, bw: number) {
   var ink = STICKER_INK;
