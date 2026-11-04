@@ -15,7 +15,7 @@ import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeO
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
-import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut } from './spells';
+import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
 import { runeIcon } from '../render/svg/creatures';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
@@ -340,6 +340,7 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
       var mu = moveOf(i, ev.move), su = S.sides[i].id;
       return castSelf(i, ev.style as TypeName, mu ? mu.name : '', !!mu && isSpecies(su) && SPECIES[su].sig === mu.id);
     }
+    case 'stat': return statShow(i, ev.style || 'atkUp');
     case 'caught': if (m.classList.contains('innet')) return sleep(reduced ? 60 : 500); m.classList.add('caught'); return sleep(800);
     default: return Promise.resolve();
   }
@@ -585,6 +586,8 @@ export const UI = {
   _debug: {
     suggest: function () { return S && S.phase === 'select' && needQ.length ? E.ai(JSON.parse(JSON.stringify(S)), needQ[0]) : null; },
     battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; },
+    /* a number going up or down, shown on demand */
+    stat: function (i: number, what: string) { return S ? statShow(i, what) : null; },
     /* a spell's show on demand, to look at the shows: type (null for a plain move), what happens, who casts */
     cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; self?: boolean; drain?: boolean; quick?: boolean }) {
       if (!S) return null;

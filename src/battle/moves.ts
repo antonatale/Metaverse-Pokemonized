@@ -279,14 +279,17 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
     ev.push(expr(i, 'smirk'));
     ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: type, move: m.id }));
   }
+  /* a number going up or down shows itself (story battles only: only the creatures' moves come here) */
   if (fx.self) {
     const f = FX[fx.self];
     addMod(me, f.stat, f.mult, s.turn + f.turns, fx.self);
+    ev.push(anim(i, 'stat', { style: fx.self }));
     ev.push(say(cap(f.text.replace('{n}', ch(me).name))));
   }
   if (fx.foe && foe.hp > 0) {
     const f = FX[fx.foe];
     addMod(foe, f.stat, f.mult, s.turn + f.turns, fx.foe);
+    ev.push(anim(j, 'stat', { style: fx.foe }));
     ev.push(say(cap(f.text.replace('{n}', ch(foe).name))));
   }
   if (fx.conf && foe.hp > 0 && (fx.conf >= 1 || rand(s) < fx.conf)) confuse(s, j, 2, ev);

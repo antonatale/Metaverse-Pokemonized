@@ -637,3 +637,20 @@ export function fadeOut(i: number, t: TypeName, t2?: TypeName) {
       { transform: tr([x + (n % 2 ? -10 : 10), c[1] - 150]) + ' scale(.5)', opacity: 0 }], { duration: 1100, delay: 200 + n * 50, easing: 'ease-out', fill: 'both' }).then(gone(el));
   }
 }
+
+/** a number going up or down, as in the Pokémon games: arrows of light rising over the creature (red for Attack,
+    blue for Defence), or falling and grey */
+export function statShow(i: number, what: string): Promise<void> {
+  if (reduced || !arena) return Promise.resolve();
+  const up = /Up$/.test(what), atk = /^atk/.test(what), col = up ? (atk ? '#ff6b4a' : '#5aa9ff') : '#9aa3b8', c = body(i, 0.5, 0.5);
+  const m = $('m-' + i);
+  if (m) { m.style.setProperty('--mc', col); pulse(m, up ? 'statup' : 'statdown', 760); }
+  sfx(up ? 'shimmer' : 'weak');
+  for (let n = 0; n < 9; n++) {
+    const x = c[0] + (n - 4) * 30, el = piece('<svg viewBox="0 0 24 32" width="36" height="48" aria-hidden="true"><path d="' + (up ? 'M12 2L22 14H16V30H8V14H2Z' : 'M12 30L22 18H16V2H8V18H2Z') + '" fill="' + col + '" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/></svg>', 'sp-star');
+    const y0 = up ? c[1] + 60 : c[1] - 90, y1 = up ? c[1] - 120 : c[1] + 60;
+    animate(el, [{ transform: tr([x, y0]) + ' scale(.6)', opacity: 0 }, { transform: tr([x, lerp(y0, y1, 0.4)]) + ' scale(1)', opacity: 1, offset: 0.3 }, { transform: tr([x, y1]) + ' scale(.8)', opacity: 0 }],
+      { duration: 760, delay: (n % 3) * 90 + (n % 2) * 40, easing: up ? 'ease-out' : 'ease-in', fill: 'both' }).then(gone(el));
+  }
+  return sleep(640);
+}

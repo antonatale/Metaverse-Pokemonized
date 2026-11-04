@@ -238,3 +238,8 @@
 .curtain::after { content: ""; position: absolute; inset: 0; background: #ffffff; animation: curtainFlash .3s ease-out forwards; }
 @keyframes curtainFlash { from { opacity: .85; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .curtain { display: none; } }
+/* a number going up or down (statShow in ui/spells.ts): the creature takes the colour for a moment */
+.mover.statup .spr { animation: statUp .76s ease-out; }
+.mover.statdown .spr { animation: statDown .76s ease-out; }
+@keyframes statUp { 25%, 60% { filter: brightness(1.25) drop-shadow(0 0 14px var(--mc)); } }
+@keyframes statDown { 25%, 60% { filter: grayscale(.6) brightness(.8); } }
