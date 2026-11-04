@@ -334,7 +334,7 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     /* the creatures' magic, as a show of its type (ui/spells.ts): it resolves on the hit, so the damage lands on it */
     case 'magic': {
       var t = ev.style as TypeName, mv = moveOf(i, ev.move), o = outcomeOf(evs, next, j), sid = S.sides[i].id;
-      return castSpell(i, j, { type: mv && mv.plain ? null : t, name: mv ? mv.name : '', power: (mv && mv.power) || 40, sig: !!mv && isSpecies(sid) && SPECIES[sid].sig === mv.id, outcome: o.outcome, crit: o.crit, lvl: o.lvl,
+      return castSpell(i, j, { type: mv && mv.plain ? null : t, id: mv ? mv.id : undefined, name: mv ? mv.name : '', power: (mv && mv.power) || 40, sig: !!mv && isSpecies(sid) && SPECIES[sid].sig === mv.id, outcome: o.outcome, crit: o.crit, lvl: o.lvl,
         drain: !!(mv && mv.drain), quick: !!(mv && mv.priority) });
     }
     case 'magicUp': {
@@ -590,11 +590,11 @@ export const UI = {
     /* a number going up or down, shown on demand */
     stat: function (i: number, what: string) { return S ? statShow(i, what) : null; },
     /* a spell's show on demand, to look at the shows: type (null for a plain move), what happens, who casts */
-    cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; self?: boolean; drain?: boolean; quick?: boolean }) {
+    cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; id?: string; self?: boolean; drain?: boolean; quick?: boolean }) {
       if (!S) return null;
       var i = from || 0, x = o || {};
       if (x.self && type) return castSelf(i, type, x.name || 'Prova', !!x.sig);
-      return castSpell(i, 1 - i, { type: type, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0, drain: !!x.drain, quick: !!x.quick });
+      return castSpell(i, 1 - i, { type: type, id: x.id, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0, drain: !!x.drain, quick: !!x.quick });
     }
   }
 };

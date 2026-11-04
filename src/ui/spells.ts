@@ -1,4 +1,5 @@
 import type { TypeName } from '../data/types';
+import { MOVE_FX, type Gesture } from '../data/move-fx';
 import { MAGIC, runeIcon } from '../render/svg/creatures';
 import { reduced, esc, $ } from './dom';
 import { sleep, battle } from './common';
@@ -22,6 +23,8 @@ const INK = '#1c2340';
 export interface Cast {
   /** the spell's type; null for a plain move */
   type: TypeName | null;
+  /** the move's id: how it travels is in data/move-fx.ts (missing: as its type does) */
+  id?: string;
   /** the move's name, for the band */
   name: string;
   power: number;
@@ -460,6 +463,75 @@ function plainHit(from: number, to: number, c: Cast, k: number): Promise<void> {
 const FLY: Record<TypeName, (from: number, end: P, c: Cast, mc: string, k: number) => Promise<void>> = { Calma: moonFly, Caos: boltFly, Cervello: starFly, Chiacchiera: songFly, Cuore: heartFly };
 const HIT: Record<TypeName, (b: P, to: number, c: Cast, mc: string, k: number) => void> = { Calma: moonHit, Caos: boltHit, Cervello: starHit, Chiacchiera: songHit, Cuore: heartHit };
 
+/* ---------- the gestures: how a move travels, whatever it is made of (data/move-fx.ts) ---------- */
+type Flight = (from: number, end: P, c: Cast, mc: string, k: number, t: TypeName) => Promise<void>;
+/** a cut across the foe: the caster dashes in, two strokes of the move's colour cross, the type's shape bursts at the middle */
+function slashFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
+  const a = body(from, 0.5, 0.5), m = $('m-' + from);
+  sfx('lunge');
+  if (m) animate(m, [{ transform: 'none' }, { transform: 'translate(' + ((end[0] - a[0]) * 0.3).toFixed(0) + 'px,' + ((end[1] - a[1]) * 0.3).toFixed(0) + 'px) scale(1.06)', offset: 0.45 }, { transform: 'none' }], { duration: 440, easing: 'ease-in-out' });
+  return sleep(240).then(function () {
+    if (c.outcome === 'miss') return;
+    const r = 62 * k, x = end[0], y = end[1];
+    const L = layer(beam('M' + (x + r).toFixed(1) + ' ' + (y - r).toFixed(1) + ' L' + (x - r).toFixed(1) + ' ' + (y + r).toFixed(1), mc, 9 * k) + beam('M' + (x - r).toFixed(1) + ' ' + (y - r * 0.8).toFixed(1) + ' L' + (x + r).toFixed(1) + ' ' + (y + r * 0.8).toFixed(1), mc, 9 * k));
+    trace(L, 150).then(function () { fade(L, 280, 60); });
+    const s = piece(shape(t, '#ffffff', Math.round(44 * k)), 'sp-star');
+    animate(s, [{ transform: tr(end) + ' scale(.3) rotate(-25deg)', opacity: 1 }, { transform: tr(end) + ' scale(1.5) rotate(25deg)', opacity: 0 }], { duration: 380, delay: 90, easing: 'ease-out', fill: 'both' }).then(gone(s));
+  });
+}
+/** a rain from above: the type's shapes fall on the foe one after another */
+function rainFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
+  const n = 7;
+  sfx('whoosh');
+  for (let q = 0; q < n; q++) {
+    const x0 = end[0] + (q - 3) * 40 * k + 120 * k, x1 = end[0] + (q - 3) * 24 * k, el = piece(shape(t, q % 2 ? '#ffffff' : mc, Math.round(28 * k)), 'sp-star');
+    animate(el, [{ transform: tr([x0, -30]) + ' scale(.6) rotate(0deg)', opacity: 0 }, { transform: tr([lerp(x0, x1, 0.3), lerp(-30, end[1], 0.3)]) + ' scale(1) rotate(120deg)', opacity: 1, offset: 0.3 },
+      { transform: tr([x1, end[1]]) + ' scale(1.1) rotate(300deg)', opacity: 1 }], { duration: 340, delay: q * 55, easing: 'ease-in', fill: 'both' }).then(function () {
+      el.remove(); if (c.outcome !== 'miss') flashAt(x1, end[1], mc, 110 * k, 200);
+    });
+  }
+  return sleep(340 + (n - 1) * 55);
+}
+/** a ring that turns around the caster and then closes in on the foe */
+function orbitFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
+  const f = body(from, 0.5, 0.4), n = 7, els: HTMLElement[] = [];
+  const pos = (s: number, q: number): P => { const a = s / n * Math.PI * 2 + q * Math.PI * 2 * 1.4; return [f[0] + Math.cos(a) * 70 * k, f[1] + Math.sin(a) * 34 * k]; };
+  for (let s = 0; s < n; s++) {
+    const el = piece(shape(t, s % 2 ? '#ffffff' : mc, Math.round(26 * k)), 'sp-star'), fr: Keyframe[] = [];
+    for (let q = 0; q <= 10; q++) fr.push({ transform: tr(pos(s, q / 10)) + ' scale(' + lerp(0.4, 1, q / 10).toFixed(2) + ')', opacity: Math.min(1, q / 3) });
+    animate(el, fr, { duration: 480, easing: 'linear', fill: 'both' });
+    els.push(el);
+  }
+  sfx('shimmer');
+  return sleep(480).then(function () {
+    els.forEach(function (el, s) {
+      animate(el, along(curve(pos(s, 1), end, 60 * k + s * 6).at, 8, function (u) { return 'scale(' + lerp(1, 1.2, u).toFixed(2) + ') rotate(' + (u * 260).toFixed(0) + 'deg)'; }, function (u) { return c.outcome === 'miss' && u > 0.9 ? 0 : 1; }),
+        { duration: 340, delay: s * 28, easing: 'ease-in', fill: 'both' }).then(gone(el));
+    });
+    return sleep(340 + n * 28);
+  });
+}
+/** a ray from the caster to the foe, drawn in one stroke, with the type's shape flashing where it lands */
+function beamFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
+  const f = body(from, 0.5, 0.45), cv = curve(f, end, 40 * k), L = layer(beam(cv.d, mc, 12 * k));
+  sfx('magic');
+  return trace(L, 260).then(function () {
+    if (c.outcome !== 'miss') {
+      const s = piece(shape(t, '#ffffff', Math.round(54 * k)), 'sp-star');
+      animate(s, [{ transform: tr(end) + ' scale(.4)', opacity: 1 }, { transform: tr(end) + ' scale(1.6)', opacity: 0 }], { duration: 320, easing: 'ease-out', fill: 'both' }).then(gone(s));
+    }
+    fade(L, 300, 60);
+  });
+}
+/** a lob: one big shape thrown high over the arena, turning as it goes */
+function lobFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
+  const f = body(from, 0.5, 0.4), cv = curve(f, end, 150 * k), el = piece(shape(t, mc, Math.round(46 * k)), 'sp-star');
+  sfx('whoosh');
+  return animate(el, along(cv.at, 12, function (s) { return 'scale(' + lerp(0.7, 1.25, Math.sin(s * Math.PI)).toFixed(2) + ') rotate(' + (s * 540).toFixed(0) + 'deg)'; }, function (s) { return c.outcome === 'miss' && s > 0.94 ? 0 : 1; }),
+    { duration: 560, easing: 'ease-in', fill: 'both' }).then(gone(el));
+}
+const FLIGHT: Record<Gesture, Flight> = { slash: slashFly, rain: rainFly, orbit: orbitFly, beam: beamFly, lob: lobFly };
+
 /** a spell that does no damage (it lowers a number, it confuses): the type's shapes turn around the foe and sink */
 function hex(to: number, t: TypeName, mc: string, k: number) {
   const b = body(to, 0.5, 0.45), f = anchor(to, 0.5, 0.88);
@@ -498,7 +570,8 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
   glow(from, mc, 900);
   magicCircle(from, t, mc, 200 * k, 1200);
   const end = c.outcome === 'miss' ? beyond(body(from, 0.5, 0.45), b) : b;
-  return FLY[t](from, end, c, mc, k).then(function () {
+  const gesture = c.id ? MOVE_FX[c.id] : undefined;
+  return (gesture ? FLIGHT[gesture](from, end, c, mc, k, t) : FLY[t](from, end, c, mc, k)).then(function () {
     if (c.outcome === 'hit') {
       HIT[t](b, to, c, mc, k);
       if (c.drain) lifeBack(from, to, mc);

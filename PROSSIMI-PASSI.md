@@ -10,6 +10,8 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
+**Il briefing delle idee** (4 novembre 2026): `BRIEFING-IDEE.md` ha lo studio su cosa rende divertenti questi giochi, due misure sul motore (il tipo decide già i duelli; le scelte nel turno sono poche), le idee per lotte, mappa, progressione, avvenimenti, amici, luoghi misteriosi, animazioni, versi, musica, scelte, leggendari e palestre-labirinto, le priorità di tutto (§7) e chi fa cosa tra Opus, Sonnet e Haiku (§9). Le cose da **Opus max** (lotte che pensano: cambio di creatura, abilità, oggetti, stati; motore dei luoghi con puzzle, buio e validatore; framework dei leggendari; scelte; Slancio e Risonanza) sono ancora tutte da fare. Il nome del gioco è da cambiare (§6; non le chiavi `lotte-tra-amici:*`). Il metro delle lotte è `npm run sim:fun`.
+
 **Il trailer è fermo** (4 novembre 2026): Antonio ha chiesto di non aggiornarlo più dopo ogni miglioramento del gioco, finché non lo chiede lui. Quando lo chiede: `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti); se una novità merita una scena tutta sua, si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts` (vedi «Il trailer» in `CLAUDE.md`).
 
 
@@ -42,6 +44,7 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Fatti
 
+- **Il primo giro di cose da Sonnet del briefing** (4 novembre 2026): `tools/sim-fun.ts` (`npm run sim:fun`, le due misure con gli obiettivi); le **selvatiche che seguono la squadra** nei posti di sfida e la trama che alza gli altri (`wildLevel`); **un verso per ogni specie**, in tre versioni (entrata, vittoria, KO), e il gigante di Lamo non è più muto (`audio/cries.ts`); la **musica per luogo** con la sua notte (Castellone, Mola e il porto, Vindicio e la pineta; `audio/zones.ts`); **cinque gesti** per le mosse, 25 mosse con il loro (`data/move-fx.ts`). Restano di questo giro: il tasto «Veloce» per le animazioni, gli altri temi (Gianola, Monti Aurunci, interni, lotte per tipo, stinger, un motivo per ogni amico), le scene firma delle mosse speciali, e tutto quello che aspetta il motore di Opus (Cisternone, covi-labirinto, contenuto di abilità e oggetti, leggende, rami delle scelte).
 - **Il trailer rifatto dal gioco di adesso** (4 novembre 2026): tutte le clip registrate di nuovo (il terreno senza griglia, le creature ridisegnate, le magie nuove, l'albero delle abilità), e i tagli delle lotte rimessi a tempo: la magia parte con la sua fascia e colpisce sul battito, il retino vola, trema e regge con le stelle. Al posto dell'Esame c'è il rivale: Tullio presentato dopo i sei amici con il suo «!», lo studente che vede Antonio e gli viene incontro, la lotta con Tullio che si apre con le fasce rosse.
 
 - **Il rivale, gli allenatori che ti vedono, le due squadre, l'albero delle abilità** (4 novembre 2026): Tullio, il nipote del guardaparco, sceglie dopo Antonio l'iniziale che batte la sua e lo sfida tre volte (al parco, sull'Appia, dopo Mamurra); gli allenatori non battuti vedono Antonio davanti a sé, il «!», gli vengono incontro e lo sfidano; nel menu le persone e le creature sono due squadre da sei posti; le abilità sono un albero a tre rami dove ognuna si apre con un punto in quella prima.
