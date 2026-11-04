@@ -13,7 +13,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 **Il trailer, dopo ogni aggiornamento:** `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti). Se la novità merita una scena tutta sua (Torino, i poteri delle creature, la pesca…), si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts`: vedi «Il trailer» in `CLAUDE.md`.
 
 
-14. **Il trailer dopo le magie nuove**: le lotte durano di più, quindi gli shot di `tools/promo/trailer.ts` agganciati a un momento di una clip di lotta vanno ricontrollati (vedi «Il trailer» in `CLAUDE.md`).
 
 9. **Creature, il resto**: altre specie selvatiche con disegni nuovi (meduse e ricci in acqua bassa, un pipistrello
    della Grotta della Janara), una mossa che cambia con il terreno, e altri posti da raggiungere con i poteri
@@ -26,6 +25,8 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     provano a pezzi), e il bilanciamento delle lotte con Mamurra (Tenaglione 21, Olivastro 19, Sibilla 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
 ## Fatti
+
+- **Il trailer rifatto dal gioco di adesso** (4 novembre 2026): tutte le clip registrate di nuovo (il terreno senza griglia, le creature ridisegnate, le magie nuove, l'albero delle abilità), e i tagli delle lotte rimessi a tempo: la magia parte con la sua fascia e colpisce sul battito, il retino vola, trema e regge con le stelle, l'Esame prende il colpo sul suono. Idea per dopo: uno shot per Tullio e per il «!» degli allenatori.
 
 - **Il rivale, gli allenatori che ti vedono, le due squadre, l'albero delle abilità** (4 novembre 2026): Tullio, il nipote del guardaparco, sceglie dopo Antonio l'iniziale che batte la sua e lo sfida tre volte (al parco, sull'Appia, dopo Mamurra); gli allenatori non battuti vedono Antonio davanti a sé, il «!», gli vengono incontro e lo sfidano; nel menu le persone e le creature sono due squadre da sei posti; le abilità sono un albero a tre rami dove ognuna si apre con un punto in quella prima.
 

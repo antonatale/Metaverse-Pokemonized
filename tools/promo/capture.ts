@@ -63,8 +63,9 @@ function P(id: string, dx = 0, dy = 0): { x: number; y: number } {
   throw new Error('no free tile near ' + id);
 }
 
-/* the HUD, Cicero's corner and the battle's top bar are hidden: the trailer writes its own words */
-const CLEAN = 'html.promo #world .whud > :not(#wtoast), html.promo #world .whint, html.promo #world #wcic, html.promo #world #wcic-say { visibility: hidden !important; }' +
+/* the HUD, the level bars in the corner, Cicero's corner and the battle's top bar are hidden: the trailer writes its
+   own words */
+const CLEAN = 'html.promo #world .whud > :not(#wtoast), html.promo #world .wbars, html.promo #world .whint, html.promo #world #wcic, html.promo #world #wcic-say { visibility: hidden !important; }' +
   'html.promo #battle .topbar { visibility: hidden !important; }';
 
 /* ---------- playing ---------- */
@@ -74,6 +75,8 @@ async function story(browser: Browser, save: Save, o: { hour?: 'giorno' | 'notte
   if (o.clean !== false) await g.page.evaluate(() => document.documentElement.classList.add('promo'));
   await g.page.click('#go-story');
   await g.page.clock.runFor(1500);
+  /* the trainers who see Antonio stay where they are: nobody walks into a shot to challenge him */
+  await g.page.evaluate(() => (window as unknown as { WORLD: { _debug: { spotting(on: boolean): void } } }).WORLD._debug.spotting(false));
   /* nothing jumps out of the grass while we film, and the creature finds nothing; battles get Math.random back (luck(p, null)) */
   await luck(g.page, 0.999);
   return g;
@@ -243,7 +246,8 @@ const CLIPS: Record<string, Shot> = {
   },
   /* the guardaparco's three cubs */
   async starters(b) {
-    const g = await story(b, { badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { ...QUIET, starter: false }, ...P('guardaparco', -1, 2), dir: 'up', mons: [], lv: {} });
+    /* from the path north of him: below him the ruins of the villa and the hill close a pocket */
+    const g = await story(b, { badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { ...QUIET, starter: false }, ...P('guardaparco', 0, -2), dir: 'down', mons: [], lv: {} });
     const c = new Clip(g.page, WORK + '/starters');
     await talkTo(c, 'guardaparco', false); await talkThrough(c, false);
     await frames(c, true, 4);
@@ -458,7 +462,10 @@ const CLIPS: Record<string, Shot> = {
     const g = await openGame(b, { seed: 42, dark: true });
     const p = g.page;
     await p.addStyleTag({ content: CLEAN }); await p.evaluate(() => document.documentElement.classList.add('promo'));
-    await p.evaluate(() => { (document.querySelector('.slot[data-id="antonio"]') as HTMLElement).click(); document.getElementById('go-exam')!.click(); });
+    /* the Esame is one of the foes in the challenge sheet */
+    await p.evaluate(() => { (document.querySelector('.slot[data-id="antonio"]') as HTMLElement).click(); document.getElementById('go')!.click(); });
+    await p.clock.runFor(300);
+    await p.evaluate(() => { (document.querySelector('.pick[data-k="p2"][data-id="esame"]') as HTMLElement).click(); document.getElementById('su-go')!.click(); });
     const c = new Clip(p, WORK + '/boss');
     await toPad(c, true, 200);
     await move(c); await frames(c, true, 20); await toPad(c, true, 200);

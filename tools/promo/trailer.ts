@@ -197,8 +197,10 @@ function hud(parent: HTMLElement, id: SpeciesId, lv: number, side: 'me' | 'foe')
   return { el, set: function (v: number) { bar.style.width = (v * 100) + '%'; bar.style.background = v > 0.5 ? '#57c968' : v > 0.2 ? '#ffd166' : RED; } };
 }
 
-/* where the spell leaves the caster, in the battle clip, and where it lands (checked on its contact sheet) */
-const BATTLE_AT = 178;
+/* the spell in the battle clip (checked on its contact sheet): from BATTLE_AT the arena darkens and the move's name
+   crosses it on its banner; the moon leaves Polpino 19 frames later and lands on the Riccetto at BATTLE_HIT, two
+   beats into the shot, with the number of the damage four frames after */
+const BATTLE_AT = 147, BATTLE_HIT = BATTLE_AT + 30;
 
 /* ---------- shots ---------- */
 interface K { f: number; g: number; n: number; p: number }
@@ -371,12 +373,13 @@ shot(fr(23, 2), fr(24), function (el) {
 
 /* ===== CREATURES ===== */
 shot(fr(24), fr(25), function (el) {
-  /* the spell leaves Polpino at the shot's start and lands on the Riccetto, on the right, 41 frames later */
+  /* the banner of the move at the shot's start, then the moon from Polpino to the Riccetto, on the right */
   const draw = clip(el, 'battle', { at: BATTLE_AT, zoom: [1, 1.22], origin: '76% 40%' });
   const stamp = div(el, 'stampbig', 'LOTTA!');
   return function (k) {
     draw(k);
-    const t = span(k.f, 0, 8), out = span(k.f, 24, 32);
+    /* below the banner of the move, and gone before the moon leaves */
+    const t = span(k.f, 0, 8), out = span(k.f, 12, 19);
     stamp.style.transform = 'translate(-50%,-50%) rotate(-9deg) scale(' + mix(2.6, 1, E.back(t)) + ')';
     stamp.style.opacity = String(clamp(t * 3) * (1 - out));
   };
@@ -495,7 +498,9 @@ function boltsSvg(seed: number, col: string): string {
 povShot(fr(25), fr(26), { me: 'polpino', foe: 'riccetto', scene: 'gianola', night: false, lv: [7, 6], hp: [1, 0.52], crit: false, cap: 'Ogni mossa è una magia' });
 povShot(fr(26), fr(27), { me: 'gabbi', foe: 'cicalina', scene: 'pineta', night: true, lv: [9, 8], hp: [0.8, 0.08], crit: true });
 clipShot(fr(27), fr(28), 'starters', { at: 12, zoom: [1, 1.05], cap: 'Scegli la tua prima creatura', capY: 120, capSize: 84, hi: TYPE.Chiacchiera });
-clipShot(fr(28), fr(29), 'catch', { at: -1, zoom: [1.02, 1.1], cap: 'Catturale!', capY: 150, hi: TYPE.Cuore });
+/* the net flies, closes on the Cicalina, shakes on the ground and holds, with its stars (at twice the speed: from
+   the throw to the stars is over three seconds of the clip) */
+clipShot(fr(28), fr(29), 'catch', { at: 454, speed: 2, zoom: [1.02, 1.1], cap: 'Catturale!', capY: 150, hi: TYPE.Cuore });
 shot(fr(29), fr(30), function (el) {
   paper(el);
   const cap = caption(el, '20 creature da scoprire', { y: 110, size: 104, hi: TYPE.Chiacchiera });
@@ -611,9 +616,10 @@ shot(fr(44), fr(44, 2), function (el) {
     items.forEach(function (it, i) { const t = E.back(span(k.f, 2 + i * 4, 12 + i * 4)); it.style.transform = 'scale(' + t + ') rotate(' + mix(-30, (i ? 6 : -6), t) + 'deg)'; });
   };
 });
-clipShot(fr(44, 2), fr(45), 'boss', { at: 250, zoom: [1.75, 1.65], origin: '50% 28%', cap: 'Supera l\'Esame!', hi: RED, capAt: 0 });
+/* Antonio's Diagnosi Energetica hits the exam a quarter of a beat in */
+clipShot(fr(44, 2), fr(45), 'boss', { at: 236, zoom: [1.75, 1.65], origin: '50% 28%', cap: 'Supera l\'Esame!', hi: RED, capAt: 0 });
 shot(fr(45), fr(46), function (el) {
-  const picks: [string, number][] = [['battle', BATTLE_AT + 41], ['friends', 240], ['porto-notte', 50], ['tourney', 40], ['sky', 90], ['catch', 560], ['volley', 60], ['piazza-notte', 40], ['boss', 270], ['beach', 70], ['covo', 80], ['battle', BATTLE_AT + 44]];
+  const picks: [string, number][] = [['battle', BATTLE_HIT + 4], ['friends', 240], ['porto-notte', 50], ['tourney', 40], ['sky', 90], ['catch', 552], ['volley', 60], ['piazza-notte', 40], ['boss', 245], ['beach', 70], ['covo', 80], ['battle', BATTLE_HIT + 6]];
   const img = document.createElement('img'); img.className = 'clip'; el.appendChild(img);
   const white = div(el, 'white');
   return function (k) {
@@ -744,7 +750,7 @@ css.textContent = MAGIC_CSS + `
 .stripes { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .stripe { flex: 1; background: #0b0d1c; }
 .bang { position: absolute; left: 50%; top: 50%; z-index: 3; }
-.stampbig { position: absolute; left: 50%; top: 42%; padding: 26px 60px 18px; border: 14px solid ${RED}; border-radius: 26px; color: ${RED}; background: ${PAPER}; font: 210px/1 'Lilita One'; letter-spacing: .05em; z-index: 3; box-shadow: 14px 16px 0 rgba(31,44,110,.6); }
+.stampbig { position: absolute; left: 50%; top: 66%; padding: 26px 60px 18px; border: 14px solid ${RED}; border-radius: 26px; color: ${RED}; background: ${PAPER}; font: 210px/1 'Lilita One'; letter-spacing: .05em; z-index: 3; box-shadow: 14px 16px 0 rgba(31,44,110,.6); }
 .pov-world { transform-origin: 61% 46%; }
 .pov-bg { transform: scale(1.2); transform-origin: 60% 70%; }
 .pov-plat { position: absolute; left: 900px; top: 640px; width: 560px; height: 120px; border-radius: 50%; border: 6px solid ${LINE}; box-shadow: inset 0 -14px 0 rgba(0,0,0,.18); }

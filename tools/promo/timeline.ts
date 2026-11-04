@@ -34,13 +34,13 @@ export const CUES: [number, number, string, number][] = [
   [17, 0.4, 'scooter', 0.5],
   /* the tall grass, the rock pools, the pineta… and the encounter */
   [21, 0, 'rustle', 0.5], [21, 2, 'rustle', 0.45], [21, 3, 'rustle', 0.5], [22, 2, 'rustle', 0.55], [23, 0, 'rustle', 0.6], [23, 2, 'meet', 0.9],
-  /* creatures: the spell in the game (it leaves at the cut, lands 41 frames later); then the spells seen from the
-     creature: its cry, the charge, the launch, the hit on the and of three */
-  [24, 0.28, 'magic', 0.6], [24, 1.48, 'reveal', 0.3], [24, 2.75, 'hit', 0.7],
+  /* creatures: the spell in the game (the banner at the cut, the moon leaves 19 frames in and lands on the third
+     beat); then the spells seen from the creature: its cry, the charge, the launch, the hit on the and of three */
+  [24, 0.28, 'magic', 0.6], [24, 1.27, 'reveal', 0.3], [24, 2, 'hit', 0.7],
   [25, 0, 'cry-octo', 0.5], [25, 0.25, 'magicUp', 0.55], [25, 1.5, 'magic', 0.75], [25, 2.5, 'hit', 0.9],
   [26, 0, 'cry-bird', 0.5], [26, 0.25, 'magicUp', 0.55], [26, 1.5, 'magic', 0.8], [26, 2.5, 'crit', 1.0], [26, 2.6, 'superEff', 0.6],
   /* the cubs, the net, the shadows, the hearts, a swim, the light, a flight */
-  [27, 0.3, 'magicUp', 0.5], [28, 2.55, 'caught', 0.7], [29, 0.3, 'shimmer', 0.45], [30, 0.5, 'heal', 0.5], [30, 2.1, 'whoosh', 0.35],
+  [27, 0.3, 'magicUp', 0.5], [28, 0.1, 'net', 0.5], [28, 3.2, 'caught', 0.7], [29, 0.3, 'shimmer', 0.45], [30, 0.5, 'heal', 0.5], [30, 2.1, 'whoosh', 0.35],
   [31, 0.8, 'reveal', 0.6], [31, 2.4, 'shimmer', 0.6], [32, 0.2, 'whoosh', 0.5],
   /* the mystery: someone digging at night, a secret, the ghost who guides, the tour */
   [34, 0.5, 'rustle', 0.45], [34, 2.5, 'rustle', 0.4], [35, 0, 'shimmer', 0.35], [36, 0, 'magic', 0.4], [37, 0.5, 'pickup', 0.5],
