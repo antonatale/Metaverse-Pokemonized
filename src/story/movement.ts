@@ -18,6 +18,8 @@ let held: Dir | null = null, pressedAt = 0, lastBump = '', walking = false;
 export let mover: Mover | null = null, parity = 0, busy = false;
 /** stop walking: a dialogue, a sheet or leaving the map */
 export function halt() { held = null; walking = false; }
+/** Antonio stands still (a trainer who has seen him walks up to him), and may walk again */
+export function lock(on: boolean) { busy = on; if (on) halt(); }
 export function press(d: Dir) {
   /* nobody walks while a winged creature shows Formia from above */
   if (!running || dialog || busy || skyFrom) return;

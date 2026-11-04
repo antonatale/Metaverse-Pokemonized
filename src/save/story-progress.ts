@@ -42,6 +42,8 @@ export interface StoryProgress {
   lead?: string;
   /** the first of his company: the person shown in the corner of the map and sent in first in a covo (Antonio when missing) */
   first?: FriendId;
+  /** the creature his rival Tullio picked after him (story/rival.ts; worked out from Antonio's when missing) */
+  rival?: SpeciesId;
 }
 
 export function blank(): StoryProgress {

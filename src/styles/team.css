@@ -14,6 +14,19 @@
 .team .tm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .team .tm b { font: 16px/1.15 var(--font-display); color: var(--ink); }
 .team .tm small { font-size: 12.5px; color: var(--muted); line-height: 1.25; }
+/* the two teams, the people and the creatures: each with its six places, a little face on the ones taken */
+.teams { display: flex; flex-direction: column; gap: 12px; }
+.party { display: flex; flex-direction: column; gap: 7px; padding: 8px; border: 2px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--pc) 20%, var(--paper)); box-shadow: 3px 3px 0 var(--line); }
+.party.people { --pc: var(--t-chiacchiera); }
+.party.mons { --pc: var(--t-calma); }
+.party-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; row-gap: 6px; }
+.party-h > .ico { width: 20px; height: 20px; padding: 4px; border: 2px solid var(--line); border-radius: 50%; background: var(--pc); color: #1f2c6e; box-sizing: content-box; stroke-width: 2; }
+.party-h h3 { margin: 0; font: 19px/1.1 var(--font-display); color: var(--ink); }
+.party-h > small { font: 700 12.5px/1 var(--font-body); color: var(--muted); }
+.slots { display: flex; gap: 4px; margin-left: auto; }
+.slots i { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--line) 45%, transparent); overflow: hidden; background: var(--card); }
+.slots i.on { border: 2px solid var(--line); background: var(--tc, var(--t-none)); }
+.slots i > * { display: block; width: 100%; height: 100%; }
 .btn.small { flex: none; min-height: 34px; padding: 4px 10px; font-size: 14px; }
 /* the three to start with */
 .starters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -29,9 +42,9 @@
 .evo b { font: 28px/1 var(--font-display); color: var(--ink); }
 /* the shops */
 .wallet { margin: 0 0 8px; color: var(--ink); }
-.wares, .skills { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.wares li, .skills li { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); }
-.wares li > span, .skills li > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wares { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.wares li { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); }
+.wares li > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 /* the money is a coin with its number; the nets and the tiella have their little drawing */
 .coin { flex: none; display: inline-block; vertical-align: -3px; margin-right: 3px; }
 .wmoney { display: inline-flex; align-items: center; gap: 2px; }
@@ -39,13 +52,66 @@
 .wares li > .ware-ico, .bag .ware-ico { flex: none; display: grid; place-items: center; width: 38px; height: 38px; }
 .wares .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .wares .btn .coin { margin: 0; }
-.wares b, .skills b { font: 16px/1.15 var(--font-display); color: var(--ink); }
-.wares small, .skills small { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
-.wares .btn, .skills .btn { flex: none; min-width: 72px; }
+.wares b { font: 16px/1.15 var(--font-display); color: var(--ink); }
+.wares small { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
+.wares .btn { flex: none; min-width: 72px; }
 /* the grades of an ability */
 .pips { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; }
 .pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line); }
 .pips i.on { background: var(--t-caos); }
+/* ---------- Antonio's abilities: three branches, an ability after the other ---------- */
+.sk-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 3px 3px 0 var(--line); }
+.sk-head .face { flex: none; width: 52px; height: 52px; border-radius: 8px; overflow: hidden; border: 2px solid var(--line); background: var(--t-chiacchiera); }
+.sk-head > span:nth-child(2) { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sk-head b { font: 18px/1.1 var(--font-display); color: var(--ink); }
+.sk-head small { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
+.sk-points { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 62px; height: 62px; border-radius: 50%; border: 2.5px solid var(--line); background: var(--paper); color: var(--ink); }
+.sk-points b { font: 26px/1 var(--font-display); }
+.sk-points small { font: 700 11px/1 var(--font-body); color: inherit; }
+.sk-points.has { background: var(--t-chiacchiera); color: #1f2c6e; animation: skGlow 1.6s ease-in-out infinite; }
+.sk-tree { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: start; }
+.sk-branch { min-width: 0; padding: 7px 3px 10px; border: 2px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--bc) 24%, var(--card)); }
+.sk-branch h3 { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 0 0 8px; font: 13px/1.1 var(--font-display); color: var(--ink); text-align: center; }
+.sk-branch h3 .ico { width: 22px; height: 22px; padding: 3px; border: 2px solid var(--line); border-radius: 50%; background: var(--bc); color: #1f2c6e; box-sizing: content-box; }
+.sk-path { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+.sk-node { position: relative; width: 100%; display: flex; justify-content: center; }
+.sk-node + .sk-node { margin-top: 20px; }
+/* the path from the one before: dashed while closed, a solid line once open */
+.sk-node + .sk-node::before { content: ''; position: absolute; top: -21px; left: 50%; width: 0; height: 20px; margin-left: -2px; border-left: 4px dashed color-mix(in srgb, var(--line) 40%, transparent); }
+.sk-node + .sk-node:not(.locked)::before { border-left-style: solid; border-left-color: var(--line); }
+.sk-node button { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 100%; padding: 0 2px; border: 0; background: none; color: var(--ink); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sk-orb { position: relative; flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid var(--line); background: var(--card); color: var(--ink); box-shadow: 2px 2px 0 var(--line); transition: transform .15s; }
+.sk-orb .ico { width: 26px; height: 26px; stroke-width: 2; }
+.sk-node.some .sk-orb { background: var(--bc); color: #1f2c6e; }
+.sk-node.full .sk-orb { background: var(--bc); color: #1f2c6e; box-shadow: 0 0 0 3px var(--card), 0 0 0 5.5px var(--line); }
+.sk-node.locked .sk-orb { border-style: dashed; background: var(--paper); color: var(--muted); box-shadow: none; }
+.sk-node.can .sk-orb { animation: skGlow 1.6s ease-in-out infinite; }
+.sk-node.sel .sk-orb { transform: scale(1.05); outline: 3px solid var(--ink); outline-offset: 2px; }
+.sk-node button:active .sk-orb { transform: scale(.94); }
+.sk-node button:focus-visible { outline: none; }
+.sk-node button:focus-visible .sk-orb { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sk-node.took .sk-orb { animation: skPop .55s ease-out; }
+.sk-star { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--line); border-radius: 50%; background: var(--t-chiacchiera); color: #1f2c6e; }
+.sk-star .ico { width: 14px; height: 14px; fill: currentColor; stroke-width: 1.4; }
+.sk-node .pips { margin: 0; }
+.sk-node .pips i { width: 8px; height: 8px; background: var(--card); }
+.sk-node .pips i.on { background: var(--ink); }
+.sk-name { max-width: 100%; font: 700 11.5px/1.15 var(--font-body); color: var(--ink); text-align: center; overflow-wrap: anywhere; }
+.sk-node.locked .sk-name { color: var(--muted); }
+/* what the tapped one does: always in sight at the bottom of the sheet */
+.sk-detail { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px; border: 2px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--bc) 22%, var(--card)); box-shadow: 3px 3px 0 var(--line); }
+.sk-detail > .sk-orb { width: 46px; height: 46px; background: var(--bc); color: #1f2c6e; }
+.sk-detail > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sk-detail b { font: 18px/1.1 var(--font-display); color: var(--ink); }
+.sk-detail small { font-size: 13px; line-height: 1.35; color: var(--text, var(--ink)); }
+.sk-detail .sk-why { font-weight: 700; color: var(--ink); }
+.sk-grade { font: 700 12px/1 var(--font-body); color: var(--muted); }
+.sk-grade .pips { margin: 0 4px 0 0; }
+.sk-grade .pips i.on { background: var(--ink); }
+.sk-detail .btn { flex: none; min-width: 84px; }
+@keyframes skGlow { 50% { box-shadow: 2px 2px 0 var(--line), 0 0 0 6px color-mix(in srgb, var(--t-chiacchiera) 75%, transparent); } }
+@keyframes skPop { 0% { transform: scale(1); } 35% { transform: scale(1.3) rotate(-10deg); } 70% { transform: scale(.95) rotate(4deg); } 100% { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .sk-points.has, .sk-node.can .sk-orb, .sk-node.took .sk-orb { animation: none; } }
 /* in battle: what is in the bag, the net, a creature caught */
 .mv.bag { min-height: 48px; background: var(--paper); }
 .mv.bag b { font-size: 14px; }

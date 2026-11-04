@@ -13,7 +13,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 **Il trailer, dopo ogni aggiornamento:** `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti). Se la novità merita una scena tutta sua (Torino, i poteri delle creature, la pesca…), si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts`: vedi «Il trailer» in `CLAUDE.md`.
 
 
-13. **Dalla lista della sessione del 4 novembre**, ancora da fare: due squadre nel menu (persone e creature, sei posti ciascuna); la schermata delle abilità come albero a tre rami; cose alla Pokémon: il nipote del guardaparco come rivale che sceglie l'iniziale che batte la tua, allenatori che ti vedono e ti sfidano. (Fatti dalla stessa lista: le magie e la pulsantiera della lotta, i retini, i premi del diario; vedi sotto.)
 14. **Il trailer dopo le magie nuove**: le lotte durano di più, quindi gli shot di `tools/promo/trailer.ts` agganciati a un momento di una clip di lotta vanno ricontrollati (vedi «Il trailer» in `CLAUDE.md`).
 
 9. **Creature, il resto**: altre specie selvatiche con disegni nuovi (meduse e ricci in acqua bassa, un pipistrello
@@ -27,6 +26,8 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     provano a pezzi), e il bilanciamento delle lotte con Mamurra (Tenaglione 21, Olivastro 19, Sibilla 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
 ## Fatti
+
+- **Il rivale, gli allenatori che ti vedono, le due squadre, l'albero delle abilità** (4 novembre 2026): Tullio, il nipote del guardaparco, sceglie dopo Antonio l'iniziale che batte la sua e lo sfida tre volte (al parco, sull'Appia, dopo Mamurra); gli allenatori non battuti vedono Antonio davanti a sé, il «!», gli vengono incontro e lo sfidano; nel menu le persone e le creature sono due squadre da sei posti; le abilità sono un albero a tre rami dove ognuna si apre con un punto in quella prima.
 
 - **Le magie delle creature, grandi e diverse per tipo** (4 novembre 2026): il buio intorno, il cerchio magico, il nome della mossa su una fascia; la falce di luna, i fulmini dalla nuvola, la rete di stelle, le onde di canto, il cuore gigante, ognuna col suo suono, e una versione grande per le mosse forti; numeri dei danni grandi con «Superefficace!» e simili, la barra dei PS che scende con la fascia chiara; le mosse delle creature colorate col loro tipo e la runa; l'entrata in lotta con le fasce, come nei Pokémon (`ui/spells.ts`).
 - **I retini** (4 novembre 2026): sei retini di pregio diverso (dal Retino al Retino d'oro, più Nassa e Rete della lampara), il retaio accanto al guardaparco che li vende tutti, cinque retini in regalo con la prima creatura e la spiegazione di come si cattura, la Borsa come riga in lotta con la probabilità, il retino che trema prima di reggere (`data/nets.ts`).

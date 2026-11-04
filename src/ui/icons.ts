@@ -31,7 +31,11 @@ const ICONS: Record<string, string> = {
   wrench: '<path d="M14.5 6.5a4 4 0 0 0 5 5l-8.5 8.5a2.1 2.1 0 0 1-3-3L16.5 8.5a4 4 0 0 0-2-2z"/>',
   paw: '<circle cx="7" cy="9.5" r="1.8"/><circle cx="11" cy="6.5" r="1.8"/><circle cx="15.5" cy="7" r="1.8"/><circle cx="18" cy="11" r="1.8"/><path d="M8.5 17.5c0-3 2-5.5 4.5-5.5s4 2 4 4.2c0 2-1.6 3.3-3.8 3.3-1.2 0-2.2-.6-3.2-.6-.9 0-1.5.6-2.2.6-.8 0-1.3-.8-1.3-2z"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
-  users: '<circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.4c3 .2 5.5 2.4 5.5 5.6"/>'
+  users: '<circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.4c3 .2 5.5 2.4 5.5 5.6"/>',
+  bolt: '<path d="M13.5 2.5L5.5 13.5h5.5L9.5 21.5l9-11.5h-5.8z"/>',
+  net: '<circle cx="10" cy="10" r="6.5"/><path d="M4.5 7.5l11 5M4.5 12.5l11-5M10 3.5v13M14.8 14.8l5.7 5.7"/>',
+  lock: '<rect x="5.5" y="10.5" width="13" height="10" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.5v2.5"/>',
+  star: '<path d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/>'
 };
 export function ico(n: string): string { return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
 

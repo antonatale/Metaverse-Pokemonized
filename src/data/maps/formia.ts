@@ -198,7 +198,15 @@ const npcs: Npc[] = [
   npc('mamurr-peschiere', { trainer: 'mamurr-peschiere', look: 'mamurriano', name: 'Sub con la muta', dir: 'down', when: { after: 'trama-archivio', until: 'tr-mamurr-peschiere' },
     lines: ['Mi sono immerso tutta la mattina tra le peschiere romane. E guarda cosa ho trovato.'] }),
   npc('mamurra', { trainer: 'mamurra', ghost: 'mamurra', name: 'Mamurra', dir: 'down', when: { after: 'pietra-voce', until: 'tr-mamurra' },
-    lines: ['Ah, il ragazzo di Cicerone. Ti aspettavo.'] })
+    lines: ['Ah, il ragazzo di Cicerone. Ti aspettavo.'] }),
+  /* Tullio, the guardaparco's grandson and Antonio's rival (story/rival.ts): at the park as soon as they both have a
+     creature, on the Appia on the way to Cicero's tomb, and at the park again once Mamurra is beaten */
+  npc('tullio', { trainer: 'rivale-1', look: 'tullio', name: 'Tullio', dir: 'right',
+    lines: ['Il nonno dice che le creature nascono dalla magia dei giganti. Io dico che nascono per lottare!'] }),
+  npc('tullio-appia', { trainer: 'rivale-2', look: 'tullio', name: 'Tullio', dir: 'right',
+    lines: ['Da quassù si vede tutto il golfo, fino a Gaeta. Vengo ad allenarmi qui, vicino alla tomba di Cicerone.'] }),
+  { ...npc('tullio', { trainer: 'rivale-3', look: 'tullio', name: 'Tullio', dir: 'right',
+    lines: ['Il nonno mi ha raccontato tutto: le pietre, il sigillo, Mamurra.'] }), id: 'tullio-campione' }
 ];
 
 const item = (id: string, move: string, pron: string, t: string): LostItem => { const [x, y] = spot(id); return { id, move, x, y, pron, text: t }; };

@@ -146,13 +146,29 @@ function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
   return sprites[id] || (sprites[id] = paintObject('item', P || palette(), s, { item: kind, up: UP.item }));
 }
+/** the "!" over a trainer who has seen Antonio: a bubble that pops up, with a little bounce (t: ms since) */
+function exclaim(c: CanvasRenderingContext2D, x: number, y: number, t: number) {
+  var k = reduced ? 1 : t < 120 ? 0.3 + 0.9 * (t / 120) : t < 220 ? 1.2 - 0.2 * ((t - 120) / 100) : 1;
+  c.save(); c.translate(x, y); c.scale(k, k);
+  c.beginPath();
+  c.moveTo(-3, -24); c.lineTo(3, -24); c.quadraticCurveTo(8, -24, 8, -19); c.lineTo(8, -9); c.quadraticCurveTo(8, -4, 3, -4);
+  c.lineTo(1.5, -4); c.lineTo(0, 1.5); c.lineTo(-1.5, -4); c.lineTo(-3, -4); c.quadraticCurveTo(-8, -4, -8, -9); c.lineTo(-8, -19); c.quadraticCurveTo(-8, -24, -3, -24);
+  c.closePath();
+  c.fillStyle = '#ffffff'; c.strokeStyle = '#1c2340'; c.lineWidth = 1.8; c.lineJoin = 'round'; c.fill(); c.stroke();
+  c.fillStyle = '#e63946';
+  c.beginPath(); c.moveTo(-1.9, -21); c.lineTo(1.9, -21); c.lineTo(1.1, -11); c.lineTo(-1.1, -11); c.closePath(); c.fill();
+  c.beginPath(); c.arc(0, -7.6, 1.7, 0, Math.PI * 2); c.fill();
+  c.restore();
+}
 /* draws the sorted items and the moving things in one pass, so people walk behind trees and roofs */
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
     if (e.img) { var z = e.size || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
-    var img = e.w![e.d!][e.f || 0]; c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s);
+    var img = e.w![e.d!][e.f || 0];
+    if (e.alpha) c.globalAlpha = e.alpha;
+    c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s); c.globalAlpha = 1;
   };
   for (var n = 0; n < items.length; n++) {
     var it = items[n];
@@ -369,7 +385,7 @@ function drawFrame(now: number, sk: number) {
     ctx.beginPath(); ctx.moveTo(tx * T + 5 + ox, ty * T + 8 + oy); ctx.quadraticCurveTo(tx * T + 10 + ox, ty * T + 5 + oy, tx * T + 15 + ox, ty * T + 8 + oy); ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  var people: Drawn[] = [];
+  var people: Drawn[] = [], alerts: [number, number, number][] = [];
   M.people.filter(present).forEach(function (p) {
     if (p.n.ghost) {
       /* a ghost of Formia floats over its spot, see-through */
@@ -390,7 +406,13 @@ function drawFrame(now: number, sk: number) {
       return;
     }
     var idle = p.n.person ? 0 : ((Math.floor(now / 700 + hash(p.x, p.y, 9) * 6) % 7) === 0 ? 1 : 0);
-    people.push({ yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, RS), d: p.dir, f: reduced ? 0 : idle });
+    var wx = p.x * T, wy = p.y * T, wf = reduced ? 0 : idle;
+    /* someone walking (a trainer coming to challenge Antonio, and back): between two tiles, a foot forward */
+    if (p.mv) { var u = Math.min(1, (now - p.mv.t0) / STEP); wx = (p.mv.fx + (p.x - p.mv.fx) * u) * T; wy = (p.mv.fy + (p.y - p.mv.fy) * u) * T; wf = u > 0.12 && u < 0.88 ? 1 + ((p.x + p.y) & 1) : 0; }
+    /* a beaten rival walking away fades out over his last steps */
+    var fade = p.leaving ? Math.min(1, ((p.path ? p.path.length : 0) + 1) / 3) : 1;
+    people.push({ yb: wy + T, x: wx, y: wy, w: walkerFor(p.n, RS), d: p.dir, f: wf, alpha: fade < 1 ? fade : undefined });
+    if (p.alert) alerts.push([wx + T / 2, wy - 14, now - p.alert]);
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
   people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
@@ -415,6 +437,8 @@ function drawFrame(now: number, sk: number) {
     ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.62 + wv, T * 0.5, T * 0.16, 0, 0, Math.PI * 2); ctx.stroke();
   }
   ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
+  /* over the night too: the "!" of a trainer who has seen Antonio */
+  alerts.forEach(function (a) { exclaim(ctx, a[0], a[1], a[2]); });
   /* from above, the lost things are easy to spot: a ring that pulses around each one, and the creature flying over Antonio */
   if (sk < 1) {
     M.items.forEach(function (it) {

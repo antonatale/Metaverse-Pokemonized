@@ -191,7 +191,10 @@ export const SPOTS: SpotSpec[] = [
   { id: 'archivista', tile: [92, 39] },
   { id: 'mamurr-cisterna', near: { place: 'cisternone', dx: 1, dy: 2 } },
   { id: 'mamurr-peschiere', at: [41.2510, 13.5981] },
-  { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } }
+  { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } },
+  /* Tullio, the rival: by his grandfather at the park, and on the Appia, on the way to Cicero's tomb */
+  { id: 'tullio', tile: [159, 56] },
+  { id: 'tullio-appia', tile: [31, 57] }
 ];
 /* where the wild creatures hide, out of sight (data/encounters.ts says which ones, by the id): the generator paints
    tall grass on the grass ('E') and rock pools on the sand ('A') out to about r tiles around each spot */

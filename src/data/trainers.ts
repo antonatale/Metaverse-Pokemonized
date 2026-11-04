@@ -9,7 +9,8 @@ export interface Trainer {
   id: string;
   /** who sends the creatures in, in battle */
   title: string;
-  team: { sp: SpeciesId; lv: number }[];
+  /** their creatures, at a level, with the moves they know when not the ones of that level */
+  team: { sp: SpeciesId; lv: number; moves?: string[] }[];
   /** before the challenge, when beaten, when they win, and once beaten */
   intro: string[];
   win: string[];
@@ -17,6 +18,10 @@ export interface Trainer {
   after: string[];
   /** sesterzi, the first time they are beaten */
   prize: number;
+  /** Antonio's rival, Tullio, at his first, second or third meeting with him: his team is not here but follows
+      Antonio's choice and the story (story/rival.ts); in his lines {rival} is his creature, {mine} Antonio's, {why}
+      why his has the better of Antonio's */
+  rival?: 1 | 2 | 3;
 }
 
 export const TRAINERS: Record<string, Trainer> = {
@@ -85,6 +90,29 @@ export const TRAINERS: Record<string, Trainer> = {
     win: ['Impossibile… battuto da un ragazzo con la felpa.', 'Le pietre restano a Formia. Ma ogni volta che passerai davanti alle rovine della mia villa, ricordati di me.'],
     lose: ['Le pietre saranno mie. Torna quando avrai il coraggio.'],
     after: ['…']
+  },
+  /* the rival: Tullio, the guardaparco's grandson. He picks his creature after Antonio, the one that beats his, and
+     meets him three times: at the park, on the Appia, and after Mamurra, for the title of the strongest in Formia */
+  'rivale-1': {
+    id: 'rivale-1', title: 'Tullio, il nipote del guardaparco', prize: 30, rival: 1, team: [],
+    intro: ['Ehi, aspetta! Sono Tullio, il nipote del guardaparco. Il nonno mi ha fatto scegliere dopo di te.', 'Ho preso {rival}. {why}', 'Le nostre creature sono appena nate: vediamo subito chi è più forte!'],
+    win: ['Cosa?! Avevo scelto quella giusta, eppure…', 'Va bene, stavolta hai vinto tu. Ma mi alleno, e la prossima volta ti batto!'],
+    lose: ['Visto? Il nonno aveva ragione. Allena il tuo {mine} e riprova quando vuoi: io sto qui.'],
+    after: ['Rivincita? Il mio {rival} non vede l\'ora.']
+  },
+  'rivale-2': {
+    id: 'rivale-2', title: 'Tullio, il nipote del guardaparco', prize: 80, rival: 2, team: [],
+    intro: ['Antonio! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
+    win: ['Di nuovo! Ma come fai?', 'Il nonno dice che le creature crescono con chi gli vuole bene. Forse ha ragione lui.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
+    lose: ['Stavolta tocca a me! Le tue creature sono stanche: falle riposare e torna.'],
+    after: ['Rivincita? Stavolta vinco io.']
+  },
+  'rivale-3': {
+    id: 'rivale-3', title: 'Tullio, il nipote del guardaparco', prize: 250, rival: 3, team: [],
+    intro: ['Antonio. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
+    win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, Antonio.', 'Quando vuoi la rivincita, sono qui al parco.'],
+    lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
+    after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.']
   },
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150,

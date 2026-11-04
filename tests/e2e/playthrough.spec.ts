@@ -6,7 +6,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 declare global {
   interface Window {
-    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string }; state(): unknown };
+    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -442,6 +442,23 @@ test('creatures of Formia', async ({ browser }) => {
     await r.shot('starters');
     await p.click('.starter[data-sp="polpino"]'); await p.clock.runFor(300);
     await talkThrough(p);
+    /* the guardaparco's grandson has taken the one that beats it: a "!" over his head, and he runs up to challenge */
+    await p.clock.runFor(300);
+    await r.shot('rival-spotted');
+    await until(p, () => !!window.WORLD._debug.pos().dialog);
+    await talkThrough(p);
+    r.keep('rival', await p.locator('#wtxt').innerText());
+    await r.shot('rival-talk');
+    await choose(p, 'Sfida!');
+    await p.clock.runFor(800);
+    await fight(r, 'rival', 2);
+    r.keep('rival-stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    /* beaten, he walks away */
+    await p.clock.runFor(3000);
+    r.keep('rival-gone', await p.evaluate(() => (window.WORLD.state() as { beaten: Record<string, boolean> }).beaten));
+    await r.shot('rival-gone');
     /* a Riccetto jumps out of the rock pools of Gianola: with one creature, it goes straight in */
     await p.evaluate(() => window.WORLD._debug.meet('gianola')); await p.clock.runFor(300);
     await talkThrough(p);
@@ -452,17 +469,23 @@ test('creatures of Formia', async ({ browser }) => {
     r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
     await p.click('#st-go'); await p.clock.runFor(800);
     await talkThrough(p, 20);
+    /* a wild battle can go either way: lost, Antonio slips away */
+    if (await p.locator('#wopts button', { hasText: 'Scappa' }).count()) { await choose(p, 'Scappa'); await talkThrough(p, 20); }
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
     await p.keyboard.press('m'); await p.clock.runFor(300);
-    await p.locator('.team').scrollIntoViewIfNeeded();
+    await p.locator('.teams').scrollIntoViewIfNeeded();
     await r.shot('team');
-    r.keep('team', await p.locator('.team').innerText());
+    r.keep('team', await p.locator('.teams').innerText());
   });
   const sf = first.data.find((x) => x.name === 'state')!.value as { mons: { uid: string; sp: string }[]; lv: Record<string, { lv: number; xp: number }>; money: number };
   expect(sf.mons[0]).toMatchObject({ uid: 'c1', sp: 'polpino' });
   expect((sf.mons[0] as { bond?: number }).bond).toBeGreaterThan(40);
   expect(sf.lv.c1.lv > 5 || sf.lv.c1.xp > 0).toBe(true);
   expect(String(first.data.find((x) => x.name === 'team')!.value)).toContain('Polpino');
+  /* the rival took the one that beats Polpino, said why, and lost to it */
+  expect(String(first.data.find((x) => x.name === 'rival')!.value)).toContain('Gabbì');
+  expect(first.data.find((x) => x.name === 'rival-stamp')!.value).toBe('Vince Polpino');
+  expect(first.data.find((x) => x.name === 'rival-gone')!.value).toMatchObject({ 'tr-rivale-1': true });
 
   const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true, starter: true }, found: {},
     mons: [{ uid: 'c1', sp: 'gabbi' }], lv: { c1: { lv: 12, xp: 0 } }, money: 120, bag: {} };
@@ -530,6 +553,73 @@ test('a trainer of Formia', async ({ browser }) => {
   const st = r.data.find((x) => x.name === 'state')!.value as { beaten: Record<string, boolean>; money: number };
   expect(st.beaten['tr-animatore']).toBe(true);
   expect(st.money).toBe(25);
+});
+
+/* a trainer not beaten yet sees Antonio step in front of him: a "!", he walks up, challenges him with no saying
+   later, and once beaten walks back to his place */
+test('a trainer who sees Antonio', async ({ browser }) => {
+  const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
+    /* one step up the street, into the student's sight */
+    await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(400);
+    await r.shot('alert');
+    await until(p, () => !!window.WORLD._debug.pos().dialog);
+    r.keep('came', await p.evaluate(() => window.WORLD._debug.who('studente')));
+    await talkThrough(p);
+    await r.shot('challenge');
+    r.keep('opts', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Sfida!');
+    await p.clock.runFor(800);
+    for (let fightNo = 0; fightNo < 2; fightNo++) {
+      await fight(r, 'duel' + fightNo, 0);
+      await p.click('#st-go'); await p.clock.runFor(800);
+      await talkThrough(p, 20);
+      await p.clock.runFor(800);
+      if (await p.evaluate(() => document.body.classList.contains('in-battle'))) continue;
+    }
+    await p.clock.runFor(2500);
+    r.keep('after', await p.evaluate(() => window.WORLD._debug.who('studente')));
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const at = (n: string) => r.data.find((x) => x.name === n)!.value as { x: number; y: number; dir: string };
+  const st = r.data.find((x) => x.name === 'state')!.value as { beaten: Record<string, boolean>; x: number; y: number };
+  /* he came down the street to the tile in front of Antonio, and went back */
+  expect(at('came')).toMatchObject({ x: at('before').x, y: st.y - 1, dir: 'down' });
+  expect(at('after')).toEqual(at('before'));
+  expect(r.data.find((x) => x.name === 'opts')!.value).toEqual(['Sfida!']);
+  expect(st.beaten['tr-studente']).toBe(true);
+});
+
+/* the menu: two teams of six, the people and the creatures; Antonio's abilities, a tree of three branches where each
+   ability opens with a point in the one before it */
+test('the two teams and Antonio\'s abilities', async ({ browser }) => {
+  const r = await play(browser, 'teams', { seed: 15, storage: inTown({ squad: ['antonio', 'forchetta'], mons: [{ uid: 'c1', sp: 'polpetto' }, { uid: 'c2', sp: 'cicalina' }],
+    lv: { antonio: { lv: 9, xp: 0 }, forchetta: { lv: 8, xp: 0 }, c1: { lv: 15, xp: 0 }, c2: { lv: 9, xp: 0 } }, skills: { svelto: 1 } }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await r.shot('teams');
+    r.keep('teams', await p.locator('.teams').innerText());
+    r.keep('slots', await p.evaluate(() => Array.from(document.querySelectorAll('.party .slots')).map((s) => [s.querySelectorAll('i.on').length, s.querySelectorAll('i').length])));
+    await p.click('[data-skills]'); await p.clock.runFor(300);
+    await r.shot('skills');
+    /* the ability after Gambe da Mennea is open: a grade of it; the one after Allenatore is still closed */
+    await p.click('[data-skn="passo"]'); await p.click('[data-sk="passo"]'); await p.clock.runFor(600);
+    await r.shot('skills-took');
+    await p.click('[data-skn="mano"]'); await p.clock.runFor(200);
+    r.keep('closed', await p.locator('[data-sk="mano"]').evaluate((b) => [(b as HTMLButtonElement).disabled, b.textContent]));
+    await r.shot('skills-closed');
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('teams'))).toContain('Le persone');
+  expect(String(get('teams'))).toContain('Le creature');
+  expect(get('slots')).toEqual([[2, 6], [2, 6]]);
+  expect(get('closed')).toEqual([true, 'Chiusa']);
+  expect((get('state') as { skills: Record<string, number> }).skills).toEqual({ svelto: 1, passo: 1 });
 });
 
 /* the plot: the lady of the theatre's riddle gives the stone of the walls, Cicero's three questions at his tomb the

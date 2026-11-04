@@ -81,6 +81,9 @@ describe('growing up', () => {
     expect(perksFor({})).toEqual({ lose: 0.15, idea: 0.25 });
     expect(perksFor({ memoria: 3, prompt: 3 }).lose).toBeLessThan(0.05);
     for (const sk of SKILLS) expect(sk.max).toBeGreaterThan(0);
+    /* a tree: each branch starts from one ability, the others open one after the other on the same branch */
+    for (const sk of SKILLS) if (sk.after) expect(SKILLS.find((o) => o.id === sk.after)!.branch).toBe(sk.branch);
+    expect(new Set(SKILLS.filter((sk) => !sk.after).map((sk) => sk.branch)).size).toBe(SKILLS.filter((sk) => !sk.after).length);
     for (const sh of Object.values(SHOPS)) for (const it of sh.sells) expect(WARES[it].price).toBeGreaterThan(0);
   });
 });
@@ -110,13 +113,32 @@ describe('the trainers of Formia', () => {
   it('are people on the map, with creatures that exist, and a prize', async () => {
     const { TRAINERS } = await import('../../src/data/trainers');
     const { MAPS } = await import('../../src/data/maps');
+    const { teamOf } = await import('../../src/story/rival');
     for (const tr of Object.values(TRAINERS)) {
       const n = (MAPS.formia.npcs || []).find((q) => q.trainer === tr.id);
       expect(n, 'nobody is ' + tr.id).toBeDefined();
-      expect(tr.team.length).toBeGreaterThan(0);
-      for (const t of tr.team) expect(SPECIES[t.sp]).toBeDefined();
+      const team = teamOf(tr.id);
+      expect(team.length).toBeGreaterThan(0);
+      for (const t of team) { expect(SPECIES[t.sp]).toBeDefined(); for (const m of t.moves || []) expect(CMOVES[m], m).toBeDefined(); }
       expect(tr.prize).toBeGreaterThan(0);
     }
+  });
+  it('have a rival who picks the creature that beats Antonio\'s, and comes back with its next forms', async () => {
+    const { rivalFor, formAt, teamOf } = await import('../../src/story/rival');
+    const { st } = await import('../../src/save/story-progress');
+    const { TYPES } = await import('../../src/data/types');
+    expect(rivalFor('polpino')).toBe('gabbi');
+    expect(rivalFor('gabbi')).toBe('ramarrino');
+    /* none beats Ramarrino's Calma: then not the one it beats */
+    expect(rivalFor('ramarrino')).toBe('polpino');
+    for (const sp of ['polpino', 'gabbi'] as const) expect(TYPES[SPECIES[rivalFor(sp)].type].beats).toBe(SPECIES[sp].type);
+    expect(formAt('gabbi', 2)).toBe('gabbianotto');
+    expect(formAt('gabbiammiraglio', 1)).toBe('gabbi');
+    expect(formAt('ramarrino', 3)).toBe('muraglione');
+    st.rival = 'gabbi';
+    const last = (id: string) => { const t = teamOf(id); return t[t.length - 1].sp; };
+    expect([last('rivale-1'), last('rivale-2'), last('rivale-3')]).toEqual(['gabbi', 'gabbianotto', 'gabbiammiraglio']);
+    st.rival = undefined;
   });
   it('send their creatures in with the health the last battle left', () => {
     const s = E.newBattle({ a: 'polpino', b: 'olivella', seed: 4, trainer: 'L\'animatore dell\'oratorio',

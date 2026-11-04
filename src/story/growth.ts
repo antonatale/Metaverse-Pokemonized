@@ -165,9 +165,14 @@ export function pointsLeft(): number {
   var used = SKILLS.reduce(function (n, s) { return n + grade(s.id); }, 0);
   return Math.max(0, level('antonio').lv - START_LEVEL - used);
 }
+/** an ability opens with a point in the one before it on its branch */
+export function skillOpen(id: SkillId): boolean {
+  var sk = SKILLS.filter(function (s) { return s.id === id; })[0];
+  return !!sk && (!sk.after || grade(sk.after) > 0 || grade(id) > 0);
+}
 export function takeSkill(id: SkillId): boolean {
   var sk = SKILLS.filter(function (s) { return s.id === id; })[0];
-  if (!sk || pointsLeft() <= 0 || grade(id) >= sk.max) return false;
+  if (!sk || pointsLeft() <= 0 || grade(id) >= sk.max || !skillOpen(id)) return false;
   st.skills = st.skills || {}; st.skills[id] = grade(id) + 1;
   return true;
 }

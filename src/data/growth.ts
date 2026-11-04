@@ -34,18 +34,19 @@ export function moneyFor(foeLv: number, covo: boolean): number { return covo ? 8
    story screen, the battle's side options). */
 export type SkillId = 'passo' | 'fortuna' | 'svelto' | 'allenatore' | 'mano' | 'legame' | 'ultima' | 'memoria' | 'prompt' | 'amici';
 export type Branch = 'Esploratore' | 'Allenatore' | 'Formiano';
-export interface Skill { id: SkillId; branch: Branch; name: string; text: string; max: number }
+/** an ability: on a branch of the tree, after another one (it opens with a point in that), up to some grades */
+export interface Skill { id: SkillId; branch: Branch; name: string; text: string; max: number; after?: SkillId }
 export const SKILLS: Skill[] = [
-  { id: 'passo', branch: 'Esploratore', name: 'Passo felpato', text: 'Nell\'erba alta e tra gli scogli le creature ti sentono meno: un terzo di incontri in meno a grado.', max: 2 },
-  { id: 'fortuna', branch: 'Esploratore', name: 'Occhio da pescatore', text: 'Le creature rare saltano fuori più spesso, e quelle dorate il doppio a ogni grado.', max: 2 },
   { id: 'svelto', branch: 'Esploratore', name: 'Gambe da Mennea', text: 'Le ripetute sulla pista del Bruno Zauli: cammini più svelto per Formia.', max: 2 },
+  { id: 'passo', branch: 'Esploratore', name: 'Passo felpato', text: 'Nell\'erba alta e tra gli scogli le creature ti sentono meno: un terzo di incontri in meno a grado.', max: 2, after: 'svelto' },
+  { id: 'fortuna', branch: 'Esploratore', name: 'Occhio da pescatore', text: 'Le creature rare saltano fuori più spesso, e quelle dorate il doppio a ogni grado.', max: 2, after: 'passo' },
   { id: 'allenatore', branch: 'Allenatore', name: 'Allenatore', text: 'Le tue creature guadagnano il 15% di esperienza in più a ogni grado.', max: 3 },
-  { id: 'mano', branch: 'Allenatore', name: 'Mano ferma', text: 'Lanci meglio il retino: le catture riescono il 20% più spesso a ogni grado.', max: 2 },
-  { id: 'legame', branch: 'Allenatore', name: 'Legame', text: 'Le tue creature non vogliono deluderti: una volta a lotta, un colpo che le manderebbe KO può lasciarle a 1 PS (15% a grado).', max: 3 },
-  { id: 'ultima', branch: 'Formiano', name: 'Ultima difesa', text: 'Quando le tue creature sono KO e scendi in campo tu: Attacco e Difesa +15% a grado.', max: 2 },
-  { id: 'memoria', branch: 'Formiano', name: 'Memoria di ferro', text: 'Nelle lotte perdi meno le cose: dal 15% a turno all\'11%, al 7%, al 3%.', max: 3 },
-  { id: 'prompt', branch: 'Formiano', name: 'Prompt engineer', text: 'L\'IA ti suggerisce idee più spesso: dal 25% a turno al 30%, al 35%, al 40%.', max: 3 },
-  { id: 'amici', branch: 'Formiano', name: 'Amico di tutti', text: 'Formia ti conosce: nei negozi paghi il 10% in meno e le attività rendono il 25% in più, a ogni grado.', max: 2 }
+  { id: 'mano', branch: 'Allenatore', name: 'Mano ferma', text: 'Lanci meglio il retino: le catture riescono il 20% più spesso a ogni grado.', max: 2, after: 'allenatore' },
+  { id: 'legame', branch: 'Allenatore', name: 'Legame', text: 'Le tue creature non vogliono deluderti: una volta a lotta, un colpo che le manderebbe KO può lasciarle a 1 PS (15% a grado).', max: 3, after: 'mano' },
+  { id: 'amici', branch: 'Formiano', name: 'Amico di tutti', text: 'Formia ti conosce: nei negozi paghi il 10% in meno e le attività rendono il 25% in più, a ogni grado.', max: 2 },
+  { id: 'memoria', branch: 'Formiano', name: 'Memoria di ferro', text: 'Nelle lotte perdi meno le cose: dal 15% a turno all\'11%, al 7%, al 3%.', max: 3, after: 'amici' },
+  { id: 'prompt', branch: 'Formiano', name: 'Prompt engineer', text: 'L\'IA ti suggerisce idee più spesso: dal 25% a turno al 30%, al 35%, al 40%.', max: 3, after: 'memoria' },
+  { id: 'ultima', branch: 'Formiano', name: 'Ultima difesa', text: 'Quando le tue creature sono KO e scendi in campo tu: Attacco e Difesa +15% a grado.', max: 2, after: 'prompt' }
 ];
 type Grades = Partial<Record<SkillId, number>>;
 /** Antonio's numbers when he steps in for his creatures, with his last stand */

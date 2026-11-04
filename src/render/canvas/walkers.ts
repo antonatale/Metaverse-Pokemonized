@@ -261,7 +261,9 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
 export const LOOKS: Record<string, PersonLook> = {
   nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
   /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
-  mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' }
+  mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' },
+  /* Tullio, the rival: red hair, the green of his grandfather's park, a cocky smile */
+  tullio: { skin: '#f0c8a8', hair: { style: 'quiff', color: '#b5532b', hi: '#ec9a63' }, top: '#2f8f5b', top2: '#f2c14e', style: 'hoodie', pants: '#56627a', shoes: '#f3f3f3', smirk: true }
 };
 /* generic townsfolk, varied by a seed */
 export function townsperson(seed: number): PersonLook {

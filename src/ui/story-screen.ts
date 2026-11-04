@@ -7,8 +7,9 @@ import { GATES } from '../data/gates';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel, setPace, onEdge, stepNow } from '../story/movement';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, type Person } from '../story/maps';
+import { press, release, update, halt, mover, busy, travel, setPace, onEdge, stepNow, lock, STEP } from '../story/movement';
+import { teamOf, trainerLine } from '../story/rival';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
@@ -143,11 +144,15 @@ onReward(function (g, cash) {
 var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
 const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+/** a new chapter of the story: Cicero says so from the corner, once nothing else is going on (no talk, no sheet, no
+    trainer coming to challenge Antonio, no fight); from the frame, so that it never slips in between two steps of one
+    moment, such as the guardaparco's words and his grandson's challenge */
+function chapterTip() {
+  if (!running || dialog || between || !st.seen.intro || overlayOpen() || meeting || fight) return;
+  var cn = chapterNow();
+  if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
+}
 export function renderGoal() {
-  if (running && !dialog && st.seen.intro && !overlayOpen()) {
-    var cn = chapterNow();
-    if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
-  }
   var el = $('wgoal'), h = heading(M.id);
   if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
   var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
@@ -276,14 +281,17 @@ function closeDialog(next?: (() => void) | null) {
   dlg.hidden = true; dlgOpts.hidden = true; dlgOpts.innerHTML = ''; dlg.classList.remove('wait');
   if (d && d.who === CICERO) cicPresence.until = performance.now();
   var fn = next || (d && d.done);
-  if (fn) setTimeout(fn, 30);
+  if (fn) { between = true; setTimeout(function () { between = false; fn!(); }, 30); }
 }
+/** a dialogue has just closed and what follows it is about to start (Cicero waits for it) */
+var between = false;
 function interact() {
   if (dialog) { advance(); return; }
   if (!running || mover || busy) return;
   var v = DV[st.dir], x = st.x + v[0], y = st.y + v[1];
   var p = personAt(M, x, y);
   if (!p && M.cell(x, y).reach) p = personAt(M, x + v[0], y + v[1]);   /* across a net or a counter */
+  if (p && (p.path || p.mv)) return;   /* someone walking by */
   if (p) { talkTo(p); return; }
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
@@ -483,7 +491,7 @@ function safeMoves() { return foundItems().map(function (it) { return it.move; }
 /* Antonio sends his creatures in one after the other, each keeping the health the last battle left it; the foe keeps
    its own. Only when all his creatures are down does he step in himself. A trainer's creatures come one after the
    other; a wild one is a single foe, that can be caught. */
-interface Foe { sp: SpeciesId; lv: number; gold?: boolean }
+interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[] }
 interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[]; idx: number; foeHp: number | null; down: string[]; hp: Record<string, number> }
 var fight: Fight | null = null;
 function creaturesLeft(f: Fight): string[] { return teamMons().map(function (m) { return m.uid; }).filter(function (k) { return f.down.indexOf(k) < 0; }); }
@@ -497,6 +505,7 @@ function fightOn(key?: string) {
     if (f.hp[k] != null) a.hp = f.hp[k];
     if (f.foeHp != null) b.hp = f.foeHp;
     if (foe.gold) b.gold = true;
+    if (foe.moves) b.known = foe.moves.slice();
     see(foe.sp); save();
     var place = sceneFor(M.id, areaName());
     startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: a, sideB: b, bag: battleBag(),
@@ -523,19 +532,19 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
     f.hp[key] = res.hp ? res.hp[0] : 0; f.idx++; f.foeHp = null;
     if (wild) { fight = null; wildGone[f.id] = Date.now(); rewards(key, foe.lv, true, false); return; }
     rewards(key, foe.lv, true, true, function () {
-      if (f.idx < tr!.team.length) { say([tr!.title + ' manda in campo ' + SPECIES[tr!.team[f.idx].sp].name + '!'], null, null, function () { fightOn(key); }); return; }
+      if (f.idx < f.foes.length) { say([tr!.title + ' manda in campo ' + SPECIES[f.foes[f.idx].sp].name + '!'], null, null, function () { fightOn(key); }); return; }
       var first = !st.beaten['tr-' + f.id];
       st.beaten['tr-' + f.id] = true;
       if (first) earn(tr!.prize);
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(tr!.win.concat(first ? ['Antonio vince ' + coins(tr!.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
+      say(lines(tr!.win, f.id).concat(first ? ['Antonio vince ' + coins(tr!.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
     }, true);
     return;
   }
   /* this one is down: another creature, or Antonio himself when they all are */
   f.down.push(key); f.foeHp = res.hp ? res.hp[1] : null;
-  var left = creaturesLeft(f), end = function () { fight = null; if (tr) say(tr.lose, f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']); };
+  var left = creaturesLeft(f), end = function () { fight = null; if (tr) say(lines(tr.lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']); };
   rewards(key, foe.lv, false, !wild, function () {
     var giveUp = { label: wild ? 'Scappa' : 'Mi arrendo', fn: end };
     if (left.length) { say([nameOf(key) + ' non ce la fa più. Mandi un\'altra creatura?'], null, [{ label: 'Manda un\'altra creatura', fn: function () { fightOn(); } }, giveUp]); return; }
@@ -553,6 +562,7 @@ var walked = 0, sniffed = 0;
 export function stepped(): boolean {
   if (treasure()) return true;
   if (!st.mons || !st.mons.length) return false;
+  if (spotted()) return true;
   /* walking together brings Antonio and his creature closer */
   if (++walked >= 40) { walked = 0; var lead = leadCreature(); if (lead) addBond(lead, 1); }
   /* and now and then, out in town, it finds something on the ground: the closer they are, the more often */
@@ -602,14 +612,97 @@ function wildTalk(p: Person) {
   wildMeet(p.n.id, SPECIES[w.sp].text, { sp: w.sp, lv: lv });
 }
 /* ---------- the trainers of Formia: their creatures one after the other ---------- */
-function trainerTalk(id: string, who: string, lines: string[]) {
+/** a trainer's lines, with the rival's creature and Antonio's in them */
+function lines(t: string[], id: string): string[] { return t.map(function (l) { return trainerLine(l, id); }); }
+/** a trainer challenges Antonio (`came`: he has walked up to him, and there is no saying later) */
+function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
-  var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id];
-  if (!st.mons || !st.mons.length) { say(lines.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
-  say(lines.concat(beaten ? tr.after : tr.intro).concat(['Creature: ' + tr.team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, [
-    { label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: tr.team.slice(), idx: 0, foeHp: null, down: [], hp: {} }; fightOn(); } },
-    { label: 'Più tardi', fn: null }
-  ]);
+  var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id], team = teamOf(id);
+  if (!st.mons || !st.mons.length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
+  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: team.slice(), idx: 0, foeHp: null, down: [], hp: {} }; fightOn(); } }];
+  if (!came) opts.push({ label: 'Più tardi', fn: null });
+  say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(['Creature: ' + team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, opts);
+}
+
+/* ---------- trainers who see Antonio: a "!" over their head, and they come to challenge him ---------- */
+/* As in the games: a trainer not beaten yet looks ahead the way he faces, a few tiles; when Antonio steps into his
+   sight a "!" pops up over his head, he walks up to Antonio and challenges him, with no saying later. Tullio, the
+   rival, calls him from anywhere near. Once the talk or the fight is over the trainer walks back to his place (a
+   beaten rival walks away, and is gone), and leaves Antonio alone for a while. */
+const SIGHT = 4, RIVAL_NEAR = 5, ALERT_MS = 750, LEAVE_ALONE = 180000;
+var noticed: Record<string, number> = {}, meeting: Person | null = null, away: { p: Person; map: string; done?: () => void }[] = [];
+function seesAntonio(p: Person): boolean {
+  var id = p.n.trainer;
+  if (!id || p.n.ghost || p.path || !present(p) || st.beaten['tr-' + id] || Date.now() - (noticed[id] || 0) < LEAVE_ALONE) return false;
+  var dx = st.x - p.x, dy = st.y - p.y;
+  if (TRAINERS[id].rival) return Math.abs(dx) + Math.abs(dy) <= RIVAL_NEAR && !!walkPath(p.x, p.y, st.x, st.y, true);
+  var v = DV[p.dir], d = v[0] ? dx * v[0] : dy * v[1];
+  if ((v[0] ? dy : dx) !== 0 || d < 1 || d > SIGHT) return false;
+  for (var k = 1; k < d; k++) if (blocked(M, p.x + v[0] * k, p.y + v[1] * k)) return false;
+  return true;
+}
+/** a step has just ended: does a trainer see Antonio? then he comes to challenge him */
+var spotting = true;
+function spotted(): boolean {
+  var p = spotting ? M.people.find(seesAntonio) : null;
+  if (!p) return false;
+  var n = p.n;
+  approach(p, function () { trainerTalk(n.trainer!, n.name || '', [], true); });
+  return true;
+}
+function faceTo(x: number, y: number, tx: number, ty: number): Dir { return Math.abs(tx - x) > Math.abs(ty - y) ? (tx > x ? 'right' : 'left') : (ty > y ? 'down' : 'up'); }
+/** the "!", the walk up to Antonio (who stands still meanwhile), and the two face each other: then `then` */
+function approach(p: Person, then: () => void) {
+  noticed[p.n.trainer!] = Date.now();
+  halt(); lock(true); meeting = p;
+  p.alert = performance.now(); p.dir = faceTo(p.x, p.y, st.x, st.y);
+  sfx('spot');
+  setTimeout(function () {
+    walk(p, walkPath(p.x, p.y, st.x, st.y, true) || [], function () {
+      p.alert = undefined;
+      p.dir = faceTo(p.x, p.y, st.x, st.y); st.dir = OPP[p.dir];
+      lock(false);
+      then();
+    });
+  }, reduced ? 0 : ALERT_MS);
+}
+/** someone walks along the tiles, one per step at Antonio's pace (frame, below), then `done` */
+function walk(p: Person, path: [number, number][], done?: () => void) {
+  p.path = path;
+  if (!away.some(function (a) { return a.p === p; })) away.push({ p: p, map: M.id });
+  away.forEach(function (a) { if (a.p === p) a.done = done; });
+}
+function walkPeople(now: number) {
+  away.slice().forEach(function (a) {
+    var p = a.p;
+    /* Antonio has gone elsewhere: everyone is back in place */
+    if (a.map !== M.id) { home(a); return; }
+    if (p.mv && now - p.mv.t0 >= STEP) p.mv = undefined;
+    if (p.mv) return;
+    if (p.path && p.path.length) {
+      var nx = p.path[0][0], ny = p.path[0][1];
+      if ((nx === st.x && ny === st.y) || (mover && nx === mover.tx && ny === mover.ty) || personAt(M, nx, ny)) return;   /* in the way: he waits */
+      p.path.shift();
+      p.dir = faceTo(p.x, p.y, nx, ny);
+      p.mv = { fx: p.x, fy: p.y, t0: now }; p.x = nx; p.y = ny;
+      return;
+    }
+    if (p.path) { p.path = undefined; var cb = a.done; a.done = undefined; if (cb) { cb(); return; } }
+    /* the meeting is over: back to his place, or (beaten, and not there any more) away for good */
+    if (meeting === p && (dialog || fight || overlayOpen() || busy)) return;
+    if (meeting === p) meeting = null;
+    if (p.leaving) { home(a); return; }
+    if (!present(p)) { p.leaving = true; walk(p, walkAway(p.x, p.y, 6), function () { home(a); }); return; }
+    if (p.x === p.n.x && p.y === p.n.y) { home(a); return; }
+    walk(p, walkPath(p.x, p.y, p.n.x, p.n.y, false) || [], function () { home(a); });
+  });
+}
+/** back on his own tile, facing his own way */
+function home(a: { p: Person }) {
+  var p = a.p;
+  p.x = p.n.x; p.y = p.n.y; p.dir = p.n.dir || 'down'; p.mv = p.path = p.alert = undefined; p.leaving = false;
+  away = away.filter(function (b) { return b.p !== p; });
+  if (meeting === p) meeting = null;
 }
 /* the nets: the guardaparco gives the first ones and says how to catch; the net maker beside him sells the rest */
 const GIFT_NETS = 5;
@@ -637,7 +730,11 @@ function starterTalk(who: string) {
       chooseStarter(function (uid) {
         var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];
         giveNets();
-        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who);
+        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who, null, function () {
+          /* and his grandson, who has just picked the one that beats it, wants to try it straight away */
+          var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
+          if (r) { var n = r.n; approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+        });
       });
     } },
     { label: 'Più tardi', fn: null }
@@ -782,12 +879,13 @@ function frame(now: number) {
   nudge(now);
   raf = requestAnimationFrame(frame);
   update(now);
+  walkPeople(now);
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; renderBars();
+    barAt = now; renderBars(); chapterTip();
     /* the first time a creature can do something on the map, Cicero says what */
-    if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
+    if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }
   if (skyFrom && now - skyFrom > SKY_MS) skyFrom = 0;
   drawWorld(now);
@@ -915,6 +1013,9 @@ export const WORLD = {
       return best;
     },
     area: function () { return areaName(); },
+    /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */
+    spotting: function (on: boolean) { spotting = on; },
+    who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir } : null; },
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     overview: overview,

@@ -8,6 +8,8 @@ import { flag } from './plot';
 import type { SpeciesId } from '../data/creatures';
 import { HIDINGS, type Hiding } from '../data/encounters';
 import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
+import { TRAINERS } from '../data/trainers';
+import { rivalHere } from './rival';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -16,7 +18,9 @@ export const OPP: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', ri
 
 /** something on a tile you can use: a door, a sign, a warp */
 export type Spot = { kind: 'door'; b: Building } | { kind: 'sign'; s: Sign } | { kind: 'warp'; w: Warp };
-export interface Person { n: Npc; x: number; y: number; dir: Dir }
+/** someone on the map: on a tile, facing somewhere; a trainer who has seen Antonio has a "!" over his head (since
+    `alert`) and walks to him, one tile after the other (`mv`: the step in progress, from that tile) */
+export interface Person { n: Npc; x: number; y: number; dir: Dir; alert?: number; mv?: { fx: number; fy: number; t0: number }; path?: [number, number][]; leaving?: boolean }
 export interface Gull { x: number; y: number; r: number; sp: number; ph: number }
 export interface PreparedMap extends MapDef {
   id: string;
@@ -109,8 +113,10 @@ export function areaName(): string {
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean {
   var w = p.n.when;
+  if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
   return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
+    (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
 }
 /** the legend comes out at night, once the seal of Telepilo is safe (Mamurra beaten), until it is caught */
@@ -165,6 +171,45 @@ export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badg
 export let M = null as unknown as PreparedMap;
 export function setMap(id: string): PreparedMap { M = prepare(id); return M; }
 
+/** the tiles someone walks from a tile, to one next to a target (`beside`) or onto it: the shortest way, not
+    through doors or warps, within a few tiles; null when there is none */
+export function walkPath(fx: number, fy: number, tx: number, ty: number, beside: boolean): [number, number][] | null {
+  var prev: Record<string, string> = {}, q: [number, number][] = [[fx, fy]], seen: Record<string, number> = {};
+  seen[key(fx, fy)] = 1;
+  while (q.length) {
+    var p = q.shift()!, d0 = Math.abs(p[0] - tx) + Math.abs(p[1] - ty);
+    if (beside ? d0 === 1 : d0 === 0) {
+      var out: [number, number][] = [], k = key(p[0], p[1]);
+      while (prev[k]) { var c = k.split(','); out.unshift([+c[0], +c[1]]); k = prev[k]; }
+      return out;
+    }
+    if (Math.abs(p[0] - fx) + Math.abs(p[1] - fy) > 14) continue;
+    (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
+      var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1], k2 = key(nx, ny), a = M.at[k2];
+      if (seen[k2] || (nx === st.x && ny === st.y) || a || blocked(M, nx, ny)) return;
+      seen[k2] = 1; prev[k2] = key(p[0], p[1]); q.push([nx, ny]);
+    });
+  }
+  return null;
+}
+/** the way away from Antonio: up to a few steps, to the reachable tile farthest from him */
+export function walkAway(fx: number, fy: number, steps: number): [number, number][] {
+  var prev: Record<string, string> = {}, q: [number, number, number][] = [[fx, fy, 0]], seen: Record<string, number> = {}, best = key(fx, fy), bd = -1;
+  seen[best] = 1;
+  while (q.length) {
+    var p = q.shift()!, d0 = Math.abs(p[0] - st.x) + Math.abs(p[1] - st.y);
+    if (d0 > bd) { bd = d0; best = key(p[0], p[1]); }
+    if (p[2] >= steps) continue;
+    (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
+      var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1], k2 = key(nx, ny);
+      if (seen[k2] || (nx === st.x && ny === st.y) || M.at[k2] || blocked(M, nx, ny)) return;
+      seen[k2] = 1; prev[k2] = key(p[0], p[1]); q.push([nx, ny, p[2] + 1]);
+    });
+  }
+  var out: [number, number][] = [], k = best;
+  while (prev[k]) { var c = k.split(','); out.unshift([+c[0], +c[1]]); k = prev[k]; }
+  return out;
+}
 export function route(tx: number, ty: number): Dir[] | null {
   var prev: Record<string, { k: string; d: Dir }> = {}, q = [[st.x, st.y]], seen: Record<string, number> = {};
   seen[key(st.x, st.y)] = 1;

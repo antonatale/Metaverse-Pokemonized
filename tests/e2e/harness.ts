@@ -24,6 +24,8 @@ export interface TwinOpts {
   touch?: boolean;
   /** a fake window.claude.hot, as in a claude.ai artifact: ready() hands back what was stored in sessionStorage */
   hot?: boolean;
+  /** trainers who see Antonio walk up and challenge him: off unless a test asks, as most walk past some on their way */
+  spot?: boolean;
 }
 
 async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
@@ -73,6 +75,7 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   });
   await page.clock.pauseAt(T0 + 5000);
   await page.clock.runFor(1000);
+  if (!o.spot) await page.evaluate(() => (window as unknown as { WORLD: { _debug: { spotting(on: boolean): void } } }).WORLD._debug.spotting(false));
   const run: Run = {
     page, shots: [], data: [],
     async shot(name, so = {}) {

@@ -1,11 +1,12 @@
 import { st, save } from '../save/story-progress';
 import type { TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
+import { ROSTER } from '../data/characters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch } from '../data/growth';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
-import { coin } from './icons';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
+import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
 import { SPR } from '../render/svg';
@@ -14,6 +15,7 @@ import { esc, each, $ } from './dom';
 import { say, sheet, closeSheet, renderHud, mentorTip } from './story-screen';
 import { sfx } from '../audio';
 import { setPace } from '../story/movement';
+import { rivalFor } from '../story/rival';
 
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
    money, new moves, a new form), the shops, the team and the bag in the menu, Antonio's abilities. */
@@ -46,8 +48,12 @@ export function chooseStarter(done: (uid: string) => void) {
       closeSheet();
       st.seen.starter = true;
       var uid = addCreature(sp, 5, false, 40);
-      save(); renderHud(); sfx('badge');
+      /* and the guardaparco's grandson takes the one that beats it */
+      st.rival = rivalFor(sp);
+      save(); sfx('badge');
+      /* the guardaparco talks first: Cicero's new chapter waits for him, and for his grandson */
       done(uid);
+      renderHud();
     });
   });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('.starter'); if (b) b.focus(); }, 30);
@@ -171,22 +177,40 @@ export function openShop(id: string) {
   render();
 }
 
-/* ---------- in the menu: the team, the bag, Antonio's abilities ---------- */
+/* ---------- in the menu: the two teams, the people and the creatures, and the bag ---------- */
+/** one of the team, with what can be done with it */
+function memberRow(key: string): string {
+  var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
+  if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
+  else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
+  var human = !mon, first = human && firstHuman() === key;
+  return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
+    '<small>' + esc((sp ? typesOf(sp) : c.type) + ' · ' + note) + '</small></span>' +
+    (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="In alto sulla mappa, e il primo a scendere in campo nei covi">Fallo Primo</button>' : '') +
+    (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
+    (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : '') + '</li>';
+}
+function typesOf(sp: { type: string; type2?: string }): string { return sp.type + (sp.type2 ? '/' + sp.type2 : ''); }
+/** a team's six places, as in the games: a little face on each one taken, the free ones dashed */
+function slotsHtml(keys: string[], max: number): string {
+  var out = '';
+  for (var k = 0; k < max; k++) out += keys[k] ? '<i class="on" style="--tc:' + tcOf(keys[k]) + '">' + portrait(keys[k]) + '</i>' : '<i></i>';
+  return '<span class="slots" aria-hidden="true">' + out + '</span>';
+}
 export function teamHtml(): string {
-  return '<div class="pickrow"><h3>Squadra</h3><ul class="team">' + team().map(function (key) {
-    var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
-    if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
-    else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
-    var human = !mon, first = human && firstHuman() === key;
-    return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
-      '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
-      (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="In alto sulla mappa, e il primo a scendere in campo nei covi">Fallo Primo</button>' : '') +
-      (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
-      (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : '') + '</li>';
-  }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
-    (homeMons().length || M.id === 'casa' ? '<p class="hint">' + (homeMons().length ? 'A casa ti aspettano ' + homeMons().length + (homeMons().length === 1 ? ' creatura' : ' creature') + '. ' : '') +
+  var people = (st.squad as string[]).slice(), mons = teamMons().map(function (m) { return m.uid; }), home = homeMons().length;
+  return '<div class="teams">' +
+    /* the people: Antonio, and the friends who joined him once beaten in their covo; they fight people */
+    '<section class="party people"><div class="party-h">' + ico('users') + '<h3>Le persone</h3><small>' + people.length + ' su ' + ROSTER.length + '</small>' + slotsHtml(people, ROSTER.length) + '</div>' +
+    '<ul class="team">' + people.map(memberRow).join('') + '</ul>' +
+    (people.length < ROSTER.length ? '<p class="hint">Gli altri amici sono nei loro covi: battili e vengono con te. Nei covi si lotta tra persone.</p>' : '') + '</section>' +
+    /* the creatures: up to six travel with him, the others wait at home; they fight creatures */
+    '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
+    (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
+    (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
+    (home || M.id === 'casa' ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
-      (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</div>' +
+      (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
     '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + BAG_ITEMS.map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + bagIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
     }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto al guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
@@ -226,25 +250,58 @@ export function openHome(back?: () => void) {
   };
   render();
 }
-/** the three ways of being Antonio */
-const BRANCH: Record<Branch, string> = { Esploratore: 'Esploratore di Formia', Allenatore: 'Allenatore di creature', Formiano: 'Formiano doc' };
+/* ---------- Antonio's abilities: a tree of three branches ---------- */
+/* Three ways of being Antonio, a branch each: on every branch an ability opens with a point in the one before it.
+   A point comes with each of his levels; tap an ability to read it, and +1 to take a grade. */
+const BRANCHES: Branch[] = ['Esploratore', 'Allenatore', 'Formiano'];
+const BRANCH: Record<Branch, { name: string; col: string; ico: string }> = {
+  Esploratore: { name: 'Esploratore di Formia', col: 'var(--t-calma)', ico: 'flag' },
+  Allenatore: { name: 'Allenatore di creature', col: 'var(--t-caos)', ico: 'ball' },
+  Formiano: { name: 'Formiano doc', col: 'var(--t-cuore)', ico: 'spark' }
+};
+const SKILL_ICO: Record<SkillId, string> = { svelto: 'bolt', passo: 'paw', fortuna: 'eye', allenatore: 'chart', mano: 'net', legame: 'heart', amici: 'users', memoria: 'notes', prompt: 'robot', ultima: 'shield' };
+function skillOf(id: SkillId): Skill { return SKILLS.filter(function (s) { return s.id === id; })[0]; }
+function skillPips(s: Skill): string {
+  var g = grade(s.id);
+  return '<span class="pips" aria-hidden="true">' + Array.from({ length: s.max }, function (_, k) { return '<i class="' + (k < g ? 'on' : '') + '"></i>'; }).join('') + '</span>';
+}
+var picked: SkillId | null = null;
 export function openSkills(back: () => void) {
-  var render = function () {
+  var render = function (popped?: SkillId) {
     var left = pointsLeft();
-    var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sk-t"><div class="sheet-h"><h2 id="sk-t">Abilità di Antonio</h2><button class="tb-btn" type="button" id="sk-x">Indietro</button></div>' +
-      '<p class="hint">' + (left ? 'Hai ' + left + (left === 1 ? ' punto' : ' punti') + ' da spendere: uno a ogni livello.' : 'Un punto a ogni livello: vinci lotte e fai attività per salire.') + '</p>' +
-      (['Esploratore', 'Allenatore', 'Formiano'] as Branch[]).map(function (br) {
-        return '<div class="pickrow"><h3>' + esc(BRANCH[br]) + '</h3><ul class="skills">' + SKILLS.filter(function (s) { return s.branch === br; }).map(function (s) {
-          var g = grade(s.id), full = g >= s.max;
-          return '<li><span><b>' + esc(s.name) + ' <span class="pips" aria-label="grado ' + g + ' su ' + s.max + '">' + Array.from({ length: s.max }, function (_, k) { return '<i class="' + (k < g ? 'on' : '') + '"></i>'; }).join('') + '</span></b><small>' + esc(s.text) + '</small></span>' +
-            '<button class="btn" type="button" data-sk="' + s.id + '"' + (!left || full ? ' disabled' : '') + '>' + (full ? 'Al massimo' : '+1') + '</button></li>';
-        }).join('') + '</ul></div>';
-      }).join('') + '</div>');
+    /* the one shown below the tree: the last tapped, or the first that can grow */
+    if (!picked) picked = (SKILLS.filter(function (s) { return skillOpen(s.id) && grade(s.id) < s.max; })[0] || SKILLS[0]).id;
+    var node = function (s: Skill) {
+      var g = grade(s.id), open = skillOpen(s.id), full = g >= s.max;
+      var cls = 'sk-node' + (open ? '' : ' locked') + (g ? ' some' : '') + (full ? ' full' : '') + (open && !full && left ? ' can' : '') + (picked === s.id ? ' sel' : '') + (popped === s.id ? ' took' : '');
+      return '<li class="' + cls + '"><button type="button" data-skn="' + s.id + '" aria-pressed="' + (picked === s.id) + '" aria-label="' + esc(s.name + ': grado ' + g + ' su ' + s.max + (open ? '' : ', ancora chiusa')) + '">' +
+        '<span class="sk-orb">' + ico(open ? SKILL_ICO[s.id] : 'lock') + (full ? '<span class="sk-star">' + ico('star') + '</span>' : '') + '</span>' +
+        skillPips(s) + '<span class="sk-name">' + esc(s.name) + '</span></button></li>';
+    };
+    var tree = BRANCHES.map(function (br) {
+      var b = BRANCH[br];
+      return '<div class="sk-branch" style="--bc:' + b.col + '"><h3>' + ico(b.ico) + '<span>' + esc(b.name) + '</span></h3><ol class="sk-path">' +
+        SKILLS.filter(function (s) { return s.branch === br; }).map(node).join('') + '</ol></div>';
+    }).join('');
+    var sk = skillOf(picked), g = grade(sk.id), open = skillOpen(sk.id), full = g >= sk.max, prev = sk.after ? skillOf(sk.after) : null;
+    var detail = '<div class="sk-detail" style="--bc:' + BRANCH[sk.branch].col + '" aria-live="polite"><span class="sk-orb">' + ico(open ? SKILL_ICO[sk.id] : 'lock') + '</span>' +
+      '<div><b>' + esc(sk.name) + '</b><span class="sk-grade">' + skillPips(sk) + ' grado ' + g + ' su ' + sk.max + '</span><small>' + esc(sk.text) + '</small>' +
+      (!open && prev ? '<small class="sk-why">Si apre con un punto in «' + esc(prev.name) + '».</small>' : '') + '</div>' +
+      '<button class="btn" type="button" data-sk="' + sk.id + '"' + (!open || full || !left ? ' disabled' : '') + '>' + (full ? 'Al massimo' : !open ? 'Chiusa' : '+1') + '</button></div>';
+    var head = '<div class="sk-head"><span class="face">' + portrait('antonio') + '</span><span><b>Antonio <small class="lv">Lv ' + level('antonio').lv + '</small></b>' +
+      '<small>' + (left ? 'Scegli dove crescere: tocca un\'abilità e prendi un grado.' : 'Un punto a ogni livello: vinci lotte e fai attività per salire.') + '</small></span>' +
+      '<span class="sk-points' + (left ? ' has' : '') + '" aria-label="' + left + (left === 1 ? ' punto' : ' punti') + ' da spendere"><b>' + left + '</b><small>' + (left === 1 ? 'punto' : 'punti') + '</small></span></div>';
+    var o = sheet('<div class="sheet sk-sheet" role="dialog" aria-modal="true" aria-labelledby="sk-t"><div class="sheet-h"><h2 id="sk-t">Abilità di Antonio</h2><button class="tb-btn" type="button" id="sk-x">Indietro</button></div>' +
+      head + '<div class="sk-tree">' + tree + '</div>' + detail + '</div>');
     $('sk-x').addEventListener('click', function () { closeSheet(); back(); });
-    each(o.querySelectorAll('[data-sk]'), function (b) {
-      b.addEventListener('click', function () { if (takeSkill(b.getAttribute('data-sk') as SkillId)) { sfx('pickup'); save(); setPace(); render(); } });
+    each(o.querySelectorAll('[data-skn]'), function (b) {
+      b.addEventListener('click', function () { picked = b.getAttribute('data-skn') as SkillId; sfx('click'); render(); focusNode(); });
     });
-    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-sk]:not([disabled])') || $('sk-x'); if (b) b.focus(); }, 30);
+    each(o.querySelectorAll('[data-sk]'), function (b) {
+      b.addEventListener('click', function () { var id = b.getAttribute('data-sk') as SkillId; if (takeSkill(id)) { sfx('pickup'); save(); setPace(); render(id); focusNode(); } });
+    });
+    var focusNode = function () { setTimeout(function () { var n = o.querySelector<HTMLElement>('[data-skn="' + picked + '"]'); if (n) n.focus(); }, 0); };
+    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-sk]:not([disabled])') || o.querySelector<HTMLElement>('[data-skn="' + picked + '"]') || $('sk-x'); if (b) b.focus(); }, 30);
   };
   render();
 }

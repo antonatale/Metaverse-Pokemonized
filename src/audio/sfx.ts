@@ -97,6 +97,8 @@ const FX: Record<string, Fx> = {
   /* a wild creature jumps out of its hiding place: a rustle, then a rising alarm */
   rustle(c, out, t) { hiss(c, out, t, 0.18, { freq: 3000, to: 1200, q: 0.7, gain: 0.5 }); hiss(c, out, t + 0.12, 0.16, { freq: 2600, to: 900, q: 0.7, gain: 0.45 }); },
   meet(c, out, t) { FX.rustle(c, out, t); arp(c, out, t + 0.28, ['E5', 'A5', 'E6'], 0.07, { type: 'square', gain: 0.12, cutoff: 4200, decay: 0.03, sustain: 0.5 }); },
+  /* a trainer has seen Antonio: the "!" over his head, a sharp sting */
+  spot(c, out, t) { tone(c, out, hz('E6'), t, 0.06, { type: 'square', gain: 0.1, cutoff: 5000, decay: 0.02, sustain: 0.5 }); tone(c, out, hz('B6'), t + 0.07, 0.16, { type: 'square', gain: 0.1, cutoff: 5000, decay: 0.03, sustain: 0.6 }); },
   scooter(c, out, t) { tone(c, out, 70, t, 0.9, { type: 'sawtooth', to: 150, gain: 0.09, cutoff: 900, attack: 0.05, sustain: 0.8, release: 0.2, vibrato: 30 }); hiss(c, out, t, 0.8, { type: 'lowpass', freq: 600, gain: 0.2, attack: 0.1 }); },
   step(c, out, t) { hiss(c, out, t, 0.05, { type: 'lowpass', freq: 900 + wobble() * 300, gain: 0.5 }); },
   door(c, out, t) { hiss(c, out, t, 0.25, { freq: 350, to: 1400, q: 0.7, gain: 0.3 }); tone(c, out, 200, t + 0.05, 0.08, { type: 'triangle', gain: 0.1 }); },
