@@ -88,6 +88,117 @@ export const TRACKS: Record<string, Track> = {
     ],
     drums: { gain: 0.45, bars: repeat(['k . h . h . h . k . h . h . h .'], 8) }
   },
+  /* Castellone, the old village on the hill: slow and stately, D Dorian, a lute under the walls */
+  castellone: {
+    bpm: 84, loop: true,
+    voices: [
+      lead([
+        'D5 - - - F5 - - - A5 - - - G5 - F5 -',
+        'E5 - - - D5 - - - F5 - - - A5 - - -',
+        'Bb5 - - - A5 - - - G5 - - - F5 - D5 -',
+        'E5 - - - G5 - - - C6 - - - B5 - A5 -',
+        'A5 - - - F5 - - - D5 - - - F5 - A5 -',
+        'G5 - - - Bb5 - - - D6 - - - C6 - Bb5 -',
+        'A5 - - - C#6 - - - E6 - - - D6 - C#6 -',
+        'D6 - - - - - - - A5 - - - F5 - - -'
+      ], { type: 'triangle', gain: 0.2, cutoff: undefined, decay: 0.2, sustain: 0.8, vibrato: 10 }),
+      bass([
+        'D3 - - - . . A2 . D3 - - - . . A2 .',
+        'D3 - - - . . A2 . D3 - - - . . A2 .',
+        'Bb2 - - - . . F2 . Bb2 - - - . . F2 .',
+        'C3 - - - . . G2 . C3 - - - . . G2 .',
+        'D3 - - - . . A2 . D3 - - - . . A2 .',
+        'G2 - - - . . D3 . G2 - - - . . D3 .',
+        'A2 - - - . . E2 . A2 - - - . . E2 .',
+        'D3 - - - . . A2 . D3 - - - . . A2 .'
+      ]),
+      pluck([
+        repeat(['D4 F4 A4 F4'], 4).join(' '),
+        repeat(['D4 F4 A4 F4'], 4).join(' '),
+        repeat(['D4 F4 Bb4 F4'], 4).join(' '),
+        repeat(['E4 G4 C5 G4'], 4).join(' '),
+        repeat(['D4 F4 A4 F4'], 4).join(' '),
+        repeat(['D4 G4 Bb4 G4'], 4).join(' '),
+        repeat(['E4 A4 C#5 A4'], 4).join(' '),
+        repeat(['D4 F4 A4 F4'], 4).join(' ')
+      ], { gain: 0.03, cutoff: 2400 })
+    ],
+    drums: { gain: 0.35, bars: repeat(['k . . . h . . . s . . . h . . .'], 8) }
+  },
+  /* Mola and the port: the fishermen's village, an accordion over an oom-pah, G major, G C G D Em C D G */
+  mola: {
+    bpm: 112, loop: true,
+    voices: [
+      lead([
+        'B5 - D6 - B5 - G5 - A5 - B5 - D6 - - -',
+        'E6 - D6 - C6 - B5 - C6 - E6 - G6 - - -',
+        'D6 - B5 - G5 - B5 - D6 - B5 - A5 - G5 -',
+        'F#5 - A5 - D6 - C6 - A5 - F#5 - A5 - - .',
+        'G5 - B5 - E6 - D6 - B5 - G5 - B5 - - -',
+        'C6 - E6 - G6 - E6 - D6 - C6 - B5 - A5 -',
+        'A5 - D6 - F#6 - E6 - D6 - C6 - A5 - F#5 -',
+        'G5 - B5 - D6 - B5 - G6 - - - - - . .'
+      ], { gain: 0.06, cutoff: 2800, decay: 0.12, sustain: 0.8, vibrato: 7 }),
+      bass([
+        'G2 - . . D3 - . . G2 - . . D3 - . .',
+        'C3 - . . G2 - . . C3 - . . G2 - . .',
+        'G2 - . . D3 - . . G2 - . . D3 - . .',
+        'D3 - . . A2 - . . D3 - . . A2 - . .',
+        'E2 - . . B2 - . . E2 - . . B2 - . .',
+        'C3 - . . G2 - . . C3 - . . G2 - . .',
+        'D3 - . . A2 - . . D3 - . . A2 - . .',
+        'G2 - . . D3 - . . G2 - . . D3 - . .'
+      ]),
+      pluck([
+        '. . D4 B3 . . D4 B3 . . D4 B3 . . D4 B3',
+        '. . E4 C4 . . E4 C4 . . E4 C4 . . E4 C4',
+        '. . D4 B3 . . D4 B3 . . D4 B3 . . D4 B3',
+        '. . F#4 A3 . . F#4 A3 . . F#4 A3 . . F#4 A3',
+        '. . G4 B3 . . G4 B3 . . G4 B3 . . G4 B3',
+        '. . E4 C4 . . E4 C4 . . E4 C4 . . E4 C4',
+        '. . F#4 A3 . . F#4 A3 . . F#4 A3 . . F#4 A3',
+        '. . D4 B3 . . D4 B3 . . D4 B3 . . D4 B3'
+      ], { gain: 0.035, cutoff: 2600 })
+    ],
+    drums: { gain: 0.5, bars: repeat(['k . h . s . h . k . h . s . h h'], 8) }
+  },
+  /* Vindicio, the long beach and the umbrella pines: easy and sunny, a little bossa nova, C Am Dm G C Em F G */
+  vindicio: {
+    bpm: 96, loop: true,
+    voices: [
+      lead([
+        'E5 - - G5 - - B5 - - A5 - G5 - - E5 -',
+        'C6 - - B5 - - A5 - - G5 - E5 - - . .',
+        'D5 - - F5 - - A5 - - C6 - A5 - - F5 -',
+        'G5 - - B5 - - D6 - - F6 - D6 - - B5 -',
+        'E6 - - D6 - - C6 - - B5 - G5 - - E5 -',
+        'G5 - - B5 - - E6 - - D6 - B5 - - G5 -',
+        'A5 - - C6 - - F6 - - E6 - C6 - - A5 -',
+        'B5 - - D6 - - G6 - - - - - . . . .'
+      ], { type: 'triangle', gain: 0.2, cutoff: undefined, decay: 0.2, sustain: 0.8, vibrato: 12 }),
+      bass([
+        'C3 - - . . . G2 - . . C3 - . . G2 -',
+        'A2 - - . . . E2 - . . A2 - . . E2 -',
+        'D3 - - . . . A2 - . . D3 - . . A2 -',
+        'G2 - - . . . D3 - . . G2 - . . D3 -',
+        'C3 - - . . . G2 - . . C3 - . . G2 -',
+        'E2 - - . . . B2 - . . E2 - . . B2 -',
+        'F2 - - . . . C3 - . . F2 - . . C3 -',
+        'G2 - - . . . D3 - . . G2 - . . D3 -'
+      ]),
+      pluck([
+        'E4 . G4 . B4 . G4 . E4 . G4 . B4 . G4 .',
+        'E4 . A4 . C5 . A4 . E4 . A4 . C5 . A4 .',
+        'F4 . A4 . C5 . A4 . F4 . A4 . C5 . A4 .',
+        'F4 . B4 . D5 . B4 . F4 . B4 . D5 . B4 .',
+        'E4 . G4 . B4 . G4 . E4 . G4 . B4 . G4 .',
+        'E4 . G4 . D5 . G4 . E4 . G4 . D5 . G4 .',
+        'A4 . C5 . E5 . C5 . A4 . C5 . E5 . C5 .',
+        'F4 . B4 . D5 . B4 . F4 . B4 . D5 . B4 .'
+      ], { gain: 0.03, cutoff: 3000 })
+    ],
+    drums: { gain: 0.35, bars: repeat(['k . . h . . h . k . . h . . h .'], 8) }
+  },
   /* a friendly battle: driving bass, Am F G E */
   battle: {
     bpm: 150, loop: true,
@@ -144,3 +255,19 @@ export const TRACKS: Record<string, Track> = {
     ]
   }
 };
+
+/** The same tune at night: slower, softer, the lead a plain triangle, the drums nearly gone. Made from the day's
+    numbers, not written again, so a new place theme gets its night for the cost of one name in NIGHT_OF. */
+function atNight(t: Track): Track {
+  return {
+    bpm: Math.round(t.bpm * 0.88), loop: t.loop,
+    voices: t.voices.map(function (v, i) {
+      return { ...v, type: i === 0 ? ('triangle' as OscillatorType) : v.type, gain: v.gain * (i === 0 ? 0.9 : 0.75),
+        cutoff: i === 0 ? undefined : i === 2 ? Math.min(v.cutoff || 1500, 1500) : v.cutoff, vibrato: i === 0 ? 14 : v.vibrato };
+    }),
+    drums: t.drums && { gain: t.drums.gain * 0.3, bars: t.drums.bars }
+  };
+}
+/** the tunes of the map, by place (audio/zones.ts); each has a night version, `name:night` */
+export const NIGHT_OF = ['world', 'castellone', 'mola', 'vindicio'];
+NIGHT_OF.forEach(function (n) { TRACKS[n + ':night'] = atNight(TRACKS[n]); });

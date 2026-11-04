@@ -38,7 +38,7 @@ import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
 import { soundButton } from './sound';
-import { music, sfx, typeBlip } from '../audio';
+import { music, worldMusic, sfx, typeBlip } from '../audio';
 import { startBattle, goHome } from './battle-screen';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
@@ -871,6 +871,13 @@ function openMenu(tab?: string) {
 
 
 /* ---------- loop ---------- */
+/** the tune of the place Antonio is in, by day or night: asked often, it changes only when the place or the light does
+    (audio/zones.ts); open() forgets the last one, because a battle has played its own in between */
+let lastTune = '';
+function tune() {
+  const t = worldMusic(M.id, areaName(), darkness(new Date()) > 0.5);
+  if (t !== lastTune) { lastTune = t; music(t); }
+}
 export let running = false;
 let raf = 0;
 function frame(now: number) {
@@ -883,7 +890,7 @@ function frame(now: number) {
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; renderBars(); chapterTip();
+    barAt = now; renderBars(); chapterTip(); tune();
     /* the first time a creature can do something on the map, Cicero says what */
     if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }
@@ -966,7 +973,7 @@ function open(quiet?: boolean) {
   setScreen('world');
   setMap(st.map); setPace();
   resize(); renderHud();
-  music('world');
+  lastTune = ''; tune();
   var go = function () {
     invalidate(); start();
     if (!quiet && !st.seen.intro) intro();

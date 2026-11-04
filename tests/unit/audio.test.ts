@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TRACKS } from '../../src/audio/tracks';
+import { TRACKS, NIGHT_OF } from '../../src/audio/tracks';
+import { worldMusic } from '../../src/audio/zones';
 import { parse } from '../../src/audio/music';
 import { hz } from '../../src/audio/synth';
 import { SFX_NAMES } from '../../src/audio/sfx';
@@ -65,3 +66,33 @@ describe('the cries of the creatures', () => {
     expect(voiceOf('lamo').pitch).toBeLessThan(1);
   });
 });
+
+describe('the music of the places', () => {
+  it('gives a night version of every tune of the map, slower and softer', () => {
+    for (const n of NIGHT_OF) {
+      const day = TRACKS[n], night = TRACKS[n + ':night'];
+      expect(night, n).toBeTruthy();
+      expect(night.bpm).toBeLessThan(day.bpm);
+      expect(night.voices.length).toBe(day.voices.length);
+      expect(night.voices[0].gain).toBeLessThan(day.voices[0].gain);
+      expect(parse(night).steps).toBe(parse(day).steps);
+    }
+  });
+  it('follows the neighbourhood, by the same table as the battle scenes, and always names a track that exists', () => {
+    const at = (area: string, night = false, map = 'formia') => worldMusic(map, area, night);
+    expect(at('Castellone')).toBe('castellone');
+    expect(at('Mola')).toBe('mola');
+    expect(at('Porto')).toBe('mola');
+    expect(at('Caposele')).toBe('mola');
+    expect(at('Vindicio')).toBe('vindicio');
+    expect(at('Pineta di Vindicio')).toBe('vindicio');
+    expect(at('Castellone', true)).toBe('castellone:night');
+    /* a place with no tune of its own, out in the open, and indoors: the plain one */
+    expect(at('Centro')).toBe('world');
+    expect(at('Gianola', true)).toBe('world:night');
+    expect(at('')).toBe('world');
+    expect(at('Birreria Morgana', false, 'morgana')).toBe('world');
+    for (const area of ['Castellone', 'Mola', 'Porto', 'Vindicio', 'Centro', 'Gianola', '', 'Monti Aurunci']) for (const night of [false, true]) expect(TRACKS[at(area, night)], area).toBeTruthy();
+  });
+});
+
