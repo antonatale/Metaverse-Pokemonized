@@ -175,6 +175,10 @@ tools/
 
 ## Com'è disegnata Formia
 
+- **Il terreno** (`render/canvas/ground.ts`): prima i colori di tutte le caselle, poi le texture, poi i contorni a penna. Non si vede più la griglia delle caselle:
+  - le texture sono ritagliate sulla loro casella (non sbordano su un terreno diverso), ma le macchie d'erba appartengono a una casella e le disegnano anche le vicine dello stesso terreno, e le increspature della sabbia e le lastre di pietra sono disposte sulla mappa intera, quindi passano da una casella all'altra senza tagli;
+  - erba con macchie più scure, ciuffi e qualche fiore; sabbia con le increspature del vento; mare con le onde, l'acqua più chiara vicino alla riva, la schiuma lungo le spiagge e qualche riflesso di sole; piazze di lastre sfalsate; sampietrini un po' storti;
+  - i contorni arrotondano gli angoli: dove una casella sporge dalle tre intorno, l'angolo passa al terreno delle altre e la linea curva, così coste, spiagge e piazze sono forme e non scalini. Ferrovia, muri, pavimenti, pontili e mura poligonali restano squadrati. Ogni vertice disegna metà dei lati che ci arrivano, così i pezzi della mappa disegnati separatamente combaciano.
 - **Case di contorno:** ognuna ha un seme `v` (in `formia-ground.ts`) da cui `render/canvas/objects.ts` (`facade`) sceglie:
   - la facciata: crema, giallo, rosa, pesca o azzurro;
   - le persiane: verdi o marroni;

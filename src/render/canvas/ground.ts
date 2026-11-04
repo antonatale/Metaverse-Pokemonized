@@ -18,33 +18,71 @@ const GROUP: Record<string, string> = { grass: 'g', path: 'p', road: 'r', sand: 
 
 function groundFill(P: Palette, g: string): string {
   return ({ grass: P.grass, path: P.path, road: P.road, sand: P.sand, sea: P.sea, pier: P.wood, stone: P.stone, steps: P.stone, clay: P.clay, floor: P.wood,
-    wall: P.wall, rail: P.path2, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far } as Record<string, string>)[g] || P.paper;
+    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far } as Record<string, string>)[g] || P.paper;
+}
+/** the same kind of ground (its group) at a tile of the map */
+function same(map: GroundMap, x: number, y: number, g: string): boolean {
+  return x >= 0 && y >= 0 && x < map.w && y < map.h && GROUP[map.cell(x, y).g] === g;
+}
+/** a slow noise along a row, 0–1: where the ripples on the sand run and where they stop */
+function noise1(u: number, row: number, k: number): number {
+  var i = Math.floor(u), f = u - i, a = hash(i, row, k), b = hash(i + 1, row, k);
+  return a + (b - a) * f * f * (3 - 2 * f);
+}
+/** a little wave, "~", centred on x, y */
+function wave(c: Ctx, x: number, y: number, w: number) {
+  c.beginPath(); c.moveTo(x - w, y); c.quadraticCurveTo(x - w / 2, y - 3, x, y); c.quadraticCurveTo(x + w / 2, y + 3, x + w, y); c.stroke();
+}
+/** sea next to the land */
+function shore(map: GroundMap, x: number, y: number): boolean {
+  return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(function (d) { var q = x + d[0], u = y + d[1]; return q >= 0 && u >= 0 && q < map.w && u < map.h && GROUP[map.cell(q, u).g] !== 'w'; });
 }
 
-/* one tile of ground with its texture */
-function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
-  var L = map.cell(x, y), X = x * T, Y = y * T, r = hash(x, y, 1), k;
-  c.fillStyle = groundFill(P, L.g); c.fillRect(X, Y, T, T);
+/* The texture of one tile, over its colour. It is clipped to the tile, so nothing spills onto another kind of ground;
+   the soft patches belong to a tile and are drawn by its neighbours of the same ground too, and the ripples and the
+   flagstones are laid out on the whole map, so they run on from tile to tile and the squares do not show. */
+function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
+  var L = map.cell(x, y), X = x * T, Y = y * T, r = hash(x, y, 1), g = GROUP[L.g], k, dx, dy, q, u;
+  c.save(); c.beginPath(); c.rect(X, Y, T, T); c.clip();
+  if (L.g === 'grass' || L.g === 'hill') {
+    /* darker patches, shared with the tiles around */
+    c.fillStyle = L.g === 'grass' ? P.grass2 : P.hill2; c.globalAlpha = 0.14;
+    for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) {
+      q = x + dx; u = y + dy;
+      if (!same(map, q, u, g) || hash(q, u, 3) > 0.45) continue;
+      ell(c, q * T + 6 + hash(q, u, 4) * 20, u * T + 6 + hash(q, u, 5) * 20, 12 + hash(q, u, 6) * 12, 9 + hash(q, u, 7) * 9); c.fill();
+    }
+    c.globalAlpha = 1;
+  }
   if (L.g === 'grass') {
     c.strokeStyle = P.grass2; c.lineWidth = 1.4;
     for (k = 0; k < 3; k++) {
       var gx = X + 5 + hash(x, y, 10 + k) * 22, gy = Y + 8 + hash(x, y, 20 + k) * 18;
       c.beginPath(); c.moveTo(gx - 3, gy + 2); c.lineTo(gx - 1, gy - 2); c.moveTo(gx, gy + 2); c.lineTo(gx + 1, gy - 3); c.moveTo(gx + 3, gy + 2); c.lineTo(gx + 3.5, gy - 1.5); c.stroke();
     }
+    /* now and then a little flower in the grass */
+    if (hash(x, y, 8) < 0.07) {
+      var fx = X + 7 + hash(x, y, 9) * 18, fy = Y + 7 + hash(x, y, 11) * 18;
+      c.fillStyle = hash(x, y, 12) < 0.5 ? P['flower-a'] : P['flower-b'];
+      for (k = 0; k < 4; k++) { circle(c, fx + Math.cos(k * 1.571) * 2, fy + Math.sin(k * 1.571) * 2, 1.6); c.fill(); }
+      circle(c, fx, fy, 1.1); c.fillStyle = P.foam; c.fill();
+    }
   } else if (L.g === 'path') {
     c.strokeStyle = P.path2; c.lineWidth = 1.2;
     for (k = 0; k < 3; k++) { var px = X + 4 + hash(x, y, 30 + k) * 22, py = Y + 4 + hash(x, y, 40 + k) * 22; rr(c, px, py, 6 + r * 3, 4 + r * 2, 2); c.stroke(); }
   } else if (L.g === 'road') {
+    c.fillStyle = P.road2;
+    for (k = 0; k < 4; k++) { circle(c, X + 3 + hash(x, y, 160 + k) * 26, Y + 3 + hash(x, y, 165 + k) * 26, 0.8); c.fill(); }
     c.strokeStyle = P.road2; c.lineWidth = 1;
     c.beginPath(); c.moveTo(X + 4 + r * 10, Y + 9); c.lineTo(X + 9 + r * 10, Y + 9); c.moveTo(X + 16, Y + 22 + r * 4); c.lineTo(X + 23, Y + 22 + r * 4); c.stroke();
     /* a level crossing: the railway on both sides of the street, a few tiles away at most */
-    var track = function (dx: number, dy: number) {
+    var track = function (tx: number, ty: number) {
       for (var s = 1; s <= 3; s++) {
-        var q = x + dx * s, u = y + dy * s;
-        if (q < 0 || u < 0 || q >= map.w || u >= map.h) return false;
-        var g = map.cell(q, u).g;
-        if (g === 'rail') return true;
-        if (g !== 'road') return false;
+        var a = x + tx * s, b = y + ty * s;
+        if (a < 0 || b < 0 || a >= map.w || b >= map.h) return false;
+        var gg = map.cell(a, b).g;
+        if (gg === 'rail') return true;
+        if (gg !== 'road') return false;
       }
       return false;
     };
@@ -53,12 +91,33 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     if (track(0, -1) && track(0, 1)) { c.moveTo(X + 11, Y); c.lineTo(X + 11, Y + T); c.moveTo(X + 21, Y); c.lineTo(X + 21, Y + T); }
     c.stroke();
   } else if (L.g === 'sand') {
+    /* ripples left by the wind, rows across the whole beach that come and go */
+    c.strokeStyle = P.sand2; c.lineWidth = 1.1; c.globalAlpha = 0.6;
+    for (var row = Math.floor(Y / 9) - 1; row * 9 < Y + T + 4; row++) {
+      var ry0 = row * 9 + (hash(row, 7, 13) - 0.5) * 3, on = false;
+      c.beginPath();
+      for (var sx = Math.floor((X - 4) / 3) * 3; sx <= X + T + 4; sx += 3) {
+        var vis = noise1(sx / 23, row, 14) > 0.55, sy = ry0 + Math.sin(sx / 7 + row * 1.9) * 1.6;
+        if (vis) { if (on) c.lineTo(sx, sy); else c.moveTo(sx, sy); }
+        on = vis;
+      }
+      c.stroke();
+    }
+    c.globalAlpha = 1;
     c.fillStyle = P.sand2;
-    for (k = 0; k < 6; k++) { circle(c, X + 3 + hash(x, y, 50 + k) * 26, Y + 3 + hash(x, y, 60 + k) * 26, 0.9); c.fill(); }
+    for (k = 0; k < 5; k++) { circle(c, X + 3 + hash(x, y, 50 + k) * 26, Y + 3 + hash(x, y, 60 + k) * 26, 0.9); c.fill(); }
   } else if (L.g === 'stone') {
+    /* flagstones in staggered rows, laid on the whole square and not on the tiles */
     c.strokeStyle = P.stone2; c.lineWidth = 1;
-    c.strokeRect(X + 0.5, Y + 0.5, T - 1, T - 1);
-    c.beginPath(); c.moveTo(X + 16, Y); c.lineTo(X + 16, Y + 16); c.moveTo(X, Y + 16); c.lineTo(X + T, Y + 16); c.stroke();
+    for (var fr = Math.floor(Y / 16); fr * 16 < Y + T; fr++) {
+      var top = fr * 16, off = (fr % 2) * 11;
+      c.beginPath(); c.moveTo(X, top); c.lineTo(X + T, top); c.stroke();
+      for (var kx = Math.floor((X - off) / 22) - 1; kx * 22 + off < X + T + 22; kx++) {
+        var jx = kx * 22 + off + (hash(kx, fr, 21) - 0.5) * 8;
+        if (hash(kx, fr, 22) < 0.16) { c.fillStyle = P.stone2; c.globalAlpha = 0.25; c.fillRect(jx, top, 22, 16); c.globalAlpha = 1; }
+        c.beginPath(); c.moveTo(jx, top); c.lineTo(jx, top + 16); c.stroke();
+      }
+    }
   } else if (L.g === 'pier' || L.g === 'floor') {
     c.strokeStyle = P.wood2; c.lineWidth = 1.2;
     for (k = 1; k < 4; k++) { c.beginPath(); c.moveTo(X, Y + k * 8); c.lineTo(X + T, Y + k * 8); c.stroke(); }
@@ -68,24 +127,23 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     c.strokeStyle = P.stone2; c.lineWidth = 1;
     c.beginPath(); c.moveTo(X, Y + T - 8); c.lineTo(X + T, Y + T - 8); c.stroke();
   } else if (L.g === 'rail') {
-    c.fillStyle = P.path; c.fillRect(X, Y, T, T);
     /* the track runs towards the rail next to it: along the row, down the column, or round a corner */
-    var rl = function (dx: number, dy: number) { return x + dx >= 0 && y + dy >= 0 && x + dx < map.w && y + dy < map.h && map.cell(x + dx, y + dy).g === 'rail'; };
+    var rl = function (tx: number, ty: number) { return x + tx >= 0 && y + ty >= 0 && x + tx < map.w && y + ty < map.h && map.cell(x + tx, y + ty).g === 'rail'; };
     var we = rl(-1, 0) || rl(1, 0), ns = rl(0, -1) || rl(0, 1);
     if (!we && !ns) we = true;
     /* half a track from the middle of the tile to one side: sleepers across, two rails along */
-    var half = function (dx: number, dy: number) {
+    var half = function (hx: number, hy: number) {
       var cx = X + T / 2, cy = Y + T / 2;
       c.strokeStyle = P.wood2; c.lineWidth = 3;
       for (var s = 0; s < 2; s++) {
         var o = 4 + s * 8;
         c.beginPath();
-        if (dy === 0) { c.moveTo(cx + dx * o, Y + 6); c.lineTo(cx + dx * o, Y + 26); } else { c.moveTo(X + 6, cy + dy * o); c.lineTo(X + 26, cy + dy * o); }
+        if (hy === 0) { c.moveTo(cx + hx * o, Y + 6); c.lineTo(cx + hx * o, Y + 26); } else { c.moveTo(X + 6, cy + hy * o); c.lineTo(X + 26, cy + hy * o); }
         c.stroke();
       }
       c.strokeStyle = P.ink; c.lineWidth = 2; c.beginPath();
-      if (dy === 0) { c.moveTo(cx - (dx < 0 ? 0 : 5), Y + 11); c.lineTo(dx < 0 ? X : X + T, Y + 11); c.moveTo(cx - (dx < 0 ? 0 : 5), Y + 21); c.lineTo(dx < 0 ? X : X + T, Y + 21); }
-      else { c.moveTo(X + 11, cy - (dy < 0 ? 0 : 5)); c.lineTo(X + 11, dy < 0 ? Y : Y + T); c.moveTo(X + 21, cy - (dy < 0 ? 0 : 5)); c.lineTo(X + 21, dy < 0 ? Y : Y + T); }
+      if (hy === 0) { c.moveTo(cx - (hx < 0 ? 0 : 5), Y + 11); c.lineTo(hx < 0 ? X : X + T, Y + 11); c.moveTo(cx - (hx < 0 ? 0 : 5), Y + 21); c.lineTo(hx < 0 ? X : X + T, Y + 21); }
+      else { c.moveTo(X + 11, cy - (hy < 0 ? 0 : 5)); c.lineTo(X + 11, hy < 0 ? Y : Y + T); c.moveTo(X + 21, cy - (hy < 0 ? 0 : 5)); c.lineTo(X + 21, hy < 0 ? Y : Y + T); }
       c.stroke();
     };
     /* a straight run goes right across, even where a road or a tunnel cuts it off on one side */
@@ -93,8 +151,31 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     else if (ns && !we) { half(0, -1); half(0, 1); }
     else { if (rl(-1, 0)) half(-1, 0); if (rl(1, 0)) half(1, 0); if (rl(0, -1)) half(0, -1); if (rl(0, 1)) half(0, 1); }
   } else if (L.g === 'sea') {
-    c.fillStyle = P.sea2;
-    if (r < 0.5) { ell(c, X + 8 + r * 16, Y + 20, 7, 1.6); c.fill(); }
+    /* lighter water along the shore, shared with the sea around */
+    c.fillStyle = P.foam; c.globalAlpha = 0.08;
+    for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) {
+      q = x + dx; u = y + dy;
+      if (!same(map, q, u, 'w') || !shore(map, q, u)) continue;
+      ell(c, q * T + 16, u * T + 16, 30, 26); c.fill(); ell(c, q * T + 16, u * T + 16, 20, 17); c.fill();
+    }
+    c.globalAlpha = 1;
+    c.strokeStyle = P.sea2; c.lineWidth = 1.6;
+    if (r < 0.7) wave(c, X + 9 + hash(x, y, 15) * 14, Y + 9 + hash(x, y, 16) * 14, 5 + hash(x, y, 17) * 3);
+    if (hash(x, y, 18) < 0.3) wave(c, X + 9 + hash(x, y, 23) * 14, Y + 9 + hash(x, y, 24) * 14, 4);
+    /* the surf, along the beach */
+    c.strokeStyle = P.foam; c.lineWidth = 2;
+    [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+      if (!same(map, x + d[0], y + d[1], 's')) return;
+      c.beginPath();
+      if (d[0] === 0) { var ey = d[1] < 0 ? Y + 5 : Y + T - 5; c.moveTo(X + 7, ey); c.quadraticCurveTo(X + 12, ey - 2.5 * d[1], X + 16, ey); c.quadraticCurveTo(X + 20, ey + 2.5 * d[1], X + 25, ey); }
+      else { var ex = d[0] < 0 ? X + 5 : X + T - 5; c.moveTo(ex, Y + 7); c.quadraticCurveTo(ex - 2.5 * d[0], Y + 12, ex, Y + 16); c.quadraticCurveTo(ex + 2.5 * d[0], Y + 20, ex, Y + 25); }
+      c.stroke();
+    });
+    /* and a glint of sun, here and there */
+    if (hash(x, y, 19) < 0.05) {
+      var gx2 = X + 8 + hash(x, y, 25) * 16, gy2 = Y + 8 + hash(x, y, 26) * 16;
+      c.fillStyle = P.foam; c.beginPath(); c.moveTo(gx2, gy2 - 4); c.lineTo(gx2 + 1, gy2 - 1); c.lineTo(gx2 + 4, gy2); c.lineTo(gx2 + 1, gy2 + 1); c.lineTo(gx2, gy2 + 4); c.lineTo(gx2 - 1, gy2 + 1); c.lineTo(gx2 - 4, gy2); c.lineTo(gx2 - 1, gy2 - 1); c.closePath(); c.fill();
+    }
   } else if (L.g === 'clay') {
     c.fillStyle = P.sand2;
     for (k = 0; k < 4; k++) { circle(c, X + 3 + hash(x, y, 70 + k) * 26, Y + 3 + hash(x, y, 80 + k) * 26, 0.7); c.fill(); }
@@ -112,9 +193,12 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     c.strokeStyle = P.stone2; c.lineWidth = 1.2;
     for (k = 1; k < 4; k++) { c.beginPath(); c.moveTo(X + 1, Y + k * 8); c.lineTo(X + T - 1, Y + k * 8); c.stroke(); }
   } else if (L.g === 'paving') {
-    /* sampietrini: rows of small square cobbles */
+    /* sampietrini: rows of small cobbles, each a little out of line */
     c.strokeStyle = P.stone2; c.lineWidth = 0.9;
-    for (var ry = 0; ry < 4; ry++) for (var rx = 0; rx < 5; rx++) c.strokeRect(X + rx * 8 - (ry % 2) * 4 + 1, Y + ry * 8 + 1, 6, 6);
+    for (var cy2 = 0; cy2 < 4; cy2++) for (var cx2 = 0; cx2 < 5; cx2++) {
+      var bx = X + cx2 * 8 - (cy2 % 2) * 4 + 1 + (hash(x * 5 + cx2, y * 4 + cy2, 27) - 0.5) * 1.2, by = Y + cy2 * 8 + 1 + (hash(x * 5 + cx2, y * 4 + cy2, 28) - 0.5) * 1.2;
+      rr(c, bx, by, 6, 6, 1.6); c.stroke();
+    }
   } else if (L.g === 'mura') {
     /* polygonal blocks, like the walls of ancient Formia */
     var j = function (a: number) { return (hash(x, y, a) - 0.5) * 6; };
@@ -123,10 +207,41 @@ function tile(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     [[[X + 1, Y + 2], m1, m2, [X + 1, Y + 13]], [m1, [X + T - 1, Y + 3], m3, m2], [[X + 1, Y + 13], m2, m4, [X + 1, Y + T - 1]], [m2, m3, [X + T - 1, Y + T - 1], m4]]
       .forEach(function (pts) { poly(c, pts); c.stroke(); });
   }
-  /* the squared paper shows through */
-  c.strokeStyle = P.grid; c.lineWidth = 0.6; c.globalAlpha = 0.5;
-  c.strokeRect(X + 0.3, Y + 0.3, T - 0.6, T - 0.6);
-  c.globalAlpha = 1;
+  c.restore();
+}
+
+/* The ballpoint outline wherever two kinds of ground meet. Corners are rounded off: where a tile sticks out of the
+   other three around a corner, that corner goes to the other ground and the line curves, so a coast, a beach or a
+   square reads as a shape and not as a staircase of squares. Railways, walls, floors, piers and the polygonal walls
+   keep their square corners. Every vertex draws half of each edge that ends on it, so pieces of the map drawn
+   apart meet exactly. */
+const ROUND: Record<string, boolean> = { g: true, p: true, r: true, s: true, w: true, st: true, h: true, pv: true, c: true, fr: true };
+function outlines(c: Ctx, map: GroundMap, P: Palette, x0: number, y0: number, x1: number, y1: number) {
+  var G = function (x: number, y: number) { return x < 0 || y < 0 || x >= map.w || y >= map.h ? null : GROUP[map.cell(x, y).g]; };
+  var ink = function (a: string | null, b: string | null) { return a === 'fr' || b === 'fr' ? P.far2 : P.ink; };
+  var h = T / 2;
+  c.lineWidth = 1.8;
+  for (var y = y0; y <= y1 + 1; y++) for (var x = x0; x <= x1 + 1; x++) {
+    var tl = G(x - 1, y - 1), tr = G(x, y - 1), bl = G(x - 1, y), br = G(x, y), X = x * T, Y = y * T;
+    var up = tl != null && tr != null && tl !== tr, down = bl != null && br != null && bl !== br;
+    var left = tl != null && bl != null && tl !== bl, right = tr != null && br != null && tr !== br;
+    if ((up ? 1 : 0) + (down ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0) === 2 && (up || down) && (left || right)) {
+      /* the tile that sticks out, and the one across the corner from it (the ground of the other three) */
+      var odd = G(left ? x - 1 : x, up ? y - 1 : y), mx = left ? x : x - 1, my = up ? y : y - 1, other = G(mx, my);
+      if (odd && other && ROUND[odd] && ROUND[other]) {
+        var ay = up ? Y - h : Y + h, bx = left ? X - h : X + h;
+        c.beginPath(); c.moveTo(X, ay); c.quadraticCurveTo(X, Y, bx, Y); c.lineTo(X, Y); c.closePath();
+        c.fillStyle = groundFill(P, map.cell(mx, my).g); c.fill();
+        c.strokeStyle = ink(odd, other);
+        c.beginPath(); c.moveTo(X, ay); c.quadraticCurveTo(X, Y, bx, Y); c.stroke();
+        continue;
+      }
+    }
+    if (up) { c.strokeStyle = ink(tl, tr); c.beginPath(); c.moveTo(X, Y); c.lineTo(X, Y - h); c.stroke(); }
+    if (down) { c.strokeStyle = ink(bl, br); c.beginPath(); c.moveTo(X, Y); c.lineTo(X, Y + h); c.stroke(); }
+    if (left) { c.strokeStyle = ink(tl, bl); c.beginPath(); c.moveTo(X, Y); c.lineTo(X - h, Y); c.stroke(); }
+    if (right) { c.strokeStyle = ink(tr, br); c.beginPath(); c.moveTo(X, Y); c.lineTo(X + h, Y); c.stroke(); }
+  }
 }
 
 /* paints the static ground of a map, or of the part of it in rect (in tiles): ground, borders, low decorations.
@@ -138,28 +253,10 @@ export function paintGround(map: GroundMap, P: Palette, s: number, rect?: Rect):
   c.lineCap = 'round'; c.lineJoin = 'round';
   c.fillStyle = P.paper; c.fillRect(R.x * T, R.y * T, R.w * T, R.h * T);
   var x0 = Math.max(0, R.x - 1), y0 = Math.max(0, R.y - 1), x1 = Math.min(map.w - 1, R.x + R.w), y1 = Math.min(map.h - 1, R.y + R.h), x, y, L;
-  for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) tile(c, map, P, x, y);
-  /* ballpoint outline wherever two kinds of ground meet (softer around faraway land) */
-  c.lineWidth = 1.8;
-  for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
-    var here = map.cell(x, y).g, g = GROUP[here], X2 = x * T, Y2 = y * T;
-    if (x + 1 < map.w) {
-      var right = map.cell(x + 1, y).g;
-      if (GROUP[right] !== g) { c.strokeStyle = here === 'far' || right === 'far' ? P.far2 : P.ink; c.beginPath(); c.moveTo(X2 + T, Y2); c.lineTo(X2 + T, Y2 + T); c.stroke(); }
-    }
-    if (y + 1 < map.h) {
-      var below = map.cell(x, y + 1).g;
-      if (GROUP[below] !== g) {
-        c.strokeStyle = here === 'far' || below === 'far' ? P.far2 : P.ink;
-        c.beginPath(); c.moveTo(X2, Y2 + T); c.lineTo(X2 + T, Y2 + T); c.stroke();
-        if (g === 's' && GROUP[below] === 'w') { /* foam on the shoreline */
-          c.strokeStyle = P.foam; c.lineWidth = 2.4;
-          c.beginPath(); c.moveTo(X2 + 2, Y2 + T + 4); c.quadraticCurveTo(X2 + 10, Y2 + T + 1, X2 + 16, Y2 + T + 4); c.quadraticCurveTo(X2 + 24, Y2 + T + 7, X2 + 30, Y2 + T + 4); c.stroke();
-          c.lineWidth = 1.8;
-        }
-      }
-    }
-  }
+  /* first every colour, then every texture (which may reach into the tiles around), then the outlines */
+  for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) { c.fillStyle = groundFill(P, map.cell(x, y).g); c.fillRect(x * T, y * T, T, T); }
+  for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) texture(c, map, P, x, y);
+  outlines(c, map, P, x0, y0, x1, y1);
   /* low decorations, drawn flat into the ground */
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
     L = map.cell(x, y);

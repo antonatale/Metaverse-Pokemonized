@@ -1,4 +1,4 @@
-/* Canvas helpers for the map art. Style: a map drawn in ballpoint on squared paper, coloured with highlighters. */
+/* Canvas helpers for the map art. Style: a map drawn in ballpoint and coloured with highlighters. */
 import type { Palette } from './palette';
 
 export type Ctx = CanvasRenderingContext2D;
