@@ -10,7 +10,7 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
-**Il trailer, dopo ogni aggiornamento:** `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti). Se la novità merita una scena tutta sua (Torino, i poteri delle creature, la pesca…), si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts`: vedi «Il trailer» in `CLAUDE.md`.
+**Il trailer è fermo** (4 novembre 2026): Antonio ha chiesto di non aggiornarlo più dopo ogni miglioramento del gioco, finché non lo chiede lui. Quando lo chiede: `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti); se una novità merita una scena tutta sua, si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts` (vedi «Il trailer» in `CLAUDE.md`).
 
 
 
