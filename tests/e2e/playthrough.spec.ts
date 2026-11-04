@@ -631,3 +631,61 @@ test('the friends\' tournament', async ({ browser }) => {
   expect(st.best.torneo).toBe(5);
   expect(st.money).toBeGreaterThanOrEqual(120);
 });
+
+/* the creatures' powers: a sea creature swims Antonio to the Roman tanks of Gianola (an amphora at the bottom of one),
+   a lizard takes him up the walls of Castellone, a gull shows Formia from above */
+test('the creatures\' powers', async ({ browser }) => {
+  /* three games in a row */
+  test.setTimeout(360_000);
+  type P = { x: number; y: number; dialog: boolean; text: string; swim: boolean; climb: boolean; sky: boolean };
+  const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
+  const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
+  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 148, y: 60, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await p.keyboard.press('ArrowDown'); await p.clock.runFor(400);
+    r.keep('ask', (await pos(p)).text);
+    await choose(p, 'Nuota con');
+    await p.clock.runFor(600);
+    r.keep('in the water', await pos(p));
+    await r.shot('amphora');
+    await talkThrough(p);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (run: { data: { name: string; value: unknown }[] }, n: string) => run.data.find((x) => x.name === n)!.value;
+  expect(String(get(swim, 'ask'))).toContain('a nuoto');
+  expect(get(swim, 'in the water')).toMatchObject({ x: 148, y: 61, swim: true });
+  expect(String((get(swim, 'in the water') as P).text)).toContain('vasca romana');
+  expect((get(swim, 'state') as { money: number; seen: Record<string, boolean> }).money).toBe(60);
+
+  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 45, y: 34, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await p.keyboard.press('ArrowUp'); await p.clock.runFor(400);
+    r.keep('ask', (await pos(p)).text);
+    await choose(p, 'Arrampicati con');
+    await p.clock.runFor(600);
+    r.keep('on the walls', await pos(p));
+    await r.shot('walls');
+  });
+  expect(String(get(climb, 'ask'))).toContain('mura');
+  expect(get(climb, 'on the walls')).toMatchObject({ x: 45, y: 33, climb: true });
+
+  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 88, y: 41, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    r.keep('hint', await p.textContent('.whint'));
+    await p.keyboard.press('v'); await p.clock.runFor(1200);
+    r.keep('up', await pos(p));
+    await r.shot('from above');
+    /* nobody walks while the gull is up there */
+    await p.keyboard.press('ArrowLeft'); await p.clock.runFor(400);
+    r.keep('still', await pos(p));
+    await p.clock.runFor(4000);
+    r.keep('down', await pos(p));
+  });
+  expect(String(get(fly, 'hint'))).toContain('V per guardare dall\'alto');
+  expect(get(fly, 'up')).toMatchObject({ sky: true });
+  expect(get(fly, 'still')).toMatchObject({ x: 88, y: 41 });
+  expect(get(fly, 'down')).toMatchObject({ sky: false });
+});

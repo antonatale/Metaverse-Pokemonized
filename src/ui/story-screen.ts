@@ -7,8 +7,8 @@ import { GATES } from '../data/gates';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel, setPace } from '../story/movement';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, type Person } from '../story/maps';
+import { press, release, update, halt, mover, busy, travel, setPace, onEdge, stepNow } from '../story/movement';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
@@ -30,7 +30,7 @@ import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
 import { MAMURRA } from '../story/plot';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress } from '../story/growth';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf } from '../story/growth';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
@@ -189,6 +189,8 @@ function renderBars() {
 }
 export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
+  var hint = root.querySelector('.whint');
+  if (hint) hint.textContent = 'Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
   $('wmoney').textContent = money() + ' €';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
@@ -210,6 +212,7 @@ export function installStoryKeys() {
       e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) interact();
     } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
     else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); e.stopImmediatePropagation(); mentorTalk(); }
+    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); e.stopImmediatePropagation(); flyUp(); }
   });
   document.addEventListener('keyup', function (e) { var d = KEYMAP[e.key]; if (d) release(d); });
 }
@@ -381,6 +384,39 @@ function leaderTalk(id: string) {
   if (st.beaten[id]) { say(cv0.after, cv0.leader); return; }
   say(cv0.intro, cv0.leader, [{ label: 'Sfida!', fn: function () { challenge(id); } }, { label: 'Più tardi', fn: null }]);
 }
+/* ---------- the creatures' powers: swimming, climbing the walls, the view from above ---------- */
+const MEET_LINE: Record<string, string> = { erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
+/* walking into the shallow sea, or against the walls of Castellone, with a creature that can help: it offers */
+onEdge(function (kind, d) {
+  var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
+  if (!who || dialog || busy || run) return false;
+  var name = nameOf(who);
+  say([kind === 'swim' ? name + ' guarda il mare e ti fa segno: può portarti a nuoto.' : name + ' si arrampica sulle pietre delle mura e ti fa segno di seguirlo.'], null, [
+    { label: kind === 'swim' ? 'Nuota con ' + name : 'Arrampicati con ' + name, fn: function () { moveMode[kind] = true; stepNow(d); } },
+    { label: 'No', fn: null }
+  ]);
+  return true;
+});
+/** swimming over one of the Roman tanks of Gianola: an amphora at the bottom, once */
+function treasure(): boolean {
+  var t = moveMode.swim ? treasureAt(M) : null;
+  if (!t || st.x !== t[0] || st.y !== t[1] || st.seen.anfora) return false;
+  st.seen.anfora = true; earn(60); save(); renderHud();
+  sfx('found'); halt();
+  say(['Sul fondo della vasca romana c\'è qualcosa che luccica…', 'Un\'anfora! Intera, dopo duemila anni nel porticciolo di Gianola.', 'Il museo archeologico la compra per 60 €: un pezzo di Formiae torna a casa.']);
+  return true;
+}
+/** the view from above: a creature with wings flies up and, for a few seconds, Formia is seen from high up */
+export const SKY_MS = 4300;
+export let skyFrom = 0, skyWho = '';
+function flyUp() {
+  if (!running || M.inside || dialog || busy || run || skyFrom) return;
+  var who = powerOf('volo');
+  if (!who) { bubble('Per vedere Formia dall\'alto serve una creatura con le ali: un gabbiano, una civetta…'); return; }
+  halt();
+  skyWho = who; skyFrom = performance.now();
+  sfx('whoosh');
+}
 /* ---------- the friends' tournament at the Bruno Zauli (data/tourney.ts): five friends in a row, then a cup ---------- */
 var tour: { round: number; edition: number; wins: number; host: string } | null = null;
 const CUP = '<svg viewBox="0 0 100 100" width="104" height="104" aria-hidden="true"><path d="M30 18h40v14c0 14-8 24-20 26-12-2-20-12-20-26Z" fill="#ffd166" stroke="#1c2340" stroke-width="4" stroke-linejoin="round"/>' +
@@ -512,6 +548,7 @@ var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
 var walked = 0, sniffed = 0;
 export function stepped(): boolean {
+  if (treasure()) return true;
   if (!st.mons || !st.mons.length) return false;
   /* walking together brings Antonio and his creature closer */
   if (++walked >= 40) { walked = 0; var lead = leadCreature(); if (lead) addBond(lead, 1); }
@@ -543,7 +580,7 @@ function meet(h: Hiding) {
   halt();
   sfx('meet');
   if (!reduced) { root.classList.remove('meet'); void root.offsetWidth; root.classList.add('meet'); setTimeout(function () { root.classList.remove('meet'); }, 900); }
-  wildMeet(h.id, h.on === 'erba' ? 'Qualcosa si muove nell\'erba alta…' : 'Qualcosa si muove tra gli scogli…', { sp: m.sp, lv: lv, gold: gold });
+  wildMeet(h.id, MEET_LINE[h.on], { sp: m.sp, lv: lv, gold: gold });
 }
 /** a wild creature in front of Antonio: fight it (with his creatures), or slip away */
 function wildMeet(id: string, first: string, foe: Foe) {
@@ -725,7 +762,12 @@ function frame(now: number) {
   update(now);
   checkRun(now);
   renderGoal();
-  if (now - barAt > 300) { barAt = now; renderBars(); }
+  if (now - barAt > 300) {
+    barAt = now; renderBars();
+    /* the first time a creature can do something on the map, Cicero says what */
+    if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
+  }
+  if (skyFrom && now - skyFrom > SKY_MS) skyFrom = 0;
   drawWorld(now);
 }
 function start() { if (running) return; running = true; raf = requestAnimationFrame(frame); }
@@ -854,6 +896,6 @@ export const WORLD = {
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     overview: overview,
-    pos: function () { return { map: st.map, x: st.x, y: st.y, dir: st.dir, running: running, moving: !!mover, busy: busy, dialog: !!dialog, opts: !!(dialog && dialog.showingOpts), text: dialog ? dlgTxt.textContent : '' }; }
+    pos: function () { return { map: st.map, x: st.x, y: st.y, dir: st.dir, running: running, moving: !!mover, busy: busy, dialog: !!dialog, opts: !!(dialog && dialog.showingOpts), text: dialog ? dlgTxt.textContent : '', swim: moveMode.swim, climb: moveMode.climb, sky: !!skyFrom }; }
   }
 };

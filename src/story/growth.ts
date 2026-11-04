@@ -51,6 +51,19 @@ export function bringAlong(uid: string): boolean {
   delete m.home;
   return true;
 }
+/* ---------- the creatures' powers on the map ---------- */
+/** what a creature can do for Antonio, by the shape of its body: the sea ones swim, the ones of the walls and the trees
+    climb, the ones with wings fly up and show Formia from above */
+export type Power = 'nuoto' | 'scalata' | 'volo';
+const POWER_OF: Record<string, Power> = { octo: 'nuoto', urchin: 'nuoto', crab: 'nuoto', lizard: 'scalata', cicada: 'scalata', bird: 'volo', owl: 'volo' };
+export function powerOfSpecies(sp: SpeciesId): Power | null { return POWER_OF[SPECIES[sp].art.body] || null; }
+/** the creature of the team that has a power (the one at his side first), or null */
+export function powerOf(p: Power): string | null {
+  var lead = leadCreature(), ms = teamMons();
+  if (lead && powerOfSpecies(creatureOf(lead)!.sp) === p) return lead;
+  var m = ms.filter(function (c) { return powerOfSpecies(c.sp) === p; })[0];
+  return m ? m.uid : null;
+}
 /** the first of the company: shown in the corner of the map, sent in first in a covo */
 export function firstHuman(): string { return st.first && st.squad.indexOf(st.first) >= 0 ? st.first : 'antonio'; }
 export function setFirst(id: string) { if ((st.squad as string[]).indexOf(id) >= 0) st.first = id as typeof st.first; }

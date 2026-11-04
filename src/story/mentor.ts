@@ -97,6 +97,7 @@ export const TIPS: Record<string, string[]> = {
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
   level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
   money: ['I primi euro! Il pescatore di Mola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
+  power: ['Le creature hanno dei poteri. Quelle del mare ti portano a nuoto, quelle dei muri e degli alberi ti fanno salire sulle mura di Castellone, quelle con le ali ti mostrano Formia dall\'alto (tasto V).', 'Cammina verso il mare o contro le mura: se una tua creatura può aiutarti, te lo dice.'],
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
   wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],
   trainer: ['Un allenatore: manda le sue creature una dopo l\'altra, e tu le tue. Ognuna tiene i PS che le restano; se cadono tutte, puoi scendere in campo tu.'],

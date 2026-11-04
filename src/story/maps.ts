@@ -7,7 +7,7 @@ import { darkness } from './daytime';
 import { flag } from './plot';
 import type { SpeciesId } from '../data/creatures';
 import { HIDINGS, type Hiding } from '../data/encounters';
-import { FORMIA_HIDING } from '../data/maps/formia-ground';
+import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -29,6 +29,8 @@ export interface PreparedMap extends MapDef {
   items: LostItem[];
   areas: Area[];
   gulls: Gull[];
+  /** sea tiles near the coast, where a sea creature lets Antonio swim (1), outdoors only */
+  shallow?: Uint8Array;
   _p?: boolean;
 }
 
@@ -66,6 +68,19 @@ export function prepare(id: string): PreparedMap {
     m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
   });
   m.items = m.items || []; m.areas = m.areas || [];
+  /* shallow water: the sea up to two tiles from anything that is not sea (rocks in the water excepted) */
+  if (!m.inside) {
+    m.shallow = new Uint8Array(m.w * m.h);
+    var isSea = function (xx: number, yy: number) { var c0 = m.cell(xx, yy); return c0.g === 'sea'; };
+    for (y = 0; y < m.h; y++) for (x = 0; x < m.w; x++) {
+      var c1 = m.cell(x, y);
+      if (c1.g !== 'sea' || c1.deco) continue;
+      near: for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) {
+        var xx = x + dx, yy = y + dy;
+        if (xx >= 0 && yy >= 0 && xx < m.w && yy < m.h && !isSea(xx, yy)) { m.shallow[y * m.w + x] = 1; break near; }
+      }
+    }
+  }
   /* a few gulls circle over open sea */
   var sea: number[][] = [];
   for (y = 0; y < m.h; y++) for (x = 0; x < m.w; x++) { var L = m.cell(x, y); if (L.g === 'sea' && !L.deco && !L.obj) sea.push([x, y]); }
@@ -108,6 +123,9 @@ export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null 
 /** the hiding place of wild creatures Antonio is standing in (tall grass, rock pools), with its table, or null */
 export function hidingAt(x: number, y: number): Hiding | null {
   if (M.id !== 'formia') return null;
+  /* in the water, and up on the walls, other creatures live */
+  if (moveMode.swim && M.cell(x, y).g === 'sea') return HIDINGS.mare || null;
+  if (moveMode.climb && isWall(M, x, y)) return HIDINGS.mura || null;
   var d = M.cell(x, y).deco;
   if (d !== 'tall' && d !== 'pools') return null;
   var best: Hiding | null = null, bd = Infinity;
@@ -121,7 +139,25 @@ export function hidingAt(x: number, y: number): Hiding | null {
 export const wildGone: Record<string, number> = {};
 export function wildHere(id: string): boolean { var t = wildGone[id]; return !t || Date.now() - t > 120000; }
 export function personAt(m: PreparedMap, x: number, y: number): Person | null { for (var i = 0; i < m.people.length; i++) { var p = m.people[i]; if (p.x === x && p.y === y && present(p)) return p; } return null; }
-export function blocked(m: PreparedMap, x: number, y: number): boolean { return x < 0 || y < 0 || x >= m.w || y >= m.h || m.solid[y * m.w + x] === 1 || !!personAt(m, x, y) || !!itemAt(m, x, y); }
+/** swimming with a sea creature, or climbing the walls with one of the walls: then water, or walls, can be walked */
+export const moveMode = { swim: false, climb: false };
+export function isShallow(m: PreparedMap, x: number, y: number): boolean { return !!m.shallow && x >= 0 && y >= 0 && x < m.w && y < m.h && m.shallow[y * m.w + x] === 1; }
+export function isWall(m: PreparedMap, x: number, y: number): boolean { return m.cell(x, y).g === 'mura'; }
+export function blocked(m: PreparedMap, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
+  if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isShallow(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;
+  return !!personAt(m, x, y) || !!itemAt(m, x, y);
+}
+/** at the bottom of one of the Roman fish tanks of Gianola, an amphora: found swimming there */
+export function treasureAt(m: PreparedMap): [number, number] | null {
+  var s0 = m.id === 'formia' ? FORMIA_SPOT['sign-porticciolo'] : null;
+  if (!s0) return null;
+  for (var r = 0; r < 4; r++) for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+    var x = s0[0] - 2 + dx, y = s0[1] + 1 + dy;
+    if (isShallow(m, x, y)) return [x, y];
+  }
+  return null;
+}
 export function cityCovi(city: string): Covo[] { return Object.keys(COVI).filter(function (k) { return COVI[k].city === city; }).map(function (k) { return COVI[k]; }); }
 export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badge.id) >= 0; }
 

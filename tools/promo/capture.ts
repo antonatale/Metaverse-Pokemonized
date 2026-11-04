@@ -16,7 +16,7 @@ const KEY: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'Arro
 const DV: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 /* Cicero keeps quiet: every chapter and every first time already seen */
-const TIPS = ['loss', 'level', 'money', 'night', 'wild', 'trainer', 'evolve', 'catch', 'lamo'];
+const TIPS = ['loss', 'level', 'money', 'night', 'wild', 'trainer', 'evolve', 'catch', 'lamo', 'power'];
 const STOPS = ['starter', 'trama-scavi', 'padel', 'covo-circolo', 'trama-archivio', 'quiz', 'gelato', 'covo-piazza', 'trama-cisterna', 'trama-mura',
   'item-caricabatterie', 'item-appunti', 'trama-mare', 'windsurf', 'volley', 'item-portafoglio', 'corsa', 'item-passaporto', 'trama-voce', 'trama-mamurra', 'torino'];
 const QUIET: Record<string, boolean> = {};

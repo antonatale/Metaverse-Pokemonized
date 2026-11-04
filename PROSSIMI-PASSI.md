@@ -13,9 +13,9 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 **Il trailer, dopo ogni aggiornamento:** `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 20 minuti). Se la novità merita una scena tutta sua (Torino, i poteri delle creature, la pesca…), si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts`: vedi «Il trailer» in `CLAUDE.md`.
 
 
-9. **Creature più coinvolgenti, il resto**: poteri sulla mappa che aprono strade (le creature del mare nuotano fino ai
-   blocchi del porticciolo di Gianola, quelle dei muri si arrampicano sulle mura di Castellone, quelle che volano
-   vedono dall'alto), altre specie selvatiche, una mossa per tipo di terreno. Carattere e legame sono fatti.
+9. **Creature, il resto**: altre specie selvatiche con disegni nuovi (meduse e ricci in acqua bassa, un pipistrello
+   della Grotta della Janara), una mossa che cambia con il terreno, e altri posti da raggiungere con i poteri
+   (fatti: nuotare, arrampicarsi, vedere dall'alto).
 10. **La trama, il seguito**: dopo le Pietre di Telepilo (fatte), un secondo atto: Torino e poi Chicago come capitoli
     veri (una mappa di Torino, il cancello del treno in `data/gates.ts` è già il punto d'aggancio); altre missioni a
     più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
@@ -37,5 +37,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **La creatura che ti segue trova cose per terra**: euro, tielle, retini, più spesso se il legame è forte.
 - **Niente spoiler** (4 novembre 2026): Cicerone all'inizio non anticipa più Torino e Chicago né il nome di Mamurra; nel menu le tappe future sono «???».
 - **Barre dell'esperienza sempre sulla mappa** (il Primo della compagnia, che si sceglie, e la creatura che segue), **menu in quattro schede**, **squadra di sei creature con le altre a casa** (si vedono nell'appartamento e lì si cambiano), **effetti delle mosse più belli** (scie, onde, stelle, forme di ogni tipo).
+- **I poteri delle creature**: con quelle del mare si nuota (fino alle vasche romane di Gianola, con un'anfora sul fondo), con lucertole e cicale si sale sulle mura di Castellone, con gabbiani e civette si vede Formia dall'alto (tasto V); in acqua e sulle mura vivono altre creature, tra cui le iniziali non scelte.
 - **Pesca dal molo e Torneo degli amici**: il pescatore di Mola porta a pescare (tre lanci a tempo, il punteggio in grammi); al Bruno Zauli il velocista organizza un torneo di cinque amici di fila, con le rivincite di Costanzo e Forchetta, che a ogni edizione vinta diventa più duro.
 - **Il trailer** (4 novembre 2026): 67 secondi in 1080p, fatto tutto da codice (`npm run promo`, `tools/promo/`): scene giocate dal gioco vero (Formia di giorno e di notte, casa, motorino, erba alta, lotte, cattura, evoluzione, diario, Lamo, Mamurra, Cicerone, abilità, attività, negozi, covi, l'Esame), i sei amici e le 20 creature con gli SVG del gioco, voli in 3D sulla pianta di Formia, il codice vero, e una musica originale sul tema delle lotte.

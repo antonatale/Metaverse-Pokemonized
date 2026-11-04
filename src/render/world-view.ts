@@ -2,8 +2,8 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, petAt, type PreparedMap } from '../story/maps';
-import { leadCreature, idOf } from '../story/growth';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, type PreparedMap } from '../story/maps';
+import { leadCreature, idOf, creatureOf } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { heading } from '../story/goals';
@@ -14,11 +14,12 @@ import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
-import { root, cv, ctx, ciceroShown } from '../ui/story-screen';
+import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS } from '../ui/story-screen';
 
 /* Drawing the story map: camera, cached pictures, everything sorted so people walk behind trees and roofs.
    This is the part a Phaser scene will take over; it only reads the story's state. */
 const CH = 12;   /* tiles per side of a cached piece of ground */
+let CACHE_MAX = 12;   /* pieces kept: more while a winged creature shows Formia from above */
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
@@ -77,7 +78,7 @@ function chunk(cx: number, cy: number): HTMLCanvasElement {
   if (c0) { if (i < cache.order.length - 1) { cache.order.splice(i, 1); cache.order.push(k); } return c0; }
   c0 = paintGround(M, P, RS, { x: cx * CH, y: cy * CH, w: Math.min(CH, M.w - cx * CH), h: Math.min(CH, M.h - cy * CH) });
   cache.chunks[k] = c0; cache.order.push(k);
-  while (cache.order.length > 12) delete cache.chunks[cache.order.shift()!];
+  while (cache.order.length > CACHE_MAX) delete cache.chunks[cache.order.shift()!];
   return c0;
 }
 function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker {
@@ -323,8 +324,24 @@ function playerPx(now: number) {
   var t = Math.min(1, (now - mover.t0) / STEP);
   return { x: (mover.fx + (mover.tx - mover.fx) * t) * T, y: (mover.fy + (mover.ty - mover.fy) * t) * T, t: t };
 }
-/** draws one frame of the map, around the player */
+/** how far the camera is from the map: 1 normally, less while a winged creature shows Formia from above (story-screen skyFrom) */
+function skyZoom(now: number): number {
+  if (!skyFrom) return 1;
+  var t = now - skyFrom, ease = function (u: number) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; };
+  if (t >= SKY_MS) return 1;
+  if (t < 700) return 1 - 0.62 * ease(t / 700);
+  if (t < SKY_MS - 700) return 0.38;
+  return 0.38 + 0.62 * ease((t - (SKY_MS - 700)) / 700);
+}
+/** draws one frame of the map, around the player (from higher up during the view from above) */
 export function drawWorld(now: number) {
+  var k = skyZoom(now);
+  if (k === 1) { drawFrame(now, 1); return; }
+  var vs0 = VS;
+  VS = VS * k; CACHE_MAX = 90;
+  try { drawFrame(now, k); } finally { VS = vs0; CACHE_MAX = 12; }
+}
+function drawFrame(now: number, sk: number) {
   ensureCaches(now);
   /* everything below is in map units (one tile = T); VS turns them into canvas pixels */
   var W = cv.width, H = cv.height, vw = W / VS, vh = H / VS, mw = M.w * T, mh = M.h * T;
@@ -389,7 +406,29 @@ export function drawWorld(now: number) {
   [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {
     if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P);
   });
+  /* swimming: the water comes up to his waist, with a ring of foam */
+  if (moveMode.swim) {
+    var wv = reduced ? 0 : Math.sin(now / 300) * 1.5;
+    ctx.globalAlpha = 0.92; ctx.fillStyle = P.sea;
+    ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.8 + wv, T * 0.58, T * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = P.foam; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.62 + wv, T * 0.5, T * 0.16, 0, 0, Math.PI * 2); ctx.stroke();
+  }
   ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
+  /* from above, the lost things are easy to spot: a ring that pulses around each one, and the creature flying over Antonio */
+  if (sk < 1) {
+    M.items.forEach(function (it) {
+      if (st.found[it.id]) return;
+      var pr = (T * 0.9 + Math.sin(now / 200) * T * 0.25) / sk;
+      ctx.strokeStyle = P.foam; ctx.lineWidth = 4 / sk; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.arc(it.x * T + T / 2, it.y * T + T / 2, pr, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    });
+    var fly = skyWho ? creatureOf(skyWho) : null, fimg = fly ? creatureImage(fly.sp) : null;
+    if (fimg) {
+      var ang = now / 520, size = T * 1.6 / sk;
+      ctx.drawImage(fimg, pp.x + T / 2 + Math.cos(ang) * T * 2.2 / sk - size / 2, pp.y - T * 1.5 / sk + Math.sin(ang) * T * 0.8 / sk - size / 2, size, size);
+    }
+  }
   /* a glint on the lost things, gulls over the water */
   M.items.forEach(function (it) {
     if (st.found[it.id]) return;
