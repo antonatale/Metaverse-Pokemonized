@@ -33,6 +33,16 @@ npm run sim            # percentuali di vittoria di tutte le coppie, per il bila
 
 La prima volta, per i test end-to-end serve anche `npx playwright install chromium`.
 
+## Il trailer
+
+```sh
+npm run promo
+```
+
+Rifà da capo il video promozionale dal gioco com'è adesso: gioca e registra le scene (mappa, creature, trama, attività), genera la musica, monta titoli, codice e voli in 3D sulla mappa, e scrive `promo/lotte-tra-amici-trailer.mp4` (1080p, circa 67 secondi) più `promo/lotte-tra-amici-trailer-light.mp4`, più leggero da mandare. Ci vogliono circa 20 minuti. Serve un Mac (il video si codifica con i framework di macOS, senza ffmpeg); il server di sviluppo viene avviato da solo se non è già acceso.
+
+Dopo un aggiornamento del gioco basta rilanciarlo: le scene sono registrate dal gioco vero e i posti sono cercati per nome, quindi il video si aggiorna da solo. Come aggiungere una scena per una cosa nuova è spiegato in [CLAUDE.md](CLAUDE.md), alla voce «Il trailer».
+
 ## Note
 
 - I progressi della storia e il libretto sono salvati nel `localStorage` del browser, quindi sono legati alla pagina e al browser in cui giochi. Le chiavi sono le stesse della versione in un file solo: i vecchi salvataggi restano validi se apri la nuova pagina dallo stesso indirizzo.

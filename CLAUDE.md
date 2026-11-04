@@ -23,6 +23,7 @@ Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrat
 | `npm run sim` | simulatore di bilanciamento (vedi sotto) |
 | `npx tsx tools/sim-story.ts` | bilanciamento della storia: quanto spesso una creatura o un amico a un livello batte un altro (`polpino:8 forchetta:9` per uno scontro solo) |
 | `npm run golden` | rigenera i golden dal codice attuale, dopo un cambio voluto |
+| `npm run promo` | il trailer: registra le scene dal gioco, genera la musica, monta e codifica `promo/lotte-tra-amici-trailer.mp4` (serve macOS; vedi «Il trailer») |
 
 ## Dove si trova ogni parte
 
@@ -105,6 +106,8 @@ tools/
   golden.mjs               genera i golden
   formia/                  la mappa di Formia: network.ts (strade e ferrovia disegnate a mano), build.ts (il generatore),
                            playable.ts e audit.ts (controlli), extract.mjs, paint.ts, show.ts, where.ts, drift.ts
+  promo/                   il trailer: make.ts (tutto in un comando), capture.ts (le scene giocate), music.ts (la musica),
+                           trailer.ts e trailer.html (il montaggio), timeline.ts (battute e suoni), encode.swift (l'mp4)
 ```
 
 ## La mappa di Formia
@@ -355,6 +358,24 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Mai `Math.random` nell'audio:** il seme delle lotte nasce da `Math.random`, e un suono non deve cambiare una lotta. Per le piccole variazioni c'è `wobble()` in `synth.ts`.
 - **Le creature:** ognuna ha il suo verso, uno per tipo di corpo (`cry-octo`, `cry-bird`, `cry-owl`…). Suona quando la creatura parla in lotta (`stepEvent` in `ui/battle-screen.ts`). Gli incantesimi hanno `magic` e `magicUp`, il retino `net`, la cattura `caught`.
 - **Nuovo brano:** aggiungilo in `tracks.ts`, con battute da 16 passi (il test unitario le controlla). `tests/e2e/audio.spec.ts` lo renderizza offline e controlla che non sia muto e non distorca.
+
+## Il trailer
+
+- **Cosa:** un video promozionale di circa 67 secondi, 1080p a 30 fps, fatto tutto da codice in `tools/promo/`: scene giocate davvero, titoli, codice vero, voli in 3D sulla mappa, la musica. `npm run promo` (`make.ts`) lo rifà da capo dal gioco com'è adesso e scrive `promo/lotte-tra-amici-trailer.mp4` e una versione leggera (`-light`). La cartella `promo/` è ignorata da git: clip, musica e fotogrammi sono in `promo/work/`.
+- **Il ritmo** (`timeline.ts`): 150 bpm, quindi una battuta dura 12 fotogrammi e ogni taglio cade su un battito. Le parti (intro, logo, amici, Formia, erba alta, creature, trama, codice, «e poi…», finale) sono in battute; `fr(battuta, battito)` dà il fotogramma. `CUES` mette i suoni del gioco (`src/audio/sfx.ts`) dove le immagini li vogliono.
+- **Le scene** (`capture.ts`): ogni clip è una funzione che parte da un salvataggio preparato (`late()` a storia quasi finita, `early()` con la prima creatura) in un posto chiamato per nome (`P('eclipse', dx, dy)`: la porta o lo spot di `formia-places.ts`, spostato sulla casella libera più vicina con le regole del gioco), così se la mappa si rigenera le scene restano giuste.
+  - Si registra fotogramma per fotogramma (`game.ts`): orologio finto di Playwright, e ogni animazione CSS o Web Animation messa in pausa e mossa a mano dello stesso tempo; quelle finite si chiudono con `finish()`, perché la lotta aspetta le loro promesse. Il risultato è uguale su qualsiasi computer.
+  - Durante le riprese l'HUD è nascosto (classe `promo`), nell'erba non salta fuori niente (`luck`) e il client del server di sviluppo è sostituito (`noHmr`): se intanto si modifica un file, la pagina non si ricarica a metà clip.
+- **Il montaggio** (`trailer.ts`, aperto da `compose.ts` sul server di sviluppo): ogni fotogramma è una funzione del suo numero. Gli shot sono in fila, sui battiti: clip del gioco (`clipShot`, con punto d'inizio `at`, zoom e didascalia), titoli in stile adesivo come i bottoni del gioco, il codice vero (importato con `?raw`), la pianta intera di Formia inclinata in 3D come un plastico (`drone`, dall'`overview` del gioco), le scene disegnate di Formia (`render/svg/scenes.ts`) come sfondi, ritratti e creature con gli SVG del gioco.
+- **La musica** (`music.ts`): originale, 150 bpm in La minore sul tema delle lotte del gioco, sintetizzata in Web Audio e resa offline in `promo/work/music.wav`. `render-music.ts` stampa i livelli per battuta: l'intro sta sotto le parti forti, nessun picco tocca lo 0.
+- **Il video** (`encode.swift`): fotogrammi JPEG e WAV in H.264 + AAC con AVFoundation, senza ffmpeg; `encode --stills film.mp4 cartella 1.5,30` estrae fotogrammi per controllare il risultato.
+- **Aggiungere una novità del gioco al video:**
+  1. una clip in `capture.ts`: un salvataggio, un posto per nome, cosa fare (camminare con `walkTo`, parlare con `talkTo`, scegliere con `choose`, lottare con `toPad`/`move`);
+  2. uno shot in `trailer.ts`, nella parte giusta: si sostituisce uno shot o si spostano i battiti (le parti della musica sono in `timeline.ts`);
+  3. se serve, un suono in `CUES`.
+
+  Per controllare: `npx tsx tools/promo/capture.ts <clip>`, poi `npx tsx tools/promo/sheet.ts <clip>` (un foglio di provini in `promo/work/sheets`), poi `npx tsx tools/promo/compose.ts --stills 900,1200` (singoli fotogrammi). Alla fine `npm run promo -- --skip-capture` rimonta senza rigiocare.
+- **Riservatezza:** il video non mostra il numero civico né la frase del letto che nomina Parco la Fontana, e non mette in primo piano persone reali che non sono nella compagnia (Nicola Spadea c'è solo sullo sfondo della spiaggia). Gli amici compaiono con nome, tipo e frase, come nella home del gioco (senza cognomi).
 
 ## Convenzioni
 
