@@ -12,10 +12,10 @@ await page.goto(GAME);
 const t0 = Date.now();
 const res = await page.evaluate(async (path) => {
   const m = await import(/* @vite-ignore */ path);
-  return m.renderMusic(48000) as Promise<{ wav: string; peak: number; rms: number[] }>;
+  return m.renderMusic(48000) as Promise<{ wav: string; peak: number; reduction: number; rms: number[] }>;
 }, '/tools/promo/music.ts');
 fs.mkdirSync('promo/work', { recursive: true });
 fs.writeFileSync('promo/work/music.wav', Buffer.from(res.wav, 'base64'));
-console.log('rendered in ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s, peak ' + res.peak.toFixed(3));
+console.log('rendered in ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s, peak ' + res.peak.toFixed(3) + ', limiter at most ' + res.reduction + ' dB');
 console.log('dBFS rms per bar: ' + res.rms.map((r, i) => i + ':' + r).join(' '));
 await browser.close();

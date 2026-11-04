@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Formia 3D</title>
+<style>html, body { margin: 0; background: #000; } #s { position: relative; width: 1920px; height: 1080px; }</style>
+<div id="s"></div>
+<script type="module">
+  /* a quick look at the 3D Formia of the trailer (city3d.ts): ?mode=day|dusk|night&pos=x,y,z&look=x,y,z&fov=42&t=1 */
+  import '../../src/styles/tokens.css';
+  import { city } from './city3d.ts';
+  const q = new URLSearchParams(location.search), v = (k, d) => (q.get(k) || d).split(',').map(Number);
+  const t0 = performance.now();
+  const r = city(document.getElementById('s'), q.get('mode') || 'day');
+  const cam = { pos: v('pos', '100,3,70'), look: v('look', '95,1,45'), fov: Number(q.get('fov') || 42) };
+  r(cam, Number(q.get('t') || 1));
+  const t1 = performance.now();
+  r(cam, Number(q.get('t') || 1) + 0.05);
+  window.times = { first: Math.round(t1 - t0), second: Math.round(performance.now() - t1) };
+  window.done = true;
+</script>
