@@ -6,7 +6,13 @@ import type { SpeciesId } from './creatures';
    night. The patches are painted on the map by tools/formia/build.ts around the spots of HIDING in formia-places.ts;
    a patch's id is the id of its table here. */
 export interface Meet { sp: SpeciesId; lv: [number, number]; w: number }
-export interface Hiding { id: string; name: string; on: 'erba' | 'scogli' | 'acqua' | 'mura'; day: Meet[]; night?: Meet[] }
+export interface Hiding {
+  id: string; name: string; on: 'erba' | 'scogli' | 'acqua' | 'mura'; day: Meet[]; night?: Meet[];
+  /** how many levels each stage of the story (a stone found, Mamurra beaten) lifts the place's band; 1 if missing */
+  rise?: number;
+  /** a place meant to be a challenge: its levels aim at the team's (see wildLevel) instead of staying in the band */
+  follow?: { off: number; slack: number };
+}
 
 export const HIDINGS: Record<string, Hiding> = {
   gramsci: { id: 'gramsci', name: 'Parco Gramsci', on: 'erba',
@@ -25,16 +31,30 @@ export const HIDINGS: Record<string, Hiding> = {
     night: [{ sp: 'civettina', lv: [8, 10], w: 3 }, { sp: 'olivella', lv: [7, 9], w: 2 }] },
   monti: { id: 'monti', name: 'Monti Aurunci', on: 'erba',
     day: [{ sp: 'civettina', lv: [10, 13], w: 4 }, { sp: 'olivella', lv: [10, 12], w: 2 }, { sp: 'olivastro', lv: [18, 20], w: 1 }],
-    night: [{ sp: 'civettina', lv: [11, 14], w: 4 }, { sp: 'civettona', lv: [18, 21], w: 1 }] },
+    night: [{ sp: 'civettina', lv: [11, 14], w: 4 }, { sp: 'civettona', lv: [18, 21], w: 1 }],
+    rise: 2, follow: { off: 0, slack: 5 } },
   /* reached with the creatures' powers (story/growth.ts): swimming in the shallow sea, climbing the walls of Castellone.
      The starters nobody chose live here: a Polpino in the sea, a Ramarrino (and, now and then, a Gabbì) on the walls */
   mare: { id: 'mare', name: 'Il mare di Formia', on: 'acqua',
     day: [{ sp: 'riccetto', lv: [7, 11], w: 4 }, { sp: 'granchietto', lv: [7, 11], w: 3 }, { sp: 'polpino', lv: [6, 9], w: 1 }, { sp: 'riccione', lv: [18, 20], w: 1 }],
-    night: [{ sp: 'riccetto', lv: [8, 12], w: 3 }, { sp: 'polpino', lv: [7, 10], w: 2 }, { sp: 'granchione', lv: [18, 20], w: 1 }] },
+    night: [{ sp: 'riccetto', lv: [8, 12], w: 3 }, { sp: 'polpino', lv: [7, 10], w: 2 }, { sp: 'granchione', lv: [18, 20], w: 1 }],
+    follow: { off: 0, slack: 4 } },
   mura: { id: 'mura', name: 'Le mura di Castellone', on: 'mura',
     day: [{ sp: 'ramarrino', lv: [7, 10], w: 3 }, { sp: 'cicalina', lv: [6, 9], w: 2 }, { sp: 'gabbi', lv: [7, 10], w: 1 }],
-    night: [{ sp: 'civettina', lv: [8, 11], w: 3 }, { sp: 'ramarrino', lv: [8, 10], w: 1 }] }
+    night: [{ sp: 'civettina', lv: [8, 11], w: 3 }, { sp: 'ramarrino', lv: [8, 10], w: 1 }],
+    follow: { off: 0, slack: 4 } }
 };
+/** The level of a creature met in a hiding place: `stage` is how far the story has gone (0–4), `ref` the average of
+    the three best levels of Antonio's team, `r` a roll from 0 to 1 (one Math.random, so the tests' seed still holds).
+    A gentle place keeps its band, lifted by the story. A place with `follow` aims at the team's level, a level below
+    or above, but never under its band (the evolved ones have a high band of their own) and never more than `slack`
+    above the band as the story has lifted it: a place stays believable, and neither a wall nor a stroll. */
+export function wildLevel(m: Meet, h: Hiding, ref: number, stage: number, r: number): number {
+  const rise = (h.rise == null ? 1 : h.rise) * stage, lo = m.lv[0] + rise, hi = m.lv[1] + rise;
+  if (!h.follow) return lo + Math.min(hi - lo, Math.floor(r * (hi - lo + 1)));
+  const aim = Math.round(ref + h.follow.off) + Math.floor(r * 3) - 1;
+  return Math.max(lo, Math.min(hi + h.follow.slack, aim));
+}
 /** about one step in RATE, in a hiding place, meets a creature; never in the CALM steps after a meeting */
 export const RATE = 9, CALM = 3;
 /** one creature of a table, by weight: r from 0 to 1 */

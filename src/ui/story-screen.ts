@@ -23,15 +23,15 @@ import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES, type SpeciesId } from '../data/creatures';
-import { HIDINGS, RATE, CALM, pickMeet, type Hiding } from '../data/encounters';
+import { HIDINGS, RATE, CALM, pickMeet, wildLevel, type Hiding } from '../data/encounters';
 import { SHOPS, meetChance, luck, lastStand, coins } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
-import { MAMURRA } from '../story/plot';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
+import { MAMURRA, storyStage } from '../story/plot';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
@@ -589,7 +589,7 @@ function meet(h: Hiding) {
   /* Antonio's eye for the rare ones: the creatures of weight 1 come out more often, the golden ones too */
   var night = darkness(new Date()) > 0.5, lk = luck(st.skills || {});
   var m = pickMeet(((night && h.night) || h.day).map(function (x) { return x.w <= 1 ? { sp: x.sp, lv: x.lv, w: x.w * lk.rare } : x; }), Math.random());
-  var lv = m.lv[0] + Math.floor(Math.random() * (m.lv[1] - m.lv[0] + 1)), gold = Math.random() < lk.gold / 48;
+  var lv = wildLevel(m, h, teamRef(), storyStage(), Math.random()), gold = Math.random() < lk.gold / 48;
   halt();
   sfx('meet');
   if (!reduced) { root.classList.remove('meet'); void root.offsetWidth; root.classList.add('meet'); setTimeout(function () { root.classList.remove('meet'); }, 900); }

@@ -23,3 +23,5 @@ export const STONES: Stone[] = [
     text: 'Bianca come il marmo. Se l\'avvicini all\'orecchio si sente una voce che parla latino.' }
 ];
 export function stonesHeld(): number { return STONES.filter(function (s) { return st.seen[s.id]; }).length; }
+/** how far the story has gone, 0 to 4: a stone each, and Mamurra beaten (the wild levels rise with it, data/encounters.ts) */
+export function storyStage(): number { return stonesHeld() + (st.beaten['tr-mamurra'] ? 1 : 0); }

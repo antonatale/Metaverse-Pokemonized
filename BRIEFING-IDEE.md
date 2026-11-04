@@ -176,7 +176,7 @@ Antonio ha chiesto un'opinione su altre cose che i Pokémon facevano bene: luogh
 - Ogni zona tiene la sua **fascia**, il senso del posto: il Parco Gramsci è dolce, i Monti Aurunci no.
 - **Progresso, come le strade dei Pokémon:** la fascia sale con la trama, usando flag che già esistono (pietre trovate, covi battuti). Per esempio +2 dopo la prima pietra, +4 dopo la seconda.
 - **Scala morbida solo nei luoghi pensati come sfida** (monti, mare, mura, ogni dungeon): `livello = clamp(riferimento + scarto, fascia.min, fascia.max + progresso)`, con riferimento = media dei tre livelli più alti della squadra e scarto da −1 a +3 secondo il posto. Il luogo resta pericoloso senza diventare né un muro né una passeggiata.
-- **Rare ed evolute** (Olivastro, Civettona, Granchione…): +4 sopra la fascia.
+- **Rare ed evolute** (Olivastro, Civettona, Granchione…): restano nella loro fascia alta. Avevo pensato a +4 sopra la squadra, ma il simulatore lo smentisce: contro l'Olivastro l'esito oscilla in modo erratico col livello (Calamastro 18 vince l'1% a livello 18 e il 35% a 20) e +4 è un muro.
 - **Fissi:** covi, rivale, boss, leggende. Cicerone dice già se sei pronto (`advice` in `story/mentor.ts`).
 - La difficoltà scelta (C3) sposta tutto di ±2.
 - Si verifica con `tools/sim-story.ts`: una squadra tipica deve battere una selvatica di quella zona il 70–90% delle volte.

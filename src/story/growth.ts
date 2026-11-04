@@ -37,6 +37,11 @@ export function team(): string[] { return (st.squad as string[]).concat(teamMons
 /** at most this many creatures travel with Antonio; the others wait at home, in his flat, until he swaps them */
 export const TEAM_MAX = 6;
 export function teamMons(): Mon[] { return (st.mons || []).filter(function (m) { return !m.home; }); }
+/** the average level of the three best creatures of the team (0 with none): what a place that follows the team aims at */
+export function teamRef(): number {
+  var top = teamMons().map(function (m) { return level(m.uid).lv; }).sort(function (a, b) { return b - a; }).slice(0, 3);
+  return top.length ? top.reduce(function (n, x) { return n + x; }, 0) / top.length : 0;
+}
 export function homeMons(): Mon[] { return (st.mons || []).filter(function (m) { return !!m.home; }); }
 /** home and back: the team keeps at least one creature and never more than TEAM_MAX */
 export function sendHome(uid: string): boolean {
