@@ -471,7 +471,9 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Mappe** (`tests/unit/maps.test.ts`): controlla righe tutte della stessa lunghezza, caratteri noti, persone, cartelli, oggetti e porte raggiungibili, warp e porte su caselle libere, covi e cancelli coerenti.
 - **Partite intere** (`npm run test:e2e`): home, lotte contro il computer, Esame, due giocatori, storia (oggetti, covo, circolo, menu), croce touch, salvataggi nel vecchio formato, aggiornamento a caldo.
   - Girano con orologio finto di Playwright, `Math.random` con seme e movimento ridotto, e devono arrivare in fondo senza un errore.
+  - Gli allenatori che vedono Antonio sono spenti, perché molte partite ci passano davanti; li accende chi passa `spot: true` a `play()` (`a trainer who sees Antonio`).
   - Con `SHOTS=1` salvano le schermate in `test-results/shots`.
+  - **Se fallisce solo `audio.spec.ts`** («Expected: > 5, Received: 5» dopo aver acceso il suono in lotta), di solito è il Mac e non il gioco: a volte in Chromium headless l'orologio audio resta fermo (`currentTime` a 0,005 con il contesto `running`), la musica non avanza e si contano solo gli effetti. Rilanciato più tardi passa; per esserne sicuri si prova sul commit di prima.
   - Fino alla conferma della migrazione gli stessi scenari erano confrontati pixel per pixel con il vecchio gioco in un file (`legacy/index.html`, ora eliminato; resta nella storia di git).
 
 ## Aggiungere una città
