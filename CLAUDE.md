@@ -381,6 +381,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   3. se serve, un suono in `CUES`.
 
   Per controllare: `npx tsx tools/promo/capture.ts <clip>`, poi `npx tsx tools/promo/sheet.ts <clip>` (un foglio di provini in `promo/work/sheets`), poi `npx tsx tools/promo/compose.ts --stills 900,1200` (singoli fotogrammi). Alla fine `npm run promo -- --skip-capture` rimonta senza rigiocare.
+- **Niente spoiler:** il trailer fa venire voglia di scoprire, non racconta. Le creature si vedono solo come ombre («20 creature da scoprire»), salvo le tre iniziali e quelle che si incontrano subito; l'evoluzione è solo la luce («Cosa diventerà?»); la leggenda è un'ombra sotto le mura, senza nome; della trama si vede chi scava di notte a Gianola e «Formia ha un segreto», non i nomi né le pietre; la creatura che segue Antonio resta nella sua prima forma; niente Torino e Chicago. Chi aggiunge scene tiene la stessa regola.
 - **Riservatezza:** il video non mostra il numero civico né la frase del letto che nomina Parco la Fontana, e non mette in primo piano persone reali che non sono nella compagnia (Nicola Spadea c'è solo sullo sfondo della spiaggia). Gli amici compaiono con nome, tipo e frase, come nella home del gioco (senza cognomi).
 
 ## Convenzioni

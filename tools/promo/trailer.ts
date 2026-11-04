@@ -4,12 +4,12 @@ import '../../src/styles/sprites.css';
 import { SPR, person, esame } from '../../src/render/svg';
 import { creature, MAGIC_CSS } from '../../src/render/svg/creatures';
 import { scene } from '../../src/render/svg/scenes';
-import { STONES, type Stone } from '../../src/story/plot';
 import { CHARS, type FriendId } from '../../src/data/characters';
 import { COVI } from '../../src/data/covi';
 import { badgeSVG } from '../../src/render/svg/badges';
 import { SPECIES, type SpeciesId } from '../../src/data/creatures';
-import creaturesSrc from '../../src/data/creatures.ts?raw';
+import networkSrc from '../formia/network.ts?raw';
+import daytimeSrc from '../../src/story/daytime.ts?raw';
 import tracksSrc from '../../src/audio/tracks.ts?raw';
 import synthSrc from '../../src/audio/synth.ts?raw';
 import viewSrc from '../../src/render/world-view.ts?raw';
@@ -138,14 +138,6 @@ function editor(parent: HTMLElement, file: string, code: string, style = ''): Ed
 function typeCode(ed: Editor, chars: number, f: number) { ed.body.innerHTML = codeHtml(ed.toks, Math.floor(chars), Math.floor(f / 8) % 2 === 0 || chars < ed.len); }
 
 /* ---------- drawings of the game ---------- */
-function stoneSVG(s: Stone, size: number): string {
-  const mark = s.mark === 'wall' ? '<path d="M18 34 L30 30 L42 34 M24 22 L36 24 M30 30 L28 44" fill="none" stroke="#1c2340" stroke-width="2.6" stroke-linecap="round"/>'
-    : s.mark === 'wave' ? '<path d="M16 34 Q22 28 28 34 T40 34 T50 32" fill="none" stroke="#1c2340" stroke-width="2.6" stroke-linecap="round"/>'
-    : '<path d="M24 26 Q30 22 36 26 M21 32 Q30 26 39 32 M24 38 Q30 34 36 38" fill="none" stroke="#1c2340" stroke-width="2.4" stroke-linecap="round"/>';
-  return '<svg viewBox="0 0 60 60" width="' + size + '" height="' + size + '"><circle cx="30" cy="31" r="27" fill="' + s.color + '" opacity=".25"/>' +
-    '<path d="M14 22 L26 10 L44 13 L52 30 L44 48 L24 52 L10 38Z" fill="' + s.color + '" stroke="#1c2340" stroke-width="3" stroke-linejoin="round"/>' +
-    '<path d="M20 20 L27 14" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".7"/>' + mark + '</svg>';
-}
 function sceneLayer(parent: HTMLElement, id: string, night: boolean) { return div(parent, 'scene', scene(id, night)); }
 /** Formia from a drone: the game's whole map, tilted in 3D like a diorama, with sky and haze behind */
 function drone(parent: HTMLElement, night = false) {
@@ -157,6 +149,9 @@ function drone(parent: HTMLElement, night = false) {
   };
 }
 const paper = (parent: HTMLElement, tint = PAPER) => div(parent, 'paper', '', 'background-color:' + tint);
+
+/* where the spell leaves the caster, in the battle clip (checked on its contact sheet) */
+const BATTLE_AT = 178;
 
 /* ---------- shots ---------- */
 interface K { f: number; g: number; n: number; p: number }
@@ -180,11 +175,11 @@ function clipShot(from: number, to: number, name: string, o: ClipO & { cap?: str
 }
 
 /* ===== INTRO: code, notes, a town ===== */
-const POLPINO = excerpt(creaturesSrc, 'polpino: S({', 9);
+const STREETS0 = excerpt(networkSrc, 'export const STREETS', 9);
 const BATTLE = excerpt(tracksSrc, 'a friendly battle', 18);
 shot(fr(0), fr(1), function (el) {
   div(el, 'navy');
-  const ed = editor(el, 'src/data/creatures.ts', POLPINO, 'left:150px;top:150px;width:1620px');
+  const ed = editor(el, 'tools/formia/network.ts', STREETS0, 'left:150px;top:150px;width:1620px');
   const cap = caption(el, 'Tutto è iniziato con del codice…', { y: 930, size: 84 });
   return function (k) {
     ed.el.style.transform = 'scale(' + mix(1, 1.05, k.p) + ')';
@@ -246,6 +241,8 @@ shot(fr(4), fr(6), function (el) {
 
 /* ===== THE FRIENDS ===== */
 const FRIENDS: FriendId[] = ['antonio', 'costanzo', 'andrea', 'valentin', 'forchetta', 'zendavid'];
+/* Antonio's line in the game says where the story ends: in the trailer, a mystery */
+const TAG: Partial<Record<FriendId, string>> = { antonio: 'Formia è casa sua' };
 shot(fr(6), fr(6, 2), function (el) {
   paper(el);
   const cap = caption(el, 'Sei amici.', { y: 170, size: 120, hi: TYPE.Chiacchiera });
@@ -263,7 +260,7 @@ FRIENDS.forEach(function (id, i) {
     const pic = div(el, 'pic', person(id, i % 2 ? 'grin' : 'smirk'));
     const name = div(el, 'fname', sticker(c.name, 190));
     const chip = div(el, 'chip', esc(c.type.toUpperCase()), 'background:' + INK + ';color:' + TYPE[c.type]);
-    const tag = div(el, 'ftag', esc(c.tagline));
+    const tag = div(el, 'ftag', esc(TAG[id] || c.tagline));
     return function (k) {
       const t = E.out(span(k.f, 0, 8));
       pic.style.transform = 'translate(' + mix(-120, 0, t) + 'px,0) scale(' + mix(1.12, 1.02, k.p) + ')';
@@ -362,7 +359,7 @@ shot(fr(17, 2), fr(18), function (el) {
 
 /* ===== CREATURES ===== */
 shot(fr(18), fr(19), function (el) {
-  const draw = clip(el, 'battle', { at: 182, zoom: [1.1, 1.0] });
+  const draw = clip(el, 'battle', { at: BATTLE_AT, zoom: [1.1, 1.0] });
   const stamp = div(el, 'stampbig', 'LOTTA!');
   return function (k) {
     draw(k);
@@ -375,12 +372,11 @@ clipShot(fr(19), fr(20), 'starters', { at: 12, zoom: [1, 1.05], cap: 'Scegli la 
 clipShot(fr(20), fr(21), 'catch', { at: -1, zoom: [1.02, 1.1], cap: 'Catturale!', capY: 150, hi: TYPE.Cuore });
 shot(fr(21), fr(22), function (el) {
   paper(el);
-  const cap = caption(el, '20 creature di Formia', { y: 110, size: 104, hi: TYPE.Chiacchiera });
+  const cap = caption(el, '20 creature da scoprire', { y: 110, size: 104, hi: TYPE.Chiacchiera });
   const grid = div(el, 'dexgrid');
   const ids = Object.keys(SPECIES) as SpeciesId[];
   const cells = ids.map(function (id) {
-    const legend = id === 'lamo';
-    return div(grid, 'cell' + (legend ? ' secret' : ''), creature(id, 'smirk') + '<span>' + esc(legend ? '???' : SPECIES[id].name) + '</span>');
+    return div(grid, 'cell secret', creature(id, 'smirk') + '<span>???</span>');
   });
   return function (k) {
     showCap(cap, k.f, 0);
@@ -388,33 +384,58 @@ shot(fr(21), fr(22), function (el) {
   };
 });
 clipShot(fr(22), fr(23), 'sheet', { at: 18, zoom: [1.02, 1.12], origin: '50% 40%', cap: 'Un legame che cresce', hi: TYPE.Cuore });
-clipShot(fr(23), fr(24), 'evolve', { at: 10, zoom: [1, 1.08], cap: 'Evolvi!', hi: TYPE.Cervello });
+/* the evolution, drawn here: the light takes Polpino, and what it becomes stays a secret */
+shot(fr(23), fr(24), function (el) {
+  div(el, 'navy');
+  const rays = div(el, 'evo-rays');
+  const mon = div(el, 'evo-mon', creature('polpino', 'worried'));
+  const white = div(el, 'white');
+  const cap = caption(el, 'Cosa diventerà?', { y: 540, size: 120, hi: TYPE.Cervello });
+  return function (k) {
+    rays.style.transform = 'translate(-50%,-50%) rotate(' + k.f * 2.5 + 'deg) scale(' + mix(0.6, 1.3, E.out(k.p)) + ')';
+    rays.style.opacity = String(span(k.f, 0, 10));
+    const glow = E.in(span(k.f, 4, 28));
+    mon.style.filter = 'brightness(' + (1 + glow * 4) + ') saturate(' + (1 - glow) + ') drop-shadow(0 0 ' + (20 + glow * 60) + 'px #fff)';
+    mon.style.transform = 'translate(-50%,-50%) scale(' + (1 + Math.sin(k.f / 2.5) * 0.04 * (1 + glow * 3)) + ')';
+    white.style.opacity = String(E.in(span(k.f, 24, 34)) * (1 - span(k.f, 36, 46) * 0.25));
+    showCap(cap, k.f, 32);
+  };
+});
 clipShot(fr(24), fr(25), 'sniff', { at: 50, zoom: [1.2, 1.3], origin: '0% 22%', cap: 'Ti segue. E trova cose.', hi: TYPE.Caos });
-clipShot(fr(25), fr(26), 'lamo', { at: 6, zoom: [1.1, 1.35], origin: '77% 45%', cap: 'E di notte… Lamo.', hi: TYPE.Caos });
+shot(fr(25), fr(26), function (el) {
+  const bg = sceneLayer(el, 'castellone', true);
+  div(el, 'shade dark');
+  const giant = div(el, 'giant', creature('lamo', 'smirk'));
+  const cap = caption(el, 'Di notte, sotto le mura, qualcosa dorme.', { y: 930, size: 80, hi: TYPE.Caos });
+  return function (k) {
+    bg.style.transform = 'scale(' + mix(1.08, 1.18, k.p) + ')';
+    giant.style.transform = 'translate(-50%,0) translateY(' + mix(260, 120, E.out(k.p)) + 'px) scale(' + mix(1, 1.08, k.p) + ')';
+    giant.style.opacity = String(span(k.f, 0, 12) * 0.95);
+    showCap(cap, k.f, 10);
+  };
+});
 
 /* ===== THE PLOT ===== */
-clipShot(fr(26), fr(27), 'mamurra', { at: 20, zoom: [1.04, 1.12], cap: 'Un fantasma vuole le Pietre di Telepilo.', capSize: 74, capY: 150, hi: '#e6c46a' });
+clipShot(fr(26), fr(27), 'dig', { at: 10, zoom: [1.1, 1.22], origin: '60% 45%', cap: 'Di notte, a Gianola, qualcuno scava…', capSize: 80, capY: 150, hi: '#e6c46a' });
 shot(fr(27), fr(28), function (el) {
   const bg = sceneLayer(el, 'castellone', true);
   div(el, 'shade dark');
-  const row = div(el, 'stones');
-  const items = STONES.map(function (s) { return div(row, 'stone', stoneSVG(s, 260) + '<b>' + esc(s.name) + '</b>', '--c:' + s.color); });
-  const cap = caption(el, 'Trovale prima di lui.', { y: 880, size: 96, hi: '#e6c46a' });
+  const cap = caption(el, 'Formia ha un segreto.', { y: 520, size: 130 });
+  const sub = caption(el, 'Chi lo scoprirà per primo?', { y: 680, size: 64, font: 'Patrick Hand' });
   return function (k) {
-    bg.style.transform = 'scale(' + mix(1.1, 1.2, k.p) + ')';
-    items.forEach(function (it, i) { const t = E.back(span(k.f, i * 12, i * 12 + 10)); it.style.transform = 'translateY(' + mix(120, 0, t) + 'px) scale(' + t + ')'; it.style.opacity = String(clamp(t * 2)); });
-    showCap(cap, k.f, 26);
+    bg.style.transform = 'scale(' + mix(1.1, 1.25, k.p) + ')';
+    showCap(cap, k.f, 2); showCap(sub, k.f, 22);
   };
 });
-clipShot(fr(28), fr(29), 'cicero', { at: 30, zoom: [1.04, 1.12], cap: 'Cicerone ti guida.', capY: 150, hi: '#f4e3a4' });
-clipShot(fr(29), fr(30), 'tour', { at: 6, zoom: [1, 1.06], cap: 'Un giro di Formia in 20 tappe', capY: 930, capSize: 84, hi: TYPE.Chiacchiera });
+clipShot(fr(28), fr(29), 'cicero', { at: 30, zoom: [1.04, 1.12], cap: 'Un fantasma ti guida.', capY: 150, hi: '#f4e3a4' });
+clipShot(fr(29), fr(30), 'tour', { at: 6, zoom: [1, 1.06], cap: 'Seguilo, tappa dopo tappa', capY: 930, capSize: 84, hi: TYPE.Chiacchiera });
 
 /* ===== MADE BY HAND ===== */
 const SNIPS = [
   ['src/audio/synth.ts', excerpt(synthSrc, 'export function kick', 6)],
   ['src/render/world-view.ts', excerpt(viewSrc, 'export function drawWorld', 10)],
   ['tools/formia/build.ts', excerpt(buildSrc, 'import', 10)],
-  ['src/data/creatures.ts', excerpt(creaturesSrc, 'ramarrino: S({', 9)]
+  ['src/story/daytime.ts', excerpt(daytimeSrc, 'export function sunTimes', 9)]
 ];
 shot(fr(30), fr(32), function (el) {
   div(el, 'navy');
@@ -437,8 +458,9 @@ clipShot(fr(33), fr(33, 2), 'volley', { at: 30, zoom: [1.35, 1.4], origin: '50% 
 clipShot(fr(33, 2), fr(34), 'quiz', { at: 10, zoom: [1.4, 1.5], origin: '50% 62%', cap: 'Quiz su Formia', capY: 140, hi: TYPE.Chiacchiera });
 clipShot(fr(34), fr(34, 2), 'gelato', { at: 30, zoom: [1.15, 1.2], origin: '50% 70%', cap: 'Gelato', capY: 150, hi: TYPE.Cuore });
 clipShot(fr(34, 2), fr(35), 'corsa', { at: 4, zoom: [1.1, 1.2], cap: 'Corsa in pineta', hi: '#9ad46a' });
-clipShot(fr(35), fr(36), 'shop', { at: 20, zoom: [1.3, 1.35], origin: '50% 80%', cap: 'Guadagna e spendi', capY: 140, hi: TYPE.Chiacchiera });
-clipShot(fr(36), fr(36, 2), 'covo', { at: 60, cap: 'Sfida gli amici nei covi', capSize: 84, hi: TYPE.Caos });
+clipShot(fr(35), fr(35, 2), 'shop', { at: 20, zoom: [1.3, 1.35], origin: '50% 80%', cap: 'Guadagna e spendi', capY: 140, hi: TYPE.Chiacchiera });
+clipShot(fr(35, 2), fr(36), 'home', { at: 6, zoom: [1.35, 1.45], origin: '50% 45%', cap: 'Le altre ti aspettano a casa', capY: 140, capSize: 80, hi: TYPE.Cuore });
+clipShot(fr(36), fr(36, 2), 'covo', { at: 60, zoom: [1.3, 1.36], origin: '50% 18%', cap: 'Sfida gli amici nei covi', capSize: 84, hi: TYPE.Caos });
 shot(fr(36, 2), fr(37), function (el) {
   paper(el);
   const row = div(el, 'badges');
@@ -449,9 +471,9 @@ shot(fr(36, 2), fr(37), function (el) {
     items.forEach(function (it, i) { const t = E.back(span(k.f, 2 + i * 4, 12 + i * 4)); it.style.transform = 'scale(' + t + ') rotate(' + mix(-30, (i ? 6 : -6), t) + 'deg)'; });
   };
 });
-clipShot(fr(37), fr(37, 3), 'boss', { at: 250, zoom: [1.7, 1.6], origin: '50% 42%', cap: 'Supera l\'Esame!', hi: RED });
+clipShot(fr(37), fr(37, 3), 'boss', { at: 250, zoom: [1.75, 1.65], origin: '50% 28%', cap: 'Supera l\'Esame!', hi: RED });
 shot(fr(37, 3), fr(38), function (el) {
-  const picks: [string, number][] = [['battle', 218], ['evolve', 44], ['friends', 240], ['porto-notte', 50], ['catch', 610], ['lamo', 40]];
+  const picks: [string, number][] = [['battle', BATTLE_AT + 36], ['friends', 240], ['porto-notte', 50], ['boss', 270], ['dig', 60], ['piazza-notte', 40]];
   const img = document.createElement('img'); img.className = 'clip'; el.appendChild(img);
   return function (k) { const q = picks[Math.min(picks.length - 1, Math.floor(k.f / 2))]; const src = clipSrc(q[0], q[1]); if (img.getAttribute('src') !== src) img.src = src; img.style.transform = 'scale(' + (1.1 + (k.f % 2) * 0.05) + ')'; };
 });
@@ -465,7 +487,7 @@ shot(fr(38), FRAMES, function (el) {
   const btn = div(el, 'play', 'Gioca gratis nel browser');
   const mons = (['polpino', 'ramarrino', 'gabbi'] as SpeciesId[]).map(function (id, i) { return div(el, 'mon m' + i, creature(id, i === 1 ? 'grin' : 'smirk')); });
   const ant = div(el, 'ant', person('antonio', 'grin'));
-  const next = caption(el, 'Prossima fermata: Torino.', { y: 760, size: 58, font: 'Patrick Hand' });
+  const next = caption(el, 'Formia ti aspetta.', { y: 760, size: 58, font: 'Patrick Hand' });
   const made = div(el, 'made', 'Fatto a mano a Formia');
   return function (k) {
     const f = k.f;
@@ -589,6 +611,11 @@ css.textContent = MAGIC_CSS + `
 .badges { position: absolute; left: 0; right: 0; top: 330px; display: flex; justify-content: center; gap: 160px; }
 .badge { text-align: center; filter: drop-shadow(10px 12px 0 rgba(31,44,110,.35)); }
 .badge b { display: block; margin-top: 18px; font: 54px 'Lilita One'; color: ${INK}; }
+.evo-rays { position: absolute; left: 50%; top: 50%; width: 1800px; height: 1800px; background: repeating-conic-gradient(rgba(255, 255, 255, .22) 0 9deg, transparent 9deg 24deg); border-radius: 50%; -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%); }
+.evo-mon { position: absolute; left: 50%; top: 50%; width: 560px; height: 560px; }
+.evo-mon svg { width: 100%; height: 100%; }
+.giant { position: absolute; left: 50%; bottom: 0; width: 760px; height: 760px; filter: brightness(0) drop-shadow(0 0 30px rgba(255, 170, 80, .55)); }
+.giant svg { width: 100%; height: 100%; }
 .stones { position: absolute; left: 0; right: 0; top: 270px; display: flex; justify-content: center; gap: 120px; }
 .stone { text-align: center; filter: drop-shadow(0 0 40px var(--c)); }
 .stone b { display: block; font: 48px 'Lilita One'; color: #fff; margin-top: 10px; -webkit-text-stroke: 2px ${INK}; }

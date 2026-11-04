@@ -24,9 +24,9 @@ TIPS.forEach((t) => { QUIET['cic-' + t] = true; });
 STOPS.forEach((s) => { QUIET['cap-' + s] = true; });
 
 const MONS = [
-  { uid: 'c1', sp: 'polpetto', bond: 85, nat: 'coraggioso', moves: ['spruzzo', 'tentacolata', 'mimetismo', 'abbraccio'] },
-  { uid: 'c2', sp: 'ramarrone', bond: 55, nat: 'robusto' },
-  { uid: 'c3', sp: 'gabbianotto', bond: 45, nat: 'svelto' },
+  { uid: 'c1', sp: 'polpino', bond: 85, nat: 'coraggioso' },
+  { uid: 'c2', sp: 'ramarrino', bond: 55, nat: 'robusto' },
+  { uid: 'c3', sp: 'gabbi', bond: 45, nat: 'svelto' },
   { uid: 'c4', sp: 'civettina', bond: 30, nat: 'furbo', gold: true },
   { uid: 'c5', sp: 'cicalina', bond: 25, nat: 'sereno' }
 ];
@@ -44,7 +44,7 @@ const LATE: Save = {
 const late = (o: Save = {}): Save => ({ ...LATE, ...o, seen: { ...(LATE.seen as object), ...((o.seen as object) || {}) } });
 /** early in the story: the first creature just chosen */
 const early = (o: Save = {}): Save => ({ badges: [], squad: ['antonio'], beaten: { 'tr-mamurr-scavi': true }, found: {}, money: 40, bag: { retino: 1, tiella: 1 },
-  mons: [{ uid: 'c1', sp: 'polpetto', bond: 70, nat: 'coraggioso', moves: ['spruzzo', 'tentacolata', 'mimetismo', 'abbraccio'] }], lv: { c1: { lv: 19, xp: 0 } }, lead: 'c1',
+  mons: [{ uid: 'c1', sp: 'polpino', bond: 70, nat: 'coraggioso' }], lv: { c1: { lv: 13, xp: 0 } }, lead: 'c1',
   ...o, seen: { ...QUIET, ...((o.seen as object) || {}) } });
 
 /* Where the clips start and walk to: a named place of formia-places.ts (its door, or its spot) and an offset in
@@ -140,11 +140,16 @@ async function battleState(p: Page) {
     const ov = document.getElementById('overlay');
     if (ov && !ov.hidden && (ov.classList.contains('result') || ov.classList.contains('pass'))) return 'over';
     const pad = document.getElementById('pad');
-    return pad && !pad.classList.contains('off') && document.body.classList.contains('in-battle') ? 'pad' : '';
+    const bt = document.getElementById('battle');
+    return pad && !pad.classList.contains('off') && bt && !bt.hidden ? 'pad' : '';
   });
 }
 async function toPad(c: Clip, rec: boolean, max = 600) { for (let i = 0; i < max; i++) { const s = await battleState(c.page); if (s) return s; await tick(c, rec); } return ''; }
-async function move(c: Clip, id?: string) { await c.page.click('#pad .mv[data-id="' + (id || await dbg(c.page).suggest()) + '"]'); }
+/* a move, clicked the way the page would get it (a click that waits for the button to be still can hang on a paused clock) */
+async function move(c: Clip, id?: string) {
+  const m = id || await dbg(c.page).suggest();
+  await c.page.evaluate((k) => { const b = document.querySelector('#pad .mv[data-id="' + k + '"]') as HTMLButtonElement | null; if (b && !b.disabled) b.click(); }, m);
+}
 /** plays the battle to its end, without recording */
 async function fightOut(c: Clip) {
   for (let t = 0; t < 60; t++) { const s = await toPad(c, false); if (s !== 'pad') return s; await move(c); }
@@ -232,7 +237,7 @@ const CLIPS: Record<string, Shot> = {
     await choose(c, 'Lotta!', false, 2);
     await toPad(b2, true);
     await move(b2, 'tentacolata'); await frames(b2, true, 20); await toPad(b2, true);
-    await move(b2, 'abbraccio'); await frames(b2, true, 20); await toPad(b2, true, 200);
+    await move(b2, 'spruzzo'); await frames(b2, true, 20); await toPad(b2, true, 200);
     await frames(b2, true, 30);
     await g.close();
   },
@@ -248,7 +253,7 @@ const CLIPS: Record<string, Shot> = {
   /* a net thrown at a tired creature: the first seed that catches it */
   async catch(b) {
     for (let seed = 8; seed < 30; seed++) {
-      const g = await story(b, early({ ...P('selv-gramsci', -2, 0), dir: 'right', mons: [{ uid: 'c1', sp: 'gabbianotto', bond: 50 }], lv: { c1: { lv: 15, xp: 0 } }, bag: { retino2: 4 } }), { seed });
+      const g = await story(b, early({ ...P('selv-gramsci', -2, 0), dir: 'right', mons: [{ uid: 'c1', sp: 'gabbi', bond: 50 }], lv: { c1: { lv: 13, xp: 0 } }, bag: { retino2: 4 } }), { seed });
       const p = g.page, D = dbg(p);
       const c = new Clip(p, WORK + '/catch');
       await luck(p, null);
@@ -458,6 +463,24 @@ const CLIPS: Record<string, Shot> = {
     await toPad(c, true, 200);
     await move(c); await frames(c, true, 20); await toPad(c, true, 200);
     await move(c); await frames(c, true, 20); await toPad(c, true, 200);
+    await g.close();
+  },
+  /* someone digging at Gianola, at night: the mystery of the story, without telling it */
+  async dig(b) {
+    const g = await story(b, early({ ...P('mamurr-scavi', -4, -2), dir: 'right', beaten: {}, seen: { starter: true } }), { hour: 'notte' });
+    const c = new Clip(g.page, WORK + '/dig'), to = P('mamurr-scavi', -1, 1);
+    await frames(c, true, 6); await walkTo(c, to.x, to.y, true); await frames(c, true, 40);
+    await g.close();
+  },
+  /* the creatures waiting at home, in Antonio's flat; talk to one and the team can change */
+  async home(b) {
+    const mons: Record<string, unknown>[] = [...MONS, { uid: 'c6', sp: 'olivella', bond: 35, nat: 'sereno', home: true }, { uid: 'c7', sp: 'granchietto', bond: 30, nat: 'furbo', home: true },
+      { uid: 'c8', sp: 'riccetto', bond: 28, nat: 'svelto', home: true }];
+    const g = await story(b, late({ map: 'casa', x: 5, y: 6, dir: 'up', mons, lv: { ...LV, c6: { lv: 12, xp: 0 }, c7: { lv: 11, xp: 0 }, c8: { lv: 10, xp: 0 } } }));
+    const c = new Clip(g.page, WORK + '/home');
+    await frames(c, true, 16);
+    await goTo(c, 'npc', 'pet-0', true);
+    await enter(c, true, 50);
     await g.close();
   },
   /* the whole map of Formia, for the trailer's drone shots */

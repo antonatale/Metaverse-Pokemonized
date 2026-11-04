@@ -32,13 +32,13 @@ export const CUES: [number, number, string, number][] = [
   /* the tall grass, the rock pools, the pineta… and the shadows */
   [14, 0, 'rustle', 0.5], [14, 2, 'rustle', 0.4], [15, 0, 'rustle', 0.55], [15, 2, 'rustle', 0.6], [16, 0, 'rustle', 0.6], [16, 2, 'reveal', 0.45],
   [17, 0, 'meet', 0.9],
-  /* creatures: the rune and its hit, the three cubs, the net, the parade, the hearts, the evolution, the find, Lamo */
-  [18, 0.33, 'magic', 0.7], [18, 3, 'hit', 0.8], [19, 0.25, 'magicUp', 0.6], [20, 2.2, 'caught', 0.7], [21, 0.25, 'party', 0.5],
-  [22, 0.5, 'heal', 0.5], [23, 1, 'reveal', 0.6], [23, 2.5, 'shimmer', 0.6], [24, 0.8, 'found', 0.7], [25, 0.5, 'magic', 0.35],
-  /* the plot: Mamurra talks, the three stones, Cicero, the tour */
-  [26, 1, 'speech', 0.35], [27, 0, 'shimmer', 0.4], [27, 1, 'shimmer', 0.4], [27, 2, 'shimmer', 0.4], [28, 0, 'magic', 0.4], [29, 0.5, 'pickup', 0.5],
+  /* creatures: the rune and its hit, the three cubs, the net, twenty shadows, the hearts, a light, the find, a shadow under the walls */
+  [18, 0.33, 'magic', 0.7], [18, 1.85, 'reveal', 0.35], [18, 3.5, 'hit', 0.8], [19, 0.25, 'magicUp', 0.6], [20, 2.2, 'caught', 0.7], [21, 0.25, 'shimmer', 0.45],
+  [22, 0.5, 'heal', 0.5], [23, 1, 'reveal', 0.6], [23, 2.5, 'shimmer', 0.6], [24, 0.8, 'found', 0.7], [25, 0, 'reveal', 0.4],
+  /* the mystery: someone digging at night, a secret, the ghost who guides, the tour */
+  [26, 0.5, 'rustle', 0.45], [26, 2.5, 'rustle', 0.4], [27, 0, 'shimmer', 0.35], [28, 0, 'magic', 0.4], [29, 0.5, 'pickup', 0.5],
   /* and more: a skill, the ball, a gelato, the run, the shop, a covo, the badges, the exam, the button */
   [32, 2, 'pickup', 0.6], [33, 0.5, 'ball', 0.6], [33, 1.25, 'ball', 0.6], [34, 0.5, 'pickup', 0.5], [34, 2, 'whoosh', 0.5],
-  [35, 0.33, 'pickup', 0.6], [35, 1.67, 'pickup', 0.6], [36, 0, 'banner', 0.5], [36, 2.2, 'badge', 0.5], [37, 1.33, 'crit', 0.7],
+  [35, 0.33, 'pickup', 0.6], [35, 3, 'pickup', 0.6], [36, 0, 'banner', 0.5], [36, 2.2, 'badge', 0.5], [37, 1.33, 'crit', 0.7],
   [39, 3, 'click', 0.8]
 ];
