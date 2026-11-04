@@ -30,8 +30,11 @@ function buildChar(c: Look): string {
   return s;
 }
 
-export function person(id: string, expr?: string, cls?: string, vb?: string): string {
-  var c = CH[id as FriendId], P = c.P, H = c.hair, hoodKo = c.ko === 'hood';
+/** someone who is not one of the six (the trailer's rival): the parts install() puts in the <defs> for the friends */
+export function defsOf(c: Look): string { return buildChar(c); }
+/** a friend's picture, with an expression; `look` draws someone else, whose parts are in the page (defsOf) */
+export function person(id: string, expr?: string, cls?: string, vb?: string, look?: Look): string {
+  var c = look || CH[id as FriendId], P = c.P, H = c.hair, hoodKo = c.ko === 'hood';
   var s = '<svg class="spr spr-p spr-' + id + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 260 300') + '" data-expr="' + (expr || 'smirk') + '" data-ph="off" role="img" aria-label="' + c.name + '">';
   if (hoodKo) s += '<use class="hood" href="#' + P + 'HoodBack"/>';
   s += '<use class="' + (hoodKo ? 'nohood' : '') + '" href="#' + P + 'Back"/>';

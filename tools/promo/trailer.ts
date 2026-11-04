@@ -1,7 +1,8 @@
 import '../../src/styles/tokens.css';
 import '../../src/styles/fonts.css';
 import '../../src/styles/sprites.css';
-import { SPR, person, esame } from '../../src/render/svg';
+import { SPR, person, defsOf } from '../../src/render/svg';
+import { TULLIO } from './tullio';
 import { creature, runeIcon, MAGIC, MAGIC_CSS } from '../../src/render/svg/creatures';
 import { scene, sceneInfo } from '../../src/render/svg/scenes';
 import { CHARS, type FriendId } from '../../src/data/characters';
@@ -310,15 +311,20 @@ FRIENDS.forEach(function (id, i) {
     };
   });
 });
+/* …and the rival: Tullio, the guardaparco's grandson (drawn like the friends, tullio.ts), with the "!" of the
+   trainers who see Antonio on the map */
 shot(fr(12), fr(13), function (el) {
-  div(el, 'boss-bg');
-  const pic = div(el, 'esame', esame('angry'));
-  const cap = caption(el, '…e un boss:', { x: 960, y: 330, size: 90, align: 'left' });
-  const name = caption(el, 'l\'Esame di Controlli', { x: 960, y: 500, size: 96, align: 'left', color: '#ffd2c9' });
-  const sub = div(el, 'bsub', 'Appello · 2 ore');
+  div(el, 'rival-bg');
+  const pic = div(el, 'pic rival', person('tullio', 'cool', '', undefined, TULLIO));
+  const bang = div(el, 'rival-bang', sticker('!', 230, '#fff', RED));
+  const cap = caption(el, '…e un rivale:', { x: 960, y: 330, size: 90, align: 'left' });
+  const name = caption(el, 'Tullio', { x: 960, y: 500, size: 140, align: 'left', color: '#c9f5d8' });
+  const sub = div(el, 'bsub', 'il nipote del guardaparco:<br>sceglie la creatura che batte la tua.');
   return function (k) {
-    const sh = k.f < 8 ? (rnd(k.f) - 0.5) * 22 * (1 - k.f / 8) : 0;
-    pic.style.transform = 'translate(' + sh + 'px,' + (mix(80, 0, E.out(span(k.f, 0, 10)))) + 'px) scale(' + mix(0.85, 1.05, E.out(k.p)) + ')';
+    pic.style.transform = 'translateX(' + mix(-220, 0, E.back(span(k.f, 0, 10))) + 'px) scale(' + mix(1.12, 1.02, k.p) + ')';
+    const b = span(k.f, 4, 11);
+    bang.style.opacity = String(b > 0 ? 1 : 0);
+    bang.style.transform = 'translate(-50%,-50%) scale(' + mix(3, 1, E.back(b)) + ') rotate(8deg)';
     showCap(cap, k.f, 0); showCap(name, k.f, 8);
     sub.style.opacity = String(span(k.f, 18, 26));
   };
@@ -603,7 +609,8 @@ clipShot(fr(40), fr(41), 'skills', { at: 2, zoom: [1.25, 1.3], origin: '50% 45%'
 clipShot(fr(41), fr(41, 2), 'volley', { at: 30, zoom: [1.35, 1.4], origin: '50% 50%', cap: 'Beach volley', hi: TYPE.Calma, capAt: 0 });
 clipShot(fr(41, 2), fr(42), 'quiz', { at: 10, zoom: [1.4, 1.5], origin: '50% 62%', cap: 'Quiz su Formia', capY: 140, hi: TYPE.Chiacchiera, capAt: 0 });
 clipShot(fr(42), fr(42, 2), 'tourney', { at: 14, zoom: [1.35, 1.45], origin: '50% 48%', cap: 'Torneo degli amici', capY: 140, hi: TYPE.Chiacchiera, capAt: 0 });
-clipShot(fr(42, 2), fr(43), 'fishing', { at: 80, zoom: [1.5, 1.6], origin: '50% 50%', cap: 'Vai a pesca', capY: 980, hi: TYPE.Calma, capAt: 0 });
+/* a trainer sees Antonio: the student's "!" a third of a beat in, then he comes down the street */
+clipShot(fr(42, 2), fr(43), 'spotted', { at: 34, zoom: [1.2, 1.3], origin: '50% 0%', cap: 'Uno sguardo… e si lotta!', capY: 980, capSize: 84, hi: TYPE.Caos, capAt: 0 });
 clipShot(fr(43), fr(43, 2), 'home', { at: 6, zoom: [1.35, 1.45], origin: '50% 45%', cap: 'Le tue creature, a casa', capY: 140, capSize: 84, hi: TYPE.Cuore, capAt: 0 });
 clipShot(fr(43, 2), fr(44), 'covo', { at: 60, zoom: [1.3, 1.36], origin: '50% 18%', cap: 'Conquista i covi', hi: TYPE.Caos, capAt: 0 });
 shot(fr(44), fr(44, 2), function (el) {
@@ -616,10 +623,10 @@ shot(fr(44), fr(44, 2), function (el) {
     items.forEach(function (it, i) { const t = E.back(span(k.f, 2 + i * 4, 12 + i * 4)); it.style.transform = 'scale(' + t + ') rotate(' + mix(-30, (i ? 6 : -6), t) + 'deg)'; });
   };
 });
-/* Antonio's Diagnosi Energetica hits the exam a quarter of a beat in */
-clipShot(fr(44, 2), fr(45), 'boss', { at: 236, zoom: [1.75, 1.65], origin: '50% 28%', cap: 'Supera l\'Esame!', hi: RED, capAt: 0 });
+/* the battle with Tullio opens: the red bands of a trainer slide away, and his Gabbì is there */
+clipShot(fr(44, 2), fr(45), 'rival-battle', { at: 4, zoom: [1.04, 1.14], origin: '60% 45%', cap: 'Batti il tuo rivale!', hi: RED, capAt: 0 });
 shot(fr(45), fr(46), function (el) {
-  const picks: [string, number][] = [['battle', BATTLE_HIT + 4], ['friends', 240], ['porto-notte', 50], ['tourney', 40], ['sky', 90], ['catch', 552], ['volley', 60], ['piazza-notte', 40], ['boss', 245], ['beach', 70], ['covo', 80], ['battle', BATTLE_HIT + 6]];
+  const picks: [string, number][] = [['battle', BATTLE_HIT + 4], ['friends', 240], ['porto-notte', 50], ['tourney', 40], ['sky', 90], ['catch', 552], ['volley', 60], ['piazza-notte', 40], ['rival-battle', 40], ['beach', 70], ['covo', 80], ['battle', BATTLE_HIT + 6]];
   const img = document.createElement('img'); img.className = 'clip'; el.appendChild(img);
   const white = div(el, 'white');
   return function (k) {
@@ -743,10 +750,10 @@ css.textContent = MAGIC_CSS + `
 .fname { position: absolute; left: 980px; top: 330px; }
 .chip { position: absolute; left: 990px; top: 230px; padding: 12px 26px 10px; border-radius: 14px; font: 46px 'Lilita One'; letter-spacing: .06em; transform-origin: 0 50%; }
 .ftag { position: absolute; left: 990px; top: 590px; font: 64px 'Patrick Hand'; color: ${INK}; }
-.boss-bg { position: absolute; inset: 0; background: radial-gradient(60% 70% at 32% 55%, #7a1f2e, #200a16 70%); }
-.esame { position: absolute; left: 80px; top: 120px; width: 900px; height: 900px; filter: drop-shadow(0 0 60px rgba(255,80,80,.5)); }
-.esame svg { width: 100%; height: 100%; }
-.bsub { position: absolute; left: 970px; top: 640px; font: 58px 'Patrick Hand'; color: #ffd2c9; }
+.rival-bg { position: absolute; inset: 0; background: radial-gradient(60% 70% at 30% 55%, #3a9a64, #0c2a1b 72%); }
+.rival { filter: drop-shadow(0 0 60px rgba(150,255,190,.35)); }
+.rival-bang { position: absolute; left: 820px; top: 190px; z-index: 3; }
+.bsub { position: absolute; left: 970px; top: 640px; font: 58px/1.25 'Patrick Hand'; color: #d7f7e2; }
 .stripes { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .stripe { flex: 1; background: #0b0d1c; }
 .bang { position: absolute; left: 50%; top: 50%; z-index: 3; }
@@ -812,6 +819,8 @@ document.head.appendChild(css);
 
 /* ---------- ready ---------- */
 SPR.install();
+/* Tullio is not one of the six: his parts go in the page here */
+document.body.insertAdjacentHTML('afterbegin', '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' + defsOf(TULLIO) + '</defs></svg>');
 const ready = (async function () {
   MAN = await (await fetch('/clips/manifest.json')).json();
   await document.fonts.ready;

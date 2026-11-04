@@ -89,6 +89,10 @@ const dbg = (p: Page) => ({
   meet: (id: string) => p.evaluate((h) => (window as unknown as { WORLD: { _debug: { meet(id: string): void } } }).WORLD._debug.meet(h), id),
   suggest: () => p.evaluate(() => (window as unknown as { UI: { _debug: { suggest(): string } } }).UI._debug.suggest())
 });
+/** the trainers who see Antonio come up to him (story() keeps them still) */
+async function spotting(p: Page, on: boolean) {
+  await p.evaluate((v) => (window as unknown as { WORLD: { _debug: { spotting(on: boolean): void } } }).WORLD._debug.spotting(v), on);
+}
 /** next frame: recorded, or only played */
 async function tick(c: Clip, rec: boolean) { if (rec) await c.frame(); else await c.run(33); }
 /** walks a route holding the keys, the way a player does; the next key goes down before a step ends, so turns are smooth */
@@ -457,19 +461,34 @@ const CLIPS: Record<string, Shot> = {
     }
     await g.close();
   },
-  /* the exam: the boss of the game */
-  async boss(b) {
-    const g = await openGame(b, { seed: 42, dark: true });
+  /* a trainer sees Antonio: the "!", and the student of the Vitruvio Pollione walks down the street to him */
+  async spotted(b) {
+    const g = await story(b, late({ ...P('studente', 0, 5), dir: 'up' }));
     const p = g.page;
-    await p.addStyleTag({ content: CLEAN }); await p.evaluate(() => document.documentElement.classList.add('promo'));
-    /* the Esame is one of the foes in the challenge sheet */
-    await p.evaluate(() => { (document.querySelector('.slot[data-id="antonio"]') as HTMLElement).click(); document.getElementById('go')!.click(); });
-    await p.clock.runFor(300);
-    await p.evaluate(() => { (document.querySelector('.pick[data-k="p2"][data-id="esame"]') as HTMLElement).click(); document.getElementById('su-go')!.click(); });
-    const c = new Clip(p, WORK + '/boss');
-    await toPad(c, true, 200);
-    await move(c); await frames(c, true, 20); await toPad(c, true, 200);
-    await move(c); await frames(c, true, 20); await toPad(c, true, 200);
+    await spotting(p, true);
+    /* the step into the Bruno Zauli's quarter would bring its card up: the shot is the student's */
+    await p.addStyleTag({ content: 'html.promo #world #wtoast { visibility: hidden !important; }' });
+    const c = new Clip(p, WORK + '/spotted');
+    await frames(c, true, 8);
+    await p.keyboard.down('ArrowUp'); await frames(c, true, 2); await p.keyboard.up('ArrowUp');
+    await frames(c, true, 70);
+    await g.close();
+  },
+  /* the rival: Tullio has just taken the creature that beats Polpino; he sees Antonio, runs up, and the battle opens */
+  async rival(b) {
+    const g = await story(b, early({ ...P('tullio', 2, -4), dir: 'down', beaten: {}, rival: 'gabbi', mons: [{ uid: 'c1', sp: 'polpino', bond: 40, nat: 'coraggioso' }], lv: { c1: { lv: 5, xp: 0 } } }), { seed: 5 });
+    const p = g.page;
+    await spotting(p, true);
+    await luck(p, null);
+    const c = new Clip(p, WORK + '/rival');
+    await frames(c, true, 8);
+    await p.keyboard.down('ArrowDown'); await frames(c, true, 2); await p.keyboard.up('ArrowDown');
+    for (let k = 0; k < 120; k++) { if ((await dbg(p).pos()).dialog) break; await tick(c, true); }
+    await talkThrough(c, true, 16, 3); await talkThrough(c, false);
+    const b2 = new Clip(p, WORK + '/rival-battle');
+    await choose(c, 'Sfida!', false, 2);
+    await toPad(b2, true);
+    await move(b2, 'spruzzo'); await frames(b2, true, 20); await toPad(b2, true, 200);
     await g.close();
   },
   /* someone digging at Gianola, at night: the mystery of the story, without telling it */

@@ -14,13 +14,13 @@ export const fr = (b: number, k = 0) => Math.round(at(b, k) * FPS);
 export const PARTS = {
   intro: [0, 5],       /* Formia at night, in 3D, from the sea: a town that hides a secret */
   logo: [5, 7],        /* the title over the gulf at dusk */
-  friends: [7, 13],    /* the six friends, and the exam */
+  friends: [7, 13],    /* the six friends, and the rival */
   world: [13, 21],     /* Formia: in 3D by day, then the game's streets, day and night */
   build: [21, 24],     /* the tall grass… something moves */
   creatures: [24, 34], /* battles, magic seen from the creature's eyes, catching, growing, the powers */
   plot: [34, 38],      /* the mystery */
   dream: [38, 40],     /* created by imagination */
-  finale: [40, 46],    /* everything else there is to do, the exam */
+  finale: [40, 46],    /* everything else there is to do: trainers, covi, the rival */
   outro: [46, 50]      /* the end card over Formia by night */
 } as const;
 export const BARS = 50;
@@ -30,6 +30,8 @@ export const FRAMES = Math.round(LENGTH * FPS);
 
 /** the game's own sounds, where the pictures need them: [bar, beat, sfx name, gain] */
 export const CUES: [number, number, string, number][] = [
+  /* the rival's "!" */
+  [12, 0.27, 'spot', 0.6],
   /* Formia: the scooter */
   [17, 0.4, 'scooter', 0.5],
   /* the tall grass, the rock pools, the pineta… and the encounter */
@@ -44,8 +46,9 @@ export const CUES: [number, number, string, number][] = [
   [31, 0.8, 'reveal', 0.6], [31, 2.4, 'shimmer', 0.6], [32, 0.2, 'whoosh', 0.5],
   /* the mystery: someone digging at night, a secret, the ghost who guides, the tour */
   [34, 0.5, 'rustle', 0.45], [34, 2.5, 'rustle', 0.4], [35, 0, 'shimmer', 0.35], [36, 0, 'magic', 0.4], [37, 0.5, 'pickup', 0.5],
-  /* and more: a skill, the ball, a right answer, the cup, a fish, home, a covo, the badges, the exam, the button */
-  [40, 2, 'pickup', 0.6], [41, 0.5, 'ball', 0.6], [41, 2.6, 'found', 0.5], [42, 0.4, 'banner', 0.45], [42, 2.6, 'pickup', 0.5],
-  [43, 0.5, 'cry-lizard', 0.4], [43, 2.3, 'banner', 0.5], [44, 0.4, 'badge', 0.5], [44, 2.5, 'crit', 0.6],
+  /* and more: a skill, the ball, a right answer, the cup, a trainer's "!", home, a covo, the badges, the red bands of
+     the rival's battle, the button */
+  [40, 2, 'pickup', 0.6], [41, 0.5, 'ball', 0.6], [41, 2.6, 'found', 0.5], [42, 0.4, 'banner', 0.45], [42, 2.33, 'spot', 0.6],
+  [43, 0.5, 'cry-lizard', 0.4], [43, 2.3, 'banner', 0.5], [44, 0.4, 'badge', 0.5], [44, 2.15, 'whoosh', 0.5],
   [48, 3, 'click', 0.8]
 ];
