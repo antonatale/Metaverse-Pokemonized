@@ -11,6 +11,8 @@ test('every track and every effect renders: audible, never clipping', async ({ p
     const { TRACKS } = await load('/src/audio/tracks.ts');
     const { renderTrack } = await load('/src/audio/music.ts');
     const { renderSfx, SFX_NAMES } = await load('/src/audio/sfx.ts');
+    const { renderCry } = await load('/src/audio/cries.ts');
+    const { SPECIES } = await load('/src/data/creatures.ts');
     const measure = async (len: number, draw: (c: OfflineAudioContext, out: AudioNode) => void) => {
       const c = new OfflineAudioContext(1, Math.ceil(44100 * len), 44100);
       /* the same gains the live graph has: music 0.42 or effects 0.7 into a compressor */
@@ -29,6 +31,13 @@ test('every track and every effect renders: audible, never clipping', async ({ p
     }
     for (const name of SFX_NAMES as string[]) {
       out['sfx ' + name] = await measure(1.6, (c, o) => { const g = c.createGain(); g.gain.value = 0.7; g.connect(o); renderSfx(c, g, name, 0.02); });
+    }
+    /* every creature, coming on, winning and going down (and a golden one coming on) */
+    for (const id of Object.keys(SPECIES)) {
+      for (const ev of ['entry', 'win', 'ko']) {
+        out['cry ' + id + ' ' + ev] = await measure(1.6, (c, o) => { const g = c.createGain(); g.gain.value = 0.7; g.connect(o); renderCry(c, g, id, ev, 0.02); });
+      }
+      out['cry ' + id + ' gold'] = await measure(1.6, (c, o) => { const g = c.createGain(); g.gain.value = 0.7; g.connect(o); renderCry(c, g, id, 'entry', 0.02, true); });
     }
     return out;
   });

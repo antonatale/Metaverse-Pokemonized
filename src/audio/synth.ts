@@ -31,6 +31,8 @@ export interface ToneOpts {
   to?: number;
   /** lowpass cutoff, Hz */
   cutoff?: number;
+  /** the cutoff closes (or opens) to this over the note */
+  cutoffTo?: number;
   /** vibrato depth in cents, after a short delay */
   vibrato?: number;
   detune?: number;
@@ -43,7 +45,11 @@ export function tone(c: BaseAudioContext, out: AudioNode, freq: number, t: numbe
   if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t + dur);
   if (o.detune) osc.detune.value = o.detune;
   let node: AudioNode = osc;
-  if (o.cutoff) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.cutoff; osc.connect(f); node = f; }
+  if (o.cutoff) {
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(o.cutoff, t);
+    if (o.cutoffTo) f.frequency.exponentialRampToValueAtTime(Math.max(20, o.cutoffTo), t + dur);
+    osc.connect(f); node = f;
+  }
   if (o.vibrato) {
     const lfo = c.createOscillator(), depth = c.createGain();
     lfo.frequency.value = 5.5; depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(o.vibrato, t + Math.min(0.25, dur * 0.6));

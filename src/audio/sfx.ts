@@ -71,7 +71,7 @@ const FX: Record<string, Fx> = {
   headphones(c, out, t) { tone(c, out, 90, t, 0.25, { type: 'sine', gain: 0.18, sustain: 0.6, release: 0.15 }); FX.shimmer(c, out, t + 0.05); },
   notes(c, out, t) { arp(c, out, t, ['G5', 'B5', 'D6', 'G6'], 0.09, { type: 'square', gain: 0.05, cutoff: 3000, decay: 0.03, sustain: 0.6 }); },
 
-  /* ---------- the creatures of Formia: their magic, the net, and a cry for each kind of body ---------- */
+  /* ---------- the creatures of Formia: their magic and the net (their cries are in cries.ts) ---------- */
   magic(c, out, t) {
     arp(c, out, t, ['C6', 'E6', 'G6', 'B6', 'D7'], 0.04, { type: 'sine', gain: 0.12, decay: 0.03, sustain: 0.6, vibrato: 12 });
     hiss(c, out, t + 0.05, 0.25, { type: 'highpass', freq: 6000, gain: 0.08 });
@@ -84,14 +84,6 @@ const FX: Record<string, Fx> = {
   /* the net on the ground, shaking with the creature in it */
   shake(c, out, t) { tone(c, out, 260, t, 0.07, { type: 'triangle', to: 200, gain: 0.3, decay: 0.04, sustain: 0.3 }); hiss(c, out, t, 0.09, { freq: 1600, to: 900, q: 1.1, gain: 0.35 }); },
   caught(c, out, t) { arp(c, out, t, ['G5', 'C6', 'E6', 'G6'], 0.09, { type: 'square', gain: 0.06, cutoff: 5000, decay: 0.03, sustain: 0.7 }); FX.magic(c, out, t + 0.36); },
-  'cry-octo'(c, out, t) { ['G4', 'C5', 'E5'].forEach(function (n, i) { tone(c, out, hz(n), t + i * 0.07, 0.06, { type: 'sine', to: hz(n) * 1.4, gain: 0.22, decay: 0.03, sustain: 0.5 }); }); },
-  'cry-lizard'(c, out, t) { tone(c, out, 260, t, 0.18, { type: 'triangle', to: 520, gain: 0.25, decay: 0.06, sustain: 0.6, vibrato: 25 }); },
-  'cry-bird'(c, out, t) { [0, 0.2].forEach(function (d) { tone(c, out, 1300, t + d, 0.16, { type: 'square', to: 760, gain: 0.07, cutoff: 3000, decay: 0.05, sustain: 0.6, vibrato: 30 }); }); },
-  'cry-cicada'(c, out, t) { for (let k = 0; k < 8; k++) tone(c, out, 3800, t + k * 0.035, 0.022, { type: 'square', gain: 0.05, cutoff: 7000, decay: 0.01, sustain: 0.5 }); },
-  'cry-olive'(c, out, t) { tone(c, out, 880, t, 0.4, { type: 'sine', gain: 0.16, decay: 0.15, sustain: 0.3, release: 0.2 }); tone(c, out, 1320, t + 0.08, 0.35, { type: 'sine', gain: 0.1, decay: 0.15, sustain: 0.3 }); },
-  'cry-urchin'(c, out, t) { for (let k = 0; k < 4; k++) hiss(c, out, t + k * 0.06, 0.03, { freq: 5000 - k * 600, q: 3, gain: 0.25 }); },
-  'cry-crab'(c, out, t) { [0, 0.13].forEach(function (d) { hiss(c, out, t + d, 0.04, { freq: 1800, q: 2, gain: 0.45 }); tone(c, out, 700, t + d, 0.04, { type: 'square', gain: 0.06, cutoff: 2500 }); }); },
-  'cry-owl'(c, out, t) { [0, 0.32].forEach(function (d) { tone(c, out, 420, t + d, 0.24, { type: 'sine', to: 380, gain: 0.22, attack: 0.04, sustain: 0.7, release: 0.1 }); }); },
 
   /* ---------- story ---------- */
   /* a wild creature jumps out of its hiding place: a rustle, then a rising alarm */
