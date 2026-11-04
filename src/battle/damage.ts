@@ -1,10 +1,27 @@
 import { CHARS, type Move } from '../data/characters';
-import { TUNE, K, CRIT } from '../data/tuning';
-import type { TypeName } from '../data/types';
+import { SPECIES, isSpecies } from '../data/creatures';
+import { TUNE, K, CRIT, MAGIC_TUNE } from '../data/tuning';
+import { TYPES, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
 import { say, line, expr, anim } from './events';
 import { ch, mv, eff, modMult, sideType, zenOn, statsOf } from './state';
+
+/* ---------- the creatures' magic ---------- */
+/** a side's types: a creature's own (one or two), a person's of the moment */
+export function typesOf(s: BattleState, side: Side, foe: Side): TypeName[] {
+  if (isSpecies(side.id)) { const sp = SPECIES[side.id]; return sp.type2 ? [sp.type, sp.type2] : [sp.type]; }
+  return [sideType(s, side, foe)];
+}
+/** the type of a creature's move: the one of its magic, or the creature's own; null for a plain move */
+export function moveType(side: Side, m: Move): TypeName | null { return m.plain ? null : m.mtype || ch(side).type; }
+/** a creature's magic against the types of the one it hits; with two types it adds up (or cancels out) */
+export function magicEff(t: TypeName | null, against: TypeName[]): number {
+  let e = 1;
+  if (!t) return e;
+  for (const d of against) { if (TYPES[t].beats === d) e *= MAGIC_TUNE.se; else if (TYPES[d].beats === t) e *= MAGIC_TUNE.nve; }
+  return Math.round(e * 1000) / 1000;
+}
 
 /* ---------- damage ---------- */
 export function movePower(side: Side, m: Move): number {
@@ -12,10 +29,12 @@ export function movePower(side: Side, m: Move): number {
   if (m.id === 'cucinato') return Math.round(20 + 100 * (1 - side.hp / side.max));
   return m.power!;
 }
-interface Parts { base: number; eff: number; type: TypeName; critChance: number; forceCrit: boolean; acc: number; notes: string[] }
+interface Parts { base: number; eff: number; type: TypeName | null; critChance: number; forceCrit: boolean; acc: number; notes: string[] }
 function parts(s: BattleState, i: number, id: string): Parts {
   const me = s.sides[i], foe = s.sides[1 - i], m = mv(me, id)!;
-  const type = sideType(s, me, foe), e = eff(type, sideType(s, foe, me));
+  /* a person's advantage is the person's type against the other's; a creature's is the type of the spell it casts */
+  const magic = isSpecies(me.id), type = magic ? moveType(me, m) : sideType(s, me, foe);
+  const e = magic ? magicEff(type, typesOf(s, foe, me)) : eff(type, sideType(s, foe, me));
   const atk = statsOf(me).atk * modMult(s, me, 'atk') * (me.id === 'zendavid' ? 1 - 0.06 * me.anx : 1);
   const def = statsOf(foe).def * modMult(s, foe, 'def');
   let mult = 1, forceCrit = false;
@@ -70,7 +89,9 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   ev.push({ k: 'hp', who: j, hp: foe.hp, dmg: dmg, crit: crit, eff: p.eff });
   ev.push(expr(j, foe.hp > 0 ? 'pout' : 'sleepy'));
   if (crit) ev.push(say(p.forceCrit ? 'La fissa di Costanzo: colpo critico sicuro!' : 'Colpo critico!'));
-  if (p.eff > 1) ev.push(say('È superefficace!'));
+  if (p.eff >= 1.6) ev.push(say('Doppio vantaggio di tipo: è superefficace!'));
+  else if (p.eff > 1) ev.push(say('È superefficace!'));
+  else if (p.eff <= 0.62) ev.push(say('Non è per niente efficace…'));
   else if (p.eff < 1) ev.push(say('Non è molto efficace…'));
   if (p.notes.indexOf('filo') >= 0 && !opt.quiet) ev.push(say('Costanzo cambia argomento e perde il filo: −20%.'));
   if (p.notes.indexOf('calc') >= 0) { ev.push(say('Andrea ha già i dati su questa mossa: −' + Math.round(100 - TUNE.calc * 100) + '%.')); }

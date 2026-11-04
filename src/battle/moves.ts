@@ -253,7 +253,7 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
   const type = ch(me).type;
   if (m.kind === 'atk') {
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magic', { style: type }));
+    ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type }));
     const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
     if (dmg > 0 && m.drain && me.hp > 0) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
     if (dmg <= 0 || foe.hp <= 0) return attacked;

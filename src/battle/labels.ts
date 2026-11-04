@@ -2,7 +2,7 @@ import { TUNE } from '../data/tuning';
 import { ITEMS } from '../data/items';
 import type { BattleState, Chip, MoveLabel, Snap } from './types';
 import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn } from './state';
-import { movePower } from './damage';
+import { movePower, moveType, magicEff, typesOf } from './damage';
 import { isSpecies } from '../data/creatures';
 
 /* What the UI shows, decided here so the UI never needs to know the rules:
@@ -74,9 +74,14 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
       /* the creatures' moves: what they do, from their numbers (the Esame's keep no label, as they always had) */
       if (!isSpecies(me.id)) break;
       const fx = m.fx || {}, bits: string[] = [];
-      if (m.kind === 'atk') bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
+      out.mtype = moveType(me, m);
+      if (m.kind === 'atk') {
+        out.power = m.power; out.acc = m.acc || 1;
+        out.eff = magicEff(out.mtype, typesOf(s, s.sides[1 - i], me));
+        bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
+      }
       if (m.priority) bits.push('Attacca per primo');
-      if (m.drain) bits.push('si cura metà');
+      if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura un terzo');
       if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');
       if (fx.heal) bits.push('Cura il ' + Math.round(fx.heal * 100) + '%');
       if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');

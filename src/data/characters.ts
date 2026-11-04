@@ -33,6 +33,10 @@ export interface Move {
   drain?: number;
   /** chance that the move works at all (Battuta) */
   chance?: number;
+  /** the creatures' moves: the type of their magic, when it is not the creature's own */
+  mtype?: TypeName;
+  /** a creature's plain move, of no type: the same against everyone */
+  plain?: boolean;
   /** the creatures' moves: what they do besides the damage (battle/moves.ts, genericMove) */
   fx?: MoveFx;
 }
@@ -56,6 +60,8 @@ export interface Character {
   full: string;
   nick: string;
   type: TypeName;
+  /** a second type: only some creatures of Formia, from their last forms */
+  type2?: TypeName;
   tagline: string;
   boss?: boolean;
   stats: Stats;

@@ -25,3 +25,8 @@ export const TUNE: Tune = { zenBoost: 1.2, healBase: 20, healPer: 12, K: 0.3, se
 export const K = 0.42;
 /** base critical hit chance */
 export const CRIT = 1 / 16;
+
+/** the creatures' magic (story battles): the type of a move against each type of the one it hits, stronger than the
+    friends' advantage (×se when it beats it, ×nve when it is beaten, multiplied for two types). Plain moves have no
+    type. Tuned with tools/sim-story.ts. */
+export const MAGIC_TUNE = { se: 1.12, nve: 0.9 };

@@ -287,7 +287,7 @@ const CLIPS: Record<string, Shot> = {
     await p.click('[data-cr="c1"]'); await frames(c, true, 70);
     await g.close();
   },
-  /* Polpino becomes Polpetto */
+  /* Polpino becomes Calamastro */
   async evolve(b) {
     const g = await story(b, early({ ...P('selv-gianola-1', 0, -1), dir: 'down', mons: [{ uid: 'c1', sp: 'polpino', bond: 60, nat: 'coraggioso' }], lv: { c1: { lv: 13, xp: 149 } } }), { seed: 5 });
     const p = g.page, D = dbg(p);

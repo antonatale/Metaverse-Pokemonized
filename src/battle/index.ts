@@ -6,7 +6,7 @@ import { ITEMS } from '../data/items';
 import { TUNE } from '../data/tuning';
 import type { BattleState } from './types';
 import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf, BAG } from './state';
-import { expected } from './damage';
+import { expected, typesOf } from './damage';
 import { snap, moveLabel } from './labels';
 import { ai } from './ai';
 import { intro, beginTurn, needs, playTurn } from './turn';
@@ -20,6 +20,8 @@ export function clock(s: BattleState): string { const m = (s.maxTurns - s.turn +
 export function planName(s: BattleState, i: number): string | null { const p = s.plan[i]; return p ? mv(s.sides[i], p)!.name : null; }
 /** a side's type right now (Costanzo's Personaggismo changes it) */
 export function sideType(s: BattleState, i: number): TypeName { return typeOf(s, s.sides[i], s.sides[1 - i]); }
+/** all of a side's types: two for some creatures */
+export function sideTypes(s: BattleState, i: number): TypeName[] { return typesOf(s, s.sides[i], s.sides[1 - i]); }
 
 /** the whole engine as one object, with the same names the old window.ENGINE had */
 export const ENGINE = {
@@ -27,5 +29,5 @@ export const ENGINE = {
   move, newBattle, intro, beginTurn, needs, playTurn,
   available, moveLabel, snap, ai, expected, BAG,
   ANTONIO: CHARS.antonio, ESAME: CHARS.esame,
-  clock, planName, sideType
+  clock, planName, sideType, sideTypes
 };

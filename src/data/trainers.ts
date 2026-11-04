@@ -89,9 +89,9 @@ export const TRAINERS: Record<string, Trainer> = {
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150,
     team: [{ sp: 'ramarrone', lv: 22 }, { sp: 'granchione', lv: 24 }, { sp: 'muraglione', lv: 28 }],
-    intro: ['Lo sai chi ha messo le pietre delle mura di Castellone? I giganti, dicono. E io custodisco la loro creatura.', 'Se vuoi vedere il Muraglione, prima devi battere gli altri due.'],
+    intro: ['Lo sai chi ha messo le pietre delle mura di Castellone? I giganti, dicono. E io custodisco la loro creatura.', 'Se vuoi vedere il Dracastello, prima devi battere gli altri due.'],
     win: ['Duemila anni di mura… e tu le hai scavalcate.', 'Tieni. E rispetta le pietre di Castellone.'],
     lose: ['Le mura sono ancora in piedi. Ritorna più forte.'],
-    after: ['Il Muraglione ti aspetta. Rivincita?']
+    after: ['Il Dracastello ti aspetta. Rivincita?']
   }
 };

@@ -21,7 +21,7 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
     Maranola a Natale); scelte nei dialoghi che cambiano qualcosa.
 12. **Da provare a fondo**: tutta la trama giocata dall'inizio alla fine senza salvataggi preparati (i test la
-    provano a pezzi), e il bilanciamento delle lotte con Mamurra (Granchione 21, Olivastro 19, Civettona 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
+    provano a pezzi), e il bilanciamento delle lotte con Mamurra (Tenaglione 21, Olivastro 19, Sibilla 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
 ## Fatti
 

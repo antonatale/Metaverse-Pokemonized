@@ -34,7 +34,11 @@ if (process.argv[1] && process.argv[1].indexOf('sim-story') >= 0 && args.length 
     ['polpino', 5, 'cicalina', 3], ['gabbi', 6, 'granchietto', 7], ['polpino', 7, 'olivella', 8], ['ramarrino', 9, 'civettina', 11],
     ['antonio', 5, 'costanzo', 6], ['polpino', 6, 'costanzo', 6], ['antonio', 8, 'forchetta', 9], ['polpino', 9, 'forchetta', 9], ['gabbi', 9, 'forchetta', 9], ['ramarrino', 9, 'forchetta', 9],
     ['polpino', 6, 'olivella', 6], ['polpino', 7, 'cicalina', 7], ['polpetto', 15, 'riccione', 17], ['polpetto', 18, 'civettona', 19],
-    ['polpastro', 30, 'muraglione', 28], ['muraglione', 30, 'granchione', 24]
+    ['polpastro', 30, 'muraglione', 28], ['muraglione', 30, 'granchione', 24],
+    /* the first battles at Gianola, with each of the three: the pools and the man with the shovel */
+    ['gabbi', 6, 'riccetto', 6], ['polpino', 6, 'riccetto', 6], ['ramarrino', 6, 'riccetto', 6], ['gabbi', 7, 'granchietto', 7], ['ramarrino', 7, 'granchietto', 7],
+    /* the last forms against each other, with their second types */
+    ['gabbiammiraglio', 30, 'muraglione', 30], ['muraglione', 30, 'polpastro', 30], ['polpastro', 30, 'gabbiammiraglio', 30]
   ];
   for (const [a, la, b, lb] of rows) console.log((a + ' Lv' + la).padEnd(16) + ' vs ' + (b + ' Lv' + lb).padEnd(16) + winRate(a, la, b, lb) + '%');
 }

@@ -147,9 +147,10 @@ export function gainXp(key: string, xp: number): Growth {
     }
     if (sp !== first) {
       mon.sp = sp; own(sp); out.evolved = { from: first, to: sp };
-      /* a new form brings the next move of its line forward */
-      var next = SPECIES[sp].learn.filter(function (x) { return x[0] > lv && movesOf(key).indexOf(x[1]) < 0 && out.pending.indexOf(x[1]) < 0; })[0];
-      if (next) learn(mon, key, next[1], out);
+      /* a new form brings its own move (or else the next move of its line) */
+      var sig = SPECIES[sp].sig, next = sig && movesOf(key).indexOf(sig) < 0 && out.pending.indexOf(sig) < 0 ? sig : null;
+      if (!next) { var nx = SPECIES[sp].learn.filter(function (x) { return x[0] > lv && movesOf(key).indexOf(x[1]) < 0 && out.pending.indexOf(x[1]) < 0; })[0]; if (nx) next = nx[1]; }
+      if (next) learn(mon, key, next, out);
     }
   }
   return out;

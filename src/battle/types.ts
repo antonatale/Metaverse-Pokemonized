@@ -138,6 +138,11 @@ export interface MoveLabel {
   dots: boolean[] | null;
   /** uses left, for limited moves */
   left?: number;
+  /** the creatures' moves: the type of the spell, how well it works on the foe in front (1 even), power and aim */
+  mtype?: TypeName | null;
+  eff?: number;
+  power?: number;
+  acc?: number;
 }
 
 export type { TypeName };
