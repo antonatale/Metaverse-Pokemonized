@@ -14,9 +14,10 @@ import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
-import { offerActivity } from './activities';
+import { offerActivity, startActivity } from './activities';
 import { checkRun, cancelRun } from './run';
-import { ACTIVITIES, timesDone, bestOf } from '../story/activities';
+import { ACTIVITIES, timesDone, bestOf, record } from '../story/activities';
+import { TOURNEY, roundsOf } from '../data/tourney';
 import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
@@ -347,10 +348,17 @@ function talkTo(p: Person) {
   if (n.pet != null) { openHome(); return; }
   if (plotTalk(n)) return;
   if (n.covo) leaderTalk(n.covo);
+  else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
   else if (n.starter && !hasStarter()) starterTalk(n.name || '');
-  else if (n.shop) say(n.lines || [SHOPS[n.shop].hello], n.name, [{ label: 'Compra', fn: function () { openShop(n.shop!); } }, { label: 'No, grazie', fn: null }]);
+  else if (n.shop) {
+    /* the fisherman of Mola also takes you fishing off the pier */
+    var shopOpts: { label: string; fn: (() => void) | null }[] = [{ label: 'Compra', fn: function () { openShop(n.shop!); } }];
+    if (n.shop === 'pesca') shopOpts.push({ label: 'Pesca dal molo', fn: function () { startActivity('pesca', n); } });
+    shopOpts.push({ label: 'No, grazie', fn: null });
+    say(n.lines || [SHOPS[n.shop].hello], n.name, shopOpts);
+  }
   else if (n.gate) gateTalk(n.gate, n.name);
   else if (n.activity) offerActivity(n);
   else if (n.hint) say((n.lines || []).concat(nextStop().tip), n.name);
@@ -372,6 +380,52 @@ function leaderTalk(id: string) {
   var cv0 = COVI[id];
   if (st.beaten[id]) { say(cv0.after, cv0.leader); return; }
   say(cv0.intro, cv0.leader, [{ label: 'Sfida!', fn: function () { challenge(id); } }, { label: 'Più tardi', fn: null }]);
+}
+/* ---------- the friends' tournament at the Bruno Zauli (data/tourney.ts): five friends in a row, then a cup ---------- */
+var tour: { round: number; edition: number; wins: number; host: string } | null = null;
+const CUP = '<svg viewBox="0 0 100 100" width="104" height="104" aria-hidden="true"><path d="M30 18h40v14c0 14-8 24-20 26-12-2-20-12-20-26Z" fill="#ffd166" stroke="#1c2340" stroke-width="4" stroke-linejoin="round"/>' +
+  '<path d="M30 24H18c0 12 6 18 14 18M70 24h12c0 12-6 18-14 18" fill="none" stroke="#1c2340" stroke-width="4"/><path d="M44 58h12v12H44Z" fill="#ffd166" stroke="#1c2340" stroke-width="4"/>' +
+  '<path d="M32 70h36v10H32Z" fill="#e8916a" stroke="#1c2340" stroke-width="4" stroke-linejoin="round"/><path d="M38 26l4 10" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/></svg>';
+function tourneyTalk(host: string, lines: string[]) {
+  if (!cityCovi('formia').every(hasBadge)) { say(lines.concat(['Il torneo è per chi ha vinto i due covi di Formia: torna con le spille di Forchetta e di Costanzo.']), host); return; }
+  var ed = (st.done && st.done.coppa) || 0;
+  say([ed ? 'Il ' + TOURNEY.name + ' ricomincia, edizione numero ' + (ed + 1) + ': stavolta tutti hanno ' + ed * TOURNEY.step + ' livelli in più.'
+    : 'Il ' + TOURNEY.name + ': cinque amici, uno dopo l\'altro, sulla pista del Bruno Zauli. Anche Costanzo e Forchetta vogliono la rivincita.',
+    'Chi li batte tutti vince la coppa e ' + TOURNEY.prize + ' €. Ti iscrivi?'], host,
+    [{ label: 'Iscriviti!', fn: function () { tour = { round: 0, edition: ed, wins: 0, host: host }; tourneyRound(); } }, { label: 'Più tardi', fn: null }]);
+}
+function tourneyRound() {
+  var t = tour!, r = roundsOf(t.edition)[t.round], L = C[r.who];
+  say(['Turno ' + (t.round + 1) + ' di ' + TOURNEY.rounds.length + ': ' + L.name + ', livello ' + r.lv + '.'], t.host, null, function () {
+    say([r.line], r.who, null, function () {
+      var first = firstHuman(), keys = (st.squad as string[]).filter(function (k) { return k !== r.who; }).sort(function (a, b) { return a === first ? -1 : b === first ? 1 : 0; });
+      pickFighter('Chi mandi contro ' + L.name + '?', L.type, keys, function (key) {
+        hide();
+        startBattle({ a: idOf(key), b: r.who, mode: 'cpu', story: { tourney: t.round, key: key, foeLv: r.lv, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
+          sideA: sideOf(key), sideB: foeSide(r.who, r.lv), bag: battleBag() });
+      });
+    });
+  });
+}
+function tourneyAfter(won: boolean, key: string) {
+  var t = tour!, r = roundsOf(t.edition)[t.round], L = C[r.who];
+  if (!won) {
+    tour = null;
+    rewards(key, r.lv, false, true, function () { say([L.name + ' ti ha battuto al turno ' + (t.round + 1) + '. Fuori dal torneo, per stavolta: puoi riprovare quando vuoi.'], t.host, null, function () { record('torneo', t.wins); }); }, true);
+    return;
+  }
+  t.wins++;
+  rewards(key, r.lv, true, true, function () {
+    if (t.round + 1 < TOURNEY.rounds.length) { t.round++; say([L.name + ' è fuori! Avanti il prossimo.'], t.host, null, tourneyRound); return; }
+    tour = null;
+    st.done = st.done || {}; st.done.coppa = (st.done.coppa || 0) + 1; earn(TOURNEY.prize); save(); renderHud();
+    sfx('badge');
+    sheet('<div class="award" role="dialog" aria-modal="true" aria-labelledby="cup-t" style="--tc:var(--t-chiacchiera)"><div class="award-badge">' + CUP + '</div>' +
+      '<h2 id="cup-t">Hai vinto il ' + esc(TOURNEY.name) + '!</h2><p>La coppa del Bruno Zauli' + (t.edition ? ', edizione numero ' + (t.edition + 1) : '') + ', e ' + TOURNEY.prize + ' €. ' +
+      'Al prossimo torneo tutti saranno ' + TOURNEY.step + ' livelli più forti.</p><button class="btn primary" type="button" id="cup-ok">Continua</button></div>', 'result');
+    $('cup-ok').addEventListener('click', function () { closeSheet(); record('torneo', t.wins); });
+    setTimeout(function () { var bt = $('cup-ok'); if (bt) bt.focus(); }, 30);
+  }, true);
 }
 /* people fight people: in a covo it is Antonio, or one of the friends who joined him */
 function challenge(id: string) {
@@ -547,6 +601,7 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   if (!res.won && !res.caught) mentorTip('loss');
   if (res.caught) mentorTip('catch');
   if ((tag.trainer || tag.wild) && fight) { fightAfter(res, key); return; }
+  if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
   if (!cv0) return;
   if (res.won && !st.beaten[tag.covo!]) {

@@ -19,6 +19,8 @@ export interface GameOpts {
   storage?: Record<string, string>;
   time?: number;
   dark?: boolean;
+  /** the player's 'reduce motion' setting (the playtests use it) */
+  reduced?: boolean;
 }
 
 /* The dev server's client, replaced in every page we film: no hot-module socket, so an edit to a file while we
@@ -42,7 +44,7 @@ export async function openGame(browser: Browser, o: GameOpts = {}): Promise<Game
     viewport: o.viewport || { width: 1280, height: 720 },
     deviceScaleFactor: o.scale || 1.5,
     colorScheme: o.dark ? 'dark' : 'light',
-    reducedMotion: 'no-preference',
+    reducedMotion: o.reduced ? 'reduce' : 'no-preference',
     timezoneId: 'Europe/Rome',
     locale: 'it-IT'
   });

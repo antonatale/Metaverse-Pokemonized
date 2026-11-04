@@ -67,6 +67,8 @@ export interface Npc {
   person?: FriendId;
   /** the covo he leads */
   covo?: string;
+  /** organises the friends' tournament at the Bruno Zauli (data/tourney.ts) */
+  tourney?: boolean;
   /** townsfolk: a name, a look picked by seed, and what they say */
   name?: string;
   seed?: number;

@@ -29,8 +29,11 @@ async function fight(r: Run, label: string, shots = 4) {
       continue;
     }
     if (turn < shots) await r.shot(label + '-turn' + turn);
+    /* the computer's choice; if it has no button right now, the first move that can be used */
     const id = await p.evaluate(() => window.UI._debug.suggest());
-    await p.click('#pad .mv[data-id="' + id + '"]');
+    const btn = p.locator('#pad .mv[data-id="' + id + '"]:not([disabled])');
+    if (id && await btn.count()) await btn.click({ timeout: 10_000 });
+    else await p.locator('#pad .mv:not([disabled]):not([hidden])').first().click({ timeout: 10_000 });
   }
   await p.clock.runFor(600);
   await r.shot(label + '-result');
@@ -562,4 +565,69 @@ test('the stones of Telepilo', async ({ browser }) => {
   const st = get('state') as { seen: Record<string, boolean> };
   expect(st.seen['pietra-mura']).toBe(true);
   expect(st.seen['pietra-voce']).toBe(true);
+});
+
+/* a save already in town, with Formia as it is now (positions kept) */
+const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+  seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
+
+/* fishing off the pier with the fisherman of Mola: three casts, a pull right after each bite */
+test('fishing off the pier', async ({ browser }) => {
+  const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 88, y: 41, dir: 'right' }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkTo(p, 'pescatore');
+    await choose(p, 'Pesca dal molo');
+    /* the bites come at 2.7, 3.5 and 2.2 s into each cast; choose() let 0.3 s go, and each catch is shown for 1.3 s */
+    const waits = [2700 - 300 + 100, 3500 - 200 + 100, 2200 - 200 + 100];
+    for (const w of waits) { await p.clock.runFor(w); await p.keyboard.press(' '); await p.clock.runFor(1500); }
+    r.keep('score', await p.textContent('#mg-s'));
+    await r.shot('fishing');
+    await p.click('#mg-x'); await p.clock.runFor(300);
+    await talkThrough(p);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('score'))).toMatch(/^Fine: \d/);
+  const st = get('state') as { done: Record<string, number>; best: Record<string, number> };
+  expect(st.done.pesca).toBe(1);
+  expect(st.best.pesca).toBeGreaterThan(1500);
+});
+
+/* the friends' tournament at the Bruno Zauli: five friends in a row, then the cup, and the next edition is harder */
+test('the friends\' tournament', async ({ browser }) => {
+  /* five whole battles in a row */
+  test.setTimeout(480_000);
+  const strong = { lv: 45, xp: 0 };
+  const r = await play(browser, 'tourney', { seed: 13, storage: inTown({ badges: ['gialosai', 'peggio'], squad: ['antonio', 'forchetta', 'costanzo'], beaten: { circolo: true, piazza: true },
+    lv: { antonio: strong, forchetta: strong, costanzo: strong }, money: 0 }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkTo(p, 'velocista');
+    await choose(p, 'Iscriviti!');
+    for (let round = 0; round < 5; round++) {
+      await talkThrough(p, 20);
+      /* the company: the first one in the list goes */
+      await p.locator('.pick').first().click({ timeout: 5000 });
+      await p.clock.runFor(800);
+      await fight(r, 'round' + round, round === 0 ? 1 : 0);
+      await p.click('#st-go'); await p.clock.runFor(800);
+    }
+    await talkThrough(p, 20);
+    await p.clock.runFor(300);
+    r.keep('cup', await p.locator('.award h2').innerText());
+    await r.shot('cup');
+    await p.click('#cup-ok'); await p.clock.runFor(300);
+    await talkThrough(p, 20);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('cup'))).toContain('Torneo degli amici');
+  const st = get('state') as { done: Record<string, number>; best: Record<string, number>; money: number };
+  expect(st.done.coppa).toBe(1);
+  expect(st.done.torneo).toBe(1);
+  expect(st.best.torneo).toBe(5);
+  expect(st.money).toBeGreaterThanOrEqual(120);
 });

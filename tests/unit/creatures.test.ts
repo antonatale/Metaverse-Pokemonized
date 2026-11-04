@@ -247,3 +247,14 @@ describe('the team and the creatures at home', () => {
     expect(firstHuman()).toBe('forchetta');
   });
 });
+
+describe('the friends\' tournament', () => {
+  it('has five friends who exist, getting stronger, and every edition is harder', async () => {
+    const { TOURNEY, roundsOf } = await import('../../src/data/tourney');
+    expect(TOURNEY.rounds.length).toBe(5);
+    TOURNEY.rounds.forEach((r) => expect(CHARS[r.who]).toBeTruthy());
+    const a = roundsOf(0), b = roundsOf(2);
+    for (let k = 1; k < a.length; k++) expect(a[k].lv).toBeGreaterThan(a[k - 1].lv);
+    expect(b[0].lv).toBe(a[0].lv + 2 * TOURNEY.step);
+  });
+});

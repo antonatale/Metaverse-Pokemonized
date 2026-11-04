@@ -13,8 +13,11 @@ export function offerActivity(n: Npc) {
   const a = activity(n.activity!);
   say(n.lines || ['…'], n.name, [{ label: a.verb, fn: function () { play(a.id, n); } }, { label: 'Più tardi', fn: null }]);
 }
+/** an activity started by someone who also does something else (the fisherman of Mola sells nets and takes you fishing) */
+export function startActivity(id: string, n: Npc) { play(id, n); }
 function play(id: string, n: Npc) {
-  if (id === 'volley') playRally(n, VOLLEY);
+  if (id === 'pesca') fishing(n);
+  else if (id === 'volley') playRally(n, VOLLEY);
   else if (id === 'padel') playRally(n, PADEL);
   else if (id === 'windsurf') windsurf(n);
   else if (id === 'lettino') lettino(n);
@@ -304,4 +307,116 @@ function quiz(n: Npc) {
       say(['Ecco la ' + (d === 'Un analcolico' ? 'bibita' : 'birra') + '. Si comincia!'], n.name, null, function () { ask(0); });
     } };
   }));
+}
+
+/* ---------- fishing off the pier with the fisherman of Mola: three casts, and the float tells you when to pull.
+   The fish bite at fixed moments, with nibbles in between that are not bites yet: pull at the nibble and the bait is
+   gone, wait too long and the fish has eaten it; the quicker the pull after the float goes under, the bigger the
+   fish. No chance in it: a fair game, like the others. ---------- */
+interface Cast { nibbles: number[]; bite: number; fish: string; g: [number, number] }
+const CASTS: Cast[] = [
+  { nibbles: [1.1, 1.9], bite: 2.7, fish: 'un cefalo', g: [600, 1300] },
+  { nibbles: [0.8, 1.6, 2.6], bite: 3.5, fish: 'un\'orata', g: [400, 1100] },
+  { nibbles: [1.4], bite: 2.2, fish: 'una spigola', g: [800, 1900] }
+];
+const PULL = 0.55;
+function fishing(n: Npc) {
+  const best0 = bestOf('pesca');
+  sheet('<div class="award mg" role="dialog" aria-modal="true" aria-labelledby="mg-t">' +
+    '<h2 id="mg-t">Pesca dal molo</h2>' +
+    '<p>Il pescatore ti presta una canna. Guarda il galleggiante: quando va giù, tira (Spazio, o tocca il mare). Se tiri a un assaggio, l\'esca se ne va.</p>' +
+    '<canvas class="mg-court" id="mg-c" width="320" height="140" aria-label="Il mare del porto, con il galleggiante"></canvas>' +
+    '<p class="mg-score" id="mg-s" aria-live="polite">Lancio 1 di ' + CASTS.length + (best0 ? ' · record ' + activity('pesca').score!(best0) : '') + '</p>' +
+    '<button class="btn" type="button" id="mg-x">Basta così</button></div>', 'result');
+  const cv = $('mg-c') as HTMLCanvasElement, c = cv.getContext('2d')!, scoreEl = $('mg-s');
+  const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 320, Hc = 140;
+  cv.width = Wc * dpr; cv.height = Hc * dpr; cv.style.width = '100%'; cv.style.maxWidth = Wc + 'px';
+  const col = { sky: css('--m-sea', '#a7d8f2'), sea: css('--m-sea2', '#79bde6'), foam: css('--m-foam', '#ffffff'), ink: css('--m-ink', '#1f2c6e'), stone: css('--m-stone', '#e4dfd2'), red: css('--red', '#c8372d'), good: css('--good', '#2c9a55') };
+  let k = 0, t = 0, total = 0, over = false, raf = 0, last = performance.now(), state: 'wait' | 'bite' | 'shown' = 'wait', shown = 0, msg = '', catches: string[] = [];
+  const cast = function () { return CASTS[Math.min(k, CASTS.length - 1)]; };
+  /* how far under the float is now: a nibble is a little dip, the bite pulls it right down */
+  function dip(): number {
+    const C = cast();
+    if (state === 'bite') return 14;
+    for (const nb of C.nibbles) if (t >= nb && t < nb + 0.22) return 5 * Math.sin((t - nb) / 0.22 * Math.PI);
+    return 0;
+  }
+  function draw() {
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.fillStyle = col.sky; c.fillRect(0, 0, Wc, 46);
+    c.fillStyle = col.sea; c.fillRect(0, 46, Wc, Hc - 46);
+    c.strokeStyle = col.foam; c.lineWidth = 1.5;
+    for (let r = 0; r < 4; r++) { c.beginPath(); for (let x = 0; x <= Wc; x += 8) { const y = 58 + r * 20 + Math.sin(x / 22 + t * 2 + r) * 2; if (x) c.lineTo(x, y); else c.moveTo(x, y); } c.stroke(); }
+    /* the pier and the rod */
+    c.fillStyle = col.stone; c.fillRect(0, Hc - 24, 90, 24); c.strokeStyle = col.ink; c.lineWidth = 2; c.strokeRect(-2, Hc - 24, 92, 26);
+    c.beginPath(); c.moveTo(70, Hc - 24); c.lineTo(150, 22); c.stroke();
+    const fx0 = 228, fy = 74 + Math.sin(t * 3) * 1.5 + dip();
+    c.lineWidth = 1; c.beginPath(); c.moveTo(150, 22); c.quadraticCurveTo(200, 30, fx0, fy - 8); c.stroke();
+    if (state !== 'shown') {
+      /* the float: red on top, white below the water line */
+      c.beginPath(); c.ellipse(fx0, fy, 6, 8, 0, 0, Math.PI * 2); c.fillStyle = col.foam; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
+      c.beginPath(); c.ellipse(fx0, fy - 3, 6, 5, 0, Math.PI, Math.PI * 2); c.fillStyle = col.red; c.fill(); c.stroke();
+      if (state === 'bite') { c.strokeStyle = col.foam; c.lineWidth = 2; c.beginPath(); c.ellipse(fx0, 82, 14 + (t * 40) % 10, 4, 0, 0, Math.PI * 2); c.stroke(); }
+    } else {
+      /* what came out of the water */
+      const up = Math.min(1, shown * 3), y = 82 - up * 40;
+      c.save(); c.translate(fx0, y); c.rotate(Math.sin(shown * 12) * 0.3);
+      if (msg) { c.fillStyle = col.good; c.beginPath(); c.ellipse(0, 0, 18, 8, 0, 0, Math.PI * 2); c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke(); c.beginPath(); c.moveTo(16, 0); c.lineTo(26, -7); c.lineTo(26, 7); c.closePath(); c.fill(); c.stroke(); c.fillStyle = col.ink; c.beginPath(); c.arc(-10, -2, 1.8, 0, Math.PI * 2); c.fill(); }
+      c.restore();
+    }
+  }
+  function next() {
+    k++; t = 0; state = 'wait'; shown = 0; msg = '';
+    if (k >= CASTS.length) { finish(); return; }
+    scoreEl.textContent = 'Lancio ' + (k + 1) + ' di ' + CASTS.length + ' · finora ' + activity('pesca').score!(total);
+  }
+  function pull() {
+    if (over || state === 'shown') return;
+    const C = cast();
+    if (state === 'bite') {
+      const r = Math.max(0, t - C.bite), g = Math.round((C.g[0] + (C.g[1] - C.g[0]) * Math.max(0, 1 - r / PULL)) / 10) * 10;
+      total += g; msg = C.fish + ' di ' + activity('pesca').score!(g); catches.push(msg);
+      sfx('found');
+    } else { msg = ''; sfx('dodge'); catches.push('niente: era solo un assaggio'); }
+    state = 'shown'; shown = 0;
+    scoreEl.textContent = msg ? 'Preso ' + msg + '!' : 'Troppo presto: l\'esca se n\'è andata.';
+  }
+  function frame(now: number) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!over) {
+      t += dt;
+      const C = cast();
+      if (state === 'wait' && t >= C.bite) { state = 'bite'; sfx('ball'); }
+      if (state === 'bite' && t > C.bite + PULL) { state = 'shown'; shown = 0; msg = ''; catches.push('niente: il pesce ha mangiato l\'esca'); sfx('dodge'); scoreEl.textContent = 'Troppo tardi: il pesce ha mangiato l\'esca.'; }
+      if (state === 'shown') { shown += dt; if (shown > 1.3) next(); }
+    }
+    draw();
+    if (!over) raf = requestAnimationFrame(frame);
+  }
+  function finish() {
+    over = true; cancelAnimationFrame(raf); draw();
+    const better = record('pesca', total);
+    if (better && total > 0) sfx('badge');
+    scoreEl.textContent = 'Fine: ' + activity('pesca').score!(total) + (better && total > 0 ? ' · nuovo record!' : best0 ? ' · record ' + activity('pesca').score!(best0) : '');
+    const x0 = $('mg-x'); x0.textContent = 'Continua'; x0.focus();
+  }
+  const key = function (e: KeyboardEvent) {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'a' || e.key === 'A') {
+      if (over && e.key === 'Enter') return;
+      e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) pull();
+    }
+  };
+  document.addEventListener('keydown', key, true);
+  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); pull(); });
+  $('mg-x').addEventListener('click', function () {
+    const quit = !over;
+    over = true; cancelAnimationFrame(raf);
+    document.removeEventListener('keydown', key, true);
+    closeSheet();
+    if (quit) { say(['Già stanco? Il mare non scappa.'], n.name); return; }
+    say(total ? ['Hai preso: ' + catches.filter(function (x) { return x.indexOf('niente') !== 0; }).join(', ') + '.', total >= 2500 ? 'Mamma mia! Con questi si fa una zuppa per tutta Mola.' : 'Non male. I cefali del porto sono furbi.']
+      : ['Oggi i pesci non abboccano. Succede anche ai pescatori di Mola.'], n.name);
+  });
+  draw();
+  raf = requestAnimationFrame(frame);
 }

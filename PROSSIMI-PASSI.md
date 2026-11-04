@@ -20,10 +20,6 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     veri (una mappa di Torino, il cancello del treno in `data/gates.ts` è già il punto d'aggancio); altre missioni a
     più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
     Maranola a Natale); scelte nei dialoghi che cambiano qualcosa.
-11. **Pesca dal molo** (un'attività per guadagnare: un pescatore sul molo del porto, un mini-gioco a tempo come il
-    windsurf, `ui/activities.ts`) e **rivincite con gli amici** a livello più alto: i capi dei covi, battuti, lasciano
-    il covo e si uniscono ad Antonio (`unless` sull'Npc), quindi la rivincita va fatta altrove, per esempio un torneo
-    al Bruno Zauli dove gli amici lottano a livelli che crescono.
 12. **Da provare a fondo**: tutta la trama giocata dall'inizio alla fine senza salvataggi preparati (i test la
     provano a pezzi), e il bilanciamento delle lotte con Mamurra (Granchione 21, Olivastro 19, Civettona 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
@@ -41,4 +37,5 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 - **La creatura che ti segue trova cose per terra**: euro, tielle, retini, più spesso se il legame è forte.
 - **Niente spoiler** (4 novembre 2026): Cicerone all'inizio non anticipa più Torino e Chicago né il nome di Mamurra; nel menu le tappe future sono «???».
 - **Barre dell'esperienza sempre sulla mappa** (il Primo della compagnia, che si sceglie, e la creatura che segue), **menu in quattro schede**, **squadra di sei creature con le altre a casa** (si vedono nell'appartamento e lì si cambiano), **effetti delle mosse più belli** (scie, onde, stelle, forme di ogni tipo).
+- **Pesca dal molo e Torneo degli amici**: il pescatore di Mola porta a pescare (tre lanci a tempo, il punteggio in grammi); al Bruno Zauli il velocista organizza un torneo di cinque amici di fila, con le rivincite di Costanzo e Forchetta, che a ogni edizione vinta diventa più duro.
 - **Il trailer** (4 novembre 2026): 67 secondi in 1080p, fatto tutto da codice (`npm run promo`, `tools/promo/`): scene giocate dal gioco vero (Formia di giorno e di notte, casa, motorino, erba alta, lotte, cattura, evoluzione, diario, Lamo, Mamurra, Cicerone, abilità, attività, negozi, covi, l'Esame), i sei amici e le 20 creature con gli SVG del gioco, voli in 3D sulla pianta di Formia, il codice vero, e una musica originale sul tema delle lotte.
