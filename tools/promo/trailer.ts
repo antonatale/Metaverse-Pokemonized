@@ -383,7 +383,8 @@ shot(fr(21), fr(22), function (el) {
     cells.forEach(function (c, i) { const t = E.back(span(k.f, 1 + i * 1.3, 9 + i * 1.3)); c.style.transform = 'scale(' + t + ') rotate(' + mix(20, 0, t) + 'deg)'; c.style.opacity = String(clamp(t * 2)); });
   };
 });
-clipShot(fr(22), fr(23), 'sheet', { at: 18, zoom: [1.02, 1.12], origin: '50% 40%', cap: 'Un legame che cresce', hi: TYPE.Cuore });
+clipShot(fr(22), fr(22, 2), 'sheet', { at: 18, zoom: [1.02, 1.12], origin: '50% 40%', cap: 'Un legame che cresce', hi: TYPE.Cuore });
+clipShot(fr(22, 2), fr(23), 'swim', { at: 8, zoom: [1.2, 1.3], origin: '50% 45%', cap: 'Nuota con loro', hi: TYPE.Calma });
 /* the evolution, drawn here: the light takes Polpino, and what it becomes stays a secret */
 shot(fr(23), fr(24), function (el) {
   div(el, 'navy');
@@ -401,7 +402,8 @@ shot(fr(23), fr(24), function (el) {
     showCap(cap, k.f, 32);
   };
 });
-clipShot(fr(24), fr(25), 'sniff', { at: 50, zoom: [1.2, 1.3], origin: '0% 22%', cap: 'Ti segue. E trova cose.', hi: TYPE.Caos });
+clipShot(fr(24), fr(24, 2), 'sniff', { at: 50, zoom: [1.2, 1.3], origin: '0% 22%', cap: 'Trova cose per terra', hi: TYPE.Caos });
+clipShot(fr(24, 2), fr(25), 'sky', { at: 24, zoom: [1, 1.05], cap: 'Vola sopra Formia', hi: TYPE.Calma });
 shot(fr(25), fr(26), function (el) {
   const bg = sceneLayer(el, 'castellone', true);
   div(el, 'shade dark');
@@ -457,8 +459,8 @@ clipShot(fr(32), fr(33), 'skills', { at: 4, zoom: [1.25, 1.3], origin: '50% 45%'
 clipShot(fr(33), fr(33, 2), 'volley', { at: 30, zoom: [1.35, 1.4], origin: '50% 50%', cap: 'Beach volley', hi: TYPE.Calma });
 clipShot(fr(33, 2), fr(34), 'quiz', { at: 10, zoom: [1.4, 1.5], origin: '50% 62%', cap: 'Quiz su Formia', capY: 140, hi: TYPE.Chiacchiera });
 clipShot(fr(34), fr(34, 2), 'gelato', { at: 30, zoom: [1.15, 1.2], origin: '50% 70%', cap: 'Gelato', capY: 150, hi: TYPE.Cuore });
-clipShot(fr(34, 2), fr(35), 'corsa', { at: 4, zoom: [1.1, 1.2], cap: 'Corsa in pineta', hi: '#9ad46a' });
-clipShot(fr(35), fr(35, 2), 'shop', { at: 20, zoom: [1.3, 1.35], origin: '50% 80%', cap: 'Guadagna e spendi', capY: 140, hi: TYPE.Chiacchiera });
+clipShot(fr(34, 2), fr(35), 'tourney', { at: 14, zoom: [1.35, 1.45], origin: '50% 48%', cap: 'Torneo degli amici', capY: 140, hi: TYPE.Chiacchiera });
+clipShot(fr(35), fr(35, 2), 'fishing', { at: 80, zoom: [1.5, 1.6], origin: '50% 50%', cap: 'Vai a pesca', capY: 980, hi: TYPE.Calma });
 clipShot(fr(35, 2), fr(36), 'home', { at: 6, zoom: [1.35, 1.45], origin: '50% 45%', cap: 'Le altre ti aspettano a casa', capY: 140, capSize: 80, hi: TYPE.Cuore });
 clipShot(fr(36), fr(36, 2), 'covo', { at: 60, zoom: [1.3, 1.36], origin: '50% 18%', cap: 'Sfida gli amici nei covi', capSize: 84, hi: TYPE.Caos });
 shot(fr(36, 2), fr(37), function (el) {

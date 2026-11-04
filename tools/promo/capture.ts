@@ -152,7 +152,7 @@ async function move(c: Clip, id?: string) {
 }
 /** plays the battle to its end, without recording */
 async function fightOut(c: Clip) {
-  for (let t = 0; t < 60; t++) { const s = await toPad(c, false); if (s !== 'pad') return s; await move(c); }
+  for (let t = 0; t < 120; t++) { const s = await toPad(c, false, 3000); if (s !== 'pad') return s; await move(c); }
   return '';
 }
 /** patches Math.random in the page: a fixed value, a list of values, or back to the seeded one */
@@ -481,6 +481,50 @@ const CLIPS: Record<string, Shot> = {
     await frames(c, true, 16);
     await goTo(c, 'npc', 'pet-0', true);
     await enter(c, true, 50);
+    await g.close();
+  },
+  /* swimming with Polpino along the Roman tanks of Gianola */
+  async swim(b) {
+    const g = await story(b, late({ ...P('selv-gianola-1', 0, 2), dir: 'left' }));
+    const p = g.page, c = new Clip(p, WORK + '/swim');
+    await p.keyboard.press('ArrowLeft'); await c.run(400);
+    await talkThrough(c);
+    await choose(c, 'Nuota con', false, 6);
+    await frames(c, true, 4); await walkRoute(c, ['left', 'left', 'left', 'left', 'left', 'left'], true); await frames(c, true, 16);
+    await g.close();
+  },
+  /* a gull shows Formia from above */
+  async sky(b) {
+    const g = await story(b, late({ ...P('pescatore', -3, 0), dir: 'down' }));
+    const p = g.page, c = new Clip(p, WORK + '/sky');
+    await frames(c, true, 4); await p.keyboard.press('v'); await frames(c, true, 130);
+    await g.close();
+  },
+  /* fishing off the pier with the fisherman of Mola: the float goes under, a pull, a fish */
+  async fishing(b) {
+    const g = await story(b, late({ ...P('pescatore', -3, 0), dir: 'right' }));
+    const p = g.page, c = new Clip(p, WORK + '/fishing');
+    await talkTo(c, 'pescatore'); await talkThrough(c);
+    await choose(c, 'Pesca dal molo', true, 70);
+    await frames(c, true, 14); await p.keyboard.press(' '); await frames(c, true, 50);
+    await g.close();
+  },
+  /* the friends' tournament: five rounds played quickly, then the cup */
+  async tourney(b) {
+    const strong = { lv: 45, xp: 0 };
+    const g = await story(b, late({ ...P('velocista', -1, 2), dir: 'up', lv: { ...LV, antonio: strong, forchetta: strong, costanzo: strong } }), { seed: 13 });
+    const p = g.page, c = new Clip(p, WORK + '/tourney');
+    await luck(p, null);
+    await talkTo(c, 'velocista'); await talkThrough(c);
+    await choose(c, 'Iscriviti!');
+    for (let round = 0; round < 5; round++) {
+      await talkThrough(c, false, 16, 20);
+      await p.locator('.pick').first().click(); await c.run(800);
+      if (await fightOut(c) !== 'over') throw new Error('round ' + round + ' did not end');
+      await c.run(600); await p.click('#st-go'); await c.run(800);
+    }
+    for (let k = 0; k < 20 && !(await p.locator('#cup-ok').count()); k++) { await p.keyboard.press('Enter'); await c.run(300); }
+    await frames(c, true, 60);
     await g.close();
   },
   /* the whole map of Formia, for the trailer's drone shots */
