@@ -4,7 +4,8 @@ import { fighter } from '../data/fighters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, type ItemId, type SkillId, type Branch } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, type Growth } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, type Growth, type Mon } from '../story/growth';
+import { M } from '../story/maps';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
 import { esc, each, $ } from './dom';
@@ -15,7 +16,7 @@ import { setPace } from '../story/movement';
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
    money, new moves, a new form), the shops, the team and the bag in the menu, Antonio's abilities. */
 
-function tcOf(key: string) { return 'var(--t-' + fighter(idOf(key)).type.toLowerCase() + ')'; }
+export function tcOf(key: string) { return 'var(--t-' + fighter(idOf(key)).type.toLowerCase() + ')'; }
 /** a fighter's picture: a friend's face, or the creature */
 export function portrait(key: string): string {
   var id = idOf(key);
@@ -174,11 +175,16 @@ export function teamHtml(): string {
     var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
     if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
     else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
-    return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
+    var human = !mon, first = human && firstHuman() === key;
+    return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
       '<small>' + esc(c.type + ' · ' + note) + '</small></span>' +
+      (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="In alto sulla mappa, e il primo a scendere in campo nei covi">Fallo Primo</button>' : '') +
       (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
       (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : '') + '</li>';
-  }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') + '</div>' +
+  }).join('') + '</ul>' + (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
+    (homeMons().length || M.id === 'casa' ? '<p class="hint">' + (homeMons().length ? 'A casa ti aspettano ' + homeMons().length + (homeMons().length === 1 ? ' creatura' : ' creature') + '. ' : '') +
+      'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
+      (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</div>' +
     '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella'] as ItemId[]).map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
     }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
@@ -190,6 +196,33 @@ export function wireTeam(reopen: () => void) {
     b.addEventListener('click', function () { setLead(b.getAttribute('data-lead')!); save(); closeSheet(); reopen(); });
   });
   each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
+  each(document.querySelectorAll('[data-first]'), function (b) {
+    b.addEventListener('click', function () { setFirst(b.getAttribute('data-first')!); save(); renderHud(); closeSheet(); reopen(); });
+  });
+  each(document.querySelectorAll('[data-home-open]'), function (b) { b.addEventListener('click', function () { openHome(reopen); }); });
+}
+
+/* ---------- the creatures at home: Antonio's flat keeps the ones not travelling with him ---------- */
+export function openHome(back?: () => void) {
+  var row = function (m: Mon, home: boolean, blocked: boolean) {
+    var key = m.uid, l = level(key);
+    return '<li style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small></b>' + xpBar(key) +
+      '<small>' + esc(SPECIES[m.sp].type + ' · ' + (hearts(key) ? '♥'.repeat(hearts(key)) : 'ancora diffidente') + (leadCreature() === key ? ' · ti segue' : '')) + '</small></span>' +
+      '<button class="btn small" type="button" data-' + (home ? 'along' : 'stay') + '="' + key + '"' + (blocked ? ' disabled' : '') + '>' + (home ? 'Portala con te' : 'Lasciala a casa') + '</button></li>';
+  };
+  var render = function () {
+    var tm = teamMons(), hm = homeMons();
+    var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hm-t"><div class="sheet-h"><h2 id="hm-t">Le creature a casa</h2><button class="tb-btn" type="button" id="hm-x">Chiudi</button></div>' +
+      '<p class="hint">In viaggio con te ne porti al massimo ' + TEAM_MAX + '. Le altre restano qui nel tuo appartamento e ti aspettano: non crescono, ma non si stancano mai.</p>' +
+      '<div class="pickrow"><h3>In viaggio con te · ' + tm.length + ' su ' + TEAM_MAX + '</h3><ul class="team">' + tm.map(function (m) { return row(m, false, tm.length <= 1); }).join('') + '</ul></div>' +
+      '<div class="pickrow"><h3>A casa · ' + hm.length + '</h3>' + (hm.length ? '<ul class="team">' + hm.map(function (m) { return row(m, true, tm.length >= TEAM_MAX); }).join('') + '</ul>'
+        : '<p class="hint">Per ora nessuna. Lasciane qui una, o catturane altre: quando la squadra è al completo, le nuove vengono a casa da sole.</p>') + '</div></div>');
+    each(o.querySelectorAll('[data-stay]'), function (b) { b.addEventListener('click', function () { if (sendHome(b.getAttribute('data-stay')!)) { sfx('pickup'); save(); renderHud(); render(); } }); });
+    each(o.querySelectorAll('[data-along]'), function (b) { b.addEventListener('click', function () { if (bringAlong(b.getAttribute('data-along')!)) { sfx('pickup'); save(); renderHud(); render(); } }); });
+    $('hm-x').addEventListener('click', function () { closeSheet(); if (back) back(); });
+    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-stay]:not([disabled]), [data-along]:not([disabled])') || $('hm-x'); if (b) b.focus(); }, 30);
+  };
+  render();
 }
 /** the three ways of being Antonio */
 const BRANCH: Record<Branch, string> = { Esploratore: 'Esploratore di Formia', Allenatore: 'Allenatore di creature', Formiano: 'Formiano doc' };

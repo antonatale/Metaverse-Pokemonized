@@ -29,8 +29,8 @@ import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
 import { MAMURRA } from '../story/plot';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond } from '../story/growth';
-import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml } from './team';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress } from '../story/growth';
+import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
@@ -56,6 +56,7 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I soldi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="wpad" id="wpad"><div class="dpad" id="dpad" role="group" aria-label="Direzioni">' +
@@ -94,9 +95,9 @@ function build() {
   $('wpad').addEventListener('contextmenu', function (e) { e.preventDefault(); });
   dlg.addEventListener('click', function (e) { if ((e.target as Element).closest && (e.target as Element).closest('.wopts')) return; if (dialog) advance(); });
   cv.addEventListener('click', function () { if (dialog) advance(); });
-  $('wmenu').addEventListener('click', openMenu);
+  $('wmenu').addEventListener('click', function () { openMenu(); });
   $('wcic').addEventListener('click', function () { mentorTalk(); });
-  $('wgoal').addEventListener('click', openMenu);
+  $('wgoal').addEventListener('click', function () { openMenu('viaggio'); });
   window.addEventListener('resize', resize);
   built = true;
 }
@@ -157,8 +158,36 @@ export function renderGoal() {
   el.setAttribute('aria-label', 'Prossima tappa: ' + h.stop.text + ', ' + h.stop.where + (here ? ': sei arrivato' : '') + '. Apri il menu');
   if (fresh && !reduced) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); clearTimeout(goalFlash); goalFlash = setTimeout(function () { el.classList.remove('new'); }, 1600); }
 }
+/* ---------- the bars in the corner: the first of the company and the creature at his side, always on the way to the next level ---------- */
+var barKeys = '', barAt = 0, barShown: Record<string, { lv: number; pct: number }> = {};
+function renderBars() {
+  var el = $('wbars');
+  if (!el) return;
+  var keys = [firstHuman()], lead = leadCreature();
+  if (lead) keys.push(lead);
+  if (keys.join() !== barKeys) {
+    barKeys = keys.join(); barShown = {};
+    el.innerHTML = keys.map(function (k) {
+      return '<div class="wbar" data-k="' + k + '" style="--tc:' + tcOf(k) + '"><span class="face">' + portrait(k) + '</span><span class="wbar-t"><b></b><small></small><span class="xpbar"><i></i></span></span></div>';
+    }).join('');
+  }
+  keys.forEach(function (k) {
+    var row = el.querySelector('[data-k="' + k + '"]') as HTMLElement, l = level(k), pct = Math.round(progress(k) * 1000) / 10, was = barShown[k];
+    var bar = row.querySelector('.xpbar i') as HTMLElement;
+    (row.querySelector('b') as HTMLElement).textContent = nameOf(k);
+    (row.querySelector('small') as HTMLElement).textContent = 'Lv ' + l.lv;
+    row.setAttribute('aria-label', nameOf(k) + ', livello ' + l.lv + ', ' + Math.round(pct) + '% verso il prossimo');
+    if (was && l.lv > was.lv) {
+      /* a level up: the bar fills to the end, flashes, and starts again */
+      bar.style.width = '100%';
+      row.classList.remove('lvup'); void row.offsetWidth; row.classList.add('lvup');
+      setTimeout(function () { bar.style.transition = 'none'; bar.style.width = '0%'; void bar.offsetWidth; bar.style.transition = ''; bar.style.width = pct + '%'; }, 650);
+    } else if (!was || was.pct !== pct) bar.style.width = pct + '%';
+    barShown[k] = { lv: l.lv, pct: pct };
+  });
+}
 export function renderHud() {
-  lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal();
+  lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
   $('wmoney').textContent = money() + ' €';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
@@ -315,6 +344,7 @@ function pickUp(it: LostItem) {
 function talkTo(p: Person) {
   p.dir = OPP[st.dir];
   var n = p.n;
+  if (n.pet != null) { openHome(); return; }
   if (plotTalk(n)) return;
   if (n.covo) leaderTalk(n.covo);
   else if (n.wild) wildTalk(p);
@@ -346,7 +376,8 @@ function leaderTalk(id: string) {
 /* people fight people: in a covo it is Antonio, or one of the friends who joined him */
 function challenge(id: string) {
   var cv0 = COVI[id];
-  pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, (st.squad as string[]).slice(), function (key) {
+  var first = firstHuman(), keys = (st.squad as string[]).slice().sort(function (a, b) { return a === first ? -1 : b === first ? 1 : 0; });
+  pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, keys, function (key) {
     hide();
     startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
       sideA: sideOf(key), sideB: foeSide(cv0.leader, cv0.level), bag: battleBag() });
@@ -362,7 +393,7 @@ function safeMoves() { return foundItems().map(function (it) { return it.move; }
 interface Foe { sp: SpeciesId; lv: number; gold?: boolean }
 interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[]; idx: number; foeHp: number | null; down: string[]; hp: Record<string, number> }
 var fight: Fight | null = null;
-function creaturesLeft(f: Fight): string[] { return (st.mons || []).map(function (m) { return m.uid; }).filter(function (k) { return f.down.indexOf(k) < 0; }); }
+function creaturesLeft(f: Fight): string[] { return teamMons().map(function (m) { return m.uid; }).filter(function (k) { return f.down.indexOf(k) < 0; }); }
 /** the next battle of a fight: the one who just won stays in, otherwise Antonio picks one of his creatures still up */
 function fightOn(key?: string) {
   var f = fight!, foe = f.foes[f.idx], sp = SPECIES[foe.sp];
@@ -389,9 +420,10 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
   var f = fight!, foe = f.foes[f.idx], sp = SPECIES[foe.sp], wild = f.kind === 'wild', tr = wild ? null : TRAINERS[f.id];
   if (res.caught) {
     fight = null; wildGone[f.id] = Date.now();
-    addCreature(foe.sp, foe.lv, foe.gold); save();
+    var caught = creatureOf(addCreature(foe.sp, foe.lv, foe.gold)); save();
     sfx('badge');
-    say([sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, foe.lv, true, false); });
+    say(caught && caught.home ? [sp.name + (foe.gold ? ' dorata' : '') + ' è tua, al livello ' + foe.lv + '!', 'La squadra è al completo: ti aspetta a casa, nel tuo appartamento. Lì puoi cambiare chi porti con te.']
+      : [sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, foe.lv, true, false); });
     return;
   }
   if (res.won) {
@@ -551,40 +583,61 @@ function hourHint() {
   var t = sunTimes(new Date()), hm = function (h: number) { var m = Math.round(h * 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); };
   return 'Come fuori: oggi a Formia il sole sorge alle ' + hm(t[0]) + ' e tramonta alle ' + hm(t[1]) + '. Di sera si accendono i lampioni.';
 }
-function openMenu() {
+/* the menu in four tabs: the team (and who leads it), the journey (the tour, the stones, the badges), the diary
+   (things done, things found, the creatures met), the map (and the hour); it opens on the last one used */
+const TABS: { id: string; label: string }[] = [{ id: 'squadra', label: 'Squadra' }, { id: 'viaggio', label: 'Viaggio' }, { id: 'diario', label: 'Diario' }, { id: 'mappa', label: 'Mappa' }];
+var menuTab = 'squadra';
+function openMenu(tab?: string) {
   if (!running || dialog || busy) return;
+  if (typeof tab === 'string') menuTab = tab;
   var city = M.city;
   var badges = cityCovi(city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
     return '<li class="' + (got ? 'got' : '') + '">' + badgeSVG({ color: b.color, mark: b.mark, earned: got }, 40) +
       '<span><b>' + esc(b.name) + '</b><small>' + esc(cv0.name) + ' · ' + esc(C[cv0.leader].name) + (got ? '' : ' · da conquistare') + '</small></span></li>';
   }).join('');
-  sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
-    '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
-    '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
-      return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
-    }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
-    '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (STOPS.length - 1) + '</h3><ul class="wbadge-list diary tour">' + STOPS.map(function (s0) {
+  var panes: Record<string, string> = {
+    squadra: teamHtml(),
+    viaggio: '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (STOPS.length - 1) + '</h3><ul class="wbadge-list diary tour">' + STOPS.map(function (s0) {
+      /* the stops still ahead stay a mystery: only the ones done and the next one are told */
       var done = s0.done(), next = s0 === nextStop();
-      return '<li class="' + (done ? 'got' : next ? 'next' : '') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '·') + '</span><span><b>' + esc(s0.text) + '</b><small>' +
-        esc(s0.where + (done ? ' · fatto' : next ? ' · prossima tappa' : '')) + '</small></span></li>';
-    }).join('') + '</ul></div>' +
-      stonesHtml() + teamHtml() + dexHtml() +
-    '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
-    '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
-      var got = !!st.found[it.id], nm = ITEMS[it.move].name;
-      return '<li class="' + (got ? 'got' : '') + '">' + itemSVG(ITEMS[it.move].icon, got, 40) + '<span><b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b><small>' +
-        esc(got ? it.text + ' Nelle lotte della Storia non si perde più.' : 'Perso da qualche parte in città.') + '</small></span></li>';
-    }).join('') + '</ul></div>' +
-    '<div class="pickrow"><h3>Diario di Formia</h3><ul class="wbadge-list diary">' + ACTIVITIES.map(function (a) {
+      return '<li class="' + (done ? 'got' : next ? 'next' : 'secret') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '?') + '</span><span><b>' + esc(done || next ? s0.text : '???') + '</b><small>' +
+        esc(done ? s0.where + ' · fatto' : next ? s0.where + ' · prossima tappa' : 'da scoprire') + '</small></span></li>';
+    }).join('') + '</ul></div>' + stonesHtml() +
+      '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>',
+    diario: '<div class="pickrow"><h3>Diario di Formia</h3><ul class="wbadge-list diary">' + ACTIVITIES.map(function (a) {
       var n = timesDone(a.id), b = bestOf(a.id);
       return '<li class="' + (n ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + (n ? n + '×' : '·') + '</span><span><b>' + esc(a.name) + '</b><small>' +
         esc(a.where + (n ? ' · fatto ' + (n === 1 ? 'una volta' : n + ' volte') + (b != null && a.score ? ' · record ' + a.score(b) : '') : ' · ancora da fare')) + '</small></span></li>';
     }).join('') + '</ul></div>' +
-    '<p class="hint">I progressi della storia restano su questo dispositivo.</p>' +
-    '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
-    '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div></div>');
-  townMap($('wm-map'));
+      '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
+        var got = !!st.found[it.id], nm = ITEMS[it.move].name;
+        return '<li class="' + (got ? 'got' : '') + '">' + itemSVG(ITEMS[it.move].icon, got, 40) + '<span><b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b><small>' +
+          esc(got ? it.text + ' Nelle lotte della Storia non si perde più.' : 'Perso da qualche parte in città.') + '</small></span></li>';
+      }).join('') + '</ul></div>' + dexHtml(),
+    mappa: '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
+      '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
+        return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
+      }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
+      '<p class="hint">I progressi della storia restano su questo dispositivo.</p>' +
+      '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
+      '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div>'
+  };
+  sheet('<div class="sheet menu" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
+    '<div class="tabs" role="tablist">' + TABS.map(function (t) {
+      return '<button type="button" role="tab" id="tab-' + t.id + '" data-tab="' + t.id + '" aria-controls="pane-' + t.id + '" aria-selected="' + (t.id === menuTab) + '">' + esc(t.label) + '</button>';
+    }).join('') + '</div>' +
+    TABS.map(function (t) { return '<div class="tabpane" role="tabpanel" id="pane-' + t.id + '" aria-labelledby="tab-' + t.id + '"' + (t.id === menuTab ? '' : ' hidden') + '>' + panes[t.id] + '</div>'; }).join('') + '</div>');
+  var drawn = false;
+  var show = function (id: string) {
+    menuTab = id;
+    each(document.querySelectorAll('[data-tab]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-tab') === id)); });
+    each(document.querySelectorAll('.tabpane'), function (pn) { (pn as HTMLElement).hidden = pn.id !== 'pane-' + id; });
+    /* the town map is drawn when its tab is open, at the width it has there */
+    if (id === 'mappa' && !drawn) { drawn = true; townMap($('wm-map')); }
+  };
+  each(document.querySelectorAll('[data-tab]'), function (b) { b.addEventListener('click', function () { sfx('click'); show(b.getAttribute('data-tab')!); }); });
+  show(menuTab);
   wireTeam(openMenu);
   each(document.querySelectorAll('[data-ora]'), function (b) {
     b.addEventListener('click', function () {
@@ -602,7 +655,7 @@ function openMenu() {
     resetProgress(); save();
     setMap(st.map); renderHud(); intro();
   });
-  setTimeout(function () { var b = $('wm-x'); if (b) b.focus(); }, 30);
+  setTimeout(function () { var b = document.querySelector<HTMLElement>('[data-tab][aria-selected="true"]') || $('wm-x'); if (b) b.focus(); }, 30);
 }
 
 
@@ -617,6 +670,7 @@ function frame(now: number) {
   update(now);
   checkRun(now);
   renderGoal();
+  if (now - barAt > 300) { barAt = now; renderBars(); }
   drawWorld(now);
 }
 function start() { if (running) return; running = true; raf = requestAnimationFrame(frame); }

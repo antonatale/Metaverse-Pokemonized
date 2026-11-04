@@ -118,3 +118,20 @@
 .mv.locked small { color: var(--red); font-weight: 700; }
 .pad.off .mv.locked { opacity: .4; }
 
+
+/* the bigger shows (ui/effects.ts): sparks, shockwaves, the comic-book star of a hit, the magic of each type */
+.part { will-change: transform, opacity; }
+.part svg { display: block; filter: drop-shadow(0 0 6px rgba(255, 255, 255, .7)); }
+.spark { display: block; width: 18px; height: 5px; border-radius: 3px; background: #fffbe6; box-shadow: 0 0 6px #ffe45c, 0 0 0 1.5px #1c2340; }
+.puff { display: block; width: 22px; height: 22px; border-radius: 50%; background: #e9e4d8; border: 2px solid #1c2340; opacity: .8; }
+.plus { display: block; font: 30px/1 var(--font-display); font-style: normal; color: var(--good); -webkit-text-stroke: 1.5px #1c2340; }
+.pow { width: 120px; height: 120px; z-index: 7; }
+.pow svg { width: 100%; height: 100%; display: block; }
+.ring { width: 100px; height: 100px; border-radius: 50%; border: 6px solid var(--mc); box-shadow: 0 0 18px var(--mc), inset 0 0 12px var(--mc); }
+.ring.flat { height: 34px; border-width: 5px; }
+.trail { display: grid; place-items: center; filter: drop-shadow(0 0 8px var(--mc)); }
+.streak { width: 120px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95), transparent); box-shadow: 0 0 0 1px rgba(28, 35, 64, .35); }
+.glowat { border-radius: 50%; background: radial-gradient(circle, #ffffff 0%, var(--mc) 28%, transparent 68%); mix-blend-mode: screen; }
+.arena.quake, #arena.quake { animation: quake .42s linear; }
+@keyframes quake { 15% { transform: translate(-9px, 4px); } 30% { transform: translate(8px, -5px); } 45% { transform: translate(-6px, -3px); } 60% { transform: translate(5px, 4px); } 80% { transform: translate(-2px, 1px); } }
+@media (prefers-reduced-motion: reduce) { .arena.quake, #arena.quake { animation: none; } }

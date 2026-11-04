@@ -217,3 +217,33 @@ describe('growing up with Antonio', () => {
     expect(creatureOf(uid)!.sp).toBe('muraglione');
   });
 });
+
+describe('the team and the creatures at home', () => {
+  it('takes six creatures along, sends the seventh home, and swaps them both ways', async () => {
+    const { addCreature, creatureOf, teamMons, homeMons, sendHome, bringAlong, leadCreature, setLead, team, TEAM_MAX, firstHuman, setFirst } = await import('../../src/story/growth');
+    const { st } = await import('../../src/save/story-progress');
+    st.mons = []; st.squad = ['antonio']; delete st.lead; delete st.first;
+    const uids = Array.from({ length: TEAM_MAX + 1 }, () => addCreature('cicalina', 5));
+    expect(teamMons().length).toBe(TEAM_MAX);
+    expect(creatureOf(uids[TEAM_MAX])!.home).toBe(true);
+    expect(team()).not.toContain(uids[TEAM_MAX]);
+    /* a full team can't take another one along; one less, and it can */
+    expect(bringAlong(uids[TEAM_MAX])).toBe(false);
+    setLead(uids[2]);
+    expect(sendHome(uids[2])).toBe(true);
+    expect(leadCreature()).toBe(uids[0]);
+    expect(bringAlong(uids[TEAM_MAX])).toBe(true);
+    expect(homeMons().map((m) => m.uid)).toEqual([uids[2]]);
+    /* the team never goes empty */
+    teamMons().slice(1).forEach((m) => sendHome(m.uid));
+    expect(teamMons().length).toBe(1);
+    expect(sendHome(teamMons()[0].uid)).toBe(false);
+    /* the first of the company is Antonio, unless a friend who joined him is chosen */
+    expect(firstHuman()).toBe('antonio');
+    setFirst('forchetta');
+    expect(firstHuman()).toBe('antonio');
+    st.squad = ['antonio', 'forchetta'];
+    setFirst('forchetta');
+    expect(firstHuman()).toBe('forchetta');
+  });
+});

@@ -91,3 +91,27 @@ div.pick { cursor: default; }
   background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); font: 14px/1.35 var(--font-body); pointer-events: none; transition: opacity .6s ease; }
 .wtoast b { display: block; font: 17px/1.15 var(--font-display); }
 .wtoast.out { opacity: 0; }
+
+/* the bars in the corner: the first of the company and the creature at his side, on their way to the next level */
+.wbars { position: absolute; z-index: 2; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.wbars:empty { display: none; }
+.wbar { position: relative; display: grid; grid-template-columns: 42px 176px; align-items: center; gap: 8px; padding: 5px 10px 6px 5px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); }
+.wbar .face { width: 42px; height: 42px; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--tc); }
+.wbar .face svg { display: block; width: 100%; height: 100%; }
+.wbar-t b { font: 16px/1.1 var(--font-display); }
+.wbar-t small { margin-left: 6px; font: 700 12px/1 var(--font-body); color: var(--muted); }
+.wbar .xpbar { height: 9px; margin: 4px 0 0; }
+.wbar .xpbar i { background: var(--tc); transition: width .6s ease-out; }
+.wbar.lvup { animation: lvup 1.1s ease-out; }
+.wbar.lvup::after { content: 'Livello +1'; position: absolute; right: 10px; top: -16px; padding: 2px 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--tc); color: var(--on-hl); font: 13px/1.2 var(--font-display); animation: lvtag 1.4s ease-out forwards; }
+@keyframes lvup { 0%, 100% { transform: none; } 25% { transform: scale(1.06); box-shadow: 0 0 0 4px var(--tc), 3px 3px 0 var(--shadow); } }
+@keyframes lvtag { 0% { opacity: 0; transform: translateY(8px); } 15%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .wbar .xpbar i { transition: none; } .wbar.lvup, .wbar.lvup::after { animation: none; } }
+
+/* the menu's tabs */
+.tabs { display: flex; gap: 6px; margin: 2px 0 14px; }
+.tabs [role="tab"] { flex: 1; padding: 9px 6px 7px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); font: 17px/1 var(--font-display); cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); }
+.tabs [role="tab"][aria-selected="true"] { background: var(--t-chiacchiera); color: var(--on-hl); transform: translateY(1px); box-shadow: 1px 1px 0 var(--shadow); }
+.tag-first { padding: 1px 6px; border-radius: 6px; background: var(--t-chiacchiera); color: var(--on-hl); font: 700 11px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+.team li.first { box-shadow: inset 4px 0 0 var(--t-chiacchiera); }
+.tour li.secret { opacity: .6; }

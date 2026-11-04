@@ -97,6 +97,8 @@ export interface Npc {
   when?: { after?: string; until?: string };
   /** a ghost of Formia, drawn see-through (render/svg/cicero.ts) instead of a person */
   ghost?: 'mamurra';
+  /** one of Antonio's creatures waiting at home (its place among them, story/growth.ts homeMons): drawn as that creature */
+  pet?: number;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {

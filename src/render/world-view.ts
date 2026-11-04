@@ -2,7 +2,7 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
@@ -360,6 +360,12 @@ export function drawWorld(now: number) {
       if (gi) people.push({ yb: (p.y + 1) * T + fl, x: p.x * T, img: gi, alpha: 0.85, size: 40 });
       return;
     }
+    if (p.n.pet != null) {
+      /* one of Antonio's creatures, at home: it bounces about, happy */
+      var pet = petAt(p.n.pet), pimg = pet ? creatureImage(pet.sp) : null, bounce = reduced ? 0 : Math.max(0, Math.sin(now / 300 + p.n.pet * 1.7)) * 5;
+      if (pimg) people.push({ yb: (p.y + 1) * T - bounce, x: p.x * T, img: pimg });
+      return;
+    }
     if (p.n.wild) {
       /* a wild creature hops on the spot now and then */
       var img = creatureImage(wildNow(p.n)!.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
@@ -434,7 +440,7 @@ export function preview(el: HTMLElement | null) {
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
   c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
-  var people = m.people.filter(function (p) { return present(p) && !p.n.wild; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
+  var people = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(ME, s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
@@ -448,7 +454,7 @@ export function overview(id?: string, s?: number): string {
   s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
   c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
-  var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
+  var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
   m.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: paintObject('item', P0, s!, { item: ITEMS[it.move].icon, up: UP.item }) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, null, 0);

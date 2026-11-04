@@ -14,7 +14,7 @@ import { reduced, esc, each, $ } from './dom';
 import { ico } from './icons';
 import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
-import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner } from './effects';
+import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, spell, rise, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
@@ -193,12 +193,13 @@ function hpEvent(ev: Extract<BattleEvent, { k: 'hp' }>) {
   uiHp[i] = ev.hp;
   if (ev.dmg) {
     m.classList.remove('shake', 'flash'); void m.offsetWidth; m.classList.add('shake', 'flash');
+    impact(i, ev.crit);
     var p = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
     fx('−' + ev.dmg, 'num ' + (ev.crit ? 'crit' : ''), p[0], p[1], 1150);
     setHp(i, ev.hp);
     return sleep(600).then(function () { m.classList.remove('shake', 'flash'); });
   }
-  if (!ev.quiet) m.classList.add('glow');
+  if (!ev.quiet) { m.classList.add('glow'); healing(i); }
   var q = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
   fx('+' + ev.heal, 'num heal', q[0], q[1], 1150);
   setHp(i, ev.hp);
@@ -207,10 +208,10 @@ function hpEvent(ev: Extract<BattleEvent, { k: 'hp' }>) {
 function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
   var i = ev.who, j = 1 - i, m = $('m-' + i);
   switch (ev.a) {
-    case 'lunge': return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340);
+    case 'lunge': streaks(i); return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340);
     case 'dodge': return pulse(m, 'dodge', 400);
-    case 'enter': return pulse(m, 'enter', 560);
-    case 'faint': m.classList.add(i === 0 ? 'faint-me' : 'faint-opp'); return sleep(950);
+    case 'enter': sleep(380).then(function () { var e = anchor(i, 0.5, 0.86); ring(e[0], e[1], '#ffffff', 180, 520, true); }); return pulse(m, 'enter', 560);
+    case 'faint': m.classList.add(i === 0 ? 'faint-me' : 'faint-opp'); sleep(500).then(function () { dust(i); }); return sleep(950);
     case 'heal': return Promise.resolve();
     case 'robot': return projectile(i, j, SPR.robot(), 'robot', 620);
     case 'robotFail': return robotFall(i);
@@ -243,11 +244,12 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
     /* the creatures' magic: a rune of their type flies at the foe and bursts; raised on itself, it glows */
     case 'magic': {
       var t = ev.style as TypeName, mc = MAGIC[t] ? MAGIC[t].col : '#ffffff';
-      return projectile(i, j, '<div class="orb" style="--mc:' + mc + '">' + runeIcon(t, 40) + '</div>', '', 520, 34)
+      return spell(i, j, t, mc, '<div class="orb" style="--mc:' + mc + '">' + runeIcon(t, 40) + '</div>')
         .then(function () { return popAt(j, '<div class="burst" style="--mc:' + mc + '"></div>', '', 0.5, 0.24, 420); });
     }
     case 'magicUp': {
       var tu = ev.style as TypeName;
+      rise(i, tu, MAGIC[tu] ? MAGIC[tu].col : '#ffffff');
       return Promise.all([pulse(m, 'glow', 800), popAt(i, '<div class="orb" style="--mc:' + (MAGIC[tu] ? MAGIC[tu].col : '#ffffff') + '">' + runeIcon(tu, 46) + '</div>', '', 0.5, 0.02, 850)]);
     }
     case 'caught': m.classList.add('caught'); return sleep(800);

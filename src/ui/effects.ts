@@ -92,3 +92,126 @@ export function banner(text: string, style?: string) {
   el.style.left = ''; el.style.top = '';
   return sleep(1050);
 }
+
+/* ---------- the bigger shows: sparks, shockwaves, the magic of each type ---------- */
+/* None of these change the battle: they are drawn over the arena while the engine's events play, and they never
+   touch Math.random (a little sequence of their own), so a battle replayed with the same seed is the same battle. */
+let seq = 17;
+function wob(): number { seq = (seq * 1664525 + 1013904223) >>> 0; return seq / 4294967296; }
+/** the little shapes each type's magic is made of (24×24): moons, bolts, stars, notes, hearts */
+const SHAPE: Record<string, string> = {
+  Calma: 'M15 3a9 9 0 1 0 6 15A10 10 0 0 1 15 3Z',
+  Caos: 'M13 2L5 14h6l-2 8 9-13h-6l3-7Z',
+  Cervello: 'M12 2l2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6Z',
+  Chiacchiera: 'M10 18V5l10-2v12M10 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM20 15a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z',
+  Cuore: 'M12 21C5 16 2 12 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 4-3 8-10 13Z'
+};
+function shape(type: string, col: string, size: number): string {
+  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true"><path d="' + (SHAPE[type] || SHAPE.Cervello) + '" fill="' + col + '" stroke="#1c2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+}
+/** pieces flying out from a point, each on its own path, fading */
+export function sparks(x: number, y: number, n: number, html: (k: number) => string, spread: number, dur: number, cls?: string) {
+  if (reduced) return;
+  for (var k = 0; k < n; k++) {
+    var el = fx(html(k), 'part ' + (cls || ''), x, y, 0), a = (k / n) * Math.PI * 2 + wob() * 0.7, d = spread * (0.55 + wob() * 0.6), spin = (wob() - 0.5) * 540;
+    animate(el, [
+      { transform: 'translate(-50%,-50%) scale(.3) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(-50%,-50%) translate(' + Math.cos(a) * d * 0.7 + 'px,' + Math.sin(a) * d * 0.7 + 'px) scale(1.1) rotate(' + spin * 0.6 + 'deg)', opacity: 1, offset: 0.55 },
+      { transform: 'translate(-50%,-50%) translate(' + Math.cos(a) * d + 'px,' + (Math.sin(a) * d + 18) + 'px) scale(.7) rotate(' + spin + 'deg)', opacity: 0 }
+    ], { duration: dur * (0.8 + wob() * 0.4), easing: 'cubic-bezier(.15,.8,.3,1)', fill: 'forwards' }).then((function (e: HTMLElement) { return function () { e.remove(); }; })(el));
+  }
+}
+/** a ring that opens out from a point: the shockwave of a spell, the ground under a fighter */
+export function ring(x: number, y: number, col: string, size: number, dur: number, flat?: boolean) {
+  if (reduced) return Promise.resolve();
+  var el = fx('', 'ring' + (flat ? ' flat' : ''), x, y, 0);
+  el.style.setProperty('--mc', col);
+  return animate(el, [
+    { transform: 'translate(-50%,-50%) scale(.15)', opacity: 1 },
+    { transform: 'translate(-50%,-50%) scale(' + size / 100 + ')', opacity: 0 }
+  ], { duration: dur, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards' }).then(function () { el.remove(); });
+}
+/** a hit: a comic-book star on the target and sparks; a critical one shakes the whole arena */
+export function impact(i: number, crit?: boolean) {
+  if (reduced) return;
+  var p = anchor(i, 0.5, i === 0 ? 0.42 : 0.4), big = crit ? 1.35 : 1;
+  var el = fx('<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4l9 25 26-10-12 24 25 9-25 9 12 24-26-10-9 25-9-25-26 10 12-24-25-9 25-9-12-24 26 10Z" fill="#fffbe6" stroke="#1c2340" stroke-width="4" stroke-linejoin="round"/></svg>', 'pow', p[0], p[1], 0);
+  animate(el, [
+    { transform: 'translate(-50%,-50%) scale(.2) rotate(-20deg)', opacity: 1 },
+    { transform: 'translate(-50%,-50%) scale(' + 1.15 * big + ') rotate(6deg)', opacity: 1, offset: 0.3 },
+    { transform: 'translate(-50%,-50%) scale(' + 1.3 * big + ') rotate(10deg)', opacity: 0 }
+  ], { duration: 380, easing: 'ease-out', fill: 'forwards' }).then(function () { el.remove(); });
+  sparks(p[0], p[1], crit ? 12 : 8, function () { return '<i class="spark"></i>'; }, crit ? 120 : 85, 480);
+  if (crit) { pulse(arena, 'quake', 420); flashAt(p[0], p[1], '#ffffff', 520, 300); }
+}
+/** speed lines behind a fighter that lunges */
+export function streaks(i: number) {
+  if (reduced) return;
+  for (var k = 0; k < 4; k++) {
+    var p = anchor(i, i === 0 ? 0.2 : 0.8, 0.25 + k * 0.15), el = fx('', 'streak', p[0], p[1], 0), dir = i === 0 ? -1 : 1;
+    animate(el, [
+      { transform: 'translate(-50%,-50%) scaleX(.2)', opacity: 0 },
+      { transform: 'translate(' + (-50 + dir * 30) + '%,-50%) scaleX(1)', opacity: 0.9, offset: 0.35 },
+      { transform: 'translate(' + (-50 + dir * 90) + '%,-50%) scaleX(.4)', opacity: 0 }
+    ], { duration: 320 + k * 40, easing: 'ease-out', fill: 'forwards' }).then((function (e: HTMLElement) { return function () { e.remove(); }; })(el));
+  }
+}
+/** a glow of light around a point, for a moment (a critical hit: a bigger, white one) */
+export function flashAt(x: number, y: number, col: string, size: number, ms: number) {
+  if (reduced) return;
+  var el = fx('', 'glowat', x, y, 0);
+  el.style.setProperty('--mc', col); el.style.width = el.style.height = size + 'px';
+  animate(el, [{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0.9 }, { transform: 'translate(-50%,-50%) scale(1.15)', opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' }).then(function () { el.remove(); });
+}
+/** a spell: the caster charges, the rune flies with a trail of its type's shapes, a shockwave where it lands */
+export function spell(from: number, to: number, type: string, col: string, orb: string): Promise<unknown> {
+  var c = anchor(from, 0.5, 0.82), t = anchor(to, 0.5, 0.42);
+  ring(c[0], c[1], col, 230, 520, true);
+  sparks(anchor(from, 0.5, 0.45)[0], anchor(from, 0.5, 0.45)[1], 6, function () { return shape(type, col, 18); }, 70, 520);
+  var trail = reduced ? Promise.resolve() : sleep(140).then(function () {
+    for (var k = 0; k < 5; k++) {
+      (function (k: number) {
+        sleep(k * 55).then(function () { return projectile(from, to, '<div class="trail" style="--mc:' + col + ';opacity:' + (0.8 - k * 0.13) + '">' + shape(type, col, 22 - k * 2) + '</div>', '', 520, 34); });
+      })(k);
+    }
+  });
+  return Promise.all([trail, sleep(reduced ? 0 : 140).then(function () { return projectile(from, to, orb, '', 520, 34); })]).then(function () {
+    ring(t[0], t[1], col, 260, 560);
+    sparks(t[0], t[1], 10, function () { return shape(type, col, 22); }, 120, 640);
+    flashAt(t[0], t[1], col, 380, 320);
+  });
+}
+/** a spell on itself: a circle on the ground and its shapes rising */
+export function rise(i: number, type: string, col: string) {
+  if (reduced) return;
+  var g = anchor(i, 0.5, 0.86);
+  ring(g[0], g[1], col, 200, 800, true);
+  for (var k = 0; k < 7; k++) {
+    (function (k: number) {
+      var p = anchor(i, 0.2 + wob() * 0.6, 0.75), el = fx(shape(type, col, 16 + Math.round(wob() * 8)), 'part', p[0], p[1], 0);
+      sleep(k * 70).then(function () {
+        return animate(el, [{ transform: 'translate(-50%,0) scale(.4)', opacity: 0 }, { transform: 'translate(-50%,-40px) scale(1)', opacity: 1, offset: 0.35 }, { transform: 'translate(-50%,-130px) scale(.6)', opacity: 0 }],
+          { duration: 900, easing: 'ease-out', fill: 'forwards' });
+      }).then(function () { el.remove(); });
+    })(k);
+  }
+}
+/** a puff of dust where a fighter falls */
+export function dust(i: number) {
+  if (reduced) return;
+  var p = anchor(i, 0.5, 0.92);
+  sparks(p[0], p[1], 7, function () { return '<i class="puff"></i>'; }, 70, 700);
+}
+/** a heal: green crosses rising */
+export function healing(i: number) {
+  if (reduced) return;
+  for (var k = 0; k < 6; k++) {
+    (function (k: number) {
+      var p = anchor(i, 0.25 + wob() * 0.5, 0.7), el = fx('<i class="plus">+</i>', 'part', p[0], p[1], 0);
+      sleep(k * 90).then(function () {
+        return animate(el, [{ transform: 'translate(-50%,0) scale(.5)', opacity: 0 }, { transform: 'translate(-50%,-30px) scale(1.1)', opacity: 1, offset: 0.4 }, { transform: 'translate(-50%,-90px) scale(.8)', opacity: 0 }],
+          { duration: 850, easing: 'ease-out', fill: 'forwards' });
+      }).then(function () { el.remove(); });
+    })(k);
+  }
+}

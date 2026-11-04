@@ -142,6 +142,7 @@ tools/
   - a ogni capitolo (le tappe del giro, `CHAPTERS`): com'è andato quello finito e la sfida dopo, con quanto è difficile;
   - la prima volta che succede qualcosa (sconfitta, primo livello, primi soldi, notte, creatura selvatica, allenatore, evoluzione, cattura), una volta sola (`TIPS`, segnati in `st.seen['cic-…']`);
   - quando Antonio sembra perso: quattro minuti senza fare un passo avanti nel giro e senza sentirlo (`nudge`), gli ricorda la prossima tappa.
+- **Non anticipa niente:** all'inizio non dice dove porta il viaggio (Torino, Chicago) né chi scava a Gianola, e i capitoli raccontano solo quello che si è appena scoperto. Vale anche per i testi nuovi: la trama si scopre giocando.
 - **Quando lo chiami** (tasto C, scritto anche in basso) dice il capitolo, cosa fare e, per i covi, se la squadra è pronta, confrontando il livello più alto della squadra con quello del capo (`advice`).
 - **Nei dialoghi** quando parla lui compare il suo ritratto.
 
@@ -166,7 +167,7 @@ tools/
 - **Prossima tappa:** è la prima non ancora fatta; si può comunque fare tutto in qualsiasi ordine. Si vede in tre posti:
   - nell'HUD, sotto il nome del posto, con una freccia che punta verso la tappa (`renderGoal` in `ui/story-screen.ts`);
   - sulla mappa, come una freccia gialla che rimbalza sopra la persona, la cosa o la porta (`drawWorld`);
-  - sulla pianta del menu, come una stella; il menu elenca anche tutto il giro.
+  - sulla pianta del menu, come una stella. Il menu (scheda Viaggio) elenca le tappe fatte e la prossima; quelle dopo restano «???», da scoprire, perché la trama non va anticipata.
 - **Dentro casa o al circolo**, la freccia punta all'uscita; fuori, alla porta del posto dove sta la tappa (`heading`).
 - **Chi dà consigli:** alcuni abitanti (la vicina, il tifoso al bar, il marinaio al porto, il bagnino all'Eclipse) hanno `hint: true`. Dopo le loro frasi dicono il `tip` della prossima tappa, con parole loro.
 - **Aggiungere una tappa:** una voce in `STOPS`, nell'ordine del giro. Il test `the tour of Formia` controlla la prima tappa e il conteggio.
@@ -302,6 +303,9 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Selvatiche e allenatori** (`fight`, `fightOn`, `fightAfter` in `ui/story-screen.ts`): scendono in campo le creature di Antonio, una dopo l'altra. Ognuna tiene i PS che le restano, e anche la creatura avversaria tiene i suoi. Quando sono tutte KO, Antonio può scendere in campo lui («Lotto io!») o scappare. Dopo una sconfitta in queste lotte la schermata del risultato ha solo «Continua»: si decide sulla mappa.
   - **Covi:** lottano le persone, cioè Antonio e gli amici che si sono uniti (`st.squad`).
   - Senza creature gli allenatori non sfidano Antonio e le selvatiche non saltano fuori.
+- **La squadra e le creature a casa:** in viaggio con Antonio vanno al massimo sei creature (`TEAM_MAX` in `story/growth.ts`); le altre aspettano nel suo appartamento (`mons[].home`, `teamMons`/`homeMons`). Lì si vedono saltellare (sei posti, `HOME_SPOTS` in `story/maps.ts`, Npc con `pet`); parlando con una si apre «Le creature a casa» (`openHome` in `ui/team.ts`) per lasciarne una o portarla con sé. Una creatura catturata con la squadra piena va a casa da sola. La squadra non resta mai senza creature.
+- **Il Primo della compagnia** (`st.first`, `firstHuman`): la persona che compare nell'angolo della mappa ed è la prima proposta nei covi. Si sceglie nel menu (Squadra → «Fallo Primo»); di base è Antonio.
+- **Le barre nell'angolo** (`renderBars` in `ui/story-screen.ts`): in basso a destra, sempre, il Primo e la creatura che segue Antonio, con livello e barra dell'esperienza. Quando salgono di livello la barra si riempie fino in fondo, lampeggia («Livello +1») e riparte.
 - **Allenatori** (`data/trainers.ts`): persone già sulla mappa con `trainer` sull'Npc. Prima dicono le loro frasi, poi sfidano Antonio con le loro creature una dopo l'altra:
   - l'animatore dell'oratorio (Lv 6–7), il bambino dell'Eclipse (7), lo studente della Vitruvio Pollione (10–11), la guida del museo (17–19), il signore di Castellone con il Muraglione (22–28);
   - in battaglia si legge «L'animatore dell'oratorio manda in campo Olivella!» (`trainer` nella lotta);
@@ -345,8 +349,10 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 
 ## Come gira
 
+- **Il menu della storia** (`openMenu`, `TABS` in `ui/story-screen.ts`): quattro schede. Squadra (la compagnia, il Primo, le creature, la borsa), Viaggio (il giro, le pietre, le spille), Diario (attività, oggetti ritrovati, diario delle creature), Mappa (la pianta, l'ora del giorno, tornare alla home, ricominciare). Si riapre sull'ultima scheda usata; la prossima tappa in alto apre Viaggio.
 - **Lotta:** `ui/battle-screen.ts` chiede al motore gli eventi (`say`, `line`, `expr`, `anim`, `hp`, `sync`, `end`) e li riproduce uno dopo l'altro con una catena di Promise. Il contatore `flow` annulla le riproduzioni vecchie. Le fasi sono `intro → begin → select → busy → begin … → over`. Non c'è un game loop.
 - **Storia:** ha un ciclo `requestAnimationFrame` in `ui/story-screen.ts`: `update(now)` (movimento) e poi `drawWorld(now)` (disegno). Il disegno legge soltanto lo stato della storia.
+- **Gli effetti della lotta** (`ui/effects.ts`): un incantesimo carica l'anello sotto chi lo lancia, vola con una scia delle forme del suo tipo (lune, fulmini, stelle, note, cuori) e scoppia in un'onda e un lampo di luce; un colpo fa la stella da fumetto con le scintille, un critico fa tremare l'arena; le cure fanno salire le croci verdi, chi cade solleva la polvere. Sono solo disegno: non cambiano la lotta, non usano `Math.random` e con il movimento ridotto non ci sono.
 - **Comunicazione tra i moduli:** import diretti. Le variabili condivise vivono nel modulo che le modifica e gli altri le leggono come binding live; dove serve modificarle da fuori ci sono dei setter (`setMap`, `resetProgress`, `halt`, `invalidate`).
 
 ## Audio

@@ -417,9 +417,10 @@ test('the tour of Formia', async ({ browser }) => {
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => String(run.data.find((x) => x.name === n)!.value);
   expect(get(first, 'goal')).toContain('La tua prima creatura');
   expect(get(first, 'tip')).toContain('guardaparco di Gianola');
-  expect(get(first, 'menu')).toContain('Padel con Andrea');
-  expect(get(first, 'menu')).toContain('Sfida Forchetta');
-  expect(get(later, 'goal')).toContain('Chi scava nella villa di Mamurra?');
+  expect(get(first, 'menu')).toContain('La tua prima creatura');
+  expect(get(first, 'menu')).toContain('???');
+  expect(get(first, 'menu')).not.toContain('Sfida Forchetta');
+  expect(get(later, 'goal')).toContain('Chi scava tra le rovine di Gianola?');
   expect(get(later, 'title').toLowerCase()).toContain('3 su 20');
 });
 

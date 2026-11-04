@@ -33,12 +33,15 @@ export interface StoryProgress {
   /** what he carries: nets, tielle, coffees */
   bag?: Record<string, number>;
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them;
-      the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character */
-  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string }[];
+      the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character,
+      and home: true for one that waits at home instead of travelling with him (a team is six at most) */
+  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean }[];
   /** the creature diary: 1 for a species seen, 2 for one he has had */
   dex?: Record<string, number>;
   /** the creature that walks behind him on the map (his first one when missing) */
   lead?: string;
+  /** the first of his company: the person shown in the corner of the map and sent in first in a covo (Antonio when missing) */
+  first?: FriendId;
 }
 
 export function blank(): StoryProgress {

@@ -30,8 +30,32 @@ export function see(sp: SpeciesId) { st.dex = st.dex || {}; if (!st.dex[sp]) st.
 /** a species Antonio has had: caught, chosen, or grown into */
 export function own(sp: SpeciesId) { st.dex = st.dex || {}; st.dex[sp] = 2; }
 export function level(key: string): { lv: number; xp: number } { return (st.lv && st.lv[key]) || { lv: START_LEVEL, xp: 0 }; }
-/** everyone who can fight for Antonio: himself, the friends who joined him, his creatures */
-export function team(): string[] { return (st.squad as string[]).concat((st.mons || []).map(function (m) { return m.uid; })); }
+/** everyone who can fight for Antonio: himself, the friends who joined him, the creatures travelling with him */
+export function team(): string[] { return (st.squad as string[]).concat(teamMons().map(function (m) { return m.uid; })); }
+/* ---------- the team and the creatures at home ---------- */
+/** at most this many creatures travel with Antonio; the others wait at home, in his flat, until he swaps them */
+export const TEAM_MAX = 6;
+export function teamMons(): Mon[] { return (st.mons || []).filter(function (m) { return !m.home; }); }
+export function homeMons(): Mon[] { return (st.mons || []).filter(function (m) { return !!m.home; }); }
+/** home and back: the team keeps at least one creature and never more than TEAM_MAX */
+export function sendHome(uid: string): boolean {
+  var m = creatureOf(uid);
+  if (!m || m.home || teamMons().length <= 1) return false;
+  m.home = true;
+  if (st.lead === uid) delete st.lead;
+  return true;
+}
+export function bringAlong(uid: string): boolean {
+  var m = creatureOf(uid);
+  if (!m || !m.home || teamMons().length >= TEAM_MAX) return false;
+  delete m.home;
+  return true;
+}
+/** the first of the company: shown in the corner of the map, sent in first in a covo */
+export function firstHuman(): string { return st.first && st.squad.indexOf(st.first) >= 0 ? st.first : 'antonio'; }
+export function setFirst(id: string) { if ((st.squad as string[]).indexOf(id) >= 0) st.first = id as typeof st.first; }
+/** where a fighter is on its way to the next level, 0–1 */
+export function progress(key: string): number { var l = level(key); return l.lv >= MAX_LEVEL ? 1 : Math.min(1, l.xp / toNext(l.lv)); }
 export function hasStarter(): boolean { return !!st.seen.starter; }
 
 /** how one of Antonio's fighters comes on in a story battle: its numbers at its level, its moves, his abilities */
@@ -161,7 +185,7 @@ export function keepBag(b: Record<string, number> | undefined) {
 
 /** the creature that walks behind Antonio on the map: the one he picked, or his first */
 export function leadCreature(): string | null {
-  var ms = st.mons || [];
+  var ms = teamMons();
   if (st.lead && ms.some(function (m) { return m.uid === st.lead; })) return st.lead;
   return ms.length ? ms[0].uid : null;
 }
@@ -175,6 +199,8 @@ export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: nu
   /* every creature has its own character; one just caught trusts Antonio a little, the first one more */
   var mon: Mon = { uid: uid, sp: sp, moves: knownAt(sp, lv), bond: bond != null ? bond : 20, nat: nats[Math.floor(Math.random() * nats.length)] };
   if (gold) mon.gold = true;
+  /* a full team: the new one goes home and waits there */
+  if (teamMons().length >= TEAM_MAX) mon.home = true;
   st.mons.push(mon);
   own(sp);
   st.lv = st.lv || {}; st.lv[uid] = { lv: lv, xp: 0 };

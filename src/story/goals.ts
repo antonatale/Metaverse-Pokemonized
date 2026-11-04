@@ -61,7 +61,7 @@ export const STOPS: Stop[] = [
     return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'Il guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
       map: 'formia', x, y, done: () => !!st.seen.starter };
   })(),
-  plot('trama-scavi', 'Chi scava nella villa di Mamurra?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa di Mamurra, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
+  plot('trama-scavi', 'Chi scava tra le rovine di Gianola?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa romana, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
   doing('padel', 'andrea', 'Andrea ti aspetta al Bruno Zauli: ha calcolato che a padel oggi vince lui.'),
   covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
   plot('trama-archivio', 'L\'Archivio della Torre di Mola', 'Torre di Mola', 'Le leggende di Formia le conosce l\'archivista della Torre di Mola: chiedi a lei delle Pietre di Telepilo.', 'archivista', 'trama-archivio'),

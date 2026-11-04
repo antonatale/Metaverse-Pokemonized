@@ -33,6 +33,10 @@ export interface PreparedMap extends MapDef {
 }
 
 export function key(x: number, y: number): string { return x + ',' + y; }
+/** where the creatures at home stand in Antonio's flat, clear of the furniture and of the way to the door */
+const HOME_SPOTS: [number, number, Dir][] = [[6, 2, 'down'], [8, 2, 'down'], [10, 2, 'left'], [7, 3, 'right'], [10, 5, 'left'], [3, 4, 'down']];
+/** the creature waiting at home on a spot, if any */
+export function petAt(i: number) { return (st.mons || []).filter(function (m) { return m.home; })[i] || null; }
 export function prepare(id: string): PreparedMap {
   var m = MAPS[id] as PreparedMap;
   if (m._p) return m;
@@ -57,6 +61,10 @@ export function prepare(id: string): PreparedMap {
   (m.signs || []).forEach(function (s) { m.solid[s.y * m.w + s.x] = 1; m.at[key(s.x, s.y)] = { kind: 'sign', s: s }; });
   (m.warps || []).forEach(function (w) { m.at[key(w.x, w.y)] = { kind: 'warp', w: w }; });
   m.people = (m.npcs || []).map(function (n) { return { n: n, x: n.x, y: n.y, dir: n.dir || 'down' }; });
+  /* Antonio's flat keeps the creatures that are not travelling with him: one on each of these tiles, if there */
+  if (id === 'casa') HOME_SPOTS.forEach(function (c, i) {
+    m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
+  });
   m.items = m.items || []; m.areas = m.areas || [];
   /* a few gulls circle over open sea */
   var sea: number[][] = [];
@@ -86,6 +94,7 @@ export function areaName(): string {
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean {
   var w = p.n.when;
+  if (p.n.pet != null) return !!petAt(p.n.pet);
   return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
 }
