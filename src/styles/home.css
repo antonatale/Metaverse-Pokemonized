@@ -49,13 +49,9 @@
 .quotes dt { font-size: 12.5px; color: var(--muted); }
 .quotes dd { margin: 0; font: 19px/1.25 var(--font-hand); color: var(--ink); }
 
-.foe { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 12px 14px; align-items: center; }
-.foe .btn { margin-top: 10px; }
 .matchups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: 14px; }
 .matchups div { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
 .matchups b { font-weight: 700; }
-.foe b { font: 20px/1.15 var(--font-display); color: var(--ink); }
-.foe p { margin: 4px 0 0; font-size: 14px; }
 
 .cycle { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; }
 .cycle .arr { font: 12px/1 var(--font-body); color: var(--muted); padding: 0 2px; }

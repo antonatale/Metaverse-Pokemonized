@@ -13,35 +13,35 @@ import { startBattle } from './battle-screen';
 import { WORLD } from './story-screen';
 import { soundButton } from './sound';
 
-/* The home page, a page of a squared exercise book: story card, roster, the chosen friend's card,
-   the boss, the type cycle, the libretto. And the setup sheet for a new battle. */
+/* The home page, a page of a squared exercise book: the story first (it is the game), then the free battles between
+   friends: the roster, the chosen friend's card, the type cycle, the libretto. And the setup sheet for a new battle,
+   where the Esame di Controlli is still there to fight, as the test it was in the beta. */
 
 const EXPR_LABEL: Record<string, string> = { smirk: 'Di base', grin: 'Carica', pout: 'Colpito', worried: 'In crisi', sleepy: 'KO', cool: 'Vittoria' };
+/* Antonio's line in the data says where the story ends (the engine's golden file keeps the data as it was):
+   on the home page, before the story, it is told differently */
+const TAGLINE: Partial<Record<FriendId, string>> = { antonio: 'Formia è casa sua' };
 
 /* =================== HOME =================== */
 export function renderHome() {
   var h = '';
-  h += '<header class="masthead"><div class="eyebrow">6 amici · 1 boss</div>' +
+  h += '<header class="masthead"><div class="eyebrow">Formia · amici · creature</div>' +
     '<h1 id="title"><span class="hl">Lotte</span> tra Amici</h1>' +
-    '<p>Lotta a turni con le persone che contano. Ognuno ha il suo tipo, le sue mosse e i suoi difetti.</p>' + soundButton('snd-home') + '</header>';
+    '<p>Un\'avventura a turni nella Formia vera: esplora la città, cattura le creature, sfida gli amici.</p>' + soundButton('snd-home') + '</header>';
   if (WORLD) h += '<section aria-labelledby="s-t"><h2 class="sec-title" id="s-t">Storia <small>Prima tappa: Formia</small></h2><div class="card story" id="story"></div></section>';
-  h += '<section aria-labelledby="r-t"><h2 class="sec-title" id="r-t">Personaggi <small>Tocca per vedere la scheda</small></h2><div class="roster">';
+  h += '<section aria-labelledby="r-t"><h2 class="sec-title" id="r-t">Lotte libere <small>Scegli un amico e sfida chi vuoi</small></h2><div class="roster">';
   ROSTER.forEach(function (id) {
     var c = C[id];
     h += '<button class="slot" type="button" data-id="' + id + '" aria-pressed="' + (id === view.sel) + '" style="--tc:' + tc(id) + '"><span class="face">' + face(id) + '</span><span class="nm">' + esc(c.name) + '</span><span class="nk">' + esc(c.nick !== c.name ? c.nick : c.full) + '</span></button>';
   });
   h += '</div></section>';
   h += '<article class="card" id="card" aria-live="polite"></article>';
-  h += '<section aria-labelledby="f-t"><h2 class="sec-title" id="f-t">Il boss</h2><div class="card foe"><div>' + SPR.esame('idle') + '</div>' +
-    '<div><b>' + esc(C.esame.name) + '</b> ' + typeTag(C.esame.type) + '<p><strong>' + esc(C.esame.passive.name) + '.</strong> ' + esc(C.esame.passive.text) + '</p>' +
-    '<button class="btn" type="button" id="go-exam"></button></div></div></section>';
   h += '<section aria-labelledby="t-t"><h2 class="sec-title" id="t-t">Tipi</h2><div class="cycle" aria-hidden="true">';
   E.TYPE_ORDER.forEach(function (t) { h += typeTag(t) + '<span class="arr">→</span>'; });
   h += typeTag(E.TYPE_ORDER[0]) + '</div>';
   h += '<p class="cycle-note">Ogni tipo batte quello che lo segue: chi ha il vantaggio fa il 12% di danni in più e ne subisce il 10% in meno.</p><ul class="cycle-why">';
   E.TYPE_ORDER.forEach(function (t) {
     var who = ROSTER.filter(function (id) { return C[id].type === t; }).map(function (id) { return C[id].name; });
-    if (t === C.esame.type) who.push('l\'Esame');
     h += '<li>' + typeTag(t) + '<span><b>batte ' + E.TYPES[t].beats + '</b>: ' + E.TYPES[t].why + '.</span><span class="who">' + esc(who.join(', ')) + '</span></li>';
   });
   h += '</ul></section>';
@@ -55,7 +55,6 @@ export function renderHome() {
     b.addEventListener('click', function () { select(b.getAttribute('data-id') as FriendId, true); });
   });
   $('go').addEventListener('click', function () { openSetup(); });
-  $('go-exam').addEventListener('click', function () { startBattle({ a: view.sel, b: 'esame', mode: 'cpu' }); });
 }
 function select(id: FriendId, scroll?: boolean) {
   view.sel = id; view.hero = 'smirk'; view.p1 = id;
@@ -80,7 +79,7 @@ function renderCard() {
   el.style.setProperty('--tc', tc(view.sel));
   el.setAttribute('aria-label', 'Scheda di ' + c.name);
   var h = '<div class="hero"><div class="hero-art">' + bust(view.sel, view.hero, '', '0 6 260 294') + '</div>' +
-    '<div class="hero-id"><h2>' + esc(c.full) + '</h2>' + typeTag(c.type) + (c.nick !== c.name ? '<span class="nick">' + esc(c.nick) + '</span>' : '') + '<span class="from">' + esc(c.tagline) + '</span></div></div>';
+    '<div class="hero-id"><h2>' + esc(c.full) + '</h2>' + typeTag(c.type) + (c.nick !== c.name ? '<span class="nick">' + esc(c.nick) + '</span>' : '') + '<span class="from">' + esc(TAGLINE[view.sel] || c.tagline) + '</span></div></div>';
   h += '<div class="exprs" role="group" aria-label="Espressioni">';
   SPR.EXPRS.forEach(function (x) { h += '<button class="expr" type="button" data-x="' + x + '" aria-pressed="' + (x === view.hero) + '">' + face(view.sel, x) + '<span>' + EXPR_LABEL[x] + '</span></button>'; });
   h += '</div>';
@@ -95,8 +94,8 @@ function renderCard() {
   var beats = ROSTER.filter(function (id) { return E.eff(c.type, C[id].type) > 1; }).map(function (id) { return C[id].name; });
   var loses = ROSTER.filter(function (id) { return E.eff(C[id].type, c.type) > 1; }).map(function (id) { return C[id].name; });
   h += '<div class="block"><h3>Vantaggi di tipo</h3><div class="matchups">' +
-    '<div><b>Forte contro</b><span>' + esc(beats.length ? beats.join(', ') : 'nessuno degli amici') + (E.eff(c.type, C.esame.type) > 1 ? ' e l\'Esame' : '') + '</span></div>' +
-    '<div><b>Debole contro</b><span>' + esc(loses.length ? loses.join(', ') : 'nessuno degli amici') + (E.eff(C.esame.type, c.type) > 1 ? ' e l\'Esame' : '') + '</span></div></div></div>';
+    '<div><b>Forte contro</b><span>' + esc(beats.length ? beats.join(', ') : 'nessuno degli amici') + '</span></div>' +
+    '<div><b>Debole contro</b><span>' + esc(loses.length ? loses.join(', ') : 'nessuno degli amici') + '</span></div></div></div>';
   el.innerHTML = h;
   each(el.querySelectorAll('.expr'), function (b) {
     b.addEventListener('click', function () {
@@ -106,7 +105,6 @@ function renderCard() {
     });
   });
   $('go').textContent = 'Sfida con ' + c.name;
-  $('go-exam').textContent = 'Affronta l\'esame con ' + c.name;
 }
 /* the story card: a still of Formia, the pins won so far, the way in */
 export function renderStory() {
@@ -133,11 +131,13 @@ export function renderLibretto() {
   var el = $('libretto');
   if (!el) return;
   var any = ROSTER.some(function (id) { var r = record.chars[id], x = record.exam[id]; return (r && (r.w || r.l)) || (x && (x.p || x.f)); });
-  var h = '<table class="rec"><thead><tr><th>Personaggio</th><th>Vittorie</th><th>Sconfitte</th><th>Voto esame</th></tr></thead><tbody>';
-  if (!any) h += '<tr><td class="empty" colspan="4">Ancora nessuna lotta. Le vittorie e i voti compaiono qui.</td></tr>';
+  /* the grades of the Esame only for whoever has taken it */
+  var exam = ROSTER.some(function (id) { var x = record.exam[id]; return !!x && (x.p > 0 || x.f > 0); });
+  var h = '<table class="rec"><thead><tr><th>Personaggio</th><th>Vittorie</th><th>Sconfitte</th>' + (exam ? '<th>Voto esame</th>' : '') + '</tr></thead><tbody>';
+  if (!any) h += '<tr><td class="empty" colspan="3">Ancora nessuna lotta libera. Le vittorie compaiono qui.</td></tr>';
   else ROSTER.forEach(function (id) {
     var r = record.chars[id] || { w: 0, l: 0 }, x = record.exam[id];
-    h += '<tr><td>' + esc(C[id].name) + '</td><td>' + r.w + '</td><td>' + r.l + '</td><td>' + examLabel(x) + '</td></tr>';
+    h += '<tr><td>' + esc(C[id].name) + '</td><td>' + r.w + '</td><td>' + r.l + '</td>' + (exam ? '<td>' + examLabel(x) + '</td>' : '') + '</tr>';
   });
   el.innerHTML = h + '</tbody></table>';
 }
@@ -162,7 +162,7 @@ export function renderSetup() {
   h += '<div class="pickrow"><h3>' + (pvp ? 'Giocatore 1' : 'Tu giochi con') + '</h3>' + grid('p1', ROSTER) + '</div>';
   h += '<div class="pickrow"><h3>' + (pvp ? 'Giocatore 2' : 'Contro') + '</h3>' + grid('p2', pvp ? ROSTER : (ROSTER as string[]).concat(['esame'])) + '</div>';
   h += '<div class="vsline">' + esc(C[view.p1].name) + ' <i>vs</i> ' + esc(C[view.p2].name) + '</div>';
-  h += '<p class="hint">' + (pvp ? 'Stesso telefono: a ogni turno sceglie prima il Giocatore 1, poi passa il telefono al Giocatore 2. Le mosse restano segrete fino alla lotta.' : view.p2 === 'esame' ? 'L\'esame dura 12 turni: se non lo batti in tempo, il compito viene ritirato.' : 'Il computer gioca con ' + C[view.p2].name + '. Puoi scegliere anche lo stesso personaggio.') + '</p>';
+  h += '<p class="hint">' + (pvp ? 'Stesso telefono: a ogni turno sceglie prima il Giocatore 1, poi passa il telefono al Giocatore 2. Le mosse restano segrete fino alla lotta.' : view.p2 === 'esame' ? 'L\'Esame di Controlli è la prova della prima versione del gioco: dura 12 turni, e se non lo batti in tempo il compito viene ritirato.' : 'Il computer gioca con ' + C[view.p2].name + '. Puoi scegliere anche lo stesso personaggio.') + '</p>';
   h += '<button class="cta" type="button" id="su-go">Inizia la lotta</button></div>';
   overlay.className = 'overlay';
   overlay.innerHTML = h;

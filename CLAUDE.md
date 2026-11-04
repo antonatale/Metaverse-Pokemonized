@@ -1,6 +1,6 @@
 # Lotte tra Amici
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss (l'Esame di Controlli), più una modalità storia su una mappa di Formia vista dall'alto, dove Antonio cresce di livello, guadagna e spende soldi e ha una squadra di creature di Formia (originali, non i Pokémon veri). Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
+Gioco di lotte a turni in stile Pokémon ambientato a Formia. Il gioco è la modalità storia, su una mappa di Formia vista dall'alto, dove Antonio cresce di livello, guadagna e spende soldi e ha una squadra di creature di Formia (originali, non i Pokémon veri). Dalla prima versione restano le lotte libere tra i sei amici, con l'Esame di Controlli: era la prova della beta, e oggi è solo un avversario facoltativo nella scelta della sfida (non è nella storia e non ha più una sezione sua nella home). Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
 
 **Lavori in corso:** le richieste ancora da fare e le idee per le prossime sessioni sono in `PROSSIMI-PASSI.md`.
 
@@ -84,7 +84,8 @@ src/
   ui/
     sound.ts               l'interruttore audio (home, barra della lotta, HUD della storia) e il clic dei pulsanti
     common.ts              colori dei tipi, ritratti, le sezioni della pagina, scelte del giocatore (view)
-    home.ts                home (scheda del personaggio, boss, tipi, libretto) e foglio "Nuova sfida"
+    home.ts                home (prima la storia, poi le lotte libere: scheda del personaggio, tipi, libretto) e foglio
+                           "Nuova sfida" (dove si può scegliere anche l'Esame)
     battle-screen.ts       schermo di lotta: riproduce gli eventi del motore, passaggio del telefono, risultato, scheda
     effects.ts             effetti della lotta (affondi, proiettili, coriandoli, striscioni…)
     story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu (con il Diario

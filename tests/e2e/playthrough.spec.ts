@@ -102,7 +102,9 @@ for (const [a, b, seed] of MATCHES) {
 test('boss', async ({ browser }) => {
   await play(browser, 'boss', { seed: 42, dark: true }, async (r) => {
     await r.page.click('.slot[data-id="antonio"]');
-    await r.page.click('#go-exam');
+    await r.page.click('#go');
+    await r.page.click('.pick[data-k="p2"][data-id="esame"]');
+    await r.page.click('#su-go');
     await toPrompt(r.page);
     await r.page.click('#info');
     await r.shot('sheet');
