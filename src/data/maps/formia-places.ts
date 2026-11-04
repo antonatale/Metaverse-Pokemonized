@@ -126,6 +126,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'bagnino', near: { place: 'eclipse-spiaggia', dx: 9, dy: 0 }, on: 'sand' },
   { id: 'bambino', near: { place: 'eclipse-spiaggia', dx: 6, dy: 5 }, on: 'sand' },
   { id: 'guardaparco', near: { place: 'mamurra', dx: 3, dy: 1 } },
+  /* the net seller, by the park: the first creature comes from the guardaparco, the nets from him */
+  { id: 'retaio', near: { place: 'mamurra', dx: 1, dy: 1 } },
   { id: 'pescatore', near: { place: 'torre-mola', dx: -2, dy: 3 } },
   /* signs */
   { id: 'sign-stazione', near: { place: 'stazione', dx: -2, dy: 3 } },

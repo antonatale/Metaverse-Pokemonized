@@ -1,4 +1,5 @@
 import { TUNE } from '../data/tuning';
+import { isNet } from '../data/nets';
 import type { BattleState } from './types';
 import { rand } from './rng';
 import { ch, mv, eff, available, hasMod, personaOn, zenOn } from './state';
@@ -25,7 +26,7 @@ export function ai(s: BattleState, i: number): string {
       if (m.fx && m.fx.foe && !hasMod(s, foe, m.fx.foe)) sc += 5;
       if (m.fx && m.fx.conf && !foe.conf) sc += 6 * m.fx.conf;
     } else if (id === 'tiella') sc = Math.min(40, me.max - me.hp) * (hpF < 0.45 ? 1.25 : 0.3);
-    else if (id === 'retino' || id === 'retino2') sc = 0;
+    else if (isNet(id)) sc = 0;
     else if (m.fx) {
       /* a creature: heal when low, raise or drop once, confuse when it is not */
       const missing = me.max - me.hp, fx = m.fx;

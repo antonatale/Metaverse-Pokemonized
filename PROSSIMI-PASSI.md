@@ -13,6 +13,9 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 **Il trailer, dopo ogni aggiornamento:** `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti). Se la novità merita una scena tutta sua (Torino, i poteri delle creature, la pesca…), si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts`: vedi «Il trailer» in `CLAUDE.md`.
 
 
+13. **Dalla lista della sessione del 4 novembre**, ancora da fare: due squadre nel menu (persone e creature, sei posti ciascuna); la schermata delle abilità come albero a tre rami; cose alla Pokémon: il nipote del guardaparco come rivale che sceglie l'iniziale che batte la tua, allenatori che ti vedono e ti sfidano, premi per chi riempie il diario delle creature. (Fatti dalla stessa lista: le magie e la pulsantiera della lotta, i retini; vedi sotto.)
+14. **Il trailer dopo le magie nuove**: le lotte durano di più, quindi gli shot di `tools/promo/trailer.ts` agganciati a un momento di una clip di lotta vanno ricontrollati (vedi «Il trailer» in `CLAUDE.md`).
+
 9. **Creature, il resto**: altre specie selvatiche con disegni nuovi (meduse e ricci in acqua bassa, un pipistrello
    della Grotta della Janara), una mossa che cambia con il terreno, e altri posti da raggiungere con i poteri
    (fatti: nuotare, arrampicarsi, vedere dall'alto).
@@ -24,6 +27,10 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     provano a pezzi), e il bilanciamento delle lotte con Mamurra (Tenaglione 21, Olivastro 19, Sibilla 23: con il simulatore le iniziali al 22 battono l'Olivastro al 19 l'85–100% delle volte, al 20 solo il 16–44%) con `tools/sim-story.ts`.
 
 ## Fatti
+
+- **Le magie delle creature, grandi e diverse per tipo** (4 novembre 2026): il buio intorno, il cerchio magico, il nome della mossa su una fascia; la falce di luna, i fulmini dalla nuvola, la rete di stelle, le onde di canto, il cuore gigante; numeri dei danni grandi con «Superefficace!» e simili, la barra dei PS che scende con la fascia chiara; le mosse delle creature colorate col loro tipo e la runa (`ui/spells.ts`).
+- **I retini** (4 novembre 2026): sei retini di pregio diverso (dal Retino al Retino d'oro, più Nassa e Rete della lampara), il retaio accanto al guardaparco che li vende tutti, cinque retini in regalo con la prima creatura e la spiegazione di come si cattura, la Borsa come riga in lotta con la probabilità, il retino che trema prima di reggere (`data/nets.ts`).
+- **I sesterzi al posto degli euro** (4 novembre 2026): la moneta della Formia romana, con la moneta d'oro nell'HUD; il nome sta in `COIN` (`data/growth.ts`).
 
 - **Cicerone compare solo quando serve** (nuovo capitolo, prima volta di qualcosa, quando Antonio sembra perso da quattro minuti, tasto C), poi svanisce: sulla mappa e nell'angolo.
 - **Il caffè si beve al bancone** del bar di Mola, scegliendo subito chi lo beve; niente più caffè nel menu.

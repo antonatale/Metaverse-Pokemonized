@@ -32,11 +32,11 @@ export const ACTIVITIES: Activity[] = [
 export function activity(id: string): Activity { const a = ACTIVITIES.find((x) => x.id === id); if (!a) throw new Error('no activity ' + id); return a; }
 export function timesDone(id: string): number { return (st.done && st.done[id]) || 0; }
 export function bestOf(id: string): number | undefined { return st.best ? st.best[id] : undefined; }
-/** what each thing to do brings: experience for Antonio, and a few euro for a good score */
+/** what each thing to do brings: experience for Antonio, and a few sesterzi for a good score */
 const XP = 20;
 const PAY: Record<string, (score: number) => number> = {
   volley: (n) => Math.min(10, n), padel: (n) => Math.min(10, n), quiz: (n) => 2 * n, windsurf: (n) => Math.min(12, Math.floor(n / 20)), corsa: () => 4,
-  /* the fisherman buys the catch: a euro every 300 g */
+  /* the fisherman buys the catch: a sesterzio every 300 g */
   pesca: (g) => Math.min(12, Math.floor(g / 300))
 };
 /** the story screen shows what an activity brought (set by ui/story-screen.ts) */

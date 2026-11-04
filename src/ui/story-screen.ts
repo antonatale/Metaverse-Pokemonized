@@ -23,7 +23,7 @@ import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, type Hiding } from '../data/encounters';
-import { SHOPS, meetChance, luck, lastStand } from '../data/growth';
+import { SHOPS, meetChance, luck, lastStand, coins } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
@@ -31,6 +31,7 @@ import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
 import { MAMURRA } from '../story/plot';
 import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf } from '../story/growth';
+import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
 import type { StoryTag } from '../battle';
@@ -56,7 +57,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I soldi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
@@ -135,7 +136,7 @@ function notify(html: string) {
   toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 4200);
 }
 onReward(function (g, cash) {
-  notify('<b>Antonio</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + cash + ' €' : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : ''));
+  notify('<b>Antonio</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + coins(cash) : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : ''));
   if (built) renderHud();
 });
 /* the next stop of the tour, with an arrow that points to it (or to the door that leads to it) */
@@ -191,7 +192,7 @@ export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
   var hint = root.querySelector('.whint');
   if (hint) hint.textContent = 'Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
-  $('wmoney').textContent = money() + ' €';
+  $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
     return '<span title="' + esc(b.name + (got ? '' : ' (da conquistare)')) + '">' + badgeSVG({ color: b.color, mark: b.mark, earned: got }, 28) + '</span>';
@@ -355,6 +356,7 @@ function talkTo(p: Person) {
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
   else if (n.starter && !hasStarter()) starterTalk(n.name || '');
+  else if (n.starter && !st.seen['dono-retini']) netsGift(n.name || '');
   else if (n.shop) {
     /* the fisherman of Mola also takes you fishing off the pier */
     var shopOpts: { label: string; fn: (() => void) | null }[] = [{ label: 'Compra', fn: function () { openShop(n.shop!); } }];
@@ -403,7 +405,7 @@ function treasure(): boolean {
   if (!t || st.x !== t[0] || st.y !== t[1] || st.seen.anfora) return false;
   st.seen.anfora = true; earn(60); save(); renderHud();
   sfx('found'); halt();
-  say(['Sul fondo della vasca romana c\'è qualcosa che luccica…', 'Un\'anfora! Intera, dopo duemila anni nel porticciolo di Gianola.', 'Il museo archeologico la compra per 60 €: un pezzo di Formiae torna a casa.']);
+  say(['Sul fondo della vasca romana c\'è qualcosa che luccica…', 'Un\'anfora! Intera, dopo duemila anni nel porticciolo di Gianola.', 'Il museo archeologico la compra per 60 sesterzi: un pezzo di Formiae torna a casa.']);
   return true;
 }
 /** the view from above: a creature with wings flies up and, for a few seconds, Formia is seen from high up */
@@ -427,7 +429,7 @@ function tourneyTalk(host: string, lines: string[]) {
   var ed = (st.done && st.done.coppa) || 0;
   say([ed ? 'Il ' + TOURNEY.name + ' ricomincia, edizione numero ' + (ed + 1) + ': stavolta tutti hanno ' + ed * TOURNEY.step + ' livelli in più.'
     : 'Il ' + TOURNEY.name + ': cinque amici, uno dopo l\'altro, sulla pista del Bruno Zauli. Anche Costanzo e Forchetta vogliono la rivincita.',
-    'Chi li batte tutti vince la coppa e ' + TOURNEY.prize + ' €. Ti iscrivi?'], host,
+    'Chi li batte tutti vince la coppa e ' + coins(TOURNEY.prize) + '. Ti iscrivi?'], host,
     [{ label: 'Iscriviti!', fn: function () { tour = { round: 0, edition: ed, wins: 0, host: host }; tourneyRound(); } }, { label: 'Più tardi', fn: null }]);
 }
 function tourneyRound() {
@@ -457,7 +459,7 @@ function tourneyAfter(won: boolean, key: string) {
     st.done = st.done || {}; st.done.coppa = (st.done.coppa || 0) + 1; earn(TOURNEY.prize); save(); renderHud();
     sfx('badge');
     sheet('<div class="award" role="dialog" aria-modal="true" aria-labelledby="cup-t" style="--tc:var(--t-chiacchiera)"><div class="award-badge">' + CUP + '</div>' +
-      '<h2 id="cup-t">Hai vinto il ' + esc(TOURNEY.name) + '!</h2><p>La coppa del Bruno Zauli' + (t.edition ? ', edizione numero ' + (t.edition + 1) : '') + ', e ' + TOURNEY.prize + ' €. ' +
+      '<h2 id="cup-t">Hai vinto il ' + esc(TOURNEY.name) + '!</h2><p>La coppa del Bruno Zauli' + (t.edition ? ', edizione numero ' + (t.edition + 1) : '') + ', e ' + coins(TOURNEY.prize) + '. ' +
       'Al prossimo torneo tutti saranno ' + TOURNEY.step + ' livelli più forti.</p><button class="btn primary" type="button" id="cup-ok">Continua</button></div>', 'result');
     $('cup-ok').addEventListener('click', function () { closeSheet(); record('torneo', t.wins); });
     setTimeout(function () { var bt = $('cup-ok'); if (bt) bt.focus(); }, 30);
@@ -526,7 +528,7 @@ function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number]
       if (first) earn(tr!.prize);
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(tr!.win.concat(first ? ['Antonio vince ' + tr!.prize + ' €.'] : []), f.who, null, function () { plotAfter(f.id); });
+      say(tr!.win.concat(first ? ['Antonio vince ' + coins(tr!.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
     }, true);
     return;
   }
@@ -562,10 +564,10 @@ export function stepped(): boolean {
   meet(h);
   return true;
 }
-/** what Antonio's creature digs up: a few euro, a slice of tiella, a net someone lost */
+/** what Antonio's creature digs up: a few sesterzi, a slice of tiella, a net someone lost */
 function sniff(key: string) {
   var r = Math.random(), name = nameOf(key), what: string;
-  if (r < 0.5) { var n = 3 + Math.floor(Math.random() * 10); earn(n); what = n + ' € caduti a qualcuno'; }
+  if (r < 0.5) { var n = 3 + Math.floor(Math.random() * 10); earn(n); what = coins(n) + ' caduti a qualcuno'; }
   else if (r < 0.8) { st.bag = st.bag || {}; st.bag.tiella = (st.bag.tiella || 0) + 1; what = 'una fetta di tiella ancora incartata'; }
   else { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + 1; what = 'un retino dimenticato'; }
   save(); renderHud(); sfx('pickup');
@@ -608,6 +610,15 @@ function trainerTalk(id: string, who: string, lines: string[]) {
     { label: 'Più tardi', fn: null }
   ]);
 }
+/* the nets: the guardaparco gives the first ones and says how to catch; the net maker beside him sells the rest */
+const GIFT_NETS = 5;
+const NETS_TALK = ['Tieni anche questi: ' + GIFT_NETS + ' retini, per cominciare.',
+  'Per catturare una creatura selvatica, prima la fai lottare con la tua e la stanchi. Poi nella lotta, in basso, c\'è la tua Borsa: tocca un retino e lancialo.',
+  'Più la creatura è stanca, più è facile. Il retino trema un po\', e se regge è tua.',
+  'Altri retini, anche più buoni, li vende il retaio qui accanto.'];
+function giveNets() { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + GIFT_NETS; st.seen['dono-retini'] = true; save(); renderHud(); }
+/** a save from before the gift: the guardaparco gives the nets the next time */
+function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, Antonio! Come sta la tua creatura?'].concat(NETS_TALK), who); }
 function starterTalk(who: string) {
   say(['Ciao Antonio! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
     'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
@@ -615,7 +626,8 @@ function starterTalk(who: string) {
     { label: 'Fammeli vedere', fn: function () {
       chooseStarter(function (uid) {
         var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];
-        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori. Con un retino le puoi catturare: il pescatore di Mola li vende.'], who);
+        giveNets();
+        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who);
       });
     } },
     { label: 'Più tardi', fn: null }

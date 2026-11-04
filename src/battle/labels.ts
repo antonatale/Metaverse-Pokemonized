@@ -4,6 +4,7 @@ import type { BattleState, Chip, MoveLabel, Snap } from './types';
 import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn } from './state';
 import { movePower, moveType, magicEff, typesOf } from './damage';
 import { isSpecies } from '../data/creatures';
+import { catchChance } from './moves';
 
 /* What the UI shows, decided here so the UI never needs to know the rules:
    the status chips under each name, and the label of every move button. */
@@ -68,8 +69,14 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     case 'battuta': out.icon = 'mic'; out.sub = '40% di far ridere'; break;
     case 'zen': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Cuffie già in testa' : 'Cuffie, cura 20'; break;
     case 'stronger': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Forte · +20% cuffie' : 'Danno alto'; break;
-    case 'retino': case 'retino2': out.icon = 'ball'; out.sub = 'Cattura' + (id === 'retino2' ? ' meglio' : '') + ' · ' + (s.bag![id] || 0) + ' nella borsa'; break;
-    case 'tiella': out.icon = 'heart'; out.sub = 'Cura 40 PS · ' + (s.bag!.tiella || 0) + ' nella borsa'; break;
+    case 'retino': case 'retino2': case 'argento': case 'oro': case 'nassa': case 'lampara': {
+      /* how likely it is to hold now, in words: the player learns to wear the creature out first */
+      const c = catchChance(s, i, id);
+      out.icon = 'ball'; out.chance = c; out.count = s.bag![id] || 0;
+      out.sub = c >= 0.8 ? 'Quasi certo' : c >= 0.5 ? 'Probabile' : c >= 0.25 ? 'Difficile' : 'Molto difficile';
+      break;
+    }
+    case 'tiella': out.icon = 'heart'; out.count = s.bag!.tiella || 0; out.sub = 'Cura 40 PS'; break;
     default: {
       /* the creatures' moves: what they do, from their numbers (the Esame's keep no label, as they always had) */
       if (!isSpecies(me.id)) break;

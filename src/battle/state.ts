@@ -1,4 +1,5 @@
 import type { Character, FighterId, Move, Stats } from '../data/characters';
+import { NETS, NET_IDS } from '../data/nets';
 import { fighter } from '../data/fighters';
 import { TYPES, type TypeName } from '../data/types';
 import { TUNE } from '../data/tuning';
@@ -22,13 +23,11 @@ function nicked(c: Character, nick: string): Character { const k = c.id + '|' + 
 export function statsOf(side: Side): Stats { return side.stats || ch(side).stats; }
 export function move(c: Character, id: string): Move | null { for (let i = 0; i < c.moves.length; i++) if (c.moves[i].id === id) return c.moves[i]; return null; }
 export function mv(side: Side, id: string): Move | null { return move(ch(side), id) || BAG[id] || null; }
-/** the bag of story battles: nets for a wild creature, a slice of tiella. They go before any move */
-export const BAG: Record<string, Move> = {
-  retino: { id: 'retino', name: 'Retino', kind: 'status', priority: 6, text: 'Prova a catturare la creatura: più è stanca, più è facile.' },
-  retino2: { id: 'retino2', name: 'Retino da pesca', kind: 'status', priority: 6, text: 'Il retino dei pescatori di Mola: cattura molto più facilmente.' },
-  tiella: { id: 'tiella', name: 'Tiella', kind: 'heal', priority: 6, text: 'Una fetta di tiella: recupera 40 PS.' }
-};
-export const BAG_IDS = ['retino', 'retino2', 'tiella'];
+/** the bag of story battles: the nets for a wild creature (data/nets.ts), a slice of tiella. They go before any move */
+export const BAG: Record<string, Move> = {};
+NET_IDS.forEach(function (id) { BAG[id] = { id: id, name: NETS[id].name, kind: 'status', priority: 6, text: NETS[id].text }; });
+BAG.tiella = { id: 'tiella', name: 'Tiella', kind: 'heal', priority: 6, text: 'Una fetta di tiella: recupera 40 PS.' };
+export const BAG_IDS: string[] = (NET_IDS as string[]).concat(['tiella']);
 
 /* ---------- a new battle ---------- */
 function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
@@ -69,6 +68,7 @@ export function newBattle(o: NewBattle): BattleState {
   if (o.wild) s.wild = true;
   if (o.trainer) s.trainer = o.trainer;
   if (o.bag) s.bag = Object.assign({}, o.bag);
+  if (o.night) s.night = true;
   return s;
 }
 

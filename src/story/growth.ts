@@ -4,6 +4,7 @@ import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
 import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
 import type { SideOpts } from '../battle';
+import { NET_IDS } from '../data/nets';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
@@ -190,12 +191,16 @@ export function drinkCoffee(key: string): Growth | null {
   return gainXp(key, 60);
 }
 /** what goes into a battle, and what is left of it after */
-export function battleBag(): Record<string, number> { return { retino: has('retino'), retino2: has('retino2'), tiella: has('tiella') }; }
+/** what can go into a battle: the nets (data/nets.ts) and the tiella */
+export const BAG_ITEMS: ItemId[] = (NET_IDS as ItemId[]).concat(['tiella']);
+export function battleBag(): Record<string, number> { var b: Record<string, number> = {}; BAG_ITEMS.forEach(function (k) { b[k] = has(k); }); return b; }
 export function keepBag(b: Record<string, number> | undefined) {
   if (!b) return;
   st.bag = st.bag || {};
-  ['retino', 'retino2', 'tiella'].forEach(function (k) { st.bag![k] = Math.max(0, b[k] || 0); });
+  BAG_ITEMS.forEach(function (k) { st.bag![k] = Math.max(0, b[k] || 0); });
 }
+/** the nets Antonio has, all kinds together */
+export function netsLeft(): number { return NET_IDS.reduce(function (n, k) { return n + has(k); }, 0); }
 
 /** the creature that walks behind Antonio on the map: the one he picked, or his first */
 export function leadCreature(): string | null {

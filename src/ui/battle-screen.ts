@@ -1,6 +1,5 @@
 import { CHARS as C, type CharId, type FighterId, type FriendId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
-import { MAGIC, runeIcon } from '../render/svg/creatures';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { sfx } from '../audio';
 import { scene, sceneInfo } from '../render/svg/scenes';
@@ -14,8 +13,10 @@ import { reduced, esc, each, $ } from './dom';
 import { ico } from './icons';
 import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
-import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, spell, rise, ring, dust, healing } from './effects';
+import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
+import { castSpell, castSelf, arrive, throwNet, bagIcon } from './spells';
+import { runeIcon } from '../render/svg/creatures';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
 
@@ -36,7 +37,7 @@ function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) 
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
   return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
-    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><span></span></div></div>' +
+    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span></div></div>' +
     '<div class="box-f"><span class="type t-' + c.type.toLowerCase() + '" id="ty-' + i + '">' + c.type + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
 /* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
@@ -61,7 +62,7 @@ function renderShell() {
     '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold) + '</div></div></div>' + boxHtml(0) + '</div>' +
     '<div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="turnbar" id="turnbar" hidden></div>' +
-    '<div class="pad off" id="pad">' + [0, 1, 2, 3, 4, 5, 6].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled' + (k > 3 ? ' hidden' : '') + '></button>'; }).join('') + '</div>';
+    '<div class="pad off" id="pad">' + [0, 1, 2, 3].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled></button>'; }).join('') + '<div class="bagrow" id="bagrow" hidden></div></div>';
   arena = $('arena'); dialog = $('dialog'); whoEl = $('who'); txtEl = $('txt'); pad = $('pad'); turnbar = $('turnbar');
   dialog.addEventListener('click', advance);
   arena.addEventListener('click', advance);
@@ -85,18 +86,37 @@ function renderShell() {
 /* ---------- status ---------- */
 export let uiHp = [0, 0];
 export const shown = { revealed: [true, false] };
-export function setHp(i: number, hp: number) {
+const counting: (ReturnType<typeof setTimeout> | null)[] = [null, null];
+function hpText(i: number, hp: number) { $('hpn-' + i).textContent = shown.revealed[i] ? hp + '/' + S.sides[i].max : '??'; }
+/** the HP bar. On a hit the colour drops at once and a pale band shows what was lost, then follows it down; on a heal
+    the pale band jumps ahead and the colour fills up to it. With no `how`, all at once */
+export function setHp(i: number, hp: number, how?: 'hit' | 'heal') {
   var max = S.sides[i].max, bar = $('hp-' + i), pct = Math.max(0, Math.min(100, hp / max * 100));
-  (bar.firstChild as HTMLElement).style.width = pct + '%';
+  var fill = bar.querySelector('span') as HTMLElement, lag = bar.querySelector('.lag') as HTMLElement | null;
+  fill.style.width = pct + '%';
+  if (lag) { lag.style.transition = how === 'hit' && !reduced ? 'width .75s cubic-bezier(.4, 0, .2, 1) .45s' : 'none'; lag.style.width = pct + '%'; }
   bar.classList.toggle('mid', pct <= 50 && pct > 20);
   bar.classList.toggle('low', pct <= 20);
-  $('hpn-' + i).textContent = shown.revealed[i] ? hp + '/' + max : '??';
+  if (!counting[i]) hpText(i, hp);
+}
+/** the HP number runs down (or up) to the new value, as the bar moves */
+function countHp(i: number, from: number, to: number) {
+  if (counting[i]) clearTimeout(counting[i]!);
+  counting[i] = null;
+  if (reduced || from === to) { hpText(i, to); return; }
+  var t0 = Date.now(), ms = 700;
+  function tick() {
+    var u = Math.min(1, (Date.now() - t0) / ms);
+    hpText(i, Math.round(from + (to - from) * (1 - (1 - u) * (1 - u))));
+    counting[i] = u < 1 ? setTimeout(tick, 30) : null;
+  }
+  tick();
 }
 function renderSync(sn: Snap) {
   for (var i = 0; i < 2; i++) {
     shown.revealed[i] = i === 0 || S.mode === 'pvp' || S.sides[i].id !== 'esame' || sn.revealed[i];
     $('chips-' + i).innerHTML = sn.chips[i].map(function (c) { return '<span class="chip ' + c.c + '" title="' + esc(c.d) + '">' + ico(c.i) + esc(c.t) + '</span>'; }).join('');
-    $('hpn-' + i).textContent = shown.revealed[i] ? uiHp[i] + '/' + S.sides[i].max : '??';
+    if (!counting[i]) hpText(i, uiHp[i]);
     var t = E.sideType(S, i), ty = $('ty-' + i);
     ty.textContent = t; ty.className = 'type t-' + t.toLowerCase();
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
@@ -109,38 +129,59 @@ function renderSync(sn: Snap) {
     $('turn-t').textContent = 'Turno ' + sn.turn + ' di ' + sn.maxTurns;
   } else $('turn-t').textContent = 'Turno ' + sn.turn;
 }
-/** the moves on a side's pad: the ones it knows, then what is in the bag (story battles) */
+/** the moves on a side's pad: the four it knows */
 function padMoves(i: number): Move[] {
   var side = S.sides[i], c = fighter(side.id);
-  var list = c.moves.filter(function (m) { return !side.known || side.known.indexOf(m.id) >= 0; }).slice(0, 4);
-  if (i === 0 && S.bag) E.available(S, i).forEach(function (id) { if (E.BAG[id]) list.push(E.BAG[id]); });
-  return list;
+  return c.moves.filter(function (m) { return !side.known || side.known.indexOf(m.id) >= 0; }).slice(0, 4);
+}
+/** what is in the bag in a story battle: the nets Antonio has (only against a wild creature) and the tiella */
+function bagMoves(i: number): Move[] {
+  if (i !== 0 || !S.bag) return [];
+  return E.BAG_IDS.filter(function (id) { return (S.bag![id] || 0) > 0 && (id === 'tiella' || S.wild); }).map(function (id) { return E.BAG[id]; });
+}
+/* the words for how well a creature's spell works on the one in front (the engine's effLevel) */
+const EFF_WORD: Record<string, string> = { '2': 'Doppio vantaggio', '1': 'Superefficace', '-1': 'Poco efficace', '-2': 'Per niente efficace' };
+function moveButton(b: HTMLButtonElement, i: number, m: Move) {
+  var L = E.moveLabel(S, i, m.id), sub = '', creatureSide = isSpecies(S.sides[i].id), bag = !!E.BAG[m.id];
+  if (L.dots) sub = '<span class="stage">' + L.dots.map(function (on) { return '<i class="' + (on ? 'on' : '') + '"></i>'; }).join('') + '</span>' + esc(L.sub);
+  else sub = (L.icon && !(creatureSide && !bag) ? ico(L.icon) : '') + esc(L.sub);
+  if (L.left != null && !L.locked) sub += '<span class="left">' + L.left + (L.left === 1 ? ' uso' : ' usi') + '</span>';
+  /* a creature's move wears the colour and the rune of its magic, and says how it does against the one in front */
+  var lvl = L.eff != null ? E.effLevel(L.eff) : 0, tag = lvl ? '<i class="eff ' + (lvl > 0 ? 'up' : 'down') + '">' + EFF_WORD[lvl] + '</i>' : '';
+  var rune = creatureSide && !bag ? '<span class="mv-rune">' + (L.mtype ? runeIcon(L.mtype, 34) : ico('spark')) + '</span>' : bag ? '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">' + L.count + '</i>' : '') + '</span>' : '';
+  if (bag) sub = esc(L.sub);
+  b.setAttribute('data-id', m.id);
+  b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (bag ? ' bag' : '') + (rune ? ' cr' : '') + (creatureSide && !bag && !L.mtype ? ' plain' : '');
+  b.style.setProperty('--tc', creatureSide && !bag ? (L.mtype ? TC[L.mtype] : 'var(--t-none)') : TC[E.sideType(S, i)]);
+  b.innerHTML = rune + '<b>' + esc(m.name) + tag + '</b><small>' + sub + '</small>';
+  b.disabled = !padOn || L.locked;
+  b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + (lvl ? EFF_WORD[lvl] + '. ' : '') + L.sub);
 }
 function renderPad(i: number) {
   padSide = i;
   var ms = padMoves(i);
-  each(pad.querySelectorAll<HTMLButtonElement>('.mv'), function (b, k) {
+  each(pad.querySelectorAll<HTMLButtonElement>('.mv[data-k]'), function (b, k) {
     var m = ms[k];
     if (!m) { b.hidden = true; return; }
     b.hidden = false;
-    var L = E.moveLabel(S, i, m.id), sub = '';
-    if (L.dots) sub = '<span class="stage">' + L.dots.map(function (on) { return '<i class="' + (on ? 'on' : '') + '"></i>'; }).join('') + '</span>' + esc(L.sub);
-    else sub = (L.icon ? ico(L.icon) : '') + esc(L.sub);
-    if (L.left != null && !L.locked) sub += '<span class="left">' + L.left + (L.left === 1 ? ' uso' : ' usi') + '</span>';
-    b.setAttribute('data-id', m.id);
-    b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (E.BAG[m.id] ? ' bag' : '');
-    b.style.setProperty('--tc', TC[E.sideType(S, i)]);
-    b.innerHTML = '<b>' + esc(m.name) + '</b><small>' + sub + '</small>';
-    b.disabled = !padOn || L.locked;
-    b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + L.sub);
+    moveButton(b, i, m);
   });
+  /* the bag: one button for each kind of net Antonio carries; against a wild creature with no nets, where to buy them */
+  var row = $('bagrow'), bag = bagMoves(i);
+  row.hidden = !(i === 0 && S.bag && (bag.length || S.wild));
+  if (row.hidden) { row.innerHTML = ''; return; }
+  row.innerHTML = '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
+    '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>');
+  each(row.querySelectorAll<HTMLButtonElement>('.mv'), function (b, k) { moveButton(b, i, bag[k]); });
 }
 function setPad(on: boolean, i?: number | null) { padOn = on; pad.classList.toggle('off', !on); renderPad(i == null ? padSide : i); }
 
 /* ---------- dialogue ---------- */
 let tapHandler: (() => void) | null = null, stopSay: (() => void) | null = null;
 function advance() { if (tapHandler) tapHandler(); }
-function say(text: string, who?: number | null): Promise<void> {
+/** a line in the dialog, typed out; `quick` when a spell follows, which starts as soon as the line is written
+    (the line stays up during the show) */
+function say(text: string, who?: number | null, quick?: boolean): Promise<void> {
   return new Promise<void>(function (resolve) {
     var wEl = whoEl, tEl = txtEl, dEl = dialog;
     if (who != null) { wEl.hidden = false; wEl.textContent = sideName(who); wEl.style.setProperty('--tc', TC[fighter(S.sides[who].id).type]); }
@@ -152,7 +193,7 @@ function say(text: string, who?: number | null): Promise<void> {
     function done() { stop(); dEl.classList.remove('wait'); resolve(); }
     function finish() {
       typing = false; tEl.textContent = full; dEl.classList.add('wait');
-      hold = setTimeout(done, reduced ? 1400 : Math.min(2400, 750 + full.length * 18));
+      hold = setTimeout(done, reduced ? 1400 : quick ? 320 : Math.min(2400, 750 + full.length * 18));
     }
     function step() {
       if (!typing) return;
@@ -188,29 +229,70 @@ function setExpr(i: number, v: string) {
   if (id === 'esame') svg.setAttribute('data-face', EX_MAP[v] || 'idle');
   else svg.setAttribute('data-expr', PX_MAP[v] || v);
 }
+/* the words over a damage number: how well the hit worked (the engine's effLevel) */
+const EFF_TAG: Record<string, string> = { '2': 'Doppio vantaggio!', '1': 'Superefficace!', '-1': 'Poco efficace', '-2': 'Per niente efficace' };
 function hpEvent(ev: Extract<BattleEvent, { k: 'hp' }>) {
-  var i = ev.who, m = $('m-' + i);
+  var i = ev.who, m = $('m-' + i), before = uiHp[i];
   uiHp[i] = ev.hp;
   if (ev.dmg) {
     m.classList.remove('shake', 'flash'); void m.offsetWidth; m.classList.add('shake', 'flash');
     impact(i, ev.crit);
-    var p = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
-    fx('−' + ev.dmg, 'num ' + (ev.crit ? 'crit' : ''), p[0], p[1], 1150);
-    setHp(i, ev.hp);
+    var lvl = E.effLevel(ev.eff == null ? 1 : ev.eff), cls = ev.crit ? ' crit' : '', tags = '';
+    if (ev.crit) tags += '<em>Critico!</em>';
+    if (lvl) { tags += '<em>' + EFF_TAG[lvl] + '</em>'; cls += lvl > 1 ? ' super2' : lvl > 0 ? ' super' : ' weak'; }
+    var p = anchor(i, 0.5, i === 0 ? 0.14 : 0.08);
+    fx(tags + '<b>−' + ev.dmg + '</b>', 'num' + cls, p[0], p[1], 1500);
+    setHp(i, ev.hp, 'hit'); countHp(i, before, ev.hp);
     return sleep(600).then(function () { m.classList.remove('shake', 'flash'); });
   }
   if (!ev.quiet) { m.classList.add('glow'); healing(i); }
-  var q = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
-  fx('+' + ev.heal, 'num heal', q[0], q[1], 1150);
-  setHp(i, ev.hp);
+  var q = anchor(i, 0.5, i === 0 ? 0.14 : 0.08);
+  fx('<b>+' + ev.heal + '</b>', 'num heal', q[0], q[1], 1400);
+  setHp(i, ev.hp, 'heal'); countHp(i, before, ev.hp);
   return sleep(ev.quiet ? 350 : 650).then(function () { m.classList.remove('glow'); });
 }
-function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
-  var i = ev.who, j = 1 - i, m = $('m-' + i);
+/** a move of the side's own, by id */
+function moveOf(i: number, id?: string): Move | null {
+  if (!id) return null;
+  var ms = fighter(S.sides[i].id).moves;
+  for (var k = 0; k < ms.length; k++) if (ms[k].id === id) return ms[k];
+  return null;
+}
+/** what the engine's next events say about a spell: it hits (how hard), it misses, or it does no damage */
+function outcomeOf(evs: BattleEvent[], n: number, to: number): { outcome: 'hit' | 'miss' | 'none'; crit: boolean; lvl: number } {
+  for (var k = n; k < evs.length && k < n + 8; k++) {
+    var e = evs[k];
+    if (e.k === 'hp' && e.who === to && e.dmg) return { outcome: 'hit', crit: !!e.crit, lvl: E.effLevel(e.eff == null ? 1 : e.eff) };
+    if (e.k === 'anim' && e.a === 'dodge' && e.who === to) return { outcome: 'miss', crit: false, lvl: 0 };
+    if (e.k === 'sync' || (e.k === 'anim' && (e.a === 'magic' || e.a === 'magicUp'))) break;
+  }
+  return { outcome: 'none', crit: false, lvl: 0 };
+}
+/** after a net: does the engine say the creature is caught? */
+function outcomeHeld(evs: BattleEvent[], n: number): boolean {
+  for (var k = n; k < evs.length && k < n + 4; k++) { var e = evs[k]; if (e.k === 'anim' && e.a === 'caught') return true; if (e.k === 'say') return false; }
+  return false;
+}
+/** a spell comes right after this line (an expression in between does not count) */
+function spellNext(evs: BattleEvent[], n: number): boolean {
+  for (var k = n; k < evs.length && k < n + 3; k++) { var e = evs[k]; if (e.k === 'expr') continue; return e.k === 'anim' && (e.a === 'magic' || e.a === 'magicUp'); }
+  return false;
+}
+/** the side that has just cast a spell: its lunge after a miss is already in the show */
+let lastSpell = -1;
+function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], next: number): Promise<unknown> {
+  var i = ev.who, j = 1 - i, m = $('m-' + i), spelled = lastSpell === i;
+  lastSpell = ev.a === 'magic' ? i : -1;
   switch (ev.a) {
-    case 'lunge': streaks(i); return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340);
+    case 'lunge': if (spelled) return Promise.resolve(); streaks(i); return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340);
     case 'dodge': return pulse(m, 'dodge', 400);
-    case 'enter': sleep(380).then(function () { var e = anchor(i, 0.5, 0.86); ring(e[0], e[1], '#ffffff', 180, 520, true); }); return pulse(m, 'enter', 560);
+    case 'enter': {
+      /* a creature comes on in a burst of its magic; a person just walks in */
+      var eid = S.sides[i].id;
+      if (isSpecies(eid)) arrive(i, SPECIES[eid].type, SPECIES[eid].type2);
+      else sleep(380).then(function () { var e = anchor(i, 0.5, 0.86); ring(e[0], e[1], '#ffffff', 180, 520, true); });
+      return pulse(m, 'enter', 560);
+    }
     case 'faint': m.classList.add(i === 0 ? 'faint-me' : 'faint-opp'); sleep(500).then(function () { dust(i); }); return sleep(950);
     case 'heal': return Promise.resolve();
     case 'robot': return projectile(i, j, SPR.robot(), 'robot', 620);
@@ -240,31 +322,29 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
       if (svg) svg.setAttribute('data-ph', ev.a === 'phOn' ? 'on' : 'off');
       return pulse(m, 'glow', 500);
     case 'notes': notes(i); return sleep(300).then(function () { return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340); });
-    case 'net': return projectile(i, j, '<div class="netball">' + ico('ball') + '</div>', '', 560, 40);
-    /* the creatures' magic: a rune of their type flies at the foe and bursts; raised on itself, it glows */
+    case 'net': return throwNet(i, j, ev.item || 'retino', ev.shakes || 0, outcomeHeld(evs, next));
+    /* the creatures' magic, as a show of its type (ui/spells.ts): it resolves on the hit, so the damage lands on it */
     case 'magic': {
-      var t = ev.style as TypeName, mc = MAGIC[t] ? MAGIC[t].col : '#ffffff';
-      return spell(i, j, t, mc, '<div class="orb" style="--mc:' + mc + '">' + runeIcon(t, 40) + '</div>')
-        .then(function () { return popAt(j, '<div class="burst" style="--mc:' + mc + '"></div>', '', 0.5, 0.24, 420); });
+      var t = ev.style as TypeName, mv = moveOf(i, ev.move), o = outcomeOf(evs, next, j), sid = S.sides[i].id;
+      return castSpell(i, j, { type: mv && mv.plain ? null : t, name: mv ? mv.name : '', power: (mv && mv.power) || 40, sig: !!mv && isSpecies(sid) && SPECIES[sid].sig === mv.id, outcome: o.outcome, crit: o.crit, lvl: o.lvl });
     }
     case 'magicUp': {
-      var tu = ev.style as TypeName;
-      rise(i, tu, MAGIC[tu] ? MAGIC[tu].col : '#ffffff');
-      return Promise.all([pulse(m, 'glow', 800), popAt(i, '<div class="orb" style="--mc:' + (MAGIC[tu] ? MAGIC[tu].col : '#ffffff') + '">' + runeIcon(tu, 46) + '</div>', '', 0.5, 0.02, 850)]);
+      var mu = moveOf(i, ev.move), su = S.sides[i].id;
+      return castSelf(i, ev.style as TypeName, mu ? mu.name : '', !!mu && isSpecies(su) && SPECIES[su].sig === mu.id);
     }
-    case 'caught': m.classList.add('caught'); return sleep(800);
+    case 'caught': if (m.classList.contains('innet')) return sleep(reduced ? 60 : 500); m.classList.add('caught'); return sleep(800);
     default: return Promise.resolve();
   }
 }
-function stepEvent(ev: BattleEvent): Promise<unknown> {
+function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<unknown> {
   cueBattle(ev);
   /* a creature speaking is its cry */
   if (ev.k === 'line') { var sid = S.sides[ev.who].id; if (isSpecies(sid)) sfx('cry-' + SPECIES[sid].art.body); }
   switch (ev.k) {
-    case 'say': return say(ev.text);
+    case 'say': return say(ev.text, null, spellNext(evs, next));
     case 'line': return say(ev.text, ev.who);
     case 'expr': setExpr(ev.who, ev.v); return Promise.resolve();
-    case 'anim': return animEvent(ev);
+    case 'anim': return animEvent(ev, evs, next);
     case 'hp': return hpEvent(ev);
     case 'sync': renderSync(ev); return Promise.resolve();
     default: return Promise.resolve();
@@ -275,7 +355,9 @@ function play(evs: BattleEvent[], my: number): Promise<unknown> {
   function next(): Promise<unknown> {
     if (my !== flow) return Promise.reject(CANCEL);
     if (n >= evs.length) return Promise.resolve();
-    return stepEvent(evs[n++]).then(next);
+    var ev = evs[n++];
+    if (ev.k !== 'anim') lastSpell = ev.k === 'say' || ev.k === 'expr' ? lastSpell : -1;
+    return stepEvent(ev, evs, n).then(next);
   }
   return next();
 }
@@ -426,7 +508,7 @@ function openSheet() {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: !!cfg!.wild && darkness(new Date()) > 0.5 });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -479,7 +561,14 @@ export const UI = {
   /* the computer's choice for the side that has to move, on a copy so the battle's dice stay untouched (playtests) */
   _debug: {
     suggest: function () { return S && S.phase === 'select' && needQ.length ? E.ai(JSON.parse(JSON.stringify(S)), needQ[0]) : null; },
-    battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; }
+    battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; },
+    /* a spell's show on demand, to look at the shows: type (null for a plain move), what happens, who casts */
+    cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; self?: boolean }) {
+      if (!S) return null;
+      var i = from || 0, x = o || {};
+      if (x.self && type) return castSelf(i, type, x.name || 'Prova', !!x.sig);
+      return castSpell(i, 1 - i, { type: type, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0 });
+    }
   }
 };
 
@@ -496,6 +585,6 @@ export function installBattleKeys() {
     if (e.key === 'Escape' && !overlay.hidden && !overlay.classList.contains('result') && !overlay.classList.contains('pass')) { closeOverlay(); return; }
     if (view.screen !== 'battle' || !overlay.hidden) return;
     if (e.key === ' ' || e.key === 'Enter') { if (tapHandler) { e.preventDefault(); advance(); } return; }
-    if (/^[1-7]$/.test(e.key) && padOn) { var m = padMoves(padSide)[+e.key - 1]; if (m) onMove(m.id); }
+    if (/^[1-9]$/.test(e.key) && padOn) { var m = padMoves(padSide).concat(bagMoves(padSide))[+e.key - 1]; if (m) onMove(m.id); }
   });
 }

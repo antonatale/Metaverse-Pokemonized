@@ -15,7 +15,7 @@ export interface Trainer {
   win: string[];
   lose: string[];
   after: string[];
-  /** euro, the first time they are beaten */
+  /** sesterzi, the first time they are beaten */
   prize: number;
 }
 

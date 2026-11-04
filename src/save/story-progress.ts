@@ -28,7 +28,7 @@ export interface StoryProgress {
   lv?: Record<string, { lv: number; xp: number }>;
   /** Antonio's abilities: the grades taken in each */
   skills?: Record<string, number>;
-  /** euro in his pocket */
+  /** sesterzi in his pocket */
   money?: number;
   /** what he carries: nets, tielle, coffees */
   bag?: Record<string, number>;

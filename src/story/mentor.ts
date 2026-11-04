@@ -21,7 +21,7 @@ export const OPENING: string[] = [
   'E non sei l\'unico a cercare. Di notte, tra le rovine di Gianola, qualcuno scava. Cosa cerca? Non lo so ancora. E a me, questo, non piace.',
   'Come si gioca: frecce o WASD per camminare, Invio per parlare con la gente, M per il menu. Nel menu trovi la squadra, la borsa, il diario e la mappa.',
   'Le lotte sono a turni: scegli una mossa alla volta. Le creature lottano con le creature, le persone con le persone. I tipi girano in cerchio (Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma) e chi ha il vantaggio fa più danno.',
-  'Lottando si sale di livello e si guadagnano euro: con gli euro compri retini, tielle e caffè nei negozi della città.',
+  'Lottando si sale di livello e si guadagnano sesterzi, le monete della Formia romana: con quelli compri retini, tielle e caffè.',
   'In alto a sinistra c\'è sempre la prossima tappa, con la freccia. Io resto qui in basso: quando hai un dubbio premi C, o tocca il mio ritratto. Prima tappa: Gianola, dal guardaparco. Andiamo!'
 ];
 
@@ -52,7 +52,7 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
     intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
     done: ['Il sigillo di Telepilo è salvo. Formia ti deve un favore.'] },
   padel: { title: 'Una partita al Bruno Zauli',
-    intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche euro.'],
+    intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche sesterzio.'],
     done: ['Ben giocato. Ogni livello di Antonio vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },
   'covo-circolo': { title: 'Il primo covo: Forchetta',
     intro: ['Ed eccoci alla prima vera sfida: Forchetta, nei campi coperti del Bruno Zauli.', 'È di tipo Calma e di livello 9: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
@@ -80,7 +80,7 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
     done: ['Bene. Un corpo allenato aiuta la mente: lo scrivevo anch\'io.'] },
   'item-portafoglio': { title: 'Il portafoglio sotto l\'ombrellone',
     intro: ['Il portafoglio è sotto un ombrellone dell\'Eclipse. Senza soldi niente retini e niente tielle.'],
-    done: ['Portafoglio al sicuro. Gli euro ti servono nei negozi.'] },
+    done: ['Portafoglio al sicuro: i sesterzi ti servono nei negozi.'] },
   corsa: { title: 'Una corsa in pineta',
     intro: ['Zendavid corre in pineta, a Vindicio. Una corsetta tra i pini, prima dell\'ultima tappa.'],
     done: ['Fiato e gambe: sei pronto per l\'ultima tappa.'] },
@@ -96,10 +96,10 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
 export const TIPS: Record<string, string[]> = {
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
   level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
-  money: ['I primi euro! Il pescatore di Mola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
+  money: ['I primi sesterzi! Il retaio di Gianola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
   power: ['Le creature hanno dei poteri. Quelle del mare ti portano a nuoto, quelle dei muri e degli alberi ti fanno salire sulle mura di Castellone, quelle con le ali ti mostrano Formia dall\'alto (tasto V).', 'Cammina verso il mare o contro le mura: se una tua creatura può aiutarti, te lo dice.'],
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
-  wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure lanciale un retino quando è stanca: più è stanca, più è facile.'],
+  wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure catturala: stancala, poi tocca un retino nella Borsa, sotto le mosse. Più è stanca, più è facile.'],
   trainer: ['Un allenatore: manda le sue creature una dopo l\'altra, e tu le tue. Ognuna tiene i PS che le restano; se cadono tutte, puoi scendere in campo tu.'],
   evolve: ['Hai visto? È la magia dei Lestrigoni: a un certo livello una creatura cambia forma, e diventa più forte.'],
   catch: ['Presa! Le creature catturate entrano nella squadra: nel menu puoi darle un nome e scegliere chi ti segue.'],

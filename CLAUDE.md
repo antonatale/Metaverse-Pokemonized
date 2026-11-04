@@ -40,6 +40,7 @@ src/
     types.ts               i cinque tipi in ciclo (TYPES, TYPE_ORDER)
     tuning.ts              numeri di bilanciamento (TUNE, K, CRIT)
     items.ts               le cose che Antonio perde (ITEMS) e dove le ritrova (FOUND)
+    nets.ts                i retini per le creature: sei tipi, quanto prendono meglio, quelli per il mare e per la notte
     maps/                  le mappe (index.ts: MAPS) e legend.ts (cosa significa ogni carattere)
       formia.ts            Formia vera: persone, cartelli, oggetti persi, quartieri, motorino (RIDES)
       formia-places.ts     i luoghi con le coordinate reali e i testi (casa, Eclipse, Morgana, stazione…)
@@ -69,7 +70,8 @@ src/
     libretto.ts            vittorie, sconfitte, voti (chiave lotte-tra-amici:libretto:v2)
   render/
     svg/                   ritratti generati da parametri (looks.ts), espressioni, capelli, vestiti, Esame, robot;
-                           badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna
+                           badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna;
+                           nets.ts: i retini (in mano, nella borsa, chiusi per terra)
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
     world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, la notte (lampioni, finestre, faro),
                            anteprima della home, mappa intera
@@ -88,6 +90,7 @@ src/
                            "Nuova sfida" (dove si può scegliere anche l'Esame)
     battle-screen.ts       schermo di lotta: riproduce gli eventi del motore, passaggio del telefono, risultato, scheda
     effects.ts             effetti della lotta (affondi, proiettili, coriandoli, striscioni…)
+    spells.ts              le magie delle creature in lotta, una scena per tipo; il retino lanciato che trema
     story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu (con il Diario
                            di Formia), motorino, ciclo dei frame
     activities.ts          le attività: beach volley, lettino, gelato, quiz da Morgana
@@ -308,7 +311,9 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
     - Esce solo di notte, sotto le mura poligonali di Castellone, quando Antonio ha battuto Mamurra (la fine della trama), finché non lo cattura (`legend` sull'Npc, `legendHere` in `story/maps.ts`).
     - Il retino lo tiene molto più di rado (`catchRate` 0,35).
     - Cicerone ne svela il segreto dopo la vittoria su Mamurra.
-  - **Il retino** si lancia dalla borsa durante la lotta. Più la creatura è stanca, più è facile prenderla; il retino da pesca vale 1,6 volte.
+  - **I retini** (`data/nets.ts`): Retino (×1), Retino da pesca (×1,6), Retino d'argento (×2,2), Retino d'oro (×3,2), e due speciali: la Nassa vale ×3 con le creature di mare (corpo `octo`, `urchin`, `crab`), la Rete della lampara ×3 quando è buio (`night` della lotta, dato dall'ora di Formia). La probabilità è `catchChance` in `battle/moves.ts`: un quarto a PS pieni, quasi sempre verso la fine, per il retino, per il `catchRate` della specie (la leggenda) e per la Mano ferma, al massimo 95%.
+  - **Come si impara:** il guardaparco, quando affida la prima creatura, regala 5 retini e spiega come si cattura (`NETS_TALK` in `ui/story-screen.ts`; a chi ha un salvataggio di prima li dà la volta dopo, `seen['dono-retini']`). Accanto a lui c'è il **retaio** (`retaio` in `formia.ts`, negozio `reti`), che vende tutti i retini; il pescatore di Mola vende retini da pesca, nasse e reti della lampara.
+  - **In lotta** la Borsa è una riga sotto le mosse (`bagrow` in `ui/battle-screen.ts`): un bottone per ogni retino che Antonio ha, con quanti ne restano e quanto è probabile che regga adesso («Molto difficile», «Difficile», «Probabile», «Quasi certo»); contro una selvatica senza retini dice dove comprarli. Tasti da 5 in su. Il retino lo lancia Antonio («Antonio lancia un retino!»): vola, si chiude sulla creatura, cade e trema da 0 a 3 volte (`shakes` nell'evento `net`, dallo stesso tiro che decide, senza tiri in più), poi regge (stelle, la creatura resta dentro) o si apre e la creatura salta fuori.
   - **Scheda di ogni creatura** (Squadra → Scheda, `openCreature` in `ui/team.ts`): numeri al suo livello, mosse, la prossima da imparare, le forme, il nome. Il nome che le dà Antonio (`nick`) vale anche in lotta: il lato ha `nick` e `ch()` restituisce il personaggio con quel nome.
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.
   - **Chi ti segue:** la creatura principale (`st.lead`, altrimenti la prima) cammina un passo dietro Antonio su tutte le mappe, anche dentro, e prende la casella che lui ha appena lasciato (`follower` in `render/world-view.ts`). Dopo una porta, un warp o il motorino si rimette dietro di lui. È solo disegno e non blocca il passo; se Antonio si gira verso di lei e preme Invio, dice il suo verso e come sta (`followerTalk`). Nel menu, Squadra → «Dietro di me», si sceglie chi segue.
@@ -330,8 +335,8 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - in battaglia si legge «L'animatore dell'oratorio manda in campo Olivella!» (`trainer` nella lotta);
   - la prima vittoria paga il premio (`st.beaten['tr-<id>']`), poi c'è sempre la rivincita per l'esperienza.
 - **Economia:**
-  - **Gli euro** (`st.money`, nell'HUD) si guadagnano battendo creature (3 + livello), vincendo un covo la prima volta (80) e con le attività (scambi, risposte giuste, metri di planata).
-  - **I negozi** (`SHOPS`): reti e retini dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).
+  - **I sesterzi** (`st.money`, nell'HUD con la moneta d'oro): la moneta della Formiae romana di Cicerone e di Mamurra, al posto degli euro. Il nome è in un posto solo (`COIN` e `coins()` in `data/growth.ts`, la moneta disegnata è `coin()` in `ui/icons.ts`); il salvataggio non cambia. Si guadagnano battendo creature (3 + livello), vincendo un covo la prima volta (80) e con le attività (scambi, risposte giuste, metri di planata).
+  - **I negozi** (`SHOPS`): tutti i retini dal retaio di Gianola, retini da pesca, nasse e reti della lampara dal pescatore di Mola, la tiella al forno di Castellone, il caffè al bar di Mola (`shop` su Npc o Building).
   - **Cosa fanno:** la tiella cura 40 PS in lotta. Il caffè si beve subito al bancone del bar (`coffee` in `ui/team.ts`): 60 punti esperienza a chi sceglie Antonio, senza passare dal menu. Un caffè già pagato in un salvataggio vecchio si beve lì gratis.
 - **Nel motore** solo le lotte della storia usano queste cose; quelle libere restano identiche e i golden delle 2040 lotte non cambiano.
   - Ogni lato può avere `stats`, `lvl`, `known` (le mosse di una creatura), `perk`, `endure` (il legame: resta a 1 PS una volta, con quella probabilità) e `net` (quanto prendono meglio i suoi retini).
@@ -371,7 +376,12 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Il menu della storia** (`openMenu`, `TABS` in `ui/story-screen.ts`): quattro schede. Squadra (la compagnia, il Primo, le creature, la borsa), Viaggio (il giro, le pietre, le spille), Diario (attività, oggetti ritrovati, diario delle creature), Mappa (la pianta, l'ora del giorno, tornare alla home, ricominciare). Si riapre sull'ultima scheda usata; la prossima tappa in alto apre Viaggio.
 - **Lotta:** `ui/battle-screen.ts` chiede al motore gli eventi (`say`, `line`, `expr`, `anim`, `hp`, `sync`, `end`) e li riproduce uno dopo l'altro con una catena di Promise. Il contatore `flow` annulla le riproduzioni vecchie. Le fasi sono `intro → begin → select → busy → begin … → over`. Non c'è un game loop.
 - **Storia:** ha un ciclo `requestAnimationFrame` in `ui/story-screen.ts`: `update(now)` (movimento) e poi `drawWorld(now)` (disegno). Il disegno legge soltanto lo stato della storia.
-- **Gli effetti della lotta** (`ui/effects.ts`): un incantesimo carica l'anello sotto chi lo lancia, vola con una scia delle forme del suo tipo (lune, fulmini, stelle, note, cuori) e scoppia in un'onda e un lampo di luce; un colpo fa la stella da fumetto con le scintille, un critico fa tremare l'arena; le cure fanno salire le croci verdi, chi cade solleva la polvere. Sono solo disegno: non cambiano la lotta, non usano `Math.random` e con il movimento ridotto non ci sono.
+- **Gli effetti della lotta** (`ui/effects.ts`): un colpo fa la stella da fumetto con le scintille, un critico fa tremare l'arena; le cure fanno salire le croci verdi, chi cade solleva la polvere. Sono solo disegno: non cambiano la lotta, non usano `Math.random` e con il movimento ridotto non ci sono.
+- **Le magie delle creature** (`ui/spells.ts`), grandi e diverse per tipo. Prima la carica, uguale per tutte: l'arena si oscura intorno a chi lancia (su tutto lo schermo quando dietro c'è la scena di Formia), si apre un cerchio magico ai suoi piedi, il nome della mossa attraversa l'arena su una fascia del suo colore (d'oro con «Mossa speciale» per la mossa della forma, `sig`). Poi la magia: Calma una falce di luna che vola girando e lascia il taglio a croce; Caos una nuvola di temporale sopra il bersaglio e tre fulmini; Cervello stelle che girano intorno a chi lancia e chiudono il bersaglio in una rete di luce, poi esplodono; Chiacchiera onde di canto con le note; Cuore un cuore gigante che batte e scoppia in tanti cuori. Una mossa senza tipo è uno scatto e tre graffi. Le mosse più forti e le speciali fanno scene più grandi; un critico o un superefficace hanno un'onda in più, un lampo e la scossa. Una magia senza danno (cala un numero, confonde) fa girare le forme del tipo intorno al bersaglio; una su di sé (sale un numero, cura) fa salire una colonna di luce, anelli e scintille.
+  - **Come si incastra:** l'evento `magic`/`magicUp` del motore porta il tipo (`style`) e la mossa (`move`); `outcomeOf` guarda gli eventi che seguono (danno, critico, quanto è efficace, schivata) senza conoscere le regole, e `castSpell` si risolve sul colpo, così il numero e la barra arrivano lì. La frase «X usa Y!» non aspetta più: la magia parte appena è scritta.
+  - **Il danno** è un numero grande che salta su, con sopra «Critico!», «Superefficace!», «Doppio vantaggio!», «Poco efficace» (i gradi sono `effLevel` del motore, lo stesso per i messaggi). La barra dei PS scende subito e una fascia chiara mostra per un attimo quanto è stato tolto (`--hp-lag`), mentre il numero dei PS scorre fino al valore nuovo.
+  - **Le mosse delle creature** nella pulsantiera hanno il colore e la runa del loro tipo e dicono «Superefficace» o «Poco efficace» contro chi hanno davanti (`eff` di `moveLabel`).
+  - Le creature entrano in lotta con il loro cerchio magico e le loro forme (`arrive`). Per guardarle: `UI._debug.cast('Caos', 'hit', 1)` in una lotta lancia una magia a comando.
 - **Comunicazione tra i moduli:** import diretti. Le variabili condivise vivono nel modulo che le modifica e gli altri le leggono come binding live; dove serve modificarle da fuori ci sono dei setter (`setMap`, `resetProgress`, `halt`, `invalidate`).
 
 ## Audio
@@ -396,6 +406,7 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
 - **Il montaggio** (`trailer.ts`, aperto da `compose.ts` sul server di sviluppo): ogni fotogramma è una funzione del suo numero. Gli shot sono in fila, sui battiti: clip del gioco (`clipShot`, con punto d'inizio `at`, zoom e didascalia), Formia in 3D, titoli in stile adesivo come i bottoni del gioco, le scene disegnate di Formia (`render/svg/scenes.ts`) come sfondi, ritratti e creature con gli SVG del gioco; il codice vero (importato con `?raw`) sta, sfocato, dietro «Creato dall'immaginazione».
 - **La musica** (`music.ts`): originale, 120 bpm in La minore, misteriosa e poi gloriosa. Un carillon, il vento, un coro lontano e il battito dei timpani all'inizio e nella trama; poi il tema dell'eroe su corni, trombe, archi e coro, con i taiko; nel finale il tema un'ottava sopra con dentro il chiptune del gioco, e alla fine un La maggiore. Tutto sintetizzato in Web Audio (coro con le formanti delle vocali, ottoni con il filtro che si apre, archi, arpa, timpani) e reso offline in `promo/work/music.wav`. `render-music.ts` stampa i livelli per battuta: l'intro sta sotto le parti forti, nessun picco tocca lo 0.
 - **Il video** (`encode.swift`): fotogrammi JPEG e WAV in H.264 + AAC con AVFoundation, senza ffmpeg; `encode --stills film.mp4 cartella 1.5,30` estrae fotogrammi per controllare il risultato.
+- **Dopo le magie nuove** (novembre 2026) le lotte durano di più: gli shot che puntano a un momento preciso di una clip di lotta (in `trailer.ts`, dove la magia parte da Polpino e arriva sul Riccetto) vanno ricontrollati sul foglio di provini.
 - **Aggiungere una novità del gioco al video:**
   1. una clip in `capture.ts`: un salvataggio, un posto per nome, cosa fare (camminare con `walkTo`, parlare con `talkTo`, scegliere con `choose`, lottare con `toPad`/`move`);
   2. uno shot in `trailer.ts`, nella parte giusta: si sostituisce uno shot o si spostano i battiti (le parti della musica sono in `timeline.ts`);

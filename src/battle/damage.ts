@@ -4,6 +4,7 @@ import { TUNE, K, CRIT, MAGIC_TUNE } from '../data/tuning';
 import { TYPES, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
+import { NET_IDS } from '../data/nets';
 import { say, line, expr, anim } from './events';
 import { ch, mv, eff, modMult, sideType, zenOn, statsOf } from './state';
 
@@ -21,6 +22,16 @@ export function magicEff(t: TypeName | null, against: TypeName[]): number {
   if (!t) return e;
   for (const d of against) { if (TYPES[t].beats === d) e *= MAGIC_TUNE.se; else if (TYPES[d].beats === t) e *= MAGIC_TUNE.nve; }
   return Math.round(e * 1000) / 1000;
+}
+
+/** how well a hit works, in steps: 2 double advantage, 1 super effective, 0 even (or cancelled out), −1, −2.
+    A person's advantage is ×1.12 or ×0.9; a creature's magic multiplies one step for each of the foe's types. */
+export function effLevel(e: number): number {
+  if (e >= 1.2) return 2;
+  if (e > 1.02) return 1;
+  if (e <= 0.85) return -2;
+  if (e < 0.98) return -1;
+  return 0;
 }
 
 /* ---------- damage ---------- */
@@ -89,14 +100,22 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   ev.push({ k: 'hp', who: j, hp: foe.hp, dmg: dmg, crit: crit, eff: p.eff });
   ev.push(expr(j, foe.hp > 0 ? 'pout' : 'sleepy'));
   if (crit) ev.push(say(p.forceCrit ? 'La fissa di Costanzo: colpo critico sicuro!' : 'Colpo critico!'));
-  if (p.eff >= 1.6) ev.push(say('Doppio vantaggio di tipo: è superefficace!'));
-  else if (p.eff > 1) ev.push(say('È superefficace!'));
-  else if (p.eff <= 0.62) ev.push(say('Non è per niente efficace…'));
-  else if (p.eff < 1) ev.push(say('Non è molto efficace…'));
+  const lvl = effLevel(p.eff);
+  if (lvl === 2) ev.push(say('Doppio vantaggio di tipo: è superefficace!'));
+  else if (lvl === 1) ev.push(say('È superefficace!'));
+  else if (lvl === -2) ev.push(say('Non è per niente efficace…'));
+  else if (lvl === -1) ev.push(say('Non è molto efficace…'));
   if (p.notes.indexOf('filo') >= 0 && !opt.quiet) ev.push(say('Costanzo cambia argomento e perde il filo: −20%.'));
   if (p.notes.indexOf('calc') >= 0) { ev.push(say('Andrea ha già i dati su questa mossa: −' + Math.round(100 - TUNE.calc * 100) + '%.')); }
   if (sturdy) { ev.push(say('Forchetta resta in piedi con 1 PS!')); ev.push(line(j, CHARS.forchetta.lines.sturdy)); }
   if (held) ev.push(say(ch(foe).name + ' non vuole deludere Antonio: resta in piedi con 1 PS!'));
+  /* a wild creature worn out: the moment for a net, said once (story battles only) */
+  if (s.wild && j === 1 && foe.hp > 0 && foe.hp / foe.max < 0.35 && !s.tired && s.bag && NET_IDS.some(function (n) { return (s.bag![n] || 0) > 0; })) {
+    s.tired = true;
+    /* she or he: the wild ones are announced as "Una Cicalina selvatica", "Un Riccetto selvatico" */
+    const she = isSpecies(foe.id) && /selvatica\b/.test(SPECIES[foe.id].wild);
+    ev.push(say(ch(foe).name + (she ? ' è stanca' : ' è stanco') + ': è il momento buono per un retino!'));
+  }
   if (foe.id === 'andrea' && foe.hp > 0) foe.seen[id] = (foe.seen[id] || 0) + 1;
   if (foe.id === 'zendavid' && foe.hp > 0 && !zenOn(s, foe) && foe.anx < 3) {
     foe.anx++;

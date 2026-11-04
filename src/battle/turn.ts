@@ -1,4 +1,5 @@
 import { CHARS, PAIRS } from '../data/characters';
+import { NETS, isNet } from '../data/nets';
 import { ITEMS, FOUND } from '../data/items';
 import { TUNE, K } from '../data/tuning';
 import type { BattleEvent, BattleState, Grade, Result } from './types';
@@ -141,7 +142,7 @@ function finish(s: BattleState, result: Result, winner: number | null, ev: Battl
   s.phase = 'over'; s.result = result; s.winner = winner;
   if (result === 'catch') {
     ev.push(anim(1, 'caught'));
-    ev.push(say('Preso! ' + ch(s.sides[1]).name + ' è nel retino.'));
+    ev.push(say('Preso! ' + ch(s.sides[1]).name + ' è ' + (s.caughtWith && isNet(s.caughtWith) ? NETS[s.caughtWith].into : 'nel retino') + '.'));
     ev.push(expr(0, 'cool'));
   } else if (result === 'win') {
     const wi = winner as number, w = s.sides[wi], l = s.sides[1 - wi];

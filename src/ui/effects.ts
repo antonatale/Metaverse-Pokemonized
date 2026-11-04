@@ -6,7 +6,7 @@ import { arena, shown, uiHp, setHp } from './battle-screen';
 /* The battle's little shows: lunges and shakes are CSS classes, the rest are elements thrown over the arena. */
 
 export function pulse(el: HTMLElement, c: string, ms: number) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); return sleep(ms).then(function () { el.classList.remove(c); }); }
-function rel(el: HTMLElement) { var a = arena.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }; }
+export function rel(el: HTMLElement) { var a = arena.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }; }
 export function fx(html: string, cls: string, x: number, y: number, life: number): HTMLElement {
   var el = document.createElement('div');
   el.className = 'fx ' + (cls || ''); el.innerHTML = html;
@@ -15,7 +15,7 @@ export function fx(html: string, cls: string, x: number, y: number, life: number
   if (life) setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, life);
   return el;
 }
-function animate(el: HTMLElement, frames: Keyframe[], opts: KeyframeAnimationOptions & { duration: number }): Promise<unknown> {
+export function animate(el: Element, frames: Keyframe[], opts: KeyframeAnimationOptions & { duration: number }): Promise<unknown> {
   if (!el.animate || reduced) return Promise.resolve();
   try { var an = el.animate(frames, opts); return an.finished ? an.finished.catch(function () {}) : sleep(opts.duration); } catch (e) { return Promise.resolve(); }
 }
@@ -97,16 +97,16 @@ export function banner(text: string, style?: string) {
 /* None of these change the battle: they are drawn over the arena while the engine's events play, and they never
    touch Math.random (a little sequence of their own), so a battle replayed with the same seed is the same battle. */
 let seq = 17;
-function wob(): number { seq = (seq * 1664525 + 1013904223) >>> 0; return seq / 4294967296; }
+export function wob(): number { seq = (seq * 1664525 + 1013904223) >>> 0; return seq / 4294967296; }
 /** the little shapes each type's magic is made of (24×24): moons, bolts, stars, notes, hearts */
-const SHAPE: Record<string, string> = {
+export const SHAPE: Record<string, string> = {
   Calma: 'M15 3a9 9 0 1 0 6 15A10 10 0 0 1 15 3Z',
   Caos: 'M13 2L5 14h6l-2 8 9-13h-6l3-7Z',
   Cervello: 'M12 2l2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6Z',
   Chiacchiera: 'M10 18V5l10-2v12M10 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM20 15a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z',
   Cuore: 'M12 21C5 16 2 12 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 4-3 8-10 13Z'
 };
-function shape(type: string, col: string, size: number): string {
+export function shape(type: string, col: string, size: number): string {
   return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true"><path d="' + (SHAPE[type] || SHAPE.Cervello) + '" fill="' + col + '" stroke="#1c2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 }
 /** pieces flying out from a point, each on its own path, fading */
@@ -162,39 +162,6 @@ export function flashAt(x: number, y: number, col: string, size: number, ms: num
   var el = fx('', 'glowat', x, y, 0);
   el.style.setProperty('--mc', col); el.style.width = el.style.height = size + 'px';
   animate(el, [{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0.9 }, { transform: 'translate(-50%,-50%) scale(1.15)', opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'forwards' }).then(function () { el.remove(); });
-}
-/** a spell: the caster charges, the rune flies with a trail of its type's shapes, a shockwave where it lands */
-export function spell(from: number, to: number, type: string, col: string, orb: string): Promise<unknown> {
-  var c = anchor(from, 0.5, 0.82), t = anchor(to, 0.5, 0.42);
-  ring(c[0], c[1], col, 230, 520, true);
-  sparks(anchor(from, 0.5, 0.45)[0], anchor(from, 0.5, 0.45)[1], 6, function () { return shape(type, col, 18); }, 70, 520);
-  var trail = reduced ? Promise.resolve() : sleep(140).then(function () {
-    for (var k = 0; k < 5; k++) {
-      (function (k: number) {
-        sleep(k * 55).then(function () { return projectile(from, to, '<div class="trail" style="--mc:' + col + ';opacity:' + (0.8 - k * 0.13) + '">' + shape(type, col, 22 - k * 2) + '</div>', '', 520, 34); });
-      })(k);
-    }
-  });
-  return Promise.all([trail, sleep(reduced ? 0 : 140).then(function () { return projectile(from, to, orb, '', 520, 34); })]).then(function () {
-    ring(t[0], t[1], col, 260, 560);
-    sparks(t[0], t[1], 10, function () { return shape(type, col, 22); }, 120, 640);
-    flashAt(t[0], t[1], col, 380, 320);
-  });
-}
-/** a spell on itself: a circle on the ground and its shapes rising */
-export function rise(i: number, type: string, col: string) {
-  if (reduced) return;
-  var g = anchor(i, 0.5, 0.86);
-  ring(g[0], g[1], col, 200, 800, true);
-  for (var k = 0; k < 7; k++) {
-    (function (k: number) {
-      var p = anchor(i, 0.2 + wob() * 0.6, 0.75), el = fx(shape(type, col, 16 + Math.round(wob() * 8)), 'part', p[0], p[1], 0);
-      sleep(k * 70).then(function () {
-        return animate(el, [{ transform: 'translate(-50%,0) scale(.4)', opacity: 0 }, { transform: 'translate(-50%,-40px) scale(1)', opacity: 1, offset: 0.35 }, { transform: 'translate(-50%,-130px) scale(.6)', opacity: 0 }],
-          { duration: 900, easing: 'ease-out', fill: 'forwards' });
-      }).then(function () { el.remove(); });
-    })(k);
-  }
 }
 /** a puff of dust where a fighter falls */
 export function dust(i: number) {

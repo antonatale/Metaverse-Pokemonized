@@ -6,7 +6,7 @@ import type { FriendId } from './characters';
 export interface Round { who: FriendId; lv: number; line: string }
 export const TOURNEY = {
   name: 'Torneo degli amici',
-  /* euro and experience for the cup, the first time and every time */
+  /* sesterzi and experience for the cup, the first time and every time */
   prize: 120,
   step: 3,
   rounds: [

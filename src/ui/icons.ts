@@ -34,3 +34,10 @@ const ICONS: Record<string, string> = {
   users: '<circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.4c3 .2 5.5 2.4 5.5 5.6"/>'
 };
 export function ico(n: string): string { return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
+
+/** the money of the story: a gold sesterzio, a sticker with a dark outline (data/growth.ts COIN for its name) */
+export function coin(size?: number): string {
+  var z = size || 18;
+  return '<svg class="coin" viewBox="0 0 24 24" width="' + z + '" height="' + z + '" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffd84d" stroke="#1c2340" stroke-width="2"/>' +
+    '<circle cx="12" cy="12" r="6.6" fill="none" stroke="#b7862a" stroke-width="1.4"/><path d="M14.4 9.2c-.6-.8-1.5-1.2-2.5-1.2-1.4 0-2.4.8-2.4 1.9 0 2.6 5.1 1.5 5.1 4.2 0 1.2-1.1 2-2.6 2-1.1 0-2.1-.5-2.7-1.3" fill="none" stroke="#1c2340" stroke-width="1.7" stroke-linecap="round"/></svg>';
+}

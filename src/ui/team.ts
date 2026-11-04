@@ -2,9 +2,11 @@ import { st, save } from '../save/story-progress';
 import type { TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, type ItemId, type SkillId, type Branch } from '../data/growth';
+import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, type Growth, type Mon } from '../story/growth';
+import { coin } from './icons';
+import { bagIcon } from './spells';
 import { M } from '../story/maps';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
@@ -126,7 +128,7 @@ export function rewards(key: string, foeLv: number, won: boolean, covo: boolean,
   save(); renderHud();
   if (cash) mentorTip('money');
   if (key === 'antonio' && g.to > g.from) mentorTip('level');
-  growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' Antonio incassa ' + cash + ' €.' : '')], then);
+  growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' Antonio incassa ' + coins(cash) + '.' : '')], then);
 }
 function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
   sfx('badge');
@@ -145,14 +147,14 @@ export function openShop(id: string) {
   var sh = SHOPS[id];
   var render = function (bought?: string) {
     var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><div class="sheet-h"><h2 id="sh-t">' + esc(sh.name) + '</h2><button class="tb-btn" type="button" id="shop-x">Chiudi</button></div>' +
-      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : sh.hello) + '</p><p class="wallet">In tasca: <b>' + money() + ' €</b></p><ul class="wares">' +
+      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : sh.hello) + '</p><p class="wallet">In tasca: <b>' + coin() + coins(money()) + '</b></p><ul class="wares">' +
       sh.sells.map(function (it) {
         var w = WARES[it], p = priceFor(it);
         /* the coffee is drunk at the counter (one already paid for, from an old save, first) */
         if (it === 'caffe') return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + '</small></span>' +
-          '<button class="btn" type="button" data-it="caffe"' + (money() < p && !has('caffe') ? ' disabled' : '') + '>' + (has('caffe') ? 'Bevi (già pagato)' : 'Bevi · ' + p + ' €') + '</button></li>';
-        return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + ' Ne hai ' + has(it) + '.</small></span>' +
-          '<button class="btn" type="button" data-it="' + it + '"' + (money() < p ? ' disabled' : '') + '>' + p + ' €</button></li>';
+          '<button class="btn" type="button" data-it="caffe"' + (money() < p && !has('caffe') ? ' disabled' : '') + '>' + (has('caffe') ? 'Bevi (già pagato)' : 'Bevi · ' + coin(16) + p) + '</button></li>';
+        return '<li><span class="ware-ico">' + bagIcon(it) + '</span><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + ' Ne hai ' + has(it) + '.</small></span>' +
+          '<button class="btn" type="button" data-it="' + it + '"' + (money() < p ? ' disabled' : '') + ' aria-label="Compra ' + esc(w.name) + ' per ' + coins(p) + '">' + coin(16) + p + '</button></li>';
       }).join('') + '</ul>' + (money() < Math.min.apply(null, sh.sells.map(priceFor)) && !has('caffe') ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
     $('shop-x').addEventListener('click', closeSheet);
     each(o.querySelectorAll('[data-it]'), function (b) {
@@ -185,9 +187,9 @@ export function teamHtml(): string {
     (homeMons().length || M.id === 'casa' ? '<p class="hint">' + (homeMons().length ? 'A casa ti aspettano ' + homeMons().length + (homeMons().length === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
       (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</div>' +
-    '<div class="pickrow"><h3>Borsa · ' + money() + ' €</h3><ul class="wbadge-list diary bag">' + (['retino', 'retino2', 'tiella'] as ItemId[]).map(function (it) {
-      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
-    }).join('') + '</ul><p class="hint">Retini e tiella si comprano a Mola dal pescatore e al forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
+    '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + BAG_ITEMS.map(function (it) {
+      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + bagIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
+    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto al guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
 }
 export function wireTeam(reopen: () => void) {
   each(document.querySelectorAll('[data-cr]'), function (b) { b.addEventListener('click', function () { openCreature(b.getAttribute('data-cr')!, reopen); }); });

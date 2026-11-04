@@ -1,4 +1,5 @@
 import type { Stats } from './characters';
+import { NETS, type NetId } from './nets';
 
 /* Growing up in the story. Every fighter (Antonio, the friends who join him, his creatures) has a level, and
    the experience toward the next one; Antonio also gets a point a level for his abilities. The characters' own
@@ -17,7 +18,12 @@ export function xpFor(foeLv: number, won: boolean, covo: boolean): number {
   const x = (14 + 6 * foeLv) * (covo ? 1.5 : 1);
   return Math.round(won ? x : x / 3);
 }
-/** euro for beating a wild creature, and a covo the first time */
+/* ---------- the money of the story: the sesterzi of Roman Formiae, Cicero's and Mamurra's ---------- */
+/** its name, in one place: change it here to rename it everywhere */
+export const COIN = { one: 'sesterzio', many: 'sesterzi' };
+/** "1 sesterzio", "12 sesterzi" */
+export function coins(n: number): string { return n + ' ' + (n === 1 ? COIN.one : COIN.many); }
+/** sesterzi for beating a wild creature, and a covo the first time */
 export function moneyFor(foeLv: number, covo: boolean): number { return covo ? 80 : 3 + foeLv; }
 
 /* ---------- Antonio's abilities: a point every level, up to the ranks of each ---------- */
@@ -63,22 +69,25 @@ export function trainerXp(xp: number, sk: Grades): number { return Math.round(xp
 export function netHand(sk: Grades): number { return 1 + 0.2 * (sk.mano || 0); }
 /** the chance a creature holds on at 1 HP, once a battle */
 export function bond(sk: Grades): number { return 0.15 * (sk.legame || 0); }
-/** euro from an activity, with friends everywhere */
+/** sesterzi from an activity, with friends everywhere */
 export function friendsPay(n: number, sk: Grades): number { return Math.round(n * (1 + 0.25 * (sk.amici || 0))); }
 
 /* ---------- things to buy around Formia, and what they do ---------- */
-export type ItemId = 'retino' | 'retino2' | 'tiella' | 'caffe';
+export type ItemId = NetId | 'tiella' | 'caffe';
 export interface Ware { id: ItemId; name: string; price: number; text: string }
-export const WARES: Record<ItemId, Ware> = {
-  retino: { id: 'retino', name: 'Retino', price: 8, text: 'Per catturare una creatura selvatica: più è stanca, più è facile.' },
-  retino2: { id: 'retino2', name: 'Retino da pesca', price: 20, text: 'Il retino dei pescatori di Mola: cattura molto più facilmente.' },
+/** the nets, from data/nets.ts, with their prices: the better the net, the dearer */
+const NET_PRICE: Record<NetId, number> = { retino: 8, retino2: 20, argento: 45, oro: 120, nassa: 25, lampara: 25 };
+export const WARES = {
   tiella: { id: 'tiella', name: 'Tiella', price: 6, text: 'In lotta: una fetta di tiella fa recuperare 40 PS (e si usa il turno).' },
   caffe: { id: 'caffe', name: 'Caffè al bancone', price: 3, text: 'Si beve subito, al bancone: 60 punti esperienza a chi scegli tu.' }
-};
+} as Record<ItemId, Ware>;
+(Object.keys(NET_PRICE) as NetId[]).forEach(function (id) { WARES[id] = { id: id, name: NETS[id].name, price: NET_PRICE[id], text: NETS[id].text }; });
 /** the shops: who sells what */
 export interface Shop { name: string; hello: string; sells: ItemId[] }
 export const SHOPS: Record<string, Shop> = {
-  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2'] },
+  /* the net maker of Gianola, by the guardaparco: every net there is */
+  reti: { name: 'La bottega del retaio', hello: 'Reti e retini fatti a mano, uno per ogni creatura: più è buono il retino, meno scappano.', sells: ['retino', 'retino2', 'argento', 'oro', 'nassa', 'lampara'] },
+  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara'] },
   forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella'] },
   bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe'] }
 };

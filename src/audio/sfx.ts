@@ -78,6 +78,11 @@ const FX: Record<string, Fx> = {
   },
   magicUp(c, out, t) { ['C5', 'E5', 'G5', 'C6'].forEach(function (n, i) { tone(c, out, hz(n), t + i * 0.03, 0.5, { type: 'triangle', gain: 0.07, attack: 0.12, sustain: 0.7, release: 0.25, vibrato: 8 }); }); },
   net(c, out, t) { hiss(c, out, t, 0.3, { freq: 900, to: 3200, q: 0.9, gain: 0.5 }); tone(c, out, 500, t + 0.25, 0.06, { type: 'triangle', gain: 0.12 }); },
+  /* the creatures' spells (ui/spells.ts): thunder for the lightning, a heartbeat for the giant heart */
+  thunder(c, out, t) { hiss(c, out, t, 0.55, { type: 'lowpass', freq: 1400, to: 160, gain: 0.85 }); tone(c, out, 80, t, 0.4, { type: 'sawtooth', to: 38, gain: 0.1, cutoff: 500, decay: 0.12, sustain: 0.4 }); },
+  heartbeat(c, out, t) { tone(c, out, 74, t, 0.13, { type: 'sine', to: 48, gain: 0.55, decay: 0.08, sustain: 0.25 }); tone(c, out, 66, t + 0.21, 0.13, { type: 'sine', to: 44, gain: 0.45, decay: 0.08, sustain: 0.25 }); },
+  /* the net on the ground, shaking with the creature in it */
+  shake(c, out, t) { tone(c, out, 260, t, 0.07, { type: 'triangle', to: 200, gain: 0.3, decay: 0.04, sustain: 0.3 }); hiss(c, out, t, 0.09, { freq: 1600, to: 900, q: 1.1, gain: 0.35 }); },
   caught(c, out, t) { arp(c, out, t, ['G5', 'C6', 'E6', 'G6'], 0.09, { type: 'square', gain: 0.06, cutoff: 5000, decay: 0.03, sustain: 0.7 }); FX.magic(c, out, t + 0.36); },
   'cry-octo'(c, out, t) { ['G4', 'C5', 'E5'].forEach(function (n, i) { tone(c, out, hz(n), t + i * 0.07, 0.06, { type: 'sine', to: hz(n) * 1.4, gain: 0.22, decay: 0.03, sustain: 0.5 }); }); },
   'cry-lizard'(c, out, t) { tone(c, out, 260, t, 0.18, { type: 'triangle', to: 520, gain: 0.25, decay: 0.06, sustain: 0.6, vibrato: 25 }); },

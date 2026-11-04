@@ -182,6 +182,8 @@ const npcs: Npc[] = [
   npc('bagnino', { name: 'Bagnino', seed: 43, dir: 'down', hint: true, lines: ['Bandiera verde: si può fare il bagno.', 'Vindicio è Bandiera Blu. E con la termica del pomeriggio è il posto del windsurf e del kite.'] }),
   npc('bambino', { trainer: 'bambino', name: 'Bambino', seed: 42, dir: 'left', lines: ['Ho perso il secchiello.', 'Pure tu perdi sempre le cose?'] }),
   npc('guardaparco', { name: 'Guardaparco', seed: 44, dir: 'right', starter: true, lines: ['La villa era di Mamurra, un cavaliere di Formia: il prefetto del genio di Giulio Cesare.', 'Il porticciolo romano, qui sotto, forse era una peschiera. Oggi è area marina protetta: niente pesca e niente motori.'] }),
+  /* the net maker, by the guardaparco: every kind of net there is */
+  npc('retaio', { name: 'Retaio', seed: 46, dir: 'down', shop: 'reti', lines: ['Reti e retini li faccio io, a mano, come si faceva a Mola.', 'Una creatura stanca si prende meglio: prima la fai lottare, poi le lanci il retino. Più il retino è buono, meno scappa.', 'La nassa è per le creature di mare. La rete della lampara è quella della pesca di notte: col buio vale il triplo.'] }),
   npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
   /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
      sight: Lamo, at night, under the walls of Castellone */

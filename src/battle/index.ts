@@ -5,14 +5,14 @@ import { TYPES, TYPE_ORDER, type TypeName } from '../data/types';
 import { ITEMS } from '../data/items';
 import { TUNE } from '../data/tuning';
 import type { BattleState } from './types';
-import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf, BAG } from './state';
-import { expected, typesOf } from './damage';
+import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf, BAG, BAG_IDS } from './state';
+import { expected, typesOf, effLevel } from './damage';
 import { snap, moveLabel } from './labels';
 import { ai } from './ai';
 import { intro, beginTurn, needs, playTurn } from './turn';
 
 export * from './types';
-export { eff, beaterOf, move, newBattle, available, expected, snap, moveLabel, ai, intro, beginTurn, needs, playTurn };
+export { eff, beaterOf, move, newBattle, available, expected, effLevel, snap, moveLabel, ai, intro, beginTurn, needs, playTurn };
 
 /** time left in the exam, as h:mm (10 minutes a turn) */
 export function clock(s: BattleState): string { const m = (s.maxTurns - s.turn + 1) * 10; return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }
@@ -27,7 +27,7 @@ export function sideTypes(s: BattleState, i: number): TypeName[] { return typesO
 export const ENGINE = {
   TYPES, TYPE_ORDER, eff, beaterOf, ITEMS, CHARS, ROSTER, TUNE,
   move, newBattle, intro, beginTurn, needs, playTurn,
-  available, moveLabel, snap, ai, expected, BAG,
+  available, moveLabel, snap, ai, expected, BAG, BAG_IDS,
   ANTONIO: CHARS.antonio, ESAME: CHARS.esame,
-  clock, planName, sideType, sideTypes
+  clock, planName, sideType, sideTypes, effLevel
 };

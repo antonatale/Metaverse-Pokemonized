@@ -108,11 +108,17 @@ export interface BattleState {
   bag?: Record<string, number>;
   /** the net held: the battle ends with the creature caught */
   caught?: boolean;
+  /** the net that held it */
+  caughtWith?: string;
+  /** a story battle in the dark (some nets catch better then) */
+  night?: boolean;
+  /** the wild creature has been said to be worn out (the moment for a net) */
+  tired?: boolean;
   /** someone who sends creatures in, one after the other (data/trainers.ts) */
   trainer?: string;
 }
 
-export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }
@@ -121,7 +127,7 @@ export type BattleEvent =
   | { k: 'say'; text: string }
   | { k: 'line'; who: number; text: string }
   | { k: 'expr'; who: number; v: string }
-  | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string }
+  | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string; move?: string; shakes?: number }
   | { k: 'hp'; who: number; hp: number; dmg?: number; crit?: boolean; eff?: number; heal?: number; quiet?: boolean }
   | Snap
   | { k: 'end'; result: Result; winner: number | null; grade: Grade | null };
@@ -138,6 +144,10 @@ export interface MoveLabel {
   dots: boolean[] | null;
   /** uses left, for limited moves */
   left?: number;
+  /** a net: the chance it holds right now */
+  chance?: number;
+  /** a thing in the bag: how many are left */
+  count?: number;
   /** the creatures' moves: the type of the spell, how well it works on the foe in front (1 even), power and aim */
   mtype?: TypeName | null;
   eff?: number;

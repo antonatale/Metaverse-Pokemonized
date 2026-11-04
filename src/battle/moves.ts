@@ -3,16 +3,29 @@ import { JOKES } from '../data/characters';
 import type { BattleEvent, BattleState } from './types';
 import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
-import { ch, mv, addMod, available, beaterOf, zenOn } from './state';
+import { ch, mv, addMod, available, beaterOf, zenOn, BAG } from './state';
 import type { Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { applyHit, heal, confuse } from './damage';
+import { NETS, SEA_BODIES, type NetId } from '../data/nets';
+
+/** the chance that a net holds: the more worn out the creature, the easier (a quarter at full health, almost always near
+    the end), times the net (a sea net against a creature of the sea, a night net in the dark), the legend's own rate and
+    Antonio's steady hand */
+export function catchChance(s: BattleState, i: number, id: string): number {
+  const foe = s.sides[1 - i], net = NETS[id as NetId], sp = isSpecies(foe.id) ? SPECIES[foe.id] : null;
+  let mult = net ? net.mult : 1;
+  if (net && net.sea && sp && SEA_BODIES.indexOf(sp.art.body) >= 0) mult *= net.sea;
+  if (net && net.night && s.night) mult *= net.night;
+  return Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * mult * (sp ? sp.catchRate || 1 : 1) * (s.sides[i].net || 1));
+}
 
 /* ---------- moves: what each one does, character by character ---------- */
 export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]): boolean {
   const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, cm = ch(me), m = mv(me, id), nm = cm.name;
   let attacked = false, dmg;
-  if (id !== 'copenhagenRet') ev.push(say(nm + ' usa ' + m!.name + '!'));
+  /* the bag is Antonio's: he throws the nets, the tiella says itself (story battles only) */
+  if (id !== 'copenhagenRet' && !BAG[id]) ev.push(say(nm + ' usa ' + m!.name + '!'));
   switch (id) {
     /* --- Antonio --- */
     case 'diagnosi':
@@ -212,14 +225,15 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       heal(s, i, 30, ev, 'Ti fa ripetere tutto a voce: l\'Esame recupera PS.');
       break;
     /* --- the bag, in story battles --- */
-    case 'retino': case 'retino2': {
+    case 'retino': case 'retino2': case 'argento': case 'oro': case 'nassa': case 'lampara': {
       s.bag![id] = (s.bag![id] || 0) - 1;
-      ev.push(anim(i, 'net'));
-      /* the more worn out the creature, the easier: a third of the times at full health, almost always near the end */
-      const rate = isSpecies(foe.id) ? SPECIES[foe.id].catchRate || 1 : 1;
-      const chance = Math.min(0.95, (0.25 + 0.65 * (1 - foe.hp / foe.max)) * (id === 'retino2' ? 1.6 : 1) * rate * (s.sides[i].net || 1));
-      if (rand(s) < chance) s.caught = true;
-      else { ev.push(anim(j, 'dodge')); ev.push(say(ch(foe).name + ' scappa dal retino!')); }
+      ev.push(say('Antonio lancia ' + NETS[id as NetId].a + '!'));
+      const chance = catchChance(s, i, id), roll = rand(s), held = roll < chance;
+      /* the net shakes before it holds (three times) or the creature gets out: more shakes the closer it came */
+      const shakes = held ? 3 : roll < chance * 1.35 ? 2 : roll < chance * 2 ? 1 : 0;
+      ev.push(anim(i, 'net', { item: id, shakes: shakes }));
+      if (held) { s.caught = true; s.caughtWith = id; }
+      else ev.push(say(shakes ? ch(foe).name + ' si libera all\'ultimo!' : ch(foe).name + ' scappa dal retino!'));
       break;
     }
     case 'tiella':
@@ -253,17 +267,17 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
   const type = ch(me).type;
   if (m.kind === 'atk') {
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type }));
+    ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
     const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
     if (dmg > 0 && m.drain && me.hp > 0) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
     if (dmg <= 0 || foe.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magicUp', { style: type }));
+    ev.push(anim(i, 'magicUp', { style: type, move: m.id }));
     heal(s, i, me.max * fx.heal, ev);
   } else {
     ev.push(expr(i, 'smirk'));
-    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: type }));
+    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: type, move: m.id }));
   }
   if (fx.self) {
     const f = FX[fx.self];
