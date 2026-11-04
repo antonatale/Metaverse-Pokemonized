@@ -12,6 +12,7 @@
     "test:all": "vitest run && playwright test",
     "golden": "tsx tools/golden.mjs",
     "sim": "tsx tools/sim.ts",
+    "sim:fun": "tsx tools/sim-fun.ts",
     "build:google-fonts": "tsc --noEmit && vite build --mode google-fonts",
     "test:e2e": "playwright test",
     "test:e2e:dist": "vite build && GAME_URL=file://$PWD/dist/index.html playwright test tests/e2e/playthrough.spec.ts",

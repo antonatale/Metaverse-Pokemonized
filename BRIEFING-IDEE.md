@@ -56,13 +56,13 @@ I valori di oggi portano già chi ha il vantaggio al 90–99%, e oltre non si gu
 
 | media sulle 18 specie | |
 |---|---|
-| IA contro IA | 48% |
-| **greedy contro IA** | **44%** |
-| mossa qualsiasi contro IA | 14% |
-| turni medi per duello | 5,7 |
+| IA contro IA | 51% |
+| **greedy contro IA** | **43%** |
+| mossa qualsiasi contro IA | 12% |
+| turni medi per duello | 5,6 |
 | quanto spesso l'IA sceglie la stessa mossa di greedy | 72% |
 
-Greedy fa come l'IA o meglio (47% o più) in **11 specie su 18**. Crolla solo dove l'IA usa bene una cura o una difesa: Ramarrino 10 (3%), Olivella 10 (7%), Olivastro 20 (19%), Riccetto 10 (36%). Cioè: oltre a «colpisci col colpo più forte», l'unica scelta che conta oggi è *quando curarsi* (2 usi). Limiti: sono policy del computer su duelli speculari, non giocatori umani, e l'IA non è un giocatore ottimo; ma nessuna regola del gioco premia un gioco più profondo.
+Greedy fa come l'IA o meglio (47% o più) in **11 specie su 18**. Crolla solo dove l'IA usa bene una cura o una difesa: Ramarrino 10 (2%), Olivella 10 (5%), Olivastro 20 (21%), Riccetto 10 (31%). Cioè: oltre a «colpisci col colpo più forte», l'unica scelta che conta oggi è *quando curarsi* (2 usi). I numeri di questa tabella sono quelli di `tools/sim-fun.ts` (`npm run sim:fun`), che li rifà in due secondi: i primi che avevo scritto, con uno script provvisorio, erano scostati di 1–3 punti perché consumava numeri casuali a vuoto; le conclusioni non cambiano. Limiti: sono policy del computer su duelli speculari, non giocatori umani, e l'IA non è un giocatore ottimo; ma nessuna regola del gioco premia un gioco più profondo.
 
 **Cosa vuol dire, in sintesi:** il tipo è già decisivo, il turno ha poche scelte, il cambio non c'è. Manca il «gioco di mezzo» tra scegliere la creatura e colpire.
 
@@ -157,8 +157,8 @@ Da **non** fare: il tempo reale di Z-A (il motore è a eventi e puro, e le recen
 
 Proposti, da tarare:
 
-- turni medi per duello: **8–10** (oggi 5,7);
-- «greedy» contro IA: **≤ 35%** per ogni specie (oggi 44% in media, ≥ 47% in 11 specie su 18);
+- turni medi per duello: **8–10** (oggi 5,6);
+- «greedy» contro IA: **≤ 35%** per ogni specie (oggi 43% in media, ≥ 47% in 11 specie su 18);
 - vantaggio di tipo a pari livello: **70–85%** (oggi 90–99%), per lasciare spazio a cambio, abilità e oggetti;
 - nessuna specie sopra il 60% o sotto il 40% in un girone a pari livello e forma (negli amici l'obiettivo era 45–55%);
 - le lotte facili (livello molto più alto) si chiudono in **≤ 4 turni**.
