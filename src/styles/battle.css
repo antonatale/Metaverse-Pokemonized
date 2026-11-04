@@ -21,6 +21,7 @@
 .box-h b { font: 17px/1.1 var(--font-display); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .box-f { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .box-f .type { font-size: 11px; padding: 0 6px; line-height: 1.6; }
+.box-f .types { display: inline-flex; gap: 3px; }
 .box-f .hpnum { margin-left: auto; }
 .hp { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px; }
 .hp em { font: 12px/1 var(--font-display); font-style: normal; color: var(--red); letter-spacing: .04em; }

@@ -38,8 +38,10 @@ function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
   return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span></div></div>' +
-    '<div class="box-f"><span class="type t-' + c.type.toLowerCase() + '" id="ty-' + i + '">' + c.type + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
+    '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
+/** a side's types, one tag each: two for the creatures' last forms */
+function typesHtml(i: number): string { return E.sideTypes(S, i).map(function (t) { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }).join(''); }
 /* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
    the fighters stand on platforms of its ground */
 function sceneHtml(): string {
@@ -117,8 +119,7 @@ function renderSync(sn: Snap) {
     shown.revealed[i] = i === 0 || S.mode === 'pvp' || S.sides[i].id !== 'esame' || sn.revealed[i];
     $('chips-' + i).innerHTML = sn.chips[i].map(function (c) { return '<span class="chip ' + c.c + '" title="' + esc(c.d) + '">' + ico(c.i) + esc(c.t) + '</span>'; }).join('');
     if (!counting[i]) hpText(i, uiHp[i]);
-    var t = E.sideType(S, i), ty = $('ty-' + i);
-    ty.textContent = t; ty.className = 'type t-' + t.toLowerCase();
+    $('ty-' + i).innerHTML = typesHtml(i);
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
     if (svg) svg.setAttribute('data-ph', sn.ph[i] ? 'on' : 'off');
   }
