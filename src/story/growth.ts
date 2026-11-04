@@ -2,7 +2,7 @@ import { st } from '../save/story-progress';
 import type { FighterId } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
-import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, type ItemId, type SkillId } from '../data/growth';
+import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, coins, type DexPrize, type ItemId, type SkillId } from '../data/growth';
 import type { SideOpts } from '../battle';
 import { NET_IDS } from '../data/nets';
 
@@ -199,6 +199,33 @@ export function keepBag(b: Record<string, number> | undefined) {
   st.bag = st.bag || {};
   BAG_ITEMS.forEach(function (k) { st.bag![k] = Math.max(0, b[k] || 0); });
 }
+/* ---------- the creature diary and the guardaparco's prizes ---------- */
+/** how many species have been Antonio's (caught, chosen, grown into) */
+export function dexHad(): number { return (Object.keys(SPECIES) as SpeciesId[]).filter(function (id) { return dexOf(id) === 2; }).length; }
+function prizeAt(p: DexPrize): number { return p.all ? Object.keys(SPECIES).length : p.n; }
+function prizeKey(p: DexPrize): string { return 'premio-diario-' + (p.all ? 'tutte' : p.n); }
+/** the prizes reached and not given yet */
+export function dexPrizesDue(): DexPrize[] { var had = dexHad(); return DEX_PRIZES.filter(function (p) { return had >= prizeAt(p) && !st.seen[prizeKey(p)]; }); }
+/** the next prize to reach, and how many species it wants */
+export function nextDexPrize(): { p: DexPrize; at: number } | null {
+  var had = dexHad();
+  for (var k = 0; k < DEX_PRIZES.length; k++) { var p = DEX_PRIZES[k]; if (had < prizeAt(p) && !st.seen[prizeKey(p)]) return { p: p, at: prizeAt(p) }; }
+  return null;
+}
+/** a prize given: the nets in the bag, the sesterzi in the pocket */
+export function takeDexPrize(p: DexPrize) {
+  st.bag = st.bag || {};
+  (Object.keys(p.give) as ItemId[]).forEach(function (it) { st.bag![it] = has(it) + (p.give[it] || 0); });
+  if (p.coins) earn(p.coins);
+  st.seen[prizeKey(p)] = true;
+}
+/** a prize in words: "3 retini da pesca e 100 sesterzi" */
+export function prizeText(p: DexPrize): string {
+  var bits = (Object.keys(p.give) as ItemId[]).map(function (it) { var n = p.give[it] || 0; return n + ' ' + (n === 1 ? WARES[it].name.toLowerCase() : PLURAL[it] || WARES[it].name.toLowerCase()); });
+  if (p.coins) bits.push(coins(p.coins));
+  return bits.join(' e ');
+}
+const PLURAL: Partial<Record<ItemId, string>> = { retino: 'retini', retino2: 'retini da pesca', argento: 'retini d\'argento', oro: 'retini d\'oro', nassa: 'nasse', lampara: 'reti della lampara', tiella: 'fette di tiella' };
 /** the nets Antonio has, all kinds together */
 export function netsLeft(): number { return NET_IDS.reduce(function (n, k) { return n + has(k); }, 0); }
 

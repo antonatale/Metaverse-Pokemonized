@@ -15,7 +15,7 @@ import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeO
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
-import { castSpell, castSelf, arrive, throwNet, bagIcon } from './spells';
+import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut } from './spells';
 import { runeIcon } from '../render/svg/creatures';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
@@ -295,7 +295,12 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
       else sleep(380).then(function () { var e = anchor(i, 0.5, 0.86); ring(e[0], e[1], '#ffffff', 180, 520, true); });
       return pulse(m, 'enter', 560);
     }
-    case 'faint': m.classList.add(i === 0 ? 'faint-me' : 'faint-opp'); sleep(500).then(function () { dust(i); }); return sleep(950);
+    case 'faint': {
+      m.classList.add(i === 0 ? 'faint-me' : 'faint-opp'); sleep(500).then(function () { dust(i); });
+      var fid = S.sides[i].id;
+      if (isSpecies(fid)) fadeOut(i, SPECIES[fid].type, SPECIES[fid].type2);
+      return sleep(950);
+    }
     case 'heal': return Promise.resolve();
     case 'robot': return projectile(i, j, SPR.robot(), 'robot', 620);
     case 'robotFail': return robotFall(i);

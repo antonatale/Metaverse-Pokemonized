@@ -233,7 +233,7 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       const shakes = held ? 3 : roll < chance * 1.35 ? 2 : roll < chance * 2 ? 1 : 0;
       ev.push(anim(i, 'net', { item: id, shakes: shakes }));
       if (held) { s.caught = true; s.caughtWith = id; }
-      else ev.push(say(shakes ? ch(foe).name + ' si libera all\'ultimo!' : ch(foe).name + ' scappa dal retino!'));
+      else ev.push(say(shakes >= 2 ? 'Per un pelo! ' + ch(foe).name + ' si libera all\'ultimo!' : shakes ? 'Accidenti, ' + ch(foe).name + ' si libera!' : ch(foe).name + ' scappa dal retino!'));
       break;
     }
     case 'tiella':

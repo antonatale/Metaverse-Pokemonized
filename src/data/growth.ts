@@ -91,6 +91,16 @@ export const SHOPS: Record<string, Shop> = {
   forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella'] },
   bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe'] }
 };
+/** the guardaparco's prizes for the creature diary: when so many species have been Antonio's (n, or all of them),
+    he gives these, once each (story/growth.ts dexPrizesDue) */
+export interface DexPrize { n: number; all?: boolean; give: Partial<Record<ItemId, number>>; coins?: number }
+export const DEX_PRIZES: DexPrize[] = [
+  { n: 3, give: { retino2: 3 } },
+  { n: 6, give: { argento: 2 } },
+  { n: 10, give: { oro: 1 }, coins: 100 },
+  { n: 15, give: { oro: 2 } },
+  { n: 0, all: true, give: { oro: 3 }, coins: 300 }
+];
 /** the price with Antonio's bargaining */
 export function priceOf(it: ItemId, sk: Grades): number { return Math.max(1, Math.round(WARES[it].price * (1 - 0.1 * (sk.amici || 0)))); }
 

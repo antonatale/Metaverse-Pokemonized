@@ -625,3 +625,15 @@ export function throwNet(from: number, to: number, id: string, shakes: number, h
     return sleep(460);
   }).then(function () { /* decided */ });
 }
+
+/** a creature down: the light of its magic leaves it, rising */
+export function fadeOut(i: number, t: TypeName, t2?: TypeName) {
+  if (reduced || !arena) return;
+  const c = body(i, 0.5, 0.6);
+  for (let n = 0; n < 12; n++) {
+    const el = piece('<i class="sp-mote"></i>', 'sp-star'), x = c[0] + ((n * 29) % 13 - 6) * 9;
+    el.style.setProperty('--mc', colOf(n % 2 && t2 ? t2 : t));
+    animate(el, [{ transform: tr([x, c[1]]) + ' scale(.4)', opacity: 0 }, { transform: tr([x + (n % 2 ? 8 : -8), c[1] - 50]) + ' scale(1)', opacity: 1, offset: 0.3 },
+      { transform: tr([x + (n % 2 ? -10 : 10), c[1] - 150]) + ' scale(.5)', opacity: 0 }], { duration: 1100, delay: 200 + n * 50, easing: 'ease-out', fill: 'both' }).then(gone(el));
+  }
+}

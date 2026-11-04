@@ -4,7 +4,7 @@ import { fighter } from '../data/fighters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
 import { coin } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -298,7 +298,13 @@ export function dexHtml(): string {
     var d = dexOf(id), sp = SPECIES[id];
     return '<button class="dex-c' + (d === 2 ? ' got' : d ? ' seen' : '') + '" type="button" data-dex="' + id + '"' + (d ? '' : ' disabled aria-label="Creatura ancora sconosciuta"') + ' style="--tc:var(--t-' + sp.type.toLowerCase() + ')">' +
       '<span class="art">' + creature(id, 'smirk', '', '0 16 200 184') + '</span><small>' + (d ? esc(sp.name) : '???') + '</small></button>';
-  }).join('') + '</div><p class="hint">Le creature si vedono lottandoci contro; quelle catturate o cresciute con te sono a colori.</p></div>';
+  }).join('') + '</div><p class="hint">Le creature si vedono lottandoci contro; quelle catturate o cresciute con te sono a colori.' + prizeHint() + '</p></div>';
+}
+/** the guardaparco's next prize for the diary, in a line */
+function prizeHint(): string {
+  if (dexPrizesDue().length) return ' Il guardaparco di Gianola ha un premio per te: vai a trovarlo.';
+  var nx = nextDexPrize();
+  return nx ? ' Il guardaparco di Gianola premia chi riempie il diario: con ' + (nx.p.all ? 'tutte le creature' : nx.at + ' creature avute') + ' ti dà ' + esc(prizeText(nx.p)) + '.' : '';
 }
 export function openSpecies(id: SpeciesId, back: () => void) {
   var sp = SPECIES[id], d = dexOf(id), mine = (st.mons || []).filter(function (m) { return m.sp === id; }).length;

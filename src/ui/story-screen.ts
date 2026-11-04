@@ -30,7 +30,7 @@ import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
 import { MAMURRA } from '../story/plot';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf } from '../story/growth';
+import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
@@ -357,6 +357,7 @@ function talkTo(p: Person) {
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
   else if (n.starter && !hasStarter()) starterTalk(n.name || '');
   else if (n.starter && !st.seen['dono-retini']) netsGift(n.name || '');
+  else if (n.starter && dexPrizesDue().length) dexPrizeTalk(n.name || '');
   else if (n.shop) {
     /* the fisherman of Mola also takes you fishing off the pier */
     var shopOpts: { label: string; fn: (() => void) | null }[] = [{ label: 'Compra', fn: function () { openShop(n.shop!); } }];
@@ -619,6 +620,15 @@ const NETS_TALK = ['Tieni anche questi: ' + GIFT_NETS + ' retini, per cominciare
 function giveNets() { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + GIFT_NETS; st.seen['dono-retini'] = true; save(); renderHud(); }
 /** a save from before the gift: the guardaparco gives the nets the next time */
 function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, Antonio! Come sta la tua creatura?'].concat(NETS_TALK), who); }
+/** the guardaparco's prizes for the creature diary: all the ones reached, at once, and the next one */
+function dexPrizeTalk(who: string) {
+  var due = dexPrizesDue(), lines = ['Fammi vedere il tuo diario delle creature… ' + dexHad() + ' creature! Bravo, Antonio.'];
+  due.forEach(function (p) { takeDexPrize(p); lines.push('Questo è per te: ' + prizeText(p) + '.'); });
+  var nx = nextDexPrize();
+  lines.push(nx ? (nx.p.all ? 'Se le prendi tutte, ti do il premio più grande: ' : 'Quando ne avrai ' + nx.at + ', ti do ' ) + prizeText(nx.p) + '.' : 'Le hai prese tutte. A Formia non l\'aveva mai fatto nessuno.');
+  save(); renderHud(); sfx('badge');
+  say(lines, who);
+}
 function starterTalk(who: string) {
   say(['Ciao Antonio! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
     'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
@@ -648,7 +658,7 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   keepBag(res.bag); save(); renderHud();
   if (res.quit) { fight = null; say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
   if (!res.won && !res.caught) mentorTip('loss');
-  if (res.caught) mentorTip('catch');
+  if (res.caught) { mentorTip('catch'); if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
   if ((tag.trainer || tag.wild) && fight) { fightAfter(res, key); return; }
   if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
