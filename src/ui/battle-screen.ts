@@ -151,7 +151,9 @@ function moveButton(b: HTMLButtonElement, i: number, m: Move) {
   var rune = creatureSide && !bag ? '<span class="mv-rune">' + (L.mtype ? runeIcon(L.mtype, 34) : ico('spark')) + '</span>' : bag ? '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">' + L.count + '</i>' : '') + '</span>' : '';
   if (bag) sub = esc(L.sub);
   b.setAttribute('data-id', m.id);
-  b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (bag ? ' bag' : '') + (rune ? ' cr' : '') + (creatureSide && !bag && !L.mtype ? ' plain' : '');
+  b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (bag ? ' bag' : '') + (rune ? ' cr' : '') + (creatureSide && !bag && !L.mtype ? ' plain' : '') +
+    /* a net likely to hold now glows: the moment to throw it */
+    (bag && L.chance != null && L.chance >= 0.5 ? ' ready' : '');
   b.style.setProperty('--tc', creatureSide && !bag ? (L.mtype ? TC[L.mtype] : 'var(--t-none)') : TC[E.sideType(S, i)]);
   b.innerHTML = rune + '<b>' + esc(m.name) + tag + '</b><small>' + sub + '</small>';
   b.disabled = !padOn || L.locked;
@@ -326,7 +328,8 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     /* the creatures' magic, as a show of its type (ui/spells.ts): it resolves on the hit, so the damage lands on it */
     case 'magic': {
       var t = ev.style as TypeName, mv = moveOf(i, ev.move), o = outcomeOf(evs, next, j), sid = S.sides[i].id;
-      return castSpell(i, j, { type: mv && mv.plain ? null : t, name: mv ? mv.name : '', power: (mv && mv.power) || 40, sig: !!mv && isSpecies(sid) && SPECIES[sid].sig === mv.id, outcome: o.outcome, crit: o.crit, lvl: o.lvl });
+      return castSpell(i, j, { type: mv && mv.plain ? null : t, name: mv ? mv.name : '', power: (mv && mv.power) || 40, sig: !!mv && isSpecies(sid) && SPECIES[sid].sig === mv.id, outcome: o.outcome, crit: o.crit, lvl: o.lvl,
+        drain: !!(mv && mv.drain), quick: !!(mv && mv.priority) });
     }
     case 'magicUp': {
       var mu = moveOf(i, ev.move), su = S.sides[i].id;
@@ -505,6 +508,20 @@ function openSheet() {
 }
 
 /* =================== NAVIGATION =================== */
+/** a battle with creatures opens as in the Pokémon games: a flash, then bars over the screen slide away one after the
+    other (dark for a wild one, red for a trainer) */
+function curtain(trainer: boolean) {
+  if (reduced) return;
+  var el = document.createElement('div');
+  el.className = 'curtain' + (trainer ? ' trainer' : '');
+  el.setAttribute('aria-hidden', 'true');
+  for (var k = 0; k < 8; k++) el.appendChild(document.createElement('i'));
+  document.body.appendChild(el);
+  each(el.querySelectorAll<HTMLElement>('i'), function (bar, k) {
+    if (bar.animate) bar.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (k % 2 ? 104 : -104) + '%)' }], { duration: 460, delay: 160 + k * 50, easing: 'cubic-bezier(.6, 0, .4, 1)', fill: 'both' });
+  });
+  setTimeout(function () { el.remove(); }, 1300);
+}
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
@@ -519,6 +536,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   document.body.classList.add('in-battle');
   window.scrollTo(0, 0);
   renderShell();
+  if (!restore && cfg && cfg.story && (cfg.wild || cfg.trainer)) curtain(!!cfg.trainer);
   music(S.boss ? 'boss' : 'battle');
   uiHp = [S.sides[0].hp, S.sides[1].hp];
   shown.revealed = [true, S.mode === 'pvp' || S.sides[1].id !== 'esame' || S.sides[1].revealed];
@@ -563,11 +581,11 @@ export const UI = {
     suggest: function () { return S && S.phase === 'select' && needQ.length ? E.ai(JSON.parse(JSON.stringify(S)), needQ[0]) : null; },
     battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; },
     /* a spell's show on demand, to look at the shows: type (null for a plain move), what happens, who casts */
-    cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; self?: boolean }) {
+    cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; self?: boolean; drain?: boolean; quick?: boolean }) {
       if (!S) return null;
       var i = from || 0, x = o || {};
       if (x.self && type) return castSelf(i, type, x.name || 'Prova', !!x.sig);
-      return castSpell(i, 1 - i, { type: type, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0 });
+      return castSpell(i, 1 - i, { type: type, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0, drain: !!x.drain, quick: !!x.quick });
     }
   }
 };

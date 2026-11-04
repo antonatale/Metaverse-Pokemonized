@@ -32,6 +32,12 @@ export interface Cast {
   crit: boolean;
   /** how well it works, from the engine (effLevel): 2 double advantage, 1 super effective, 0, −1, −2 */
   lvl: number;
+  /** it gives back to the caster part of the damage: life flows back */
+  drain?: boolean;
+  /** it strikes first: a flash-step before the spell */
+  quick?: boolean;
+  /** set by castSpell: a big move (power 75 and up) or the form's own, which has the grand version of its show */
+  big?: boolean;
 }
 type P = number[];
 const colOf = (t: TypeName | null): string => (t ? MAGIC[t].col : '#ffffff');
@@ -185,6 +191,14 @@ function moonFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
     trace(L, dur).then(function () { fade(L, 360); });
     const fr = along(cv.at, 12, function (t) { return 'rotate(' + (-25 + t * 1080).toFixed(0) + 'deg) scale(' + lerp(1, 0.9, t).toFixed(2) + ')'; });
     animate(moon, fr, { duration: dur, easing: 'cubic-bezier(.5,0,.8,1)', fill: 'both' }).then(function () { fade(moon, c.outcome === 'miss' ? 200 : 90); });
+    if (c.big) {
+      /* the grand one: two more blades, higher and lower, crossing the arena with the first */
+      [36, 150].forEach(function (lift, q) {
+        const cv2 = curve([up[0], up[1] + (q ? -30 : 30) * k], end, lift * k), extra = piece(crescent(mc), 'sp-moon', w * 0.75);
+        animate(extra, along(cv2.at, 12, function (t) { return 'rotate(' + (40 + t * (q ? -900 : 900)).toFixed(0) + 'deg) scale(' + lerp(0.6, 0.85, t).toFixed(2) + ')'; }, function (t) { return t < 0.1 ? t * 10 : 1; }),
+          { duration: dur * (q ? 1.08 : 0.92), delay: 40 + q * 50, easing: 'cubic-bezier(.5,0,.8,1)', fill: 'both' }).then(function () { fade(extra, 120); });
+      });
+    }
     for (let n = 1; n <= 3; n++) {
       const ghost = piece(crescent(mc), 'sp-moon ghost', w);
       ghost.style.opacity = '0';
@@ -197,7 +211,9 @@ function moonHit(b: P, to: number, c: Cast, mc: string, k: number) {
   const r = 70 * k;
   const d1 = 'M' + (b[0] - r) + ' ' + (b[1] - r * 0.8) + ' Q' + (b[0] + r * 0.2) + ' ' + (b[1] - r * 0.1) + ' ' + (b[0] + r) + ' ' + (b[1] + r * 0.8);
   const d2 = 'M' + (b[0] + r) + ' ' + (b[1] - r * 0.7) + ' Q' + (b[0] - r * 0.1) + ' ' + (b[1] + r * 0.05) + ' ' + (b[0] - r * 0.9) + ' ' + (b[1] + r * 0.85);
-  const L = layer(beam(d1, mc, 9 * k) + beam(d2, mc, 9 * k));
+  /* a big move cuts three times */
+  const d3 = 'M' + (b[0] - r * 1.05) + ' ' + (b[1] + r * 0.1) + ' Q' + b[0] + ' ' + (b[1] - r * 0.35) + ' ' + (b[0] + r * 1.05) + ' ' + (b[1] + r * 0.15);
+  const L = layer(beam(d1, mc, 9 * k) + beam(d2, mc, 9 * k) + (c.big ? beam(d3, mc, 8 * k) : ''));
   trace(L, 150).then(function () { fade(L, 420, 120); });
   flashAt(b[0], b[1], '#e8f7ff', 460 * k, 420);
   ring(b[0], b[1], mc, 320 * k, 640);
@@ -234,16 +250,18 @@ function boltFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
     { transform: tr([end[0], cy]) + ' scale(1.02)', opacity: 1, filter: 'brightness(1.8)', offset: 0.5 }, { transform: tr([end[0], cy]) + ' scale(1)', opacity: 1, filter: 'brightness(1)', offset: 0.6 },
     { transform: tr([end[0], cy]) + ' scale(1)', opacity: 1 }], { duration: 1150, easing: 'ease-out', fill: 'both' }).then(function () { fade(cloud, 380); });
   return sleep(470).then(function () {
-    const strikes = c.outcome === 'miss' ? 2 : 3;
+    const strikes = c.outcome === 'miss' ? 2 : c.big ? 5 : 3;
     let chain: Promise<unknown> = Promise.resolve();
     for (let n = 0; n < strikes; n++) {
       chain = chain.then(function () {
-        const last = n === strikes - 1, x = end[0] + (last ? 0 : (n === 0 ? -1 : 1) * 34 * k), y2 = end[1] + (last ? 6 : 26 * k);
+        const last = n === strikes - 1, side = [-1, 1, -2, 2][n] || 0, x = end[0] + (last ? 0 : side * 34 * k), y2 = end[1] + (last ? 6 : 26 * k);
         const d = boltPath(x + (wob() - 0.5) * 40 * k, cy + 18, x, y2, 9, 46 * k);
         const L = layer(beam(d, mc, 11 * k) + '<path d="' + boltPath(x, cy + 30, x + (wob() - 0.5) * 120 * k, lerp(cy, y2, 0.6), 5, 30 * k) + '" stroke="#ffffff" stroke-width="' + (3 * k).toFixed(1) + '" opacity=".8"/>', 'sp-bolt');
         L.style.setProperty('--mc', mc);
         animate(L, [{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 0.25, offset: 0.3 }, { opacity: 1, offset: 0.42 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration: 340, fill: 'both' }).then(gone(L));
-        flash('#ffffff', 170, last ? 0.75 : 0.45);
+        /* the whole screen flashes only on the last strike (never more than a couple of flashes a second); the
+           others light up where they land */
+        if (last) flash('#ffffff', 220, 0.5); else flashAt(x, y2, '#ffffff', 160 * k, 200);
         if (n === 0 || last) sfx('thunder');
         sparks(x, y2, 5, function () { return zig(mc); }, 70 * k, 420);
         if (last && c.outcome !== 'miss') pulse(arena, 'quake', 420);
@@ -254,6 +272,12 @@ function boltFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
   });
 }
 function boltHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  if (c.big) {
+    /* the ground cracks under the one hit */
+    const g = anchor(to, 0.5, 0.9), w0 = 120 * k;
+    const L = layer(beam(boltPath(g[0] - w0, g[1] + 4, g[0] + w0, g[1] - 4, 10, 18 * k), mc, 5 * k), 'sp-bolt');
+    trace(L, 160).then(function () { fade(L, 500, 200); });
+  }
   flashAt(b[0], b[1], mc, 440 * k, 360);
   ring(b[0], b[1], mc, 300 * k, 560);
   sparks(b[0], b[1], 16, function () { return zig(mc); }, 150 * k, 700);
@@ -301,7 +325,17 @@ function starFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
     });
   }).then(function () { /* on the collapse */ });
 }
+function meteors(b: P, mc: string, k: number) {
+  for (let n = 0; n < 7; n++) {
+    const x0 = b[0] + (n - 3) * 46 * k + 160 * k, x1 = b[0] + (n - 3) * 22 * k, el = piece(shape('Cervello', n % 2 ? '#ffffff' : mc, Math.round(26 * k)), 'sp-star');
+    animate(el, [{ transform: tr([x0, -30]) + ' scale(.6) rotate(0deg)', opacity: 0 }, { transform: tr([lerp(x0, x1, 0.3), lerp(-30, b[1], 0.3)]) + ' scale(1) rotate(120deg)', opacity: 1, offset: 0.3 },
+      { transform: tr([x1, b[1]]) + ' scale(1.1) rotate(300deg)', opacity: 1 }], { duration: 320, delay: n * 55, easing: 'ease-in', fill: 'both' }).then(function () {
+      el.remove(); flashAt(x1, b[1], mc, 120 * k, 220);
+    });
+  }
+}
 function starHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  if (c.big) meteors(b, mc, k);
   const w = 240 * k, burst = piece(starburst(mc), 'sp-burst', w), rays = piece('', 'sp-rays', w * 1.6);
   rays.style.setProperty('--mc', mc);
   animate(burst, [{ transform: tr(b) + ' scale(.15) rotate(0deg)', opacity: 1 }, { transform: tr(b) + ' scale(1.1) rotate(25deg)', opacity: 1, offset: 0.35 }, { transform: tr(b) + ' scale(1.5) rotate(45deg)', opacity: 0 }], { duration: 640, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' }).then(gone(burst));
@@ -325,7 +359,7 @@ function songFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
   if (bob) animate(bob, [{ transform: 'scale(1)' }, { transform: 'scale(1.08,.94)', offset: 0.6 }, { transform: 'scale(.96,1.06)', offset: 0.85 }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-in-out' });
   return sleep(400).then(function () {
     sfx('notes');
-    const waves = 5, dur = 560;
+    const waves = c.big ? 8 : 5, dur = 560;
     for (let n = 0; n < waves; n++) {
       sleep(n * 80).then(function () {
         const el = piece(waveSvg(mc, k), 'sp-wave');
@@ -346,6 +380,7 @@ function songFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<
   });
 }
 function songHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  if (c.big) { ring(b[0], b[1], '#ffffff', 520 * k, 760); ring(b[0], b[1], mc, 640 * k, 900); }
   const bob = document.querySelector('#m-' + to + ' .bob');
   if (bob) animate(bob, [{ transform: 'skewX(0) scale(1)' }, { transform: 'skewX(12deg) scale(1.08,.92)', offset: 0.15 }, { transform: 'skewX(-10deg) scale(.94,1.06)', offset: 0.35 }, { transform: 'skewX(7deg) scale(1.04,.96)', offset: 0.55 }, { transform: 'skewX(-4deg)', offset: 0.75 }, { transform: 'skewX(0) scale(1)' }], { duration: 640, easing: 'ease-out' });
   for (let n = 0; n < 3; n++) sleep(n * 110).then(function () { ring(b[0], b[1], mc, (220 + n * 70) * k, 520); });
@@ -388,6 +423,14 @@ function heartFly(from: number, end: P, c: Cast, mc: string, k: number): Promise
   });
 }
 function heartHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  if (c.big) {
+    /* the grand one: hearts rain on the one hit */
+    for (let n = 0; n < 12; n++) {
+      const x = b[0] + ((n * 37) % 11 - 5) * 22 * k, el = piece(shape('Cuore', n % 3 ? mc : '#ffffff', 18 + (n % 3) * 6), 'sp-heart');
+      animate(el, [{ transform: tr([x, -20]) + ' rotate(' + (n % 2 ? -20 : 20) + 'deg)', opacity: 0 }, { transform: tr([x, lerp(-20, b[1], 0.2)]) + ' rotate(0deg)', opacity: 1, offset: 0.2 },
+        { transform: tr([x + (n % 2 ? 14 : -14), b[1] + 40]) + ' rotate(' + (n % 2 ? 25 : -25) + 'deg)', opacity: 0 }], { duration: 900, delay: 120 + n * 60, easing: 'ease-in', fill: 'both' }).then(gone(el));
+    }
+  }
   for (let n = 0; n < 2; n++) sleep(n * 140).then(function () { ring(b[0], b[1], mc, (260 + n * 90) * k, 600); });
   flashAt(b[0], b[1], mc, 480 * k, 380);
   sparks(b[0], b[1], 18, function (n) { return shape('Cuore', n % 3 ? mc : '#ffffff', 18 + (n % 3) * 7); }, 180 * k, 1000);
@@ -429,10 +472,26 @@ function hex(to: number, t: TypeName, mc: string, k: number) {
   const m = $('m-' + to); if (m) pulse(m, 'hexed', 820);
 }
 
+/** a draining move: motes of light flow from the one hit back to the caster */
+function lifeBack(from: number, to: number, mc: string) {
+  const a = body(to, 0.5, 0.5), b = body(from, 0.5, 0.5);
+  for (let n = 0; n < 8; n++) {
+    const cv = curve(a, b, (n % 2 ? 40 : 110) + n * 6), el = piece('<i class="sp-mote"></i>', 'sp-star');
+    el.style.setProperty('--mc', mc);
+    animate(el, along(cv.at, 10, function (t) { return 'scale(' + (1 - Math.abs(0.5 - t)).toFixed(2) + ')'; }, function (t) { return t < 0.15 ? t / 0.15 : t > 0.9 ? (1 - t) * 10 : 1; }),
+      { duration: 620, delay: 120 + n * 55, easing: 'ease-in-out', fill: 'both' }).then(gone(el));
+  }
+}
 /** a creature's spell, from the caster to the foe; resolves on the hit */
 export function castSpell(from: number, to: number, c: Cast): Promise<void> {
   if (reduced || !arena) return Promise.resolve();
   const t = c.type, mc = colOf(t), k = grand(c);
+  c.big = c.sig || c.power >= 75;
+  if (c.quick) {
+    /* it strikes first: a flash-step, quicker than the eye */
+    const q = body(from, 0.5, 0.5);
+    streaks(from); flashAt(q[0], q[1], '#ffffff', 240, 240); sfx('whoosh');
+  }
   if (!t) return plainHit(from, to, c, k);
   const dark = darken(from, mc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
   band(from, c.name, t, c.sig, mc);
@@ -442,8 +501,9 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
   return FLY[t](from, end, c, mc, k).then(function () {
     if (c.outcome === 'hit') {
       HIT[t](b, to, c, mc, k);
+      if (c.drain) lifeBack(from, to, mc);
       /* the grand hits: a second shockwave, the whole arena lit */
-      if (c.crit || c.lvl > 0 || c.sig) { ring(b[0], b[1], '#ffffff', 420 * k, 700); flash(c.lvl > 0 ? mc : '#ffffff', 420, c.lvl > 1 || c.crit ? 0.6 : 0.4); }
+      if (c.crit || c.lvl > 0 || c.sig) { ring(b[0], b[1], '#ffffff', 420 * k, 700); if (t !== 'Caos') flash(c.lvl > 0 ? mc : '#ffffff', 420, c.lvl > 1 || c.crit ? 0.5 : 0.35); }
       if (c.crit || c.lvl > 1) pulse(arena, 'quake', 420);
       dark.off(560);
       /* a moment of stillness on the hit */

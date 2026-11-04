@@ -151,6 +151,9 @@
 .mv-rune .cnt { position: absolute; right: -5px; bottom: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; border: 1.5px solid #1c2340; background: #ffe45c; color: #1c2340;
   font: 11px/15px var(--font-display); font-style: normal; text-align: center; }
 .bag-none { flex: 1; align-self: center; font-size: 13.5px; color: var(--muted); }
+.pad:not(.off) .mv.bag.ready { border-color: var(--good); animation: netReady 1.4s ease-in-out infinite; }
+@keyframes netReady { 50% { box-shadow: 3px 3px 0 var(--line), 0 0 0 4px color-mix(in srgb, var(--good) 45%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .pad:not(.off) .mv.bag.ready { animation: none; box-shadow: 3px 3px 0 var(--line), 0 0 0 3px color-mix(in srgb, var(--good) 45%, transparent); } }
 
 
 /* the bigger shows (ui/effects.ts): sparks, shockwaves, the comic-book star of a hit, the magic of each type */
@@ -188,12 +191,13 @@
 .fx.sp-flash { inset: 0; z-index: 9; background: radial-gradient(circle at 50% 45%, #ffffff 0, color-mix(in srgb, var(--mc) 70%, #ffffff) 40%, transparent 90%); mix-blend-mode: screen; opacity: 0; }
 .sp-moon > svg { filter: drop-shadow(0 0 16px #bfe6ff) drop-shadow(0 0 4px #ffffff); }
 .sp-moon.ghost > svg { filter: blur(1.5px); }
-.sp-star svg, .sp-heart svg, .sp-note svg { display: block; filter: drop-shadow(0 0 7px rgba(255, 255, 255, .9)); }
+.sp-star svg, .sp-heart svg, .sp-note svg { display: block; }
 .sp-bigheart > svg { filter: drop-shadow(0 0 18px #ff8fc1) drop-shadow(0 0 4px #ffffff); }
 .sp-burst > svg { filter: drop-shadow(0 0 20px #ffffff); }
 .sp-rays { border-radius: 50%; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--mc) 65%, #ffffff) 0deg 7deg, transparent 7deg 22.5deg);
   -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); mask: radial-gradient(circle, #000 20%, transparent 70%); }
-.sp-wave svg { display: block; overflow: visible; filter: drop-shadow(0 0 9px #ffe45c); }
+.sp-wave svg { display: block; overflow: visible; }
+.sp-mote { display: block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0, var(--mc) 55%, transparent 72%); box-shadow: 0 0 12px var(--mc); }
 .sp-dust { display: block; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 9px #bfe6ff, 0 0 0 1.5px #1c2340; }
 .sp-pillar { z-index: 5; transform-origin: 50% 100%; border-radius: 45% 45% 0 0 / 8% 8% 0 0;
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--mc) 55%, transparent) 26%, rgba(255, 255, 255, .78) 50%, color-mix(in srgb, var(--mc) 55%, transparent) 74%, transparent);
@@ -227,3 +231,10 @@
 /* a net thrown: the hoop in the air, then the sack on the ground */
 .fx.sp-net { z-index: 6; }
 .sp-net > svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(28, 35, 64, .25)); }
+/* the way into a battle with creatures: bars that slide away (startBattle in ui/battle-screen.ts) */
+.curtain { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: flex; flex-direction: column; overflow: hidden; }
+.curtain i { flex: 1; background: #12163a; box-shadow: 0 0 0 1px #12163a; }
+.curtain.trainer i { background: #7a1c2a; box-shadow: 0 0 0 1px #7a1c2a; }
+.curtain::after { content: ""; position: absolute; inset: 0; background: #ffffff; animation: curtainFlash .3s ease-out forwards; }
+@keyframes curtainFlash { from { opacity: .85; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .curtain { display: none; } }

@@ -28,7 +28,7 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Fatti
 
-- **Le magie delle creature, grandi e diverse per tipo** (4 novembre 2026): il buio intorno, il cerchio magico, il nome della mossa su una fascia; la falce di luna, i fulmini dalla nuvola, la rete di stelle, le onde di canto, il cuore gigante; numeri dei danni grandi con «Superefficace!» e simili, la barra dei PS che scende con la fascia chiara; le mosse delle creature colorate col loro tipo e la runa (`ui/spells.ts`).
+- **Le magie delle creature, grandi e diverse per tipo** (4 novembre 2026): il buio intorno, il cerchio magico, il nome della mossa su una fascia; la falce di luna, i fulmini dalla nuvola, la rete di stelle, le onde di canto, il cuore gigante, ognuna col suo suono, e una versione grande per le mosse forti; numeri dei danni grandi con «Superefficace!» e simili, la barra dei PS che scende con la fascia chiara; le mosse delle creature colorate col loro tipo e la runa; l'entrata in lotta con le fasce, come nei Pokémon (`ui/spells.ts`).
 - **I retini** (4 novembre 2026): sei retini di pregio diverso (dal Retino al Retino d'oro, più Nassa e Rete della lampara), il retaio accanto al guardaparco che li vende tutti, cinque retini in regalo con la prima creatura e la spiegazione di come si cattura, la Borsa come riga in lotta con la probabilità, il retino che trema prima di reggere (`data/nets.ts`).
 - **I sesterzi al posto degli euro** (4 novembre 2026): la moneta della Formia romana, con la moneta d'oro nell'HUD; il nome sta in `COIN` (`data/growth.ts`).
 
