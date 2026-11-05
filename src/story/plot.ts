@@ -13,6 +13,11 @@ export const MAMURRA = 'Mamurra';
 /** a thing that has happened: a key of st.seen, or of st.beaten ('tr-…' for a trainer, a covo's id) */
 export function flag(id: string): boolean { return !!(st.seen[id] || st.beaten[id]); }
 
+/** what someone says now: the world notices what Antonio has done */
+export function linesNow(n: { lines?: string[]; reacts?: { after: string; say: string[] }[] }): string[] {
+  const r = (n.reacts || []).filter(function (x) { return flag(x.after); }).pop();
+  return r ? r.say : n.lines || [];
+}
 export interface Stone { id: string; name: string; where: string; text: string; color: string; mark: 'wall' | 'wave' | 'voice' }
 export const STONES: Stone[] = [
   { id: 'pietra-mura', name: 'Pietra delle Mura', where: 'Castellone, nel Cisternone', color: '#b8ad94', mark: 'wall',

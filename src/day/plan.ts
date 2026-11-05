@@ -1,10 +1,11 @@
-import type { Member } from '../battle/types';
+import type { Member, NewBattle } from '../battle/types';
 import { DAY_ABILITIES, DAY_FLOORS, DAY_TUNE, type DayFloor } from '../data/day';
 import { CMOVES, SPECIES, knownAt, type SpeciesId } from '../data/creatures';
 import { HIDINGS } from '../data/encounters';
 import { HELD_IDS, atLevel } from '../data/growth';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { ABILITIES, HELD, type HeldId } from '../data/passives';
+import { PLACE_MAGIC } from '../data/scenes';
 
 /* «Un giorno a Formia»: a short run, the same for everyone who plays the same day. Pure: no clock, no save, no drawing, and
    no Math.random. Everything about a day comes from its seed, floor by floor, and never from what the player has done:
@@ -76,7 +77,8 @@ function foesOf(seed: number, n: number, f: DayFloor): { sp: SpeciesId; lv: numb
     const L = LEGENDS[pick(r, Object.keys(LEGENDS).sort())];
     return [{ sp: L.sp, lv: lv, stages: L.stages }];
   }
-  const h = HIDINGS[f.table], table = h.day.concat(h.night || []).filter(function (m) { return !SPECIES[m.sp].legend && fights(m.sp); }), out: { sp: SpeciesId; lv: number }[] = [];
+  /* the day's table by day, the night's by night, as in town */
+  const h = HIDINGS[f.table], table = ((f.night && h.night) || h.day).filter(function (m) { return !SPECIES[m.sp].legend && fights(m.sp); }), out: { sp: SpeciesId; lv: number }[] = [];
   const kinds = shuffled(r, table.map(function (m) { return m.sp; }).filter(function (sp, i, a) { return a.indexOf(sp) === i; }));
   for (let k = 0; k < f.foes; k++) out.push({ sp: formAt(kinds[k % kinds.length], lv), lv: lv });
   return out;
@@ -117,6 +119,11 @@ export interface DayRun {
   over: '' | 'won' | 'lost';
   /** the creatures met so far, to name the new ones */
   born: number;
+  /** a battle has started and has not been told how it ended: reloading the page must not give a second try at a seed
+      that is known by now */
+  fighting?: boolean;
+  /** what the last floor has done to the team, until a reward is taken */
+  said?: string[];
 }
 function grow(m: DayMon, by: number) { m.lv += by; m.sp = formAt(m.sp, m.lv); }
 export function newRun(seed: number, day: string): DayRun {
@@ -138,11 +145,20 @@ export function foeMember(f: { sp: SpeciesId; lv: number }, stages?: LegendStage
   return o;
 }
 export function alive(r: DayRun): DayMon[] { return r.team.filter(function (m) { return m.hp > 0; }); }
+/** the battle of the floor to play, for the engine: one place only, so that the screen and the simulator play the same.
+    The hour is the day's, never the clock's: with the same choices the same battle, at any hour of the player's day */
+export function battleOf(r: DayRun): NewBattle {
+  const f = planOf(r.seed).floors[r.floor], mine = alive(r).map(memberOf), foes = f.foeList.map(function (x) { return foeMember(x, f.stages); });
+  const o: NewBattle = { a: mine[0].id, b: foes[0].id, seed: f.seed, sideA: mine[0], sideB: foes[0], benchA: mine.slice(1), benchB: foes.slice(1), smart: [0, f.smart || 0], wild: foes.length < 2, night: !!f.night, field: PLACE_MAGIC[f.scene] };
+  if (f.who) o.trainer = f.who;
+  return o;
+}
 /** the floor is over. `left`: what is left of each creature's health, as a share, `turns` how long it took; what the day
     says goes back to the player, a line for each creature that has changed */
 export function afterFloor(r: DayRun, won: boolean, left: Record<string, number>, turns: number): string[] {
   const said: string[] = [];
   let fell = false;
+  r.fighting = false;
   r.team.forEach(function (m) { if (left[m.key] != null) { if (m.hp > 0 && left[m.key] <= 0) fell = true; m.hp = Math.max(0, Math.min(1, left[m.key])); } });
   if (!won) { r.log.push(0); r.over = 'lost'; return said; }
   r.log.push(fell ? 1 : 2);
@@ -157,36 +173,44 @@ export function afterFloor(r: DayRun, won: boolean, left: Record<string, number>
     if (m.sp !== was) said.push(SPECIES[was].name + ' diventa ' + SPECIES[m.sp].name + '!');
   });
   r.picking = true;
+  r.said = said;
   return said;
 }
 /** the rewards of the floor just won */
 export function offersNow(r: DayRun): Offer[] { return planOf(r.seed).floors[r.floor - 1].offers; }
+/** this reward can go to this creature: an ability is worth something only to who does not have it already */
+export function fits(m: DayMon, o: Offer): boolean {
+  if (o.k !== 'abil') return true;
+  return (SPECIES[m.sp].abil || []).indexOf(o.id) < 0 && (m.abil || []).indexOf(o.id) < 0;
+}
 /** can this reward be taken as things stand? */
 export function canTake(r: DayRun, o: Offer): boolean {
   if (o.k === 'mon') return r.team.length < DAY_TUNE.team;
   if (o.k === 'heal') return r.team.some(function (m) { return m.hp < 1; });
-  return alive(r).length > 0;
+  return alive(r).some(function (m) { return fits(m, o); });
 }
 /** it needs a creature to go to */
 export function needsTarget(o: Offer): boolean { return o.k === 'held' || o.k === 'abil' || o.k === 'levels'; }
 /** the player takes a reward (`key`: the creature it goes to, if it goes to one), or none with a null */
 export function takeOffer(r: DayRun, o: Offer | null, key?: string) {
-  r.picking = false;
+  r.picking = false; r.said = [];
   if (!o || !canTake(r, o)) return;
-  const m = r.team.filter(function (x) { return x.key === key; })[0];
+  const m = r.team.filter(function (x) { return x.key === key && fits(x, o); })[0];
   if (o.k === 'heal') r.team.forEach(function (x) { x.hp = Math.min(1, x.hp + DAY_TUNE.heal); });
   else if (o.k === 'mon') { const lv = levelAt(r.floor); r.team.push({ key: 'd' + r.born++, sp: formAt(o.sp, lv), lv: lv, hp: 1 }); }
   else if (!m) r.picking = true;
   else if (o.k === 'held') m.item = o.id;
-  else if (o.k === 'abil') m.abil = (m.abil || []).filter(function (a) { return a !== o.id; }).concat([o.id]);
+  else if (o.k === 'abil') m.abil = (m.abil || []).concat([o.id]);
   else grow(m, DAY_TUNE.levels);
 }
-export function offerText(o: Offer): { name: string; text: string } {
-  if (o.k === 'heal') return { name: 'Tiella per tutti', text: 'Tutti recuperano il ' + DAY_TUNE.heal * 100 + '% dei PS, e chi è KO torna in piedi.' };
-  if (o.k === 'held') return { name: HELD[o.id].name, text: HELD[o.id].text };
-  if (o.k === 'abil') return { name: ABILITIES[o.id].name, text: ABILITIES[o.id].text };
-  if (o.k === 'mon') return { name: SPECIES[o.sp].name, text: 'Si unisce alla squadra per oggi.' };
-  return { name: 'Allenamento', text: 'Una creatura sale di ' + DAY_TUNE.levels + ' livelli.' };
+/** a reward in words, on the floor it comes after; `no`: why it cannot be taken, when it cannot */
+export function offerText(o: Offer, floor: number): { name: string; text: string; no: string } {
+  if (o.k === 'heal') return { name: 'Tiella per tutti', text: 'Tutti recuperano il ' + DAY_TUNE.heal * 100 + '% dei PS, e chi è KO torna in piedi.', no: 'Stanno tutti bene.' };
+  if (o.k === 'held') return { name: HELD[o.id].name, text: HELD[o.id].text, no: 'Non c\'è nessuno a cui darla.' };
+  if (o.k === 'abil') return { name: ABILITIES[o.id].name, text: ABILITIES[o.id].text, no: 'Non serve a nessuno: chi è in piedi ce l\'ha già.' };
+  /* it comes in the form it has at the level of the team: the name on the card is the one that arrives */
+  if (o.k === 'mon') return { name: SPECIES[formAt(o.sp, levelAt(floor))].name, text: 'Si unisce alla squadra per oggi.', no: 'La squadra è al completo.' };
+  return { name: 'Allenamento', text: 'Una creatura sale di ' + DAY_TUNE.levels + ' livelli.', no: 'Non c\'è nessuno da allenare.' };
 }
 
 /* ---------- what the player passes to a friend ---------- */

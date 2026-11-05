@@ -31,8 +31,9 @@ import { sceneFor, PLACE_MAGIC } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml, legendWay } from './plot';
+import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
-import { MAMURRA, storyStage } from '../story/plot';
+import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
 import { idOf, sideOf, foeSide, fightPay, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
@@ -377,8 +378,8 @@ function talkTo(p: Person) {
   }
   else if (n.gate) gateTalk(n.gate, n.name);
   else if (n.activity) offerActivity(n);
-  else if (n.hint) say((n.lines || []).concat(nextStop().tip), n.name);
-  else say(n.lines || ['…'], n.name);
+  else if (n.hint) say(linesNow(n).concat(nextStop().tip), n.name);
+  else { var now = linesNow(n); say(now.length ? now : ['…'], n.name); }
 }
 export function useDoor(b: Building) {
   if (b.gate) gateTalk(b.gate);
@@ -388,7 +389,14 @@ export function useDoor(b: Building) {
 function gateTalk(g: string, who?: string) {
   var G0 = GATES[g], need = cityCovi(G0.city), have = need.filter(hasBadge).length, city = MAPS[G0.city].name;
   if (have < need.length) say([G0.label + ' parte quando hai tutte le spille di ' + city + '.', 'Ne hai ' + have + ' su ' + need.length + '.'], who);
-  else say(['Hai tutte le spille di ' + city + '!', G0.label + ' arriva con il prossimo aggiornamento del gioco.'], who);
+  else say(['Hai tutte le spille di ' + city + '!', G0.label + ' arriva con il prossimo aggiornamento del gioco.'], who, flag('tr-mamurra') ? [{ label: 'Guarda indietro', fn: lookBack }, { label: 'Aspetto', fn: null }] : null);
+}
+/** before leaving: the story of this game, told back */
+function lookBack() {
+  sheet('<div class="award" role="dialog" aria-modal="true" aria-labelledby="ep-t"><h2 id="ep-t">La tua Formia</h2>' + epilogue().map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') +
+    '<button class="btn primary" type="button" id="ep-ok">Continua</button></div>', 'result');
+  $('ep-ok').addEventListener('click', closeSheet);
+  setTimeout(function () { var b = $('ep-ok'); if (b) b.focus(); }, 30);
 }
 
 /* ---------- covi ---------- */

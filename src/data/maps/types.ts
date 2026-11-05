@@ -79,6 +79,8 @@ export interface Npc {
   /** someone who has a look of their own (render/canvas/walkers.ts LOOKS), like Nicola Spadea */
   look?: string;
   lines?: string[];
+  /** what they say instead, once something has happened (a flag): the last one that holds */
+  reacts?: { after: string; say: string[] }[];
   /** talks about a city exit */
   gate?: string;
   /** offers something to do together (see story/activities.ts) */

@@ -193,3 +193,28 @@ describe('the Ricchezza of Mamurra', () => {
     expect(E.snap(s).chips[1].some((c) => c.t === 'Esposto')).toBe(true);
   });
 });
+
+describe('what the review of Slancio found', () => {
+  it('the names of the places read as Italian', () => {
+    for (const [id, m] of Object.entries(PLACE_MAGIC)) expect(m.name, id).toMatch(/^(di|del|della|degli|dei) /);
+    const s = E.newBattle({ a: 'ramarrino', b: 'cicalina', seed: 3, sideA: mon('ramarrino', 20), sideB: mon('cicalina', 20), field: PLACE_MAGIC.porto, benchA: [] });
+    expect(says(E.intro(s))).toContain('La magia del porto:');
+  });
+  it('a creature with its blow ready shows that, and not the idea from the AI, which is Antonio\'s', () => {
+    const s = fight([mon('ramarrino', 20, { resonate: true })], [mon('cicalina', 20)], { field: CAOS });
+    s.sides[0].boost = true;
+    const chips = E.snap(s).chips[0].map((c) => c.t);
+    expect(chips).toContain('Risonanza');
+    expect(chips).not.toContain('IA +50%');
+  });
+  it('the words come from the engine, with its numbers', () => {
+    const s = fight([mon('ramarrino', 20, { resonate: true })], [mon('cicalina', 20)], { field: CAOS }), t = E.resonanceText(s);
+    expect(t.sheet).toContain('la magia del porto'.replace('la', 'La'));
+    expect(t.sheet).toContain(Math.round(FIELD_TUNE.heal * 100) + '% dei PS');
+    expect(t.sheet).toContain('tre cuori');
+    s.story = { day: true };
+    expect(E.resonanceText(s).sheet, 'a day has no bond').not.toContain('tre cuori');
+    expect(E.withResonance('coda')).toBe('res:coda');
+  });
+});
+

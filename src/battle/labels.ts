@@ -58,11 +58,17 @@ export function changeText(s: BattleState, i: number): { button: string; hint: s
   return { button: (n === 1 ? '1 pronta' : n + ' pronte') + ' · costa il turno',
     hint: 'Cambiare costa il turno: ' + ch(foe).name + ' (' + typesOf(s, foe, s.sides[i]).join(' e ') + ') colpisce chi entra, che però è in guardia e prende il ' + Math.round(SWITCH_TUNE.guard * 100) + '% del danno. Chi aspetta recupera il ' + Math.round(SWITCH_TUNE.rest * 100) + '% dei PS a turno.' };
 }
+/** Risonanza and the magic of the place, in words: the button before and after it is pressed, and the sheet of the battle */
+export function resonanceText(s: BattleState): { button: string; armed: string; sheet: string } {
+  const f = s.field, pct = f ? Math.round((FIELD_TUNE.boost - 1) * 100) : 0;
+  return { button: 'Una volta sola: la prossima mossa fa il 50% in più', armed: 'Adesso scegli la mossa',
+    sheet: f ? 'La magia ' + f.name + ': qui le mosse di tipo ' + f.type + ' fanno il ' + pct + '% in più. Lo Slancio sale quando un colpo è critico o superefficace, dato o preso. Con ' + FIELD_TUNE.max + ' punti, una volta a lotta, la Risonanza dà a una creatura il tipo del luogo, il ' + Math.round(FIELD_TUNE.heal * 100) + '% dei PS e un colpo fortissimo.' + (s.story && s.story.day ? '' : ' Serve un legame di tre cuori.') : '' };
+}
 function chips(s: BattleState, i: number): Chip[] {
   const x = s.sides[i], out: Chip[] = [];
   function add(c: string, ic: string, t: string, d?: string) { out.push({ c: c, i: ic, t: t, d: d || t }); }
   if (x.lock) { const it = ITEMS[x.lock.move], left = x.lock.until - s.turn + 1; add('bad', it.icon, left <= 1 ? '1 turno' : left + ' turni', it.short); }
-  if (x.boost) add('info', 'spark', 'IA +50%');
+  if (x.boost && !isSpecies(x.id)) add('info', 'spark', 'IA +50%');
   if (x.id === 'antonio') { if (x.tee) add('white', 'cert', x.tee + '/3', 'Certificati bianchi'); add('stage', 'plane', ['Formia', 'Torino', 'AMERICA'][x.lv], 'Tappa del viaggio'); }
   if (x.skip) add('bad', x.skip.why === 'robot' ? 'robot' : 'mute', x.skip.why === 'robot' ? 'Robot a terra' : 'Perde il turno');
   if (x.conf > 0) add('bad', 'swirl', 'Confuso');

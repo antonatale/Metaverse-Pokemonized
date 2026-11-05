@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { afterFloor, alive, canTake, dayKey, foeMember, formAt, levelAt, memberOf, needsTarget, newRun, offersNow, offerText, planOf, seedOf, shareLine, takeOffer, type DayRun, type Offer } from '../../src/day/plan';
+import { afterFloor, alive, battleOf, canTake, dayKey, fits, foeMember, formAt, levelAt, memberOf, needsTarget, newRun, offersNow, offerText, planOf, seedOf, shareLine, takeOffer, type DayMon, type DayRun, type Offer } from '../../src/day/plan';
+import { ENGINE as E } from '../../src/battle';
 import { DAY_ABILITIES, DAY_FLOORS, DAY_TUNE } from '../../src/data/day';
 import { CMOVES, SPECIES, knownAt, type SpeciesId } from '../../src/data/creatures';
 import { HIDINGS } from '../../src/data/encounters';
@@ -154,7 +155,7 @@ describe('a run', () => {
     expect(JSON.parse(JSON.stringify(r))).toEqual(r);
   });
   it('tells each reward in words', () => {
-    for (const o of planOf(4).floors.flatMap((f) => f.offers)) { const t = offerText(o); expect(t.name).toBeTruthy(); expect(t.text).toBeTruthy(); }
+    for (const o of planOf(4).floors.flatMap((f) => f.offers)) { const t = offerText(o, 3); expect(t.name).toBeTruthy(); expect(t.text).toBeTruthy(); expect(t.no).toBeTruthy(); }
   });
 });
 
@@ -172,3 +173,80 @@ describe('the line for the friends', () => {
     expect(line).toContain(SPECIES[r.team[0].sp].name);
   });
 });
+
+describe('what the review of the day found', () => {
+  it('the hour of a battle is the day\'s, whatever the clock says', () => {
+    const r = newRun(5, '2026-11-05');
+    expect(battleOf(r).night, 'the morning').toBe(false);
+    r.floor = 7;
+    expect(battleOf(r).night, 'the night').toBe(true);
+  });
+  it('the simulator and the screen play the same battle: every place has its magic', () => {
+    const r = newRun(5, ''), o = battleOf(r);
+    expect(o.seed).toBe(planOf(5).floors[0].seed);
+    expect(o.field).toBeTruthy();
+    expect(o.sideA!.resonate).toBe(true);
+    for (let n = 0; n < DAY_FLOORS.length; n++) { r.floor = n; const b = battleOf(r); expect(b.wild, DAY_FLOORS[n].name).toBe(DAY_FLOORS[n].foes < 2); if (n) expect(b.trainer || b.wild).toBeTruthy(); }
+  });
+  it('a battle left in the middle is not a second try', () => {
+    const r = newRun(5, '');
+    r.fighting = true;
+    const again = JSON.parse(JSON.stringify(r)) as DayRun;
+    expect(again.fighting, 'it survives closing the page').toBe(true);
+    afterFloor(again, false, {}, 0);
+    expect(again.over).toBe('lost');
+    expect(again.fighting).toBe(false);
+  });
+  it('an ability goes only to who does not have it, and a form that brings it does not double it', () => {
+    const r = newRun(9, '');
+    r.team[0].sp = 'olivella'; r.team[1].sp = 'cicalina'; r.team[2].sp = 'polpino';
+    const o: Offer = { k: 'abil', id: 'radici' };
+    expect(fits(r.team[0], o), 'Olivella has its Radici').toBe(false);
+    expect(fits(r.team[1], o)).toBe(true);
+    takeOffer(r, o, r.team[0].key);
+    expect(r.team[0].abil).toBeUndefined();
+    expect(r.picking, 'it waits for someone it can go to').toBe(true);
+    takeOffer(r, o, r.team[1].key);
+    expect(r.team[1].abil).toEqual(['radici']);
+    expect(fits(r.team[1], o), 'twice is no use').toBe(false);
+    const dup: DayMon = { key: 'x', sp: 'olivella', lv: 10, hp: 1, abil: ['radici'] };
+    const s = E.newBattle({ a: dup.sp, b: 'cicalina', seed: 1, sideA: memberOf(dup) });
+    expect(s.sides[0].abil).toEqual(['radici']);
+  });
+  it('nobody can take an ability if everyone has it already', () => {
+    const r = newRun(9, ''); r.team = [{ key: 'a', sp: 'olivella', lv: 10, hp: 1 }];
+    expect(canTake(r, { k: 'abil', id: 'radici' })).toBe(false);
+  });
+  it('what the floor did to the team waits for the reward, and goes with it', () => {
+    const r = newRun(9, ''); r.team[0].sp = 'polpino'; r.team[0].lv = 12;
+    const said = afterFloor(r, true, {}, 5);
+    expect(r.said).toEqual(said);
+    takeOffer(r, null);
+    expect(r.said).toEqual([]);
+  });
+});
+
+describe('what the last review of the day found', () => {
+  it('a creature on offer is named as what really arrives', () => {
+    const o: Offer = { k: 'mon', sp: 'polpino' };
+    expect(offerText(o, 0).name).toBe('Polpino');
+    expect(offerText(o, 3).name, 'at level 16 it has changed form').toBe(SPECIES[SPECIES.polpino.evolve!.into].name);
+    const r = newRun(9, ''); r.floor = 3;
+    takeOffer(r, o);
+    expect(SPECIES[r.team[3].sp].name).toBe(offerText(o, 3).name);
+  });
+  it('says why a reward cannot be taken, for what it is', () => {
+    expect(offerText({ k: 'abil', id: 'radici' }, 2).no).toContain('ce l\'ha già');
+    expect(offerText({ k: 'mon', sp: 'gabbi' }, 2).no).toContain('al completo');
+    expect(offerText({ k: 'heal' }, 2).no).toContain('bene');
+  });
+  it('the creatures of a floor are those of its hour, by day and by night', () => {
+    for (let s = 1; s < 120; s++) planOf(s).floors.forEach((f) => {
+      if (f.boss) return;
+      const h = HIDINGS[f.table], list = ((f.night && h.night) || h.day).map((m) => m.sp);
+      const forms = (sp: SpeciesId): SpeciesId[] => [sp].concat(SPECIES[sp].evolve ? forms(SPECIES[sp].evolve!.into) : []);
+      for (const x of f.foeList) expect(list.flatMap(forms), f.name + ': ' + x.sp).toContain(x.sp);
+    });
+  });
+});
+

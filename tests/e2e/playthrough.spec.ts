@@ -954,6 +954,70 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
   expect(get('gone'), 'once in a battle').toBe(0);
 });
 
+/* a day's challenge cannot be tried again by closing the page in the middle of a battle */
+test('a battle of the day left in the middle', async ({ browser }) => {
+  const r = await play(browser, 'day-left', { seed: 6 }, async (r) => {
+    const p = r.page;
+    await p.click('#dy-today'); await p.clock.runFor(200);
+    await p.click('#dy-go'); await p.clock.runFor(300);
+    r.keep('fighting', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!).run.fighting));
+    await p.reload(); await p.clock.runFor(1500);
+    r.keep('card', await p.locator('#day-card').innerText());
+    await p.click('#dy-on'); await p.clock.runFor(300);
+    r.keep('title', await p.locator('#dy-t').innerText());
+    await p.click('#dy-close'); await p.clock.runFor(100);
+    r.keep('save', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!)));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('fighting')).toBe(true);
+  expect(String(get('card'))).toContain('rimasta a metà');
+  expect(get('title')).toBe('La giornata finisce qui');
+  const save = get('save') as { run: unknown; days: Record<string, { floors: number }> };
+  expect(save.run).toBeNull();
+  expect(save.days['2026-03-14'].floors).toBe(0);
+});
+
+/* a battle already decided counts, even if the page is closed on the result */
+test('a battle of the day won, and the page closed on the result', async ({ browser }) => {
+  const r = await play(browser, 'day-won', { seed: 6 }, async (r) => {
+    const p = r.page;
+    await p.click('#dy-free'); await p.clock.runFor(200);
+    await p.click('#dy-go');
+    for (let k = 0; k < 8 && !await battleOver(p); k++) await fight(r, 'day-won', 0);
+    r.keep('won', await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!).run; return s && [s.floor, s.fighting, s.picking, s.over]; }));
+    await p.reload(); await p.clock.runFor(1500);
+    await p.click('#dy-on'); await p.clock.runFor(300);
+    r.keep('title', await p.locator('#dy-t').innerText());
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('won')).toEqual([1, false, true, '']);
+  expect(get('title')).toBe('Scegli una ricompensa');
+});
+
+/* the end of the story so far: at the train, the game told back */
+test('looking back, before the train', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
+  const r = await play(browser, 'epilogue', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    await talkTo(p, 'capotreno');
+    await choose(p, 'Guarda indietro');
+    await r.shot('look-back');
+    r.keep('text', await p.locator('.award').innerText());
+    await p.click('#ep-ok'); await p.clock.runFor(200);
+    r.keep('closed', await p.locator('.award').count());
+  });
+  const text = String(r.data.find((x) => x.name === 'text')!.value);
+  expect(text).toContain('La tua Formia');
+  expect(text).toContain('Pino è ancora con te');
+  expect(text).toContain('Costanzo e Forchetta');
+  expect(text).toContain('Lamo l\'hai guardato in faccia');
+  expect(r.data.find((x) => x.name === 'closed')!.value).toBe(0);
+});
+
 /* a save already in town, with Formia as it is now (positions kept) */
 const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
   seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });

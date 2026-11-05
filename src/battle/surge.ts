@@ -19,6 +19,8 @@ const RES = 'res:';
 /** a choice that carries Risonanza with a move: `res:<move>` */
 export function isResonance(id: string | null | undefined): boolean { return !!id && id.indexOf(RES) === 0; }
 export function moveOf(id: string): string { return isResonance(id) ? id.slice(RES.length) : id; }
+/** the choice of a move with Risonanza */
+export function withResonance(id: string): string { return RES + id; }
 
 /** a blow has landed: Slancio for who gave it, if it was a critical or super effective; for who took it, if it was super
     effective, so that who is at a disadvantage gets its own back */
@@ -31,7 +33,7 @@ export function surgeOn(s: BattleState, i: number, crit: boolean, eff: number, e
 function bump(s: BattleState, i: number, ev: BattleEvent[]) {
   if (s.surge![i] >= FIELD_TUNE.max) return;
   s.surge![i]++;
-  if (s.surge![i] === FIELD_TUNE.max && i === 0 && canResonate(s, i)) ev.push(say(ch(s.sides[i]).name + ' sente la magia di ' + s.field!.name + ': può fare la Risonanza!'));
+  if (s.surge![i] === FIELD_TUNE.max && i === 0 && canResonate(s, i)) ev.push(say(ch(s.sides[i]).name + ' sente la magia ' + s.field!.name + ': può fare la Risonanza!'));
 }
 export function canResonate(s: BattleState, i: number): boolean {
   const x = s.sides[i];
@@ -52,7 +54,7 @@ export function resonate(s: BattleState, i: number, ev: BattleEvent[]) {
   if (sp.type !== f.type && sp.type2 !== f.type) x.types = [sp.type, f.type];
   x.boost = true;
   ev.push(anim(i, 'resonance', { style: f.type, text: 'Risonanza!' }));
-  ev.push(say(ch(x).name + ' risuona con la magia di ' + f.name + ': ora è anche di tipo ' + f.type + '!'));
+  ev.push(say(ch(x).name + ' risuona con la magia ' + f.name + ': ora è anche di tipo ' + f.type + '!'));
   if (x.hp < x.max) heal(s, i, x.max * FIELD_TUNE.heal, ev, ch(x).name + ' si sente rinascere.');
   cureStatus(s, i, ev);
   ev.push(snap(s));

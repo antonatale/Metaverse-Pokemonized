@@ -562,7 +562,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
   }),
   fuocelmo: S({
     id: 'fuocelmo', abil: ['leggenda'], name: 'Fuocelmo', wild: 'Fuocelmo, il drago di Sant\'Elmo,', type: 'Calore', type2: 'Caos', stage: 3, catchRate: 0.4, legend: true, sig: 'tempestelmo',
-    stats: { hp: 272, atk: 148, def: 112, spe: 138 },
+    stats: { hp: 270, atk: 148, def: 112, spe: 138 },
     learn: [[1, 'scintille'], [1, 'bonaccia'], [1, 'alberomaestro'], [1, 'vele'], [1, 'fuocoelmo'], [1, 'tempestelmo']],
     cry: { entry: 'FSSSHHH… KRRRAAAK! IL MARE BRUCIA!', win: 'La tempesta passa. Io resto.', ko: 'Torno sulle onde…' },
     text: 'La fiamma azzurra che i marinai vedono sugli alberi delle navi nei temporali, il fuoco di Sant\'Elmo. Si racconta che sia un drago di fuoco e di fulmini, con le ali come vele, che dorme nelle nuvole sopra il golfo: porta fortuna a chi lo vede e lo lascia andare, e una tempesta a chi lo vuole tenere.',

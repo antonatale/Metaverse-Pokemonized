@@ -16,7 +16,7 @@ import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeO
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
-import { dayAfter } from './day-screen';
+import { dayAfter, dayDecided } from './day-screen';
 import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
 import { runeIcon } from '../render/svg/creatures';
 import { soundButton } from './sound';
@@ -26,7 +26,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -83,7 +83,8 @@ function renderShell() {
   q.addEventListener('click', function () {
     if (q.getAttribute('data-armed') === '1' || (S && S.phase === 'over')) {
       clearTimeout(qt);
-      if (S && S.story) backToWorld(S.story, false, true); else goHome();
+      /* with the battle already decided, while its last blow plays, this is the same as Continua */
+      if (S && S.story) { var ended = S.phase === 'over'; backToWorld(S.story, ended && wonNow(), !ended); } else goHome();
       return;
     }
     q.setAttribute('data-armed', '1'); q.textContent = 'Esci davvero?';
@@ -193,7 +194,7 @@ function renderPad(i: number) {
   row.innerHTML = (shelf ? '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
     '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>') : '') +
     (sw ? '<button class="mv swap" type="button" id="sw-btn"' + (padOn ? '' : ' disabled') + '><b>Cambia</b><small>' + esc(E.changeText(S, i).button) + '</small></button>' : '') +
-    (res ? '<button class="mv swap res' + (resArmed ? ' armed' : '') + '" type="button" id="res-btn" aria-pressed="' + resArmed + '"' + (padOn ? '' : ' disabled') + '><b>Risonanza</b><small>' + (resArmed ? 'Adesso scegli la mossa' : 'Una volta sola: la prossima mossa fa il 50% in più') + '</small></button>' : '');
+    (res ? '<button class="mv swap res' + (resArmed ? ' armed' : '') + '" type="button" id="res-btn" aria-pressed="' + resArmed + '"' + (padOn ? '' : ' disabled') + '><b>Risonanza</b><small>' + esc(resArmed ? E.resonanceText(S).armed : E.resonanceText(S).button) + '</small></button>' : '');
   each(row.querySelectorAll<HTMLButtonElement>('.mv.bag'), function (b, k) { moveButton(b, i, bag[k]); });
 }
 function setPad(on: boolean, i?: number | null) { padOn = on; pad.classList.toggle('off', !on); renderPad(i == null ? padSide : i); }
@@ -406,8 +407,19 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
     default: return Promise.resolve();
   }
 }
+/** the player has won: the creature is beaten, or in the net */
+function wonNow(): boolean { return (S.result === 'win' && S.winner === 0) || S.result === 'catch'; }
+/** what is left of each creature of a team, as a share of its health */
+function leftNow(): Record<string, number> {
+  var left: Record<string, number> = {};
+  if (S.bench) [S.sides[0]].concat(S.bench[0]).forEach(function (x) { if (x.key) left[x.key] = x.hp / x.max; });
+  return left;
+}
 function play(evs: BattleEvent[], my: number): Promise<unknown> {
   var n = 0;
+  /* a battle of the day counts the moment the engine has decided it, not after the last blow and the result: closing the
+     page there must not lose a day already won */
+  if (S.phase === 'over' && S.story && S.story.day) dayDecided(wonNow(), leftNow(), S.turn);
   function next(): Promise<unknown> {
     if (my !== flow) return Promise.reject(CANCEL);
     if (n >= evs.length) return Promise.resolve();
@@ -449,7 +461,7 @@ function onMove(id: string) {
   var i = needQ[0];
   if (E.available(S, i).indexOf(id) < 0 && E.switches(S, i).indexOf(id) < 0) return;
   /* it goes with a move of the creature: a change, or something from the bag, leaves it for later */
-  pending[i] = resArmed && !E.BAG[id] && E.switches(S, i).indexOf(id) < 0 ? 'res:' + id : id;
+  pending[i] = resArmed && !E.BAG[id] && E.switches(S, i).indexOf(id) < 0 ? E.withResonance(id) : id;
   resArmed = false;
   needQ.shift();
   setPad(false, i);
@@ -557,7 +569,7 @@ function showResult() {
     else sub = S.winner === 0 ? 'Hai vinto' : 'Ha vinto il computer';
     first = [S.winner!, fighter(w.id).lines.win]; second = [1 - S.winner!, fighter(l.id).lines.ko];
   } else { star = A.id; stamp = 'Pareggio'; first = null; second = null; }
-  var story = S.story, storyWon = !!story && ((r === 'win' && S.winner === 0) || r === 'catch');
+  var story = S.story, storyWon = !!story && wonNow();
   if (story && story.covo && COVI[story.covo]) sub = COVI[story.covo].name;
   var expr = r === 'win' || r === 'catch' ? (S.boss && S.winner === 1 ? 'sleepy' : 'cool') : 'worried';
   var gradeHtml = S.boss && S.grade ? '<div class="grade"><span>Voto</span><strong>' + (S.grade.lode ? '30 e lode' : S.grade.g + '/30') + '</strong></div>' : (sub ? '<div class="grade"><span>' + esc(sub) + '</span></div>' : '');
@@ -603,7 +615,7 @@ function openSheet() {
     }
     h += '</div>';
   });
-  if (S.field) h += '<div class="card"><div class="block"><h3>La magia del luogo</h3><p>A ' + esc(S.field.name) + ' le mosse di tipo ' + esc(S.field.type) + ' fanno più male. Lo Slancio sale quando un colpo è critico o superefficace, dato o preso: con tre punti e un legame di tre cuori, una volta a lotta, la Risonanza dà a una creatura il tipo del luogo, un po\' di PS e un colpo fortissimo.</p></div></div>';
+  if (S.field) h += '<div class="card"><div class="block"><h3>La magia del luogo</h3><p>' + esc(E.resonanceText(S).sheet) + '</p></div></div>';
   h += '<div class="card"><div class="block"><h3>Tipi</h3><ul class="cycle-why">';
   if (isSpecies(S.sides[0].id) || isSpecies(S.sides[1].id)) {
     /* between creatures it is the magic that counts: ten types, each beats two */
@@ -635,7 +647,7 @@ function curtain(trainer: boolean) {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -672,8 +684,7 @@ export function goHome() {
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
-  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [], left: Record<string, number> = {}, turns = S ? S.turn : 0;
-  if (story.day && S && S.bench) [S.sides[0]].concat(S.bench[0]).forEach(function (x) { if (x.key) left[x.key] = x.hp / x.max; });
+  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [], left = S ? leftNow() : {}, turns = S ? S.turn : 0;
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;

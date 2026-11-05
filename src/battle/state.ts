@@ -62,7 +62,7 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   /* a creature's ability comes with its kind */
   if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();
   /* and one more, if the day has given it one (src/day/plan.ts) */
-  if (o && o.abil) side.abil = (side.abil || []).concat(o.abil);
+  if (o && o.abil) side.abil = (side.abil || []).concat(o.abil).filter(function (a, k, all) { return all.indexOf(a) === k; });
   return side;
 }
 export function newBattle(o: NewBattle): BattleState {

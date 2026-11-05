@@ -15,12 +15,12 @@ const BY_AREA: Record<string, string> = {
 };
 const BY_MAP: Record<string, string> = { casa: 'castellonorato', circolo: 'campo', morgana: 'birreria', cisterna: 'cisterna', telepilo: 'castellone' };
 /** the magic of a place: a part of town has a type of its own, stronger there (data/tuning.ts FIELD_TUNE) and what a creature
-    can take with Risonanza. The fights of the friends, indoors, have none */
+    can take with Risonanza. `name` comes after «la magia». The fights of the friends, indoors, have none */
 export const PLACE_MAGIC: Record<string, { type: TypeName; name: string }> = {
-  castellone: { type: 'Calma', name: 'Castellone' }, gianola: { type: 'Cervello', name: 'Gianola' }, porto: { type: 'Caos', name: 'il porto' },
-  pineta: { type: 'Chiacchiera', name: 'la pineta' }, castellonorato: { type: 'Cuore', name: 'gli uliveti' }, vindicio: { type: 'Calore', name: 'Vindicio' },
-  mola: { type: 'Corrente', name: 'Mola' }, caposele: { type: 'Corrente', name: 'Caposele' }, maranola: { type: 'Cielo', name: 'i Monti Aurunci' },
-  centro: { type: 'Corazza', name: 'piazza della Vittoria' }, cisterna: { type: 'Crepuscolo', name: 'il Cisternone' }
+  castellone: { type: 'Calma', name: 'di Castellone' }, gianola: { type: 'Cervello', name: 'di Gianola' }, porto: { type: 'Caos', name: 'del porto' },
+  pineta: { type: 'Chiacchiera', name: 'della pineta' }, castellonorato: { type: 'Cuore', name: 'degli uliveti' }, vindicio: { type: 'Calore', name: 'di Vindicio' },
+  mola: { type: 'Corrente', name: 'di Mola' }, caposele: { type: 'Corrente', name: 'di Caposele' }, maranola: { type: 'Cielo', name: 'dei Monti Aurunci' },
+  centro: { type: 'Corazza', name: 'di piazza della Vittoria' }, cisterna: { type: 'Crepuscolo', name: 'del Cisternone' }
 };
 /** the scene behind a battle on that map, in that part of town */
 export function sceneFor(map: string, area: string | null): string {
