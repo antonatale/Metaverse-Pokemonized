@@ -88,6 +88,7 @@ export function newBattle(o: NewBattle): BattleState {
   if (o.smart) s.smart = [o.smart[0], o.smart[1]];
   if (o.field) { s.field = { type: o.field.type, name: o.field.name }; s.surge = [o.surgeStart || 0, 0]; s.resonated = [false, false]; }
   if (o.shield) s.shield = { left: o.shield.left, max: o.shield.left, name: o.shield.name };
+  if (o.hero) s.hero = o.hero;
   if (o.benchA || o.benchB) {
     const ba = o.benchA || [], bb = o.benchB || [];
     s.bench = [ba.map(function (m) { return newSide(m.id, true, m); }), bb.map(function (m) { return newSide(m.id, mode === 'pvp', m); })];

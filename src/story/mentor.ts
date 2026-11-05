@@ -2,7 +2,7 @@ import { st } from '../save/story-progress';
 import { COVI } from '../data/covi';
 import { CHARS as C } from '../data/characters';
 import { STOPS, nextStop, type Stop } from './goals';
-import { team, level } from './growth';
+import { level, team, teamMons } from './growth';
 import { TRAINERS } from '../data/trainers';
 
 /* Antonio's guide: the ghost of Marcus Tullius Cicero, who died at Formia in 43 BC and has his tomb on the Appia
@@ -56,7 +56,7 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
     done: ['Mamurra è caduto. Formia ti deve un favore.'] },
   padel: { title: 'Una partita al Bruno Zauli',
     intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche sesterzio.'],
-    done: ['Ben giocato. Ogni livello di Antonio vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },
+    done: ['Ben giocato. Ogni livello di {Antonio} vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },
   'covo-circolo': { title: 'Il primo covo: Forchetta',
     intro: ['Ed eccoci alla prima vera sfida: Forchetta, nei campi coperti del Bruno Zauli.', 'È di tipo Calma e di livello 9: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
     done: ['Prima spilla! Forchetta ora è con te: anche lui può scendere in campo.', 'Ne manca una sola. A cosa servono? Lo scoprirai alla stazione.'] },
@@ -98,12 +98,13 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
 /** the first time something happens, Cicero explains it (once) */
 export const TIPS: Record<string, string[]> = {
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
-  level: ['Antonio è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
+  level: ['{Antonio} è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
   money: ['I primi sesterzi! Il retaio di Gianola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
   power: ['Le creature hanno dei poteri. Quelle del mare ti portano a nuoto, quelle dei muri e degli alberi ti fanno salire sulle mura di Castellone, quelle con le ali ti mostrano Formia dall\'alto (tasto V).', 'Cammina verso il mare o contro le mura: se una tua creatura può aiutarti, te lo dice.'],
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
   wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure catturala: stancala, poi tocca un retino nella Borsa, sotto le mosse. Più è stanca, più è facile.',
     'Tra le creature conta la magia delle mosse. Oltre ai cinque tipi delle persone ne hanno cinque tutti loro: Corrente, Calore, Cielo, Corazza e Crepuscolo. Ogni tipo ne batte due: chi batte chi lo trovi nella Scheda della lotta.'],
+  hero: ['Un amico in più, Antonio. E ognuno di voi ha la sua strada: nel menu, alla voce Squadra, puoi passare a lui e giocare con le sue creature.', 'Qualcuno in città chiederà proprio di lui: certe cose le sa fare solo una persona. Guarda le Missioni, nel Viaggio.'],
   surge: ['Tu e una delle tue creature vi capite, ormai: tre cuori. Vuol dire che può sentire la magia dei luoghi.', 'In lotta, ogni colpo critico o superefficace, dato o preso, porta Slancio: i tre pallini accanto al nome. Pieni, una volta a lotta, c\'è la Risonanza: prende il tipo del posto, si riprende un po\' e il colpo dopo fa male davvero. Scegli bene quando.'],
   legend: ['Una leggenda, Antonio. Questa non è una creatura qualunque: la lotta ha tre parti, e a ogni parte cambia.', 'Il retino regge solo nell\'ultima, e serve tutta la squadra. Se vedi che carica un colpo, hai un turno per decidere chi lo prende.'],
   trainer: ['Un allenatore: manda le sue creature una dopo l\'altra, e tu le tue. Ognuna tiene i PS che le restano; se cadono tutte, puoi scendere in campo tu.'],
@@ -140,8 +141,8 @@ export function advice(): string[] {
     out.push(b >= lv ? 'La tua squadra arriva al livello ' + b + ' e ' + who + ' è al ' + lv + ': sei pronto.' : 'La tua squadra arriva al livello ' + b + ', ' + who + ' è al ' + lv + ': allenati ancora un po\' con le creature selvatiche, poi sfidalo.');
   }
   var pf = plotFoe(s);
-  if (pf && team().some(function (k) { return k !== 'antonio'; })) {
-    var c = Math.max.apply(null, (st.mons || []).map(function (m) { return level(m.uid).lv; }));
+  if (pf && teamMons().length) {
+    var c = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
     out.push(c >= pf.lv ? 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': puoi farcela.' : 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': allenati nell\'erba alta, prima.');
   }
   if (!st.seen.starter && s.id !== 'starter') out.push('E non dimenticare: al Parco di Gianola il guardaparco ha una creatura per te.');

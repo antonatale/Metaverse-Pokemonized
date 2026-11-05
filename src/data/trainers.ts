@@ -140,6 +140,17 @@ export const TRAINERS: Record<string, Trainer> = {
       }
     }
   },
+  /* the missions of the friends (data/missions.ts): they are not on the map as trainers, the one who asks is */
+  tennista: {
+    id: 'tennista', title: 'Il tennista del circolo', prize: 40, smart: 1,
+    team: [{ sp: 'cinghialetto', lv: 13 }, { sp: 'falchetto', lv: 14 }, { sp: 'ginestrella', lv: 15 }],
+    intro: [], win: ['Set e partita. Poteva andare peggio, dicono.'], lose: ['Chi perde paga il campo. Torna quando vuoi.'], after: []
+  },
+  guastafeste: {
+    id: 'guastafeste', title: 'Il guastafeste delle dieci', prize: 40, smart: 1,
+    team: [{ sp: 'medusella', lv: 13 }, { sp: 'lumacotta', lv: 14 }, { sp: 'civettina', lv: 15 }],
+    intro: [], win: ['Va bene, va bene. Un\'ultima canzone. E poi basta.'], lose: ['Alle dieci si dorme! Torna domani.'], after: []
+  },
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150, smart: 2,
     team: [{ sp: 'ramarrone', lv: 22 }, { sp: 'granchione', lv: 24 }, { sp: 'muraglione', lv: 28 }],

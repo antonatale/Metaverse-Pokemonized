@@ -18,8 +18,8 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 | # | Cosa | Modello | Effort | Stato |
 |---|---|---|---|---|
 | O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | fatto |
-| O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | da fare |
-| O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | da fare |
+| O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | funziona, restano 10 correzioni |
+| O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | progettata, codice non iniziato |
 | S1 | Togliere «Un giorno a Formia» | Sonnet 5.5 | high | da fare |
 | S2 | Mosse in quadrato, con un design più bello | Sonnet 5.5 | high | da fare |
 | S3 | Schermata per imparare una mossa | Sonnet 5.5 | high | da fare |
@@ -34,19 +34,45 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 
 ## Opus 5.5, max
 
-Non toccare quelle che non dicono «fatto»: ci sta lavorando Opus.
+Opus si è fermato il 5 novembre per il limite settimanale: nessuno ci sta lavorando. O2 e O3 vanno finite, in quest'ordine, prima di S8.
 
 ### O1. Le persone crescono
 
 Fatto: vedi «Le persone crescono» in `CLAUDE.md`.
 
-### O2. Tutti protagonisti
+### O2. Tutti protagonisti: le correzioni che restano
 
-Antonio: «antonio e gli amici devono essere tutti protagonisti della storia, ognuno con il proprio team di creature, alcune missioni le posso fare solo con un personaggio in particolare».
+Il codice è in `main` e documentato in «Tutti protagonisti» in `CLAUDE.md`. `/code-review high` ha trovato questi 10 punti, non ancora corretti. Le decisioni sono già prese. Alla fine lancia tutte le partite: l'ultima prova completa (39 passate) è di prima delle ultime correzioni; dopo sono state rilanciate solo 4 partite.
+
+1. **Il dialogo di chi si unisce non si legge** (`friendJoins`, da `onReward`): `record()` gira con il foglio dell'attività aperto e subito dopo un altro `say()` lo sovrascrive. Vale per Andrea, Valentin e Zendavid. Metti chi si unisce in una coda e fallo parlare dal frame, con la stessa guardia di `chapterTip`.
+2. **Una persona che sale di livello con un'attività perde la mossa** (`onReward` ignora `g.pending` e `g.grew`, e `learn()` gira solo quando si passa il livello): stessa coda, con `growthSay(g, [], poi)`.
+3. **`setFirst`:** chiama `firstCreature` prima di scrivere `st.first`, altrimenti `teamRef()` guarda la squadra vuota del nuovo eroe e la creatura non tiene il passo.
+4. **`heroText` cambia anche quello che non deve:** oggi «Marco Antonio» diventa «Marco Costanzo» (`formia.ts:169`), il motorino di Antonio diventa di un altro, e `growthSay` attribuisce i livelli di Antonio a chi si sta giocando. Passa al contrario: un segnaposto `{hero}` solo nelle frasi rivolte a chi si gioca, e togli `{Antonio}`. Righe da convertire: `formia.ts` 162, 164, 167; `trainers.ts` 115, 122, 123, 128, 136; `choices.ts` 18, 20, 25, 29; `tourney.ts` 16; `story-screen.ts` 590, 596, 652, 764, 767; `plot.ts` 96; `activities.ts` 245; `team.ts` 156; `mentor.ts` 52, 58, 73, 107, 109. Attenzione a «ad Antonio» (`mentor.ts:58`): riscrivi la frase. Aggiorna anche `CLAUDE.md`.
+5. **`battle/damage.ts:132`:** «non vuole deludere Antonio» deve usare `s.hero || 'Antonio'`, come `moves.ts:233`.
+6. **Un amico si unisce anche se l'attività va male** (`record`): chiedi un punteggio vero, maggiore di zero. `run.ts:59` registra senza tempo, e al padel si può chiudere con 0 scambi.
+7. **Per chi è giusto la missione blocca il resto** (`missionTalk`): «Più tardi» deve andare avanti come sempre, con il negozio o l'attività. Fai `talkTo(p, past)` che salta `plotTalk`.
+8. **`missionDoneNow`** dice soldi e creatura ma non gli oggetti: usa lo stile di `prizeText`.
+9. **`st.lead` è uno solo per tutti:** chi segue va salvato per persona (`st.leads?`, facoltativo; `st.lead` resta di Antonio).
+10. **Pulizia:** `plotAfter(f.id, f.who)` e via `npcName`; una funzione sola per la lotta di `missionFight` e `trainerTalk`; `mine()` in `rival.ts` ripete `monsOf('antonio')`, se non crea un ciclo di import.
 
 ### O3. Animazioni davvero diverse
 
 Antonio: «le animazioni di ogni mossa sono comunque ognuna molto simile all'altra, penso a idropompa, surf e cascata in pokemon che avevano ognuno un'animazione molto diversa nonostante fossero mosse dello stesso tipo».
+
+**Perché oggi si somigliano** (`castSpell` in `ui/spells.ts`): tutte aprono allo stesso modo (buio, cerchio, fascia); finiscono con lo stesso `HIT[t]` del tipo; chi le subisce reagisce sempre uguale; le mosse hanno solo 5 gesti (47 su 66 attacchi con tipo) e le altre volano come il loro tipo.
+
+**Il progetto:**
+- **Dati:** `MOVE_FX` diventa `Record<string, Scene>` con `{ stage, charge?: 'none' | 'full', foe?, n? }`. I 5 gesti diventano `stage`, così la tabella resta una.
+- **Codice:** gli aiuti generici (`tr`, `lerp`, `mid`, `body`, `size`, `beyond`, `curve`, `along`, `piece`, `layer`, `beam`, `trace`, `fade`, `glyph`, `flash`, `veilOn`) vanno in `ui/spell-kit.ts`, le scene in `ui/move-stages.ts`. Una scena è generica: prende colore e pezzi dal tipo (acqua, fiamme, piume), e si risolve sull'impatto, perché numero e barra atterrino lì; può continuare dopo.
+- **L'apertura cambia:** `charge: 'none'` toglie buio e cerchio e lascia il nome, per i colpi rapidi. Una scena può disegnare il suo impatto invece di `HIT[t]`.
+- **Chi subisce:** `takes(to, come)` con `recoil`, `lift`, `squash`, `spin`, `shake`, `sink`, animando `m-<i>`.
+- **Spazio:** `.arena` ha `overflow: hidden` (`battle.css:11`). Quello che riempie lo schermo nelle lotte con la scena va messo su `battle`, come fanno `darken` e `flash`.
+
+**Prime scene.** Corrente: `mareggiata` `tide` (come Surf: un muro d'acqua attraversa tutta l'arena con chi lancia sulla cresta), `morsomurena` `jaws` (due morsi, senza carica), `morsa` `clamp` (due chele dai lati stringono), `tentacolata` `grasp` (tentacoli dal suolo intorno al bersaglio), `fischio` `pod` (anelli di suono e tre delfini che saltano), `aculei` `volley` (un ventaglio che si conficca e scoppia), `urtica` `sting` (si avvicina, i filamenti toccano, il bersaglio trema). Esempi di altri tipi: `spruzzo` `jet` (come Idropompa, un getto che spinge indietro), `carica` `ram` (corre lei stessa), `picchiata` `dive` (sale fuori schermo, cade dall'alto), più una `fall` (come Cascata: una colonna che cade sul bersaglio).
+
+**Test:** nessuna coppia di attacchi dello stesso tipo ha la stessa `stage`, per un elenco di tipi finiti (all'inizio solo Corrente) che S8 allarga. Il resto si controlla a vista. Finita O3, scrivi qui sotto in S8 il modello da seguire e la scena di ogni altra mossa.
+
+**Lo strumento:** `tools/move-sheet.ts` fa un foglio di provini di una mossa in `test-results/moves/`. **Non funziona ancora:** la lotta parte ma resta nell'introduzione (`#pad` resta `.off`, con 12 animazioni vive) sotto i passi di `Clip.run`; da capire. Usa il server su 5173.
 
 ## Sonnet 5.5
 

@@ -39,7 +39,7 @@ export interface StoryProgress {
   places?: Record<string, { flags: Record<string, boolean>; tick: number; rest: [number, number] | null }>;
   /** the moves each person knows, once it has started learning (data/people.ts): missing in an old save */
   people?: Record<string, { moves?: string[] }>;
-  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean; item?: string }[];
+  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean; item?: string; owner?: string }[];
   /** the creature diary: 1 for a species seen, 2 for one he has had */
   dex?: Record<string, number>;
   /** the creature that walks behind him on the map (his first one when missing) */
@@ -66,6 +66,8 @@ function load(): StoryProgress {
       if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5 || !v.seen.formia6)) {
         var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
       }
+      /* the first of the company used to be only who went first in a covo: now it is who is played, and that is chosen anew */
+      if (v.first && !v.seen.protagonisti) delete v.first;
       v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true; v.seen.formia6 = true;
       return v;
     }

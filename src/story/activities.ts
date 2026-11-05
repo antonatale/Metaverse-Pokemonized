@@ -1,5 +1,7 @@
 import { st, save } from '../save/story-progress';
-import { gainXp, earn, type Growth } from './growth';
+import { gainXp, earn, firstHuman, joinFriend, type Growth } from './growth';
+import { JOIN } from '../data/people';
+import type { FriendId } from '../data/characters';
 import { friendsPay } from '../data/growth';
 
 /* Things to do around Formia, in the places where Antonio and his friends actually go. Each one is offered by
@@ -40,8 +42,8 @@ const PAY: Record<string, (score: number) => number> = {
   pesca: (g) => Math.min(12, Math.floor(g / 300))
 };
 /** the story screen shows what an activity brought (set by ui/story-screen.ts) */
-let rewardHook: ((g: Growth, money: number) => void) | null = null;
-export function onReward(f: (g: Growth, money: number) => void) { rewardHook = f; }
+let rewardHook: ((g: Growth, money: number, joined: FriendId | null) => void) | null = null;
+export function onReward(f: (g: Growth, money: number, joined: FriendId | null) => void) { rewardHook = f; }
 /** remembers that it was done, with its score; true when the score is a new best */
 export function record(id: string, score?: number): boolean {
   const a = activity(id);
@@ -53,9 +55,12 @@ export function record(id: string, score?: number): boolean {
     better = b == null || (a.lower ? score < b : score > b);
     if (better) st.best[id] = score;
   }
-  const g = gainXp('antonio', XP), cash = PAY[id] && score != null ? friendsPay(PAY[id](score), st.skills || {}) : 0;
+  const g = gainXp(firstHuman(), XP), cash = PAY[id] && score != null ? friendsPay(PAY[id](score), st.skills || {}) : 0;
   if (cash) earn(cash);
+  /* the friend who has done this with Antonio comes along from now on */
+  const joins = (Object.keys(JOIN) as (keyof typeof JOIN)[]).filter(function (f) { return JOIN[f].activity === id; })[0];
+  const joined = joins && joinFriend(joins, JOIN[joins].lv) ? joins : null;
   save();
-  if (rewardHook) rewardHook(g, cash);
+  if (rewardHook) rewardHook(g, cash, joined);
   return better;
 }

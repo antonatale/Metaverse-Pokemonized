@@ -220,7 +220,7 @@ function memberRow(key: string): string {
   var human = !mon, first = human && firstHuman() === key;
   return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
     '<small>' + esc((sp ? typesOf(sp) : c.type) + ' · ' + note) + '</small></span>' +
-    (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="In alto sulla mappa, e il primo a scendere in campo nei covi">Fallo Primo</button>' : '') +
+    (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="Sulla mappa ci sarà lui, con le sue creature">Gioca con lui</button>' : '') +
     (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
     '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button></li>';
 }
@@ -237,9 +237,9 @@ export function teamHtml(): string {
     /* the people: Antonio, and the friends who joined him once beaten in their covo; they fight people */
     '<section class="party people"><div class="party-h">' + ico('users') + '<h3>Le persone</h3><small>' + people.length + ' su ' + ROSTER.length + '</small>' + slotsHtml(people, ROSTER.length) + '</div>' +
     '<ul class="team">' + people.map(memberRow).join('') + '</ul>' +
-    (people.length < ROSTER.length ? '<p class="hint">Gli altri amici sono nei loro covi: battili e vengono con te. Nei covi si lotta tra persone.</p>' : '') + '</section>' +
+    (people.length < ROSTER.length ? '<p class="hint">Gli altri amici sono in giro per Formia: batti chi ha un covo, gioca con gli altri, e vengono con te. Ognuno ha la sua squadra, e alcune missioni può farle solo lui.</p>' : '') + '</section>' +
     /* the creatures: up to six travel with him, the others wait at home; they fight creatures */
-    '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
+    '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature di ' + esc(nameOf(firstHuman())) + '</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
     (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
     (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
     (home || M.id === 'casa' ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +

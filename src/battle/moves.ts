@@ -230,7 +230,7 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
     /* --- the bag, in story battles --- */
     case 'retino': case 'retino2': case 'argento': case 'oro': case 'nassa': case 'lampara': {
       s.bag![id] = (s.bag![id] || 0) - 1;
-      ev.push(say('Antonio lancia ' + NETS[id as NetId].a + '!'));
+      ev.push(say((s.hero || 'Antonio') + ' lancia ' + NETS[id as NetId].a + '!'));
       const chance = catchChance(s, i, id), roll = rand(s), held = roll < chance;
       /* the net shakes before it holds (three times) or the creature gets out: more shakes the closer it came */
       const shakes = held ? 3 : roll < chance * 1.35 ? 2 : roll < chance * 2 ? 1 : 0;

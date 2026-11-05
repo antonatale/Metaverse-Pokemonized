@@ -167,11 +167,13 @@ export interface BattleState {
   /** each side's Slancio, and whether it has done its Risonanza */
   surge?: [number, number];
   resonated?: [boolean, boolean];
+  /** who throws the nets and opens the bag, in a story that has more than one protagonist */
+  hero?: string;
   /** a boss's magic on the second side: what is left of it (data/trainers.ts) */
   shield?: { left: number; max: number; name: string };
 }
 
-export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number; hero?: string }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }

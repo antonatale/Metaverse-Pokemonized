@@ -1164,6 +1164,58 @@ test('the people grow', async ({ browser }) => {
   expect(st.people.antonio.moves).not.toContain('diagnosi');
 });
 
+/* everyone is a protagonist: from the menu Antonio becomes Costanzo, with Costanzo's creatures, and a mission waits for him */
+test('playing as a friend', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: { piazza: true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'polpino', bond: 40 }], lv: { c1: { lv: 12, xp: 0 }, antonio: { lv: 10, xp: 0 }, costanzo: { lv: 10, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'friend', { seed: 17, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    /* as Antonio the man at the bar only says who he is waiting for */
+    const t = await p.evaluate(() => window.WORLD._debug.who('tifoso'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [t!.x, t!.y + 1]); await p.clock.runFor(500);
+    await talkTo(p, 'tifoso');
+    await p.clock.runFor(200);
+    await r.shot('as-antonio');
+    /* the menu: Costanzo takes over */
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await r.shot('menu');
+    await p.locator('[data-first="costanzo"]').click({ timeout: 5000 }); await p.clock.runFor(300);
+    r.keep('team', await p.locator('.party.mons').innerText());
+    await p.keyboard.press('Escape'); await p.clock.runFor(300);
+    if (await p.locator('.sheet').count()) { await p.keyboard.press('m'); await p.clock.runFor(300); }
+    await r.shot('as-costanzo');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    r.keep('offer', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Ci sto');
+    await talkThrough(p);
+    await choose(p, 'Mi chiamo Costanzo');
+    await talkThrough(p);
+    await choose(p, 'GIÀ LO SAI');
+    await talkThrough(p);
+    await choose(p, 'Daje Roma daje');
+    await talkThrough(p);
+    await choose(p, 'Il bidet non si tocca');
+    await talkThrough(p, 20);
+    await r.shot('done');
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('team'))).toContain('Le creature di Costanzo');
+  expect(String(get('team'))).toContain('Cicalina');
+  expect(String(get('team'))).not.toContain('Polpino');
+  expect(get('offer')).toEqual(['Ci sto', 'Più tardi']);
+  const st = get('state') as { first: string; seen: Record<string, boolean>; money: number; mons: { uid: string; sp: string; owner?: string }[] };
+  expect(st.first).toBe('costanzo');
+  expect(st.seen['ms-comizio']).toBe(true);
+  expect(st.money).toBe(80);
+  expect(st.mons.filter((m) => m.owner === 'costanzo').map((m) => m.sp)).toEqual(['cicalina', 'micetto']);
+  expect(st.mons.filter((m) => !m.owner).map((m) => m.sp), 'Antonio\'s are where they were').toEqual(['polpino']);
+});
+
 /* the end of the story so far: at the train, the game told back */
 test('looking back, before the train', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},

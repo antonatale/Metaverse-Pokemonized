@@ -12,6 +12,7 @@ import { TRAINERS } from '../data/trainers';
 import { rivalHere } from './rival';
 import { shutAt } from './place';
 import { LEGENDS } from '../data/legends';
+import { firstHuman, homeMons } from './growth';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -44,7 +45,7 @@ export function key(x: number, y: number): string { return x + ',' + y; }
 /** where the creatures at home stand in Antonio's flat, clear of the furniture and of the way to the door */
 const HOME_SPOTS: [number, number, Dir][] = [[6, 2, 'down'], [8, 2, 'down'], [10, 2, 'left'], [7, 3, 'right'], [10, 5, 'left'], [3, 4, 'down']];
 /** the creature waiting at home on a spot, if any */
-export function petAt(i: number) { return (st.mons || []).filter(function (m) { return m.home; })[i] || null; }
+export function petAt(i: number) { return homeMons()[i] || null; }
 export function prepare(id: string): PreparedMap {
   var m = MAPS[id] as PreparedMap;
   if (m._p) return m;
@@ -117,6 +118,7 @@ export function present(p: Person): boolean {
   var w = p.n.when;
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
+  if (p.n.person && p.n.person === firstHuman()) return false;
   return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));

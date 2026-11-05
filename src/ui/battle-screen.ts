@@ -26,7 +26,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number; hero?: string }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -512,7 +512,7 @@ function askSend(picks: Record<number, number>, my: number): Promise<unknown> {
   };
   if (a.must) {
     var left = E.benchLabels(S, i).filter(function (b) { return b.ready; }), last = left.length === 1 && left[0].last, foe = S.sides[f].hp > 0 ? sideName(f) : '';
-    benchSheet(' bench', last ? 'Le tue creature sono tutte stanche' : sideName(i) + ' non ce la fa più', last ? 'E ' + (foe || 'l\'avversario') + ' è ancora lì. Scendi in campo tu, Antonio?' : foe ? 'Chi mandi contro ' + foe + '?' : 'Chi mandi adesso?', i, S.wild ? 'Scappa' : 'Mi arrendo', next);
+    benchSheet(' bench', last ? 'Le tue creature sono tutte stanche' : sideName(i) + ' non ce la fa più', last ? 'E ' + (foe || 'l\'avversario') + ' è ancora lì. Scendi in campo tu, ' + left[0].name + '?' : foe ? 'Chi mandi contro ' + foe + '?' : 'Chi mandi adesso?', i, S.wild ? 'Scappa' : 'Mi arrendo', next);
     return Promise.resolve();
   }
   var slotN = S.nextIn![f], x = S.bench![f][slotN as number], nm = x.nick || fighter(x.id).name;
@@ -647,7 +647,7 @@ function curtain(trainer: boolean) {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart, hero: cfg!.hero });
     S.story = cfg!.story || null;
   }
   flow++;

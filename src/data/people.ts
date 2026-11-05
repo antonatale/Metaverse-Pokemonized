@@ -1,4 +1,5 @@
 import { CHARS, type Character, type FriendId, type Move, type Stats } from './characters';
+import type { SpeciesId } from './creatures';
 
 /* The people grow too. Only in the story: in the free battles the six friends are the ones in data/characters.ts, whole
    from the first turn, and the golden battles do not change. In the story they start with two moves and find the others
@@ -95,6 +96,15 @@ export const PATHS: Record<FriendId, PersonPath> = {
 };
 export function isFriend(id: string): id is FriendId { return Object.prototype.hasOwnProperty.call(PATHS, id); }
 
+/** how a friend comes into the company: beating its covo, or doing its activity together (`activity`). Everyone is a
+    protagonist, with a team of its own: it comes with its first creature, of its own type */
+export const JOIN: Record<Exclude<FriendId, 'antonio'>, { sp: SpeciesId; lv: number; activity?: string; say?: string[] }> = {
+  costanzo: { sp: 'cicalina', lv: 6 },
+  forchetta: { sp: 'lumacotta', lv: 9 },
+  andrea: { sp: 'stellina', lv: 8, activity: 'padel', say: ['Ho calcolato che con te perdo meno tempo. Vengo.', 'Questa stella l\'ho trovata sugli scogli: è di tipo Cervello, come me.'] },
+  valentin: { sp: 'cinghialetto', lv: 8, activity: 'volley', say: ['Weee! Da oggi la festa si sposta dove vai tu.', 'Lui è il mio cinghialetto. Non chiedere.'] },
+  zendavid: { sp: 'olivella', lv: 8, activity: 'corsa', say: ['Bau. Se corri così, vengo con te.', 'Questa Olivella ascolta la musica con me. Non si lamenta mai.'] }
+};
 /** how far a form takes the numbers: the people have no second form of a kind to get them from, as the creatures do */
 export const FORM_STATS = [1, 1.08, 1.16];
 /** the form at a level: 0, 1 or 2 */

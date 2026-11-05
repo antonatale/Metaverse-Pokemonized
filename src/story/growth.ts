@@ -1,7 +1,7 @@
 import { st } from '../save/story-progress';
 import type { FighterId, FriendId, Move } from '../data/characters';
 import { fighter } from '../data/fighters';
-import { formAt, isFriend, personKnows, personLearns, personMove, withForm } from '../data/people';
+import { JOIN, formAt, isFriend, personKnows, personLearns, personMove, withForm } from '../data/people';
 import { CMOVES, SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
 import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, coins, type DexPrize, type ItemId, type SkillId, xpFor } from '../data/growth';
 import type { Bout, SideOpts } from '../battle';
@@ -39,13 +39,17 @@ export function team(): string[] { return (st.squad as string[]).concat(teamMons
 /* ---------- the team and the creatures at home ---------- */
 /** at most this many creatures travel with Antonio; the others wait at home, in his flat, until he swaps them */
 export const TEAM_MAX = 6;
-export function teamMons(): Mon[] { return (st.mons || []).filter(function (m) { return !m.home; }); }
+/** each protagonist has its own creatures: one with no owner written down is Antonio's, as in a save from before */
+function ownerOf(m: Mon): string { return m.owner || 'antonio'; }
+/** the creatures of someone of the company */
+export function monsOf(who: string): Mon[] { return (st.mons || []).filter(function (m) { return ownerOf(m) === who; }); }
+export function teamMons(): Mon[] { return monsOf(firstHuman()).filter(function (m) { return !m.home; }); }
 /** the average level of the three best creatures of the team (0 with none): what a place that follows the team aims at */
 export function teamRef(): number {
   var top = teamMons().map(function (m) { return level(m.uid).lv; }).sort(function (a, b) { return b - a; }).slice(0, 3);
   return top.length ? top.reduce(function (n, x) { return n + x; }, 0) / top.length : 0;
 }
-export function homeMons(): Mon[] { return (st.mons || []).filter(function (m) { return !!m.home; }); }
+export function homeMons(): Mon[] { return monsOf(firstHuman()).filter(function (m) { return !!m.home; }); }
 /** home and back: the team keeps at least one creature and never more than TEAM_MAX */
 export function sendHome(uid: string): boolean {
   var m = creatureOf(uid);
@@ -74,9 +78,35 @@ export function powerOf(p: Power): string | null {
   var m = ms.filter(function (c) { return powerOfSpecies(c.sp) === p; })[0];
   return m ? m.uid : null;
 }
-/** the first of the company: shown in the corner of the map, sent in first in a covo */
+/** who the player is being: on the map, in the corner, with its own creatures, first in a covo. Everyone in the company is
+    a protagonist, and Antonio is simply the first of them */
 export function firstHuman(): string { return st.first && st.squad.indexOf(st.first) >= 0 ? st.first : 'antonio'; }
-export function setFirst(id: string) { if ((st.squad as string[]).indexOf(id) >= 0) st.first = id as typeof st.first; }
+export function setFirst(id: string) {
+  if ((st.squad as string[]).indexOf(id) < 0) return;
+  st.first = id as typeof st.first;
+  st.seen.protagonisti = true;
+  firstCreature(id as FriendId);
+}
+/** the story is told to whoever is being played: where it says Antonio it says that one. His house stays his, and {Antonio}
+    is Antonio himself, whoever is listening */
+export function heroText(t: string): string {
+  var h = firstHuman();
+  return t.replace(/\{Antonio\}|(?<![Cc]asa di )\bAntonio\b/g, function (w) { return w === 'Antonio' ? nameOf(h) : 'Antonio'; });
+}
+/** a friend comes with its first creature; one who joined before there were teams gets it the first time it is played */
+function firstCreature(id: FriendId) {
+  if (id === 'antonio' || monsOf(id).length) return;
+  var j = JOIN[id], lv = Math.max(j.lv, level(id).lv, Math.round(teamRef()) - 1);
+  addCreature(j.sp, lv, false, 40, id);
+}
+/** a friend joins the company, at a level: false if it was there already */
+export function joinFriend(id: FriendId, lv: number): boolean {
+  if ((st.squad as string[]).indexOf(id) >= 0) return false;
+  st.squad.push(id);
+  joinAt(id, lv);
+  firstCreature(id);
+  return true;
+}
 /** where a fighter is on its way to the next level, 0–1 */
 export function progress(key: string): number { var l = level(key); return l.lv >= MAX_LEVEL ? 1 : Math.min(1, l.xp / toNext(l.lv)); }
 export function hasStarter(): boolean { return !!st.seen.starter; }
@@ -309,8 +339,8 @@ export function leadCreature(): string | null {
   return ms.length ? ms[0].uid : null;
 }
 export function setLead(uid: string) { st.lead = uid; }
-/** a new creature for Antonio, at a level: the one he starts with, or one he has caught */
-export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: number): string {
+/** a new creature, at a level, for whoever is being played unless it says otherwise */
+export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: number, owner?: string): string {
   st.mons = st.mons || [];
   var n = st.mons.length + 1;
   while (st.mons.some(function (m) { return m.uid === 'c' + n; })) n++;
@@ -318,8 +348,10 @@ export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: nu
   /* every creature has its own character; one just caught trusts Antonio a little, the first one more */
   var mon: Mon = { uid: uid, sp: sp, moves: knownAt(sp, lv), bond: bond != null ? bond : 20, nat: nats[Math.floor(Math.random() * nats.length)] };
   if (gold) mon.gold = true;
+  var who = owner || firstHuman();
+  if (who !== 'antonio') mon.owner = who;
   /* a full team: the new one goes home and waits there */
-  if (teamMons().length >= TEAM_MAX) mon.home = true;
+  if (monsOf(who).filter(function (m) { return !m.home; }).length >= TEAM_MAX) mon.home = true;
   st.mons.push(mon);
   own(sp);
   st.lv = st.lv || {}; st.lv[uid] = { lv: lv, xp: 0 };

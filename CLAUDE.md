@@ -55,7 +55,8 @@ src/
       telepilo.ts          La Porta di Telepilo: la strada per Lamo, sotto le mura di Castellone
     passives.ts            stati, abilità e oggetti che le creature portano: solo dati, «quando, se, fa»
     legends.ts             le leggende: quando escono, cosa apre la strada, la lotta in parti, come finiscono
-    people.ts              le persone che crescono: mosse per livello, le mosse nuove, le forme
+    people.ts              le persone che crescono: mosse per livello, le mosse nuove, le forme; come si unisce ogni amico (JOIN)
+    missions.ts            le missioni che può fare solo uno della compagnia
     choices.ts             le scelte della storia: chi chiede, le risposte
     day.ts                 «Un giorno a Formia»: i piani della giornata e i numeri
     covi.ts, gates.ts      i covi (palestre) con spille e frasi; le uscite dalle città
@@ -73,6 +74,7 @@ src/
     plan.ts                «Un giorno a Formia»: la giornata dal suo seme, la corsa, le ricompense, la riga per gli amici (puro)
   story/                   logica della modalità storia, senza disegno
     choices.ts             le scelte del giocatore e cosa ne segue: Tullio, le pietre, come finisce una leggenda
+    missions.ts            le regole delle missioni: chi può farle, cosa pagano
     maps.ts                mappe preparate, collisioni, oggetti persi, quartieri, covi, percorso più breve
     movement.ts            passi, rotazioni, porte, warp e viaggi (travel)
     activities.ts          le attività per Formia: elenco, volte fatte, record
@@ -378,6 +380,15 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Due mosse e un bug da non rifare:** Antonio può perdere un oggetto, che blocca una mossa. Con Diagnosi e Certificati poteva restare senza niente da fare, e la lotta si rompeva: le sue prime due sono tutte e due colpi senza limite di usi, e non può perdere l'oggetto di una mossa che non conosce. `tests/unit/people.test.ts` lo controlla per ogni persona e ogni livello.
   - **Forme:** ai livelli 14 e 26 cambiano forma (`formAt`): un titolo (Il Ricercatore, L'Onorevole, Il King del Verde…), numeri più alti dell'8 e del 16% (`withForm`), vestiti e qualcosa sulla testa. Il ritratto è lo stesso volto con un altro `Look` (`lookOf`), i cui pezzi entrano nella pagina la prima volta che serve (`personIn`): `install()` non cambia, e i golden dei ritratti nemmeno. Quello che si vede di più sta sulla testa (`head`): il busto è una striscia in fondo al ritratto, e le miniature si fermano al viso. Sulla mappa `PEOPLE_FORMS` in `render/canvas/walkers.ts`.
   - **Avversari:** un capo di covo o un amico del torneo ha la forma e le mosse del suo livello (`foeSide`).
+- **Tutti protagonisti** (`st.first`, `firstHuman`, `setFirst` in `story/growth.ts`): chi è nella compagnia si può giocare, dal menu (Squadra → «Gioca con lui»), e Antonio è solo il primo di loro. Chi si gioca è quello che cammina sulla mappa, sta nell'angolo, scende per ultimo in campo, è il primo proposto nei covi e prende l'esperienza delle attività. La sua persona sparisce dalla mappa (`present`), e Formia gli parla.
+  - **Ognuno ha la sua squadra** (`mons[].owner`, `monsOf`): una creatura senza `owner` è di Antonio, così un salvataggio vecchio ha già ragione. `teamMons` e `homeMons` guardano chi si sta giocando: sei posti a testa, e a casa di Antonio si vedono le creature di chi è lì. Una creatura catturata va a chi la cattura. Soldi, borsa, diario, spille e storia sono di tutta la compagnia, e le abilità restano di Antonio.
+  - **Come si unisce un amico** (`JOIN` in `data/people.ts`, `joinFriend`): battuto nel suo covo (Costanzo, Forchetta) o dopo averci fatto la sua attività (padel con Andrea, beach volley con Valentin, corsetta con Zendavid). Arriva con la sua prima creatura, del suo tipo, che non resta indietro se arriva tardi (`firstCreature`). Chi si era unito prima di questa regola la riceve la prima volta che lo si gioca.
+  - **La storia chiama chi si gioca** (`heroText`, applicato ai dialoghi e alle nuvolette di Cicerone): dove un testo dice Antonio si legge il nome giusto, ma «Casa di Antonio» resta sua, e `{Antonio}` nel testo vuol dire proprio lui, chiunque ascolti: le cose perse sono le sue, i punti abilità pure. Chi scrive un testo in cui Antonio è un altro usa `{Antonio}`.
+  - **La prima creatura la dà il guardaparco solo ad Antonio**, e Tullio e l'epilogo guardano la sua (`mons` senza `owner`): un amico può unirsi prima dello starter.
+  - **Le missioni** (`MISSIONS` in `data/missions.ts`, `missionTalk` in `ui/plot.ts`): una per persona, e può farla solo lei. Chi la chiede è uno già sulla mappa: a chiunque altro dice chi aspetta, una volta, e poi fa quello che faceva sempre (`ms-<id>-detto`); ad Antonio senza creature niente (`tooEarly`). Sono una lotta (`tennista`, `guastafeste`, allenatori che non stanno sulla mappa) o qualche domanda, dove sbagliare non costa niente. Pagano sesterzi, cose per la borsa e una creatura per chi l'ha fatta. Finite, sono il flag `ms-<id>` di `st.seen`; il menu le elenca in Viaggio.
+  - **Salvataggi:** prima `st.first` diceva solo chi andava per primo nei covi. Chi l'aveva scelto ora si ritroverebbe un altro personaggio addosso, quindi senza `seen.protagonisti`, che `setFirst` accende, si riparte da Antonio.
+  - **Aggiungere una missione:** una voce in `MISSIONS`; `tests/unit/protagonists.test.ts` controlla che ci sia chi la chiede, chi la fa, e che dica per chi è. Per un allenatore nuovo, una voce in `TRAINERS`.
+  - **Test:** `tests/unit/protagonists.test.ts`, e la partita `playing as a friend`.
 - **Chi lotta con chi:** le creature lottano con le creature, le persone con le persone.
   - **Selvatiche e allenatori** (`fightOn`, `fightAfter` in `ui/story-screen.ts`): una lotta sola, con le due squadre dentro (vedi «Le lotte di squadra»). Antonio sceglie chi manda per primo, gli altri aspettano in panchina. Quando sono tutte KO, Antonio può scendere in campo lui («Lotto io!») o scappare.
   - **Covi:** lottano le persone, cioè Antonio e gli amici che si sono uniti (`st.squad`), uno contro uno.
@@ -439,7 +450,6 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Chi vive lì** (`mare` e `mura` in `data/encounters.ts`): in acqua ricci, granchi e, rari, un Polpino o una Lunaspina; sulle mura un Ramarrino, cicale e qualche Gabbì; di notte altro. Così le iniziali che non si sono scelte si possono trovare.
   - La prima volta che una creatura ha un potere, Cicerone lo spiega (`TIPS.power`).
 - **La squadra e le creature a casa:** in viaggio con Antonio vanno al massimo sei creature (`TEAM_MAX` in `story/growth.ts`); le altre aspettano nel suo appartamento (`mons[].home`, `teamMons`/`homeMons`). Lì si vedono saltellare (sei posti, `HOME_SPOTS` in `story/maps.ts`, Npc con `pet`); parlando con una si apre «Le creature a casa» (`openHome` in `ui/team.ts`) per lasciarne una o portarla con sé. Una creatura catturata con la squadra piena va a casa da sola. La squadra non resta mai senza creature.
-- **Il Primo della compagnia** (`st.first`, `firstHuman`): la persona che compare nell'angolo della mappa ed è la prima proposta nei covi. Si sceglie nel menu (Squadra → «Fallo Primo»); di base è Antonio.
 - **Le barre nell'angolo** (`renderBars` in `ui/story-screen.ts`): in basso a destra, sempre, il Primo e la creatura che segue Antonio, con livello e barra dell'esperienza. Quando salgono di livello la barra si riempie fino in fondo, lampeggia («Livello +1») e riparte.
 - **Allenatori** (`data/trainers.ts`): persone già sulla mappa con `trainer` sull'Npc. Prima dicono le loro frasi, poi sfidano Antonio con le loro creature una dopo l'altra:
   - l'animatore dell'oratorio (Lv 6–7), il bambino dell'Eclipse (7), lo studente della Vitruvio Pollione (10–11), la guida del museo (17–19), il signore di Castellone con il Dracastello (22–28);

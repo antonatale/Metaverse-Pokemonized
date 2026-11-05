@@ -115,8 +115,10 @@ describe('the trainers of Formia', () => {
     const { TRAINERS } = await import('../../src/data/trainers');
     const { MAPS } = await import('../../src/data/maps');
     const { teamOf } = await import('../../src/story/rival');
+    const { MISSIONS } = await import('../../src/data/missions');
     for (const tr of Object.values(TRAINERS)) {
-      const n = (MAPS.formia.npcs || []).find((q) => q.trainer === tr.id);
+      /* the battles of the missions start from who asks for them, not from a trainer on the map */
+      const n = (MAPS.formia.npcs || []).find((q) => q.trainer === tr.id) || MISSIONS.find((m) => m.trainer === tr.id);
       expect(n, 'nobody is ' + tr.id).toBeDefined();
       const team = teamOf(tr.id);
       expect(team.length).toBeGreaterThan(0);

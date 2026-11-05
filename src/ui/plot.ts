@@ -8,9 +8,14 @@ import { HELD } from '../data/passives';
 import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
-import { addCreature, creatureOf, has, own } from '../story/growth';
+import { addCreature, creatureOf, has, nameOf, own } from '../story/growth';
+import { MISSIONS, type Mission } from '../data/missions';
+import { MAPS } from '../data/maps';
+import { CHARS } from '../data/characters';
+import { coins } from '../data/growth';
+import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly } from '../story/missions';
 import { esc, $ } from './dom';
-import { say, sheet, closeSheet, renderHud, dexNotice, type DialogOpt } from './story-screen';
+import { say, sheet, closeSheet, renderHud, dexNotice, missionFight, foesLine, type DialogOpt } from './story-screen';
 import { sfx } from '../audio';
 import { travel } from '../story/movement';
 
@@ -18,10 +23,51 @@ import { travel } from '../story/movement';
    Cicero at his tomb, and what happens after the battles with Mamurra's men and with Mamurra himself. */
 
 /** someone of the plot has something to say now: true when the plot takes the talk */
-export function plotTalk(n: Npc): boolean {
+export function plotTalk(n: Npc, again: () => void): boolean {
   if (n.id === 'archivista' && flag('tr-mamurr-scavi') && !flag('trama-archivio')) { archive(n.name || ''); return true; }
   if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura') && !flag('porta-cisterna')) { riddle(n.name || ''); return true; }
-  return false;
+  return missionTalk(n, again);
+}
+/* ---------- the missions of each friend (data/missions.ts): they ask for one of them, and only that one can do it ---------- */
+function missionTalk(n: Npc, again: () => void): boolean {
+  var m = missionOf(n.id), who = n.name || '';
+  if (!m || tooEarly(m)) return false;
+  if (!canDo(m)) {
+    /* said once, and then on as usual: it is someone like anyone else, with its shop or its game */
+    var told = 'ms-' + m.id + '-detto';
+    if (st.seen[told]) return false;
+    st.seen[told] = true; save();
+    say(m.wait, who, null, again);
+    return true;
+  }
+  var go = m.trainer ? function () { missionFight(m!.trainer!, who); } : function () { quiz(m!, who); };
+  say(m.trainer ? m.ask.concat([foesLine(m.trainer)]) : m.ask, who, [{ label: 'Ci sto', fn: go }, { label: 'Più tardi', fn: null }]);
+  return true;
+}
+function quiz(m: Mission, who: string) {
+  var ask = function (k: number) {
+    var Q = m.quiz![k];
+    if (!Q) { missionDoneNow(m, who); return; }
+    say([Q.q], who, Q.a.map(function (t, i) {
+      return { label: t, fn: function () { if (i === Q.ok) say([Q.yes], who, null, function () { ask(k + 1); }); else say([Q.no], who, null, function () { ask(k); }); } };
+    }));
+  };
+  ask(0);
+}
+function missionDoneNow(m: Mission, who: string) {
+  say(m.done, who, null, function () {
+    var c = creatureOf(missionPay(m)), name = nameOf(c!.uid);
+    save(); renderHud(); sfx('badge'); dexNotice();
+    say([coins(m.pay.money) + ' per la missione «' + m.name + '».', name + (c && c.home ? ' ti aspetta a casa: la squadra è al completo.' : ' entra nella squadra!')]);
+  });
+}
+/** the missions in the menu: who can do each one, and where */
+export function missionsHtml(): string {
+  var left = MISSIONS.filter(function (m) { return !missionDone(m); }).length;
+  return '<div class="pickrow"><h3>Missioni · ' + (MISSIONS.length - left) + ' su ' + MISSIONS.length + '</h3><ul class="wbadge-list">' + MISSIONS.map(function (m) {
+    var did = missionDone(m), c = CHARS[m.who];
+    return '<li class="' + (did ? 'got' : '') + '"><span><b>' + esc(m.name) + '</b><small>' + esc(did ? 'Fatta' : 'Solo ' + c.name + ' · ' + m.where) + '</small></span></li>';
+  }).join('') + '</ul></div>';
 }
 /** a sign of the plot: Cicero's tomb, once Antonio has the other two stones */
 export function plotSign(s: Sign): boolean {
@@ -118,6 +164,12 @@ export function plotAfter(id: string) {
   /* the first two meetings with Tullio: what the player says to him stays */
   else if (id === 'rivale-1') askChoice('tullio1');
   else if (id === 'rivale-2') askChoice('tullio2');
+  else { var m = missionOfTrainer(id); if (m) missionDoneNow(m, m.ask.length ? npcName(m.npc) : ''); }
+}
+/** who asked for a mission: the name it has on the map */
+function npcName(id: string): string {
+  for (var k in MAPS) { var n = (MAPS[k].npcs || []).filter(function (x) { return x.id === id; })[0]; if (n) return n.name || ''; }
+  return '';
 }
 
 /* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */

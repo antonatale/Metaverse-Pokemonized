@@ -3,7 +3,8 @@ import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, type PreparedMap } from '../story/maps';
-import { leadCreature, idOf, creatureOf, formNow } from '../story/growth';
+import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
+import type { FriendId } from '../data/characters';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { placeNow } from '../story/place-run';
@@ -364,7 +365,8 @@ export function resize() {
 /** drop the cached pictures: they are painted again on the next frame */
 export function invalidate() { cache.map = null; }
 
-var ME = { person: 'antonio' as const };
+/** whoever is being played walks the town */
+function hero() { return { person: firstHuman() as FriendId }; }
 function playerPx(now: number) {
   if (!mover) return { x: st.x * T, y: st.y * T, t: 0 };
   var t = Math.min(1, (now - mover.t0) / STEP);
@@ -447,7 +449,7 @@ function drawFrame(now: number, sk: number) {
     if (p.alert) alerts.push([wx + T / 2, wy - 14, now - p.alert]);
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
-  people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(ME, RS), d: st.dir, f: step });
+  people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step });
   var fw = follower(now);
   if (fw) people.push(fw);
   var gh = ghost(now, pp);
@@ -536,7 +538,7 @@ export function preview(el: HTMLElement | null) {
   c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
   var people = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
-  people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(ME, s), d: me.dir });
+  people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(hero(), s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
   el.innerHTML = ''; el.appendChild(c0);

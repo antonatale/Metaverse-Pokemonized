@@ -28,7 +28,7 @@ export function formAt(sp: SpeciesId, stage: number): SpeciesId {
   return s;
 }
 /** Antonio's first creature, as he has it now */
-function mine(): SpeciesId | null { var m = (st.mons || [])[0]; return m ? m.sp : null; }
+function mine(): SpeciesId | null { var m = (st.mons || []).filter(function (c) { return !c.owner; })[0]; return m ? m.sp : null; }
 /** Tullio's creature (a save from before him: worked out from Antonio's) */
 export function rival(): SpeciesId { var m = mine(); return st.rival || rivalFor(m ? firstForm(m) : 'polpino'); }
 
