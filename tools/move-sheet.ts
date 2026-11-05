@@ -10,8 +10,7 @@ import type { TypeName } from '../src/data/types';
      npx tsx tools/move-sheet.ts mareggiata --step 200  a frame every 200 ms instead of 130
      npx tsx tools/move-sheet.ts mareggiata --foe       cast by the creature on the other side
      npx tsx tools/move-sheet.ts mareggiata --miss      a move that misses
-   Same Math.random and same frames every time.
-   NOT WORKING YET: the battle stays in its intro (the pad never leaves .off) under this stepping. See O3 in TASK-MODELLI.md. */
+   Same Math.random and same frames every time. */
 const arg = (name: string, d: number) => { const k = process.argv.indexOf('--' + name); return k > 0 ? +process.argv[k + 1] : d; };
 const step = arg('step', 130), n = arg('frames', 12), OUT = 'test-results/moves';
 const ids = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !(all[i - 1] || '').startsWith('--'));
@@ -44,7 +43,8 @@ for (const id of ids) {
   for (let k = 0; k < 120; k++) { await c.run(50); if (await fight()) break; await g.page.keyboard.press('Enter'); }
   for (let k = 0; k < 150 && !(await g.page.evaluate(() => { const b = document.querySelector('#pad .mv:not([disabled]):not([hidden])'); return !!b && !document.getElementById('battle')!.hidden; })); k++) { await c.run(200); await fight(); }
   await c.run(400);
-  await g.page.evaluate((o) => (window as unknown as { UI: { _debug: { cast(t: unknown, out: string, from: number, x: unknown): void } } }).UI._debug.cast(o.type, o.out, o.from, o.x), {
+  /* the cast resolves on the hit, and the hit only comes as the frames move the clock: evaluate must not wait for it */
+  await g.page.evaluate((o) => { void (window as unknown as { UI: { _debug: { cast(t: unknown, out: string, from: number, x: unknown): void } } }).UI._debug.cast(o.type, o.out, o.from, o.x); }, {
     type, out: flag('miss') ? 'miss' : 'hit', from: flag('foe') ? 1 : 0,
     x: { id, name: m.name, power: m.power || 60, sig: SPECIES[sp].sig === id || Object.values(SPECIES).some((s) => s.sig === id), drain: !!m.drain, quick: !!m.priority }
   });

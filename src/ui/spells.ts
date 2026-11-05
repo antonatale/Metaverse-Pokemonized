@@ -1,14 +1,16 @@
 import type { TypeName } from '../data/types';
-import { MOVE_FX, type Gesture } from '../data/move-fx';
-import { MAGIC, runeIcon } from '../render/svg/creatures';
+import { MOVE_FX } from '../data/move-fx';
+import { runeIcon } from '../render/svg/creatures';
 import { reduced, esc, $ } from './dom';
 import { sleep, battle } from './common';
 import { arena } from './battle-screen';
-import { fx, animate, anchor, ring, sparks, flashAt, shape, wob, pulse, streaks, SHAPE } from './effects';
+import { fx, animate, anchor, ring, sparks, flashAt, shape, wob, pulse, streaks } from './effects';
 import { netSVG, netBall } from '../render/svg/nets';
 import { sfx } from '../audio';
 import { HELD } from '../data/passives';
 import { ico } from './icons';
+import { INK, type Cast, type P, colOf, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, layer, beam, trace, fade, glyph, flash, drop, veilOn, takes } from './spell-kit';
+import { STAGES } from './move-stages';
 
 /* The creatures' moves, as shows: every type of magic has its own, big and clear.
    - The charge: the arena goes dark around the caster, a magic circle opens at its feet, the move's name crosses the
@@ -20,96 +22,8 @@ import { ico } from './icons';
    Only drawing: they change nothing in the battle, never touch Math.random (wob() of effects.ts), and with reduced
    motion they are not there. castSpell resolves on the hit, so the damage number and the HP bar land on it. */
 
-const INK = '#1c2340';
-
-export interface Cast {
-  /** the spell's type; null for a plain move */
-  type: TypeName | null;
-  /** the move's id: how it travels is in data/move-fx.ts (missing: as its type does) */
-  id?: string;
-  /** the move's name, for the band */
-  name: string;
-  power: number;
-  /** the form's own move: the grandest show */
-  sig: boolean;
-  /** what the engine's next events say: a hit, a miss, or no damage (a hex on the foe) */
-  outcome: 'hit' | 'miss' | 'none';
-  crit: boolean;
-  /** how well it works, from the engine (effLevel): 2 double advantage, 1 super effective, 0, −1, −2 */
-  lvl: number;
-  /** it gives back to the caster part of the damage: life flows back */
-  drain?: boolean;
-  /** it strikes first: a flash-step before the spell */
-  quick?: boolean;
-  /** set by castSpell: a big move (power 75 and up) or the form's own, which has the grand version of its show */
-  big?: boolean;
-}
-type P = number[];
-const colOf = (t: TypeName | null): string => (t ? MAGIC[t].col : '#ffffff');
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-const mid = (a: P, b: P, t: number): P => [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
-const tr = (p: P): string => 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px) translate(-50%,-50%)';
-const gone = (el: Element) => function () { el.remove(); };
 /** how grand a move's show is: 1 for a small move, up to about 1.8 for a form's own big one */
 function grand(c: Cast): number { return (1 + Math.max(0, Math.min(0.45, (c.power - 40) / 100)) + (c.sig ? 0.3 : 0)) * (c.crit ? 1.1 : 1); }
-function size(): { w: number; h: number } { const r = arena.getBoundingClientRect(); return { w: r.width, h: r.height }; }
-/** a point on a fighter's body (a creature's drawing, not its square frame), as fractions of it, on the arena */
-function body(i: number, fx0: number, fy0: number): P {
-  const g = document.querySelector('#w-' + i + ' .spr-c > g[transform]');
-  if (!g) return anchor(i, fx0, fy0);
-  const a = arena.getBoundingClientRect(), r = g.getBoundingClientRect();
-  return [r.left - a.left + r.width * fx0, r.top - a.top + r.height * fy0];
-}
-/** a point past the target, for a spell that misses */
-function beyond(a: P, b: P): P { return [b[0] + (b[0] - a[0]) * 0.45, b[1] + (b[1] - a[1]) * 0.45]; }
-/** a curve from a to b, lifted in the middle */
-function curve(a: P, b: P, lift: number) {
-  const cx = (a[0] + b[0]) / 2, cy = Math.min(a[1], b[1]) - lift;
-  return {
-    at: function (t: number): P { return [(1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * cx + t * t * b[0], (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * cy + t * t * b[1]]; },
-    d: 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + ' Q' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1)
-  };
-}
-/** keyframes that carry an element along a curve, with more transform and an opacity for each moment */
-function along(at: (t: number) => P, n: number, more?: (t: number) => string, op?: (t: number) => number): Keyframe[] {
-  const out: Keyframe[] = [];
-  for (let k = 0; k <= n; k++) { const t = k / n; out.push({ transform: tr(at(t)) + ' ' + (more ? more(t) : ''), opacity: op ? op(t) : 1 }); }
-  return out;
-}
-/** an element on the arena, placed by its transform */
-function piece(html: string, cls: string, w?: number): HTMLElement {
-  const el = fx(html, 'sp ' + cls, 0, 0, 0);
-  el.style.left = '0'; el.style.top = '0';
-  if (w) { el.style.width = w + 'px'; el.style.height = w + 'px'; }
-  return el;
-}
-/** an SVG as big as the arena, for the lines that cross it */
-function layer(inner: string, cls?: string): HTMLElement {
-  const z = size();
-  return piece('<svg viewBox="0 0 ' + Math.round(z.w) + ' ' + Math.round(z.h) + '" width="' + Math.round(z.w) + '" height="' + Math.round(z.h) + '" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>', 'sp-layer ' + (cls || ''));
-}
-/** a line in the type's colour with a white core: drawn from one end to the other (pathLength 1) */
-function beam(d: string, mc: string, w: number): string {
-  return '<path d="' + d + '" pathLength="1" stroke="' + mc + '" stroke-width="' + (w * 3.2 + 8).toFixed(1) + '" opacity=".22"/>' +
-    '<path d="' + d + '" pathLength="1" stroke="' + INK + '" stroke-width="' + (w + 5).toFixed(1) + '" opacity=".55"/>' +
-    '<path d="' + d + '" pathLength="1" stroke="' + mc + '" stroke-width="' + w.toFixed(1) + '"/>' +
-    '<path d="' + d + '" pathLength="1" stroke="#ffffff" stroke-width="' + Math.max(1.5, w * 0.34).toFixed(1) + '"/>';
-}
-function trace(el: HTMLElement, ms: number): Promise<unknown> {
-  const all: Promise<unknown>[] = [];
-  el.querySelectorAll('path[pathLength]').forEach(function (p) {
-    (p as SVGPathElement).style.strokeDasharray = '1 1';
-    all.push(animate(p, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: ms, easing: 'cubic-bezier(.3,.6,.3,1)', fill: 'both' }));
-  });
-  return Promise.all(all);
-}
-function fade(el: HTMLElement, ms: number, delay?: number) {
-  return animate(el, [{ opacity: 1 }, { opacity: 0 }], { duration: ms, delay: delay || 0, easing: 'ease-in', fill: 'both' }).then(gone(el));
-}
-/** a type's shape as SVG path, for drawings made of them */
-function glyph(t: TypeName, x: number, y: number, s: number, rot: number, fill: string): string {
-  return '<path transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + rot.toFixed(0) + ') scale(' + s.toFixed(2) + ') translate(-12 -12)" d="' + SHAPE[t] + '" fill="' + fill + '" stroke="' + INK + '" stroke-width="' + (2.2 / s).toFixed(2) + '"/>';
-}
 
 /* ---------- what every spell has: the dark, the circle, the band with the name, the glow ---------- */
 /** the arena goes dark around the caster, lit by the colour of its magic; off() brings the light back */
@@ -128,14 +42,6 @@ function darken(from: number, mc: string, amount: number) {
   }
   animate(el, [{ opacity: 0 }, { opacity: amount }], { duration: 260, easing: 'ease-out', fill: 'both' });
   return { off: function (ms: number) { return animate(el, [{ opacity: amount }, { opacity: 0 }], { duration: ms, easing: 'ease-in', fill: 'both' }).then(gone(el)); } };
-}
-/** a flash over the whole arena */
-function flash(col: string, ms: number, peak: number) {
-  let el: HTMLElement;
-  if (battle.classList.contains('has-scene')) { el = document.createElement('div'); el.className = 'spell-flash'; battle.appendChild(el); }
-  else el = piece('', 'sp-flash');
-  el.style.setProperty('--mc', col);
-  return animate(el, [{ opacity: 0 }, { opacity: peak, offset: 0.18 }, { opacity: 0 }], { duration: ms, easing: 'ease-out', fill: 'both' }).then(gone(el));
 }
 function circleSvg(t: TypeName | null, mc: string): string {
   let s = '<svg viewBox="0 0 200 200" aria-hidden="true" fill="none" stroke-linejoin="round">' +
@@ -470,9 +376,6 @@ function waveBig(mc: string): string {
     '<path d="M120 16C150 12 178 26 182 50" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>' +
     '<circle cx="186" cy="30" r="7" fill="#ffffff" stroke="' + INK + '" stroke-width="3"/><circle cx="170" cy="14" r="5" fill="#ffffff" stroke="' + INK + '" stroke-width="2.5"/></svg>';
 }
-function drop(mc: string, s: number): string {
-  return '<svg viewBox="0 0 20 26" width="' + s + '" height="' + Math.round(s * 1.3) + '" aria-hidden="true"><path d="M10 2C13 8 17 12 17 17A7 7 0 0 1 3 17C3 12 7 8 10 2Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="2"/><path d="M7 16A3 3 0 0 0 9 20" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg>';
-}
 function waveFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
   const g = anchor(from, 0.5, 0.92), f = body(from, 0.5, 0.5), dir = end[0] > f[0] ? 1 : -1, w = 210 * k;
   /* the water rises around the caster's feet */
@@ -720,13 +623,6 @@ const HIT: Record<TypeName, (b: P, to: number, c: Cast, mc: string, k: number) =
 
 /* ---------- the legends' own moves: a show of their own, as big as the arena ---------- */
 type Epic = (from: number, end: P, c: Cast, mc: string, k: number) => Promise<void>;
-/** a veil over the whole arena, darker than the charge */
-function veilOn(op: number) {
-  const v = piece('', 'sp-veil'), z = size();
-  v.style.width = z.w + 'px'; v.style.height = z.h + 'px';
-  animate(v, [{ opacity: 0 }, { opacity: op }], { duration: 380, fill: 'both' });
-  return function (ms: number) { animate(v, [{ opacity: op }, { opacity: 0 }], { duration: ms, fill: 'both' }).then(gone(v)); };
-}
 /** Giano's Porta del tempo: the wheel of the hours fills the arena, its hands run backwards, time stops, and the door
     in the middle opens on a blast of light */
 function timeGate(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
@@ -847,75 +743,6 @@ function boulder(from: number, end: P, c: Cast, mc: string, k: number): Promise<
 }
 const EPIC: Record<string, Epic> = { portatempo: timeGate, tempestelmo: elmoStorm, masso: boulder };
 
-/* ---------- the gestures: how a move travels, whatever it is made of (data/move-fx.ts) ---------- */
-type Flight = (from: number, end: P, c: Cast, mc: string, k: number, t: TypeName) => Promise<void>;
-/** a cut across the foe: the caster dashes in, two strokes of the move's colour cross, the type's shape bursts at the middle */
-function slashFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
-  const a = body(from, 0.5, 0.5), m = $('m-' + from);
-  sfx('lunge');
-  if (m) animate(m, [{ transform: 'none' }, { transform: 'translate(' + ((end[0] - a[0]) * 0.3).toFixed(0) + 'px,' + ((end[1] - a[1]) * 0.3).toFixed(0) + 'px) scale(1.06)', offset: 0.45 }, { transform: 'none' }], { duration: 440, easing: 'ease-in-out' });
-  return sleep(240).then(function () {
-    if (c.outcome === 'miss') return;
-    const r = 62 * k, x = end[0], y = end[1];
-    const L = layer(beam('M' + (x + r).toFixed(1) + ' ' + (y - r).toFixed(1) + ' L' + (x - r).toFixed(1) + ' ' + (y + r).toFixed(1), mc, 9 * k) + beam('M' + (x - r).toFixed(1) + ' ' + (y - r * 0.8).toFixed(1) + ' L' + (x + r).toFixed(1) + ' ' + (y + r * 0.8).toFixed(1), mc, 9 * k));
-    trace(L, 150).then(function () { fade(L, 280, 60); });
-    const s = piece(shape(t, '#ffffff', Math.round(44 * k)), 'sp-star');
-    animate(s, [{ transform: tr(end) + ' scale(.3) rotate(-25deg)', opacity: 1 }, { transform: tr(end) + ' scale(1.5) rotate(25deg)', opacity: 0 }], { duration: 380, delay: 90, easing: 'ease-out', fill: 'both' }).then(gone(s));
-  });
-}
-/** a rain from above: the type's shapes fall on the foe one after another */
-function rainFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
-  const n = 7;
-  sfx('whoosh');
-  for (let q = 0; q < n; q++) {
-    const x0 = end[0] + (q - 3) * 40 * k + 120 * k, x1 = end[0] + (q - 3) * 24 * k, el = piece(shape(t, q % 2 ? '#ffffff' : mc, Math.round(28 * k)), 'sp-star');
-    animate(el, [{ transform: tr([x0, -30]) + ' scale(.6) rotate(0deg)', opacity: 0 }, { transform: tr([lerp(x0, x1, 0.3), lerp(-30, end[1], 0.3)]) + ' scale(1) rotate(120deg)', opacity: 1, offset: 0.3 },
-      { transform: tr([x1, end[1]]) + ' scale(1.1) rotate(300deg)', opacity: 1 }], { duration: 340, delay: q * 55, easing: 'ease-in', fill: 'both' }).then(function () {
-      el.remove(); if (c.outcome !== 'miss') flashAt(x1, end[1], mc, 110 * k, 200);
-    });
-  }
-  return sleep(340 + (n - 1) * 55);
-}
-/** a ring that turns around the caster and then closes in on the foe */
-function orbitFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
-  const f = body(from, 0.5, 0.4), n = 7, els: HTMLElement[] = [];
-  const pos = (s: number, q: number): P => { const a = s / n * Math.PI * 2 + q * Math.PI * 2 * 1.4; return [f[0] + Math.cos(a) * 70 * k, f[1] + Math.sin(a) * 34 * k]; };
-  for (let s = 0; s < n; s++) {
-    const el = piece(shape(t, s % 2 ? '#ffffff' : mc, Math.round(26 * k)), 'sp-star'), fr: Keyframe[] = [];
-    for (let q = 0; q <= 10; q++) fr.push({ transform: tr(pos(s, q / 10)) + ' scale(' + lerp(0.4, 1, q / 10).toFixed(2) + ')', opacity: Math.min(1, q / 3) });
-    animate(el, fr, { duration: 480, easing: 'linear', fill: 'both' });
-    els.push(el);
-  }
-  sfx('shimmer');
-  return sleep(480).then(function () {
-    els.forEach(function (el, s) {
-      animate(el, along(curve(pos(s, 1), end, 60 * k + s * 6).at, 8, function (u) { return 'scale(' + lerp(1, 1.2, u).toFixed(2) + ') rotate(' + (u * 260).toFixed(0) + 'deg)'; }, function (u) { return c.outcome === 'miss' && u > 0.9 ? 0 : 1; }),
-        { duration: 340, delay: s * 28, easing: 'ease-in', fill: 'both' }).then(gone(el));
-    });
-    return sleep(340 + n * 28);
-  });
-}
-/** a ray from the caster to the foe, drawn in one stroke, with the type's shape flashing where it lands */
-function beamFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
-  const f = body(from, 0.5, 0.45), cv = curve(f, end, 40 * k), L = layer(beam(cv.d, mc, 12 * k));
-  sfx('magic');
-  return trace(L, 260).then(function () {
-    if (c.outcome !== 'miss') {
-      const s = piece(shape(t, '#ffffff', Math.round(54 * k)), 'sp-star');
-      animate(s, [{ transform: tr(end) + ' scale(.4)', opacity: 1 }, { transform: tr(end) + ' scale(1.6)', opacity: 0 }], { duration: 320, easing: 'ease-out', fill: 'both' }).then(gone(s));
-    }
-    fade(L, 300, 60);
-  });
-}
-/** a lob: one big shape thrown high over the arena, turning as it goes */
-function lobFly(from: number, end: P, c: Cast, mc: string, k: number, t: TypeName): Promise<void> {
-  const f = body(from, 0.5, 0.4), cv = curve(f, end, 150 * k), el = piece(shape(t, mc, Math.round(46 * k)), 'sp-star');
-  sfx('whoosh');
-  return animate(el, along(cv.at, 12, function (s) { return 'scale(' + lerp(0.7, 1.25, Math.sin(s * Math.PI)).toFixed(2) + ') rotate(' + (s * 540).toFixed(0) + 'deg)'; }, function (s) { return c.outcome === 'miss' && s > 0.94 ? 0 : 1; }),
-    { duration: 560, easing: 'ease-in', fill: 'both' }).then(gone(el));
-}
-const FLIGHT: Record<Gesture, Flight> = { slash: slashFly, rain: rainFly, orbit: orbitFly, beam: beamFly, lob: lobFly };
-
 /** a spell that does no damage (it lowers a number, it confuses): the type's shapes turn around the foe and sink */
 function hex(to: number, t: TypeName, mc: string, k: number) {
   const b = body(to, 0.5, 0.45), f = anchor(to, 0.5, 0.88);
@@ -949,15 +776,22 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
     streaks(from); flashAt(q[0], q[1], '#ffffff', 240, 240); sfx('whoosh');
   }
   if (!t) return plainHit(from, to, c, k);
-  const dark = darken(from, mc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
+  /* the move's scene (data/move-fx.ts, ui/move-stages.ts); a legend's own move has a show of its own */
+  const epic = c.sig && c.id ? EPIC[c.id] : undefined, scene = !epic && c.id ? MOVE_FX[c.id] : undefined, stage = scene ? STAGES[scene.stage] : undefined;
+  const quick = scene ? (scene.charge ? scene.charge === 'none' : !!stage!.quick) : false;
+  /* a quick blow has no dark and no magic circle: only its name */
+  const dark = quick ? { off: function () { return Promise.resolve(); } } : darken(from, mc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
   band(from, c.name, t, c.sig, mc);
-  glow(from, mc, 900);
-  magicCircle(from, t, mc, 200 * k, 1200);
+  if (!quick) { glow(from, mc, 900); magicCircle(from, t, mc, 200 * k, 1200); }
   const end = c.outcome === 'miss' ? beyond(body(from, 0.5, 0.45), b) : b;
-  const gesture = c.id ? MOVE_FX[c.id] : undefined, epic = c.sig && c.id ? EPIC[c.id] : undefined;
-  return (epic ? epic(from, end, c, mc, k) : gesture ? FLIGHT[gesture](from, end, c, mc, k, t) : FLY[t](from, end, c, mc, k)).then(function () {
+  const show = epic ? epic(from, end, c, mc, k)
+    : stage ? stage.run({ from: from, to: to, end: end, b: b, c: c, t: t, mc: mc, k: k, n: (scene && scene.n) || stage.n || 1, miss: c.outcome === 'miss' })
+      : FLY[t](from, end, c, mc, k);
+  return show.then(function () {
     if (c.outcome === 'hit') {
-      HIT[t](b, to, c, mc, k);
+      /* a scene of its own has drawn its impact; the one hit takes the blow its own way */
+      if (!stage || !stage.impact) HIT[t](b, to, c, mc, k);
+      if (stage) takes(to, (scene && scene.foe) || stage.foe, k);
       if (c.drain) lifeBack(from, to, mc);
       /* the grand hits: a second shockwave, the whole arena lit */
       if (c.crit || c.lvl > 0 || c.sig) { ring(b[0], b[1], '#ffffff', 420 * k, 700); if (t !== 'Caos') flash(c.lvl > 0 ? mc : '#ffffff', 420, c.lvl > 1 || c.crit ? 0.5 : 0.35); }

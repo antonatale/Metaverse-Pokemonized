@@ -251,6 +251,16 @@
 .sp-pillar { z-index: 5; transform-origin: 50% 100%; border-radius: 45% 45% 0 0 / 8% 8% 0 0;
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--mc) 55%, transparent) 26%, rgba(255, 255, 255, .78) 50%, color-mix(in srgb, var(--mc) 55%, transparent) 74%, transparent);
   -webkit-mask: linear-gradient(transparent, #000 35%); mask: linear-gradient(transparent, #000 35%); }
+/* the scenes of the moves (ui/move-stages.ts): a wall of water, jaws, claws, tentacles, dolphins, quills, a column */
+#battle.has-scene > div.sp-wide { position: fixed; z-index: 2; width: 0; height: 0; overflow: visible; pointer-events: none; }
+.sp-tide > svg, .sp-jaw > svg, .sp-claw > svg, .sp-dolphin > svg, .sp-quill > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.fx.sp-tide { z-index: 7; }
+.sp-tide > svg { filter: drop-shadow(0 0 16px #9ff5ea) drop-shadow(0 0 3px #ffffff); }
+.fx.sp-jaw, .fx.sp-claw, .fx.sp-dolphin, .fx.sp-quill { z-index: 7; }
+.sp-jaw > svg, .sp-claw > svg { filter: drop-shadow(0 0 10px var(--mc, #ffffff)) drop-shadow(0 3px 0 rgba(28, 35, 64, .35)); }
+.fx.sp-shadow { z-index: 1; border-radius: 50%; background: radial-gradient(closest-side, rgba(28, 35, 64, .7), rgba(28, 35, 64, 0)); }
+.fx.sp-column { z-index: 7; transform-origin: 50% 0; border-radius: 30% 30% 45% 45% / 4% 4% 10% 10%; box-shadow: 0 0 26px var(--mc);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 30%, transparent), var(--mc) 12%, #ffffff 42%, var(--mc) 58%, color-mix(in srgb, var(--mc) 80%, #1c2340) 88%, color-mix(in srgb, var(--mc) 30%, transparent)); outline: 3px solid rgba(28, 35, 64, .5); outline-offset: -3px; }
 /* the move's name, on a band across the arena */
 .fx.sp-band { left: 0; right: 0; top: 50%; z-index: 8; display: flex; justify-content: center; padding-block: 10px 12px; transform-origin: 50% 50%;
   background: linear-gradient(90deg, transparent, rgba(12, 14, 40, .9) 14%, rgba(12, 14, 40, .9) 86%, transparent); border-block: 3px solid var(--mc);
