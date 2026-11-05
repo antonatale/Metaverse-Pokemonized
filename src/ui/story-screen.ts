@@ -40,6 +40,7 @@ import { idOf, sideOf, formNow, gainXp, joinFriend, heroText, foeSide, fightPay,
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
 import { onReward } from '../story/activities';
+import type { Growth } from '../story/growth';
 import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
 import { soundButton } from './sound';
@@ -143,11 +144,24 @@ function notify(html: string) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 4200);
 }
+/** what an activity brought that has to be told: a level (with its moves, its form, a move to choose) and a friend who
+    comes along. The activity still has its sheet open, or its own words to say, so it waits and is told from the frame */
+var told: { g: Growth; joined: FriendId | null }[] = [];
 onReward(function (g, cash, joined) {
   notify('<b>' + esc(nameOf(g.key)) + '</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + coins(cash) : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : ''));
   if (built) renderHud();
-  if (joined) friendJoins(joined, JOIN[joined as keyof typeof JOIN].say || []);
+  if (g.to > g.from || joined) told.push({ g: g, joined: joined });
 });
+/** nothing else is going on: no talk, no sheet, no trainer coming, no fight */
+function quiet(): boolean { return running && !dialog && !between && !!st.seen.intro && !overlayOpen() && !meeting && !fight; }
+function tellRewards() {
+  if (!told.length || !quiet()) return;
+  var r = told.shift()!, joined = r.joined;
+  var join = function () { if (joined) friendJoins(joined, JOIN[joined as keyof typeof JOIN].say || []); };
+  if (r.g.to <= r.g.from) { join(); return; }
+  if (r.g.key === 'antonio') mentorTip('level');
+  growthSay(r.g, [], join);
+}
 /** a friend comes along: from now on it can be played, with its own creatures */
 function friendJoins(id: FriendId, lines: string[]) {
   mentorTip('hero');
@@ -161,7 +175,7 @@ const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="
     trainer coming to challenge Antonio, no fight); from the frame, so that it never slips in between two steps of one
     moment, such as the guardaparco's words and his grandson's challenge */
 function chapterTip() {
-  if (!running || dialog || between || !st.seen.intro || overlayOpen() || meeting || fight) return;
+  if (!quiet()) return;
   var cn = chapterNow();
   if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
 }
@@ -364,19 +378,20 @@ function pickUp(it: LostItem) {
   st.found[it.id] = true; save();
   var left = allItems().length - foundItems().length;
   say(['Hai ritrovato ' + ITEMS[it.move].name + '!', it.text,
-    left ? 'Nelle lotte della Storia {Antonio} non ' + it.pron + ' perde più. ' + (left === 1 ? 'Ne manca ancora uno.' : 'Ne mancano ancora ' + left + '.')
-      : 'Hai ritrovato tutto: nelle lotte della Storia {Antonio} non perde più niente.']);
+    left ? 'Nelle lotte della Storia Antonio non ' + it.pron + ' perde più. ' + (left === 1 ? 'Ne manca ancora uno.' : 'Ne mancano ancora ' + left + '.')
+      : 'Hai ritrovato tutto: nelle lotte della Storia Antonio non perde più niente.']);
 }
-function talkTo(p: Person) {
+/** talking to someone: the plot first, unless it has just had its say (past), and then what that one always does */
+function talkTo(p: Person, past?: boolean) {
   p.dir = OPP[st.dir];
   var n = p.n;
   if (n.pet != null) { openHome(); return; }
-  if (plotTalk(n, function () { talkTo(p); })) return;
+  if (!past && plotTalk(n, function () { talkTo(p, true); })) return;
   if (n.covo) leaderTalk(n.covo);
   else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
-  else if (n.starter && !hasStarter()) { if (firstHuman() === 'antonio') starterTalk(n.name || ''); else say(['Il cucciolo l\'ho promesso a {Antonio}. Digli di passare da me.'], n.name); }
+  else if (n.starter && !hasStarter()) { if (firstHuman() === 'antonio') starterTalk(n.name || ''); else say(['Il cucciolo l\'ho promesso ad Antonio. Digli di passare da me.'], n.name); }
   else if (n.starter && !st.seen['dono-retini']) netsGift(n.name || '');
   else if (n.starter && dexPrizesDue().length) dexPrizeTalk(n.name || '');
   else if (n.shop) {
@@ -587,13 +602,13 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
       if (gift) { st.bag = st.bag || {}; for (var g in gift.items) st.bag[g] = (st.bag[g] || 0) + gift.items[g]; }
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['Antonio vince ' + coins(now.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
+      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['{hero} vince ' + coins(now.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id, f.who); });
     });
     return;
   }
   rewardsAll(pay, 0, function () {
     fight = null;
-    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']);
+    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. {hero} e le sue creature vanno a riposare.']);
   });
 }
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
@@ -640,8 +655,8 @@ function meet(h: Hiding) {
 }
 /** who a trainer sends in, in one line */
 export function foesLine(id: string): string { return 'Creature: ' + teamOf(id).map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.'; }
-/** one of the missions of the friends is a battle: straight in, with the creatures of who is being played */
-export function missionFight(id: string, who: string) { fight = { kind: 'trainer', id: id, who: who, foes: teamOf(id).slice() }; fightOn(); }
+/** a battle with a trainer, with the creatures of who is being played (one of the missions of the friends is one too) */
+export function trainerFight(id: string, who: string) { fight = { kind: 'trainer', id: id, who: who, foes: teamOf(id).slice() }; fightOn(); }
 /** a wild creature in front of Antonio: fight it (with his creatures), or slip away */
 function wildMeet(id: string, first: string, foe: Foe) {
   mentorTip(foe.stages ? 'legend' : 'wild');
@@ -649,7 +664,7 @@ function wildMeet(id: string, first: string, foe: Foe) {
   see(foe.sp); save();
   say([first, sp.wild.replace(/,$/, '') + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : []), null, [
     { label: 'Lotta!', fn: function () { fight = { kind: 'wild', id: id, who: '', foes: [foe] }; fightOn(); } },
-    { label: 'Scappa', fn: function () { say(['Antonio si allontana in punta di piedi.']); } }
+    { label: 'Scappa', fn: function () { say(['{hero} si allontana in punta di piedi.']); } }
   ]);
 }
 /* the legends are the only wild creatures in sight (data/legends.ts): one with a place of its own is reached through it */
@@ -666,9 +681,9 @@ function lines(t: string[], id: string): string[] { return t.map(function (l) { 
 /** a trainer challenges Antonio (`came`: he has walked up to him, and there is no saying later) */
 function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
-  var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id], team = teamOf(id);
+  var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id];
   if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
-  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: team.slice() }; fightOn(); } }];
+  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { trainerFight(id, who); } }];
   if (!came) opts.push({ label: 'Più tardi', fn: null });
   say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat([foesLine(id)]), who, opts);
 }
@@ -761,10 +776,10 @@ const NETS_TALK = ['Tieni anche questi: ' + GIFT_NETS + ' retini, per cominciare
   'Altri retini, anche più buoni, li vende il retaio qui accanto.'];
 function giveNets() { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + GIFT_NETS; st.seen['dono-retini'] = true; save(); renderHud(); }
 /** a save from before the gift: the guardaparco gives the nets the next time */
-function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, Antonio! Come sta la tua creatura?'].concat(NETS_TALK), who); }
+function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, {hero}! Come sta la tua creatura?'].concat(NETS_TALK), who); }
 /** the guardaparco's prizes for the creature diary: all the ones reached, at once, and the next one */
 function dexPrizeTalk(who: string) {
-  var due = dexPrizesDue(), lines = ['Fammi vedere il tuo diario delle creature… ' + dexHad() + ' creature! Bravo, Antonio.'];
+  var due = dexPrizesDue(), lines = ['Fammi vedere il tuo diario delle creature… ' + dexHad() + ' creature! Bravo, {hero}.'];
   due.forEach(function (p) { takeDexPrize(p); lines.push('Questo è per te: ' + prizeText(p) + '.'); });
   var nx = nextDexPrize();
   lines.push(nx ? (nx.p.all ? 'Se le prendi tutte, ti do il premio più grande: ' : 'Quando ne avrai ' + nx.at + ', ti do ' ) + prizeText(nx.p) + '.' : 'Le hai prese tutte. A Formia non l\'aveva mai fatto nessuno.');
@@ -939,7 +954,7 @@ function frame(now: number) {
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; renderBars(); chapterTip(); tune();
+    barAt = now; renderBars(); tellRewards(); chapterTip(); tune();
     /* the first time a creature can do something on the map, Cicero says what */
     if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }

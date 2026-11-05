@@ -18,7 +18,7 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 | # | Cosa | Modello | Effort | Stato |
 |---|---|---|---|---|
 | O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | fatto |
-| O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | funziona, restano 10 correzioni |
+| O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | fatto |
 | O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | progettata, codice non iniziato |
 | S1 | Togliere «Un giorno a Formia» | Sonnet 5.5 | high | da fare |
 | S2 | Mosse in quadrato, con un design più bello | Sonnet 5.5 | high | da fare |
@@ -34,26 +34,15 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 
 ## Opus 5.5, max
 
-Opus si è fermato il 5 novembre per il limite settimanale: nessuno ci sta lavorando. O2 e O3 vanno finite, in quest'ordine, prima di S8.
+O2 è finita il 5 novembre, con le 10 correzioni della revisione. Resta O3, da finire prima di S8.
 
 ### O1. Le persone crescono
 
 Fatto: vedi «Le persone crescono» in `CLAUDE.md`.
 
-### O2. Tutti protagonisti: le correzioni che restano
+### O2. Tutti protagonisti
 
-Il codice è in `main` e documentato in «Tutti protagonisti» in `CLAUDE.md`. `/code-review high` ha trovato questi 10 punti, non ancora corretti. Le decisioni sono già prese. Alla fine lancia tutte le partite: l'ultima prova completa (39 passate) è di prima delle ultime correzioni; dopo sono state rilanciate solo 4 partite.
-
-1. **Il dialogo di chi si unisce non si legge** (`friendJoins`, da `onReward`): `record()` gira con il foglio dell'attività aperto e subito dopo un altro `say()` lo sovrascrive. Vale per Andrea, Valentin e Zendavid. Metti chi si unisce in una coda e fallo parlare dal frame, con la stessa guardia di `chapterTip`.
-2. **Una persona che sale di livello con un'attività perde la mossa** (`onReward` ignora `g.pending` e `g.grew`, e `learn()` gira solo quando si passa il livello): stessa coda, con `growthSay(g, [], poi)`.
-3. **`setFirst`:** chiama `firstCreature` prima di scrivere `st.first`, altrimenti `teamRef()` guarda la squadra vuota del nuovo eroe e la creatura non tiene il passo.
-4. **`heroText` cambia anche quello che non deve:** oggi «Marco Antonio» diventa «Marco Costanzo» (`formia.ts:169`), il motorino di Antonio diventa di un altro, e `growthSay` attribuisce i livelli di Antonio a chi si sta giocando. Passa al contrario: un segnaposto `{hero}` solo nelle frasi rivolte a chi si gioca, e togli `{Antonio}`. Righe da convertire: `formia.ts` 162, 164, 167; `trainers.ts` 115, 122, 123, 128, 136; `choices.ts` 18, 20, 25, 29; `tourney.ts` 16; `story-screen.ts` 590, 596, 652, 764, 767; `plot.ts` 96; `activities.ts` 245; `team.ts` 156; `mentor.ts` 52, 58, 73, 107, 109. Attenzione a «ad Antonio» (`mentor.ts:58`): riscrivi la frase. Aggiorna anche `CLAUDE.md`.
-5. **`battle/damage.ts:132`:** «non vuole deludere Antonio» deve usare `s.hero || 'Antonio'`, come `moves.ts:233`.
-6. **Un amico si unisce anche se l'attività va male** (`record`): chiedi un punteggio vero, maggiore di zero. `run.ts:59` registra senza tempo, e al padel si può chiudere con 0 scambi.
-7. **Per chi è giusto la missione blocca il resto** (`missionTalk`): «Più tardi» deve andare avanti come sempre, con il negozio o l'attività. Fai `talkTo(p, past)` che salta `plotTalk`.
-8. **`missionDoneNow`** dice soldi e creatura ma non gli oggetti: usa lo stile di `prizeText`.
-9. **`st.lead` è uno solo per tutti:** chi segue va salvato per persona (`st.leads?`, facoltativo; `st.lead` resta di Antonio).
-10. **Pulizia:** `plotAfter(f.id, f.who)` e via `npcName`; una funzione sola per la lotta di `missionFight` e `trainerTalk`; `mine()` in `rival.ts` ripete `monsOf('antonio')`, se non crea un ciclo di import.
+Fatto: vedi «Tutti protagonisti» in `CLAUDE.md`. Le 10 correzioni della revisione sono fatte, e tutte le partite passano dopo l'ultima. In breve: chi si unisce con un'attività e chi sale di livello con un'attività parlano dopo, quando il foglio è chiuso (`tellRewards`), e solo con un punteggio vero; nelle frasi `{hero}` è chi si gioca e «Antonio» resta sempre Antonio; ognuno ha la sua creatura che lo segue (`st.leads`); «Più tardi» su una missione fa andare avanti la persona come sempre.
 
 ### O3. Animazioni davvero diverse
 

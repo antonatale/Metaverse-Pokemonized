@@ -28,7 +28,7 @@ export interface Mission {
 }
 export const MISSIONS: Mission[] = [
   { id: 'router', who: 'antonio', npc: 'vicina', name: 'Il router della vicina', where: 'Parco la Fontana',
-    wait: ['Mi si è fermato internet. Mi serve quello che studia queste cose, il ragazzo del piano di sopra. {Antonio}, si chiama.'],
+    wait: ['Mi si è fermato internet. Mi serve quello che studia queste cose, il ragazzo del piano di sopra. Antonio, si chiama.'],
     ask: ['Antonio! Giusto te. Internet non va da stamattina e mia nipote mi chiama sul telefono fisso.', 'Tu che sei ingegnere: ci guardi?'],
     quiz: [
       { q: 'La vicina ti indica una scatola con delle lucine. Sono tutte rosse. Cosa fai?', a: ['La smonti per capire', 'Spegni e riaccendi', 'Scrivi un paper'], ok: 1, yes: 'Le lucine lampeggiano. Sembra che ci stiano pensando.', no: 'La vicina ti guarda come si guarda uno che ha studiato troppo.' },

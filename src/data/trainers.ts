@@ -112,20 +112,20 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   'rivale-2': {
     id: 'rivale-2', title: 'Tullio, il nipote del guardaparco', prize: 80, smart: 1, rival: 2, team: [],
-    intro: ['Antonio! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
+    intro: ['{hero}! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
     win: ['Di nuovo! Ma come fai?', 'Il nonno dice che le creature crescono con chi gli vuole bene. Forse ha ragione lui.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
     lose: ['Stavolta tocca a me! Le tue creature sono stanche: falle riposare e torna.'],
     after: ['Rivincita? Stavolta vinco io.']
   },
   'rivale-3': {
     id: 'rivale-3', title: 'Tullio, il nipote del guardaparco', prize: 250, smart: 2, rival: 3, team: [],
-    intro: ['Antonio. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
-    win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, Antonio.', 'Quando vuoi la rivincita, sono qui al parco.'],
+    intro: ['{hero}. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
+    win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, {hero}.', 'Quando vuoi la rivincita, sono qui al parco.'],
     lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
     after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.'],
     moods: {
       ally: {
-        intro: ['Antonio! Hai visto come si è crepata la Ricchezza? Un pezzo è merito mio, eh.', 'Però adesso, tra noi due, il più forte di Formia chi è? Il nonno guarda, e io non ti regalo niente.'],
+        intro: ['{hero}! Hai visto come si è crepata la Ricchezza? Un pezzo è merito mio, eh.', 'Però adesso, tra noi due, il più forte di Formia chi è? Il nonno guarda, e io non ti regalo niente.'],
         win: ['…Sei tu il più forte di Formia. E mi va bene così.', 'Quando vuoi allenarti, sai dove trovarmi.'],
         lose: ['Ho vinto io! Te l\'avevo detto che mi allenavo. Torna quando vuoi, amico.'],
         after: ['Ci alleniamo? Stavolta ti batto, e te lo dico prima.'],
@@ -133,7 +133,7 @@ export const TRAINERS: Record<string, Trainer> = {
       },
       bitter: {
         intro: ['Hai salvato Formia, eh? Bravo. Il nonno non parla d\'altro.', 'Lo sai chi ha detto a Mamurra come lotti? E lo sai cosa ho imparato io, nel frattempo?', 'Adesso ridi, se ci riesci.'],
-        win: ['…', 'Il nonno ha sempre saputo scegliere. A me non ha scelto.', 'Vattene, Antonio. Qui sto bene da solo.'],
+        win: ['…', 'Il nonno ha sempre saputo scegliere. A me non ha scelto.', 'Vattene, {hero}. Qui sto bene da solo.'],
         lose: ['Tutto qui?', 'Te lo ricordi? L\'hai detto tu.'],
         after: ['Che vuoi ancora?'],
         prize: 500

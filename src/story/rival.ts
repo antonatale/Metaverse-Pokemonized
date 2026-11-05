@@ -4,6 +4,7 @@ import { MAGIC_CHART, magicBeats } from '../data/types';
 import { TRAINERS, type Trainer } from '../data/trainers';
 import { flag } from './plot';
 import { tullioMood } from './choices';
+import { monsOf } from './growth';
 
 /* The rival, as in the Pokémon games: Tullio, the guardaparco's grandson. He picks his creature right after Antonio,
    the one of the three whose type beats Antonio's (none beats Ramarrino's Calma: he takes Polpino, the cleverest), and
@@ -28,7 +29,7 @@ export function formAt(sp: SpeciesId, stage: number): SpeciesId {
   return s;
 }
 /** Antonio's first creature, as he has it now */
-function mine(): SpeciesId | null { var m = (st.mons || []).filter(function (c) { return !c.owner; })[0]; return m ? m.sp : null; }
+function mine(): SpeciesId | null { var m = monsOf('antonio')[0]; return m ? m.sp : null; }
 /** Tullio's creature (a save from before him: worked out from Antonio's) */
 export function rival(): SpeciesId { var m = mine(); return st.rival || rivalFor(m ? firstForm(m) : 'polpino'); }
 

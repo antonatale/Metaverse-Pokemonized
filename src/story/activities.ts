@@ -57,8 +57,9 @@ export function record(id: string, score?: number): boolean {
   }
   const g = gainXp(firstHuman(), XP), cash = PAY[id] && score != null ? friendsPay(PAY[id](score), st.skills || {}) : 0;
   if (cash) earn(cash);
-  /* the friend who has done this with Antonio comes along from now on */
-  const joins = (Object.keys(JOIN) as (keyof typeof JOIN)[]).filter(function (f) { return JOIN[f].activity === id; })[0];
+  /* the friend who has done this with Antonio comes along from now on: done for real, with a score (a run out of time
+     or a padel game with no rally does not count) */
+  const joins = score != null && score > 0 ? (Object.keys(JOIN) as (keyof typeof JOIN)[]).filter(function (f) { return JOIN[f].activity === id; })[0] : undefined;
   const joined = joins && joinFriend(joins, JOIN[joins].lv) ? joins : null;
   save();
   if (rewardHook) rewardHook(g, cash, joined);

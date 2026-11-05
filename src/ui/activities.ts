@@ -242,7 +242,7 @@ function lettino(n: Npc) {
     'Il mare è piatto, si sente la musica del lido. Al largo le vele dei windsurf di Nicola; il sole scende dietro Gaeta e tutto diventa arancione.',
     k === 0 ? 'Che pomeriggio. Ci voleva.' : k < 3 ? 'Un altro pomeriggio così. Formia d\'estate.' : 'Ormai il lettino in prima fila è il tuo.'], null, null, function () {
     record('lettino');
-    say(k >= 2 ? ['Antonio, ormai sei di casa all\'Eclipse.', 'Il lettino te lo tengo libero.'] : ['Torna quando vuoi.', 'Il lettino è sempre qui.'], n.name);
+    say(k >= 2 ? ['{hero}, ormai sei di casa all\'Eclipse.', 'Il lettino te lo tengo libero.'] : ['Torna quando vuoi.', 'Il lettino è sempre qui.'], n.name);
   });
 }
 

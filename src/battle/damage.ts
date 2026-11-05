@@ -129,7 +129,7 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   if (p.notes.indexOf('filo') >= 0 && !opt.quiet) ev.push(say('Costanzo cambia argomento e perde il filo: −20%.'));
   if (p.notes.indexOf('calc') >= 0) { ev.push(say('Andrea ha già i dati su questa mossa: −' + Math.round(100 - TUNE.calc * 100) + '%.')); }
   if (sturdy) { ev.push(say('Forchetta resta in piedi con 1 PS!')); ev.push(line(j, CHARS.forchetta.lines.sturdy)); }
-  if (held) ev.push(say(ch(foe).name + ' non vuole deludere Antonio: resta in piedi con 1 PS!'));
+  if (held) ev.push(say(ch(foe).name + ' non vuole deludere ' + (s.hero || 'Antonio') + ': resta in piedi con 1 PS!'));
   /* a wild creature worn out: the moment for a net, said once (story battles only) */
   if (s.wild && j === 1 && foe.hp > 0 && foe.hp / foe.max < 0.35 && !s.tired && !netShut(s) && s.bag && NET_IDS.some(function (n) { return (s.bag![n] || 0) > 0; })) {
     s.tired = true;

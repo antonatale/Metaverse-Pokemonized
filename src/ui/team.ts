@@ -153,7 +153,7 @@ function pay(key: string, xp: number, won: boolean, cash: number, then?: () => v
   save(); renderHud();
   if (cash) mentorTip('money');
   if (key === 'antonio' && g.to > g.from) mentorTip('level');
-  growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' Antonio incassa ' + coins(cash) + '.' : '')], then);
+  growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' {hero} incassa ' + coins(cash) + '.' : '')], then);
 }
 function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
   sfx('badge');

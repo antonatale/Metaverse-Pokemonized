@@ -8,21 +8,20 @@ import { HELD } from '../data/passives';
 import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
-import { addCreature, creatureOf, has, nameOf, own } from '../story/growth';
+import { addCreature, creatureOf, has, nameOf, own, prizeText } from '../story/growth';
 import { MISSIONS, type Mission } from '../data/missions';
-import { MAPS } from '../data/maps';
 import { CHARS } from '../data/characters';
-import { coins } from '../data/growth';
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly } from '../story/missions';
 import { esc, $ } from './dom';
-import { say, sheet, closeSheet, renderHud, dexNotice, missionFight, foesLine, type DialogOpt } from './story-screen';
+import { say, sheet, closeSheet, renderHud, dexNotice, trainerFight, foesLine, type DialogOpt } from './story-screen';
 import { sfx } from '../audio';
 import { travel } from '../story/movement';
 
 /* What the people of the plot say (story/plot.ts): the archivist of the Torre di Mola, the lady of the Roman theatre,
    Cicero at his tomb, and what happens after the battles with Mamurra's men and with Mamurra himself. */
 
-/** someone of the plot has something to say now: true when the plot takes the talk */
+/** someone of the plot has something to say now: true when the plot takes the talk. again goes on with the talk as
+    usual, without the plot */
 export function plotTalk(n: Npc, again: () => void): boolean {
   if (n.id === 'archivista' && flag('tr-mamurr-scavi') && !flag('trama-archivio')) { archive(n.name || ''); return true; }
   if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura') && !flag('porta-cisterna')) { riddle(n.name || ''); return true; }
@@ -40,8 +39,8 @@ function missionTalk(n: Npc, again: () => void): boolean {
     say(m.wait, who, null, again);
     return true;
   }
-  var go = m.trainer ? function () { missionFight(m!.trainer!, who); } : function () { quiz(m!, who); };
-  say(m.trainer ? m.ask.concat([foesLine(m.trainer)]) : m.ask, who, [{ label: 'Ci sto', fn: go }, { label: 'Più tardi', fn: null }]);
+  var go = m.trainer ? function () { trainerFight(m!.trainer!, who); } : function () { quiz(m!, who); };
+  say(m.trainer ? m.ask.concat([foesLine(m.trainer)]) : m.ask, who, [{ label: 'Ci sto', fn: go }, { label: 'Più tardi', fn: again }]);
   return true;
 }
 function quiz(m: Mission, who: string) {
@@ -58,7 +57,7 @@ function missionDoneNow(m: Mission, who: string) {
   say(m.done, who, null, function () {
     var c = creatureOf(missionPay(m)), name = nameOf(c!.uid);
     save(); renderHud(); sfx('badge'); dexNotice();
-    say([coins(m.pay.money) + ' per la missione «' + m.name + '».', name + (c && c.home ? ' ti aspetta a casa: la squadra è al completo.' : ' entra nella squadra!')]);
+    say(['Per la missione «' + m.name + '»: ' + prizeText({ n: 0, give: m.pay.items || {}, coins: m.pay.money }) + '.', name + (c && c.home ? ' ti aspetta a casa: la squadra è al completo.' : ' entra nella squadra!')]);
   });
 }
 /** the missions in the menu: who can do each one, and where */
@@ -93,7 +92,7 @@ export function plotSign(s: Sign): boolean {
 export function plotBefore(id: string): string[] {
   var m = tullioMood();
   if (id !== 'mamurra' || !m) return [];
-  return m === 'ally' ? ['Da dietro una colonna spunta Tullio: «Antonio! Mentre parlava gli ho incrinato la Ricchezza. Il resto tocca a te.»']
+  return m === 'ally' ? ['Da dietro una colonna spunta Tullio: «{hero}! Mentre parlava gli ho incrinato la Ricchezza. Il resto tocca a te.»']
     : ['Da dietro una colonna spunta Tullio, con il suo sorrisetto: «Gli ho detto io come lotti. Così impari a prendermi in giro.»', 'La Ricchezza di Mamurra è più spessa del previsto.'];
 }
 /** a question of the story, once: who speaks speaks, the last one asks, the player answers and the answer stays */
@@ -151,8 +150,8 @@ export function legendPact(L: LegendDef, lv: number) {
   } }, { label: 'Non ora', fn: null }]);
 }
 
-/** after a battle won against someone of the plot (a trainer's id) */
-export function plotAfter(id: string) {
+/** after a battle won against someone of the plot (a trainer's id), with who stood by for it (who asked for a mission) */
+export function plotAfter(id: string, who: string) {
   if (id === 'mamurr-scavi') say(['Mamurra… Lucio Mamurra! Lo conoscevo: cavaliere di Formia, prefetto del genio di Cesare, il più ricco di tutti. La villa qui a Gianola era la sua.',
     'Catullo lo chiamava «lo scialacquatore di Formia». Se il suo fantasma cerca le Pietre di Telepilo, vuole qualcosa di grosso.',
     'All\'Archivio della Torre di Mola sanno tutto delle leggende di Formia. Andiamo a chiedere.'], CICERO);
@@ -164,12 +163,7 @@ export function plotAfter(id: string) {
   /* the first two meetings with Tullio: what the player says to him stays */
   else if (id === 'rivale-1') askChoice('tullio1');
   else if (id === 'rivale-2') askChoice('tullio2');
-  else { var m = missionOfTrainer(id); if (m) missionDoneNow(m, m.ask.length ? npcName(m.npc) : ''); }
-}
-/** who asked for a mission: the name it has on the map */
-function npcName(id: string): string {
-  for (var k in MAPS) { var n = (MAPS[k].npcs || []).filter(function (x) { return x.id === id; })[0]; if (n) return n.name || ''; }
-  return '';
+  else { var m = missionOfTrainer(id); if (m) missionDoneNow(m, who); }
 }
 
 /* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */

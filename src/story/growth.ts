@@ -55,7 +55,7 @@ export function sendHome(uid: string): boolean {
   var m = creatureOf(uid);
   if (!m || m.home || teamMons().length <= 1) return false;
   m.home = true;
-  if (st.lead === uid) delete st.lead;
+  if (leadOf(firstHuman()) === uid) setLead(null);
   return true;
 }
 export function bringAlong(uid: string): boolean {
@@ -83,15 +83,15 @@ export function powerOf(p: Power): string | null {
 export function firstHuman(): string { return st.first && st.squad.indexOf(st.first) >= 0 ? st.first : 'antonio'; }
 export function setFirst(id: string) {
   if ((st.squad as string[]).indexOf(id) < 0) return;
+  /* first, while the team that sets its level is still the one of who was being played */
+  firstCreature(id as FriendId);
   st.first = id as typeof st.first;
   st.seen.protagonisti = true;
-  firstCreature(id as FriendId);
 }
-/** the story is told to whoever is being played: where it says Antonio it says that one. His house stays his, and {Antonio}
-    is Antonio himself, whoever is listening */
+/** the story is told to whoever is being played: {hero} in a line is that one's name. Only the lines spoken to the one
+    being played have it; Antonio written in a line is always Antonio himself (his house, his scooter, Marco Antonio) */
 export function heroText(t: string): string {
-  var h = firstHuman();
-  return t.replace(/\{Antonio\}|(?<![Cc]asa di )\bAntonio\b/g, function (w) { return w === 'Antonio' ? nameOf(h) : 'Antonio'; });
+  return t.indexOf('{hero}') < 0 ? t : t.replace(/\{hero\}/g, nameOf(firstHuman()));
 }
 /** a friend comes with its first creature; one who joined before there were teams gets it the first time it is played */
 function firstCreature(id: FriendId) {
@@ -335,10 +335,19 @@ export function netsLeft(): number { return NET_IDS.reduce(function (n, k) { ret
 /** the creature that walks behind Antonio on the map: the one he picked, or his first */
 export function leadCreature(): string | null {
   var ms = teamMons();
-  if (st.lead && ms.some(function (m) { return m.uid === st.lead; })) return st.lead;
+  var lead = leadOf(firstHuman());
+  if (lead && ms.some(function (m) { return m.uid === lead; })) return lead;
   return ms.length ? ms[0].uid : null;
 }
-export function setLead(uid: string) { st.lead = uid; }
+/** the creature each protagonist picked to follow it: Antonio's in st.lead, as in a save from before, the others' in st.leads */
+function leadOf(who: string): string | undefined { return who === 'antonio' ? st.lead : st.leads && st.leads[who]; }
+/** the creature that follows whoever is being played (null: none picked, the first of the team) */
+export function setLead(uid: string | null) {
+  var who = firstHuman();
+  if (who === 'antonio') { if (uid) st.lead = uid; else delete st.lead; return; }
+  st.leads = st.leads || {};
+  if (uid) st.leads[who] = uid; else delete st.leads[who];
+}
 /** a new creature, at a level, for whoever is being played unless it says otherwise */
 export function addCreature(sp: SpeciesId, lv: number, gold?: boolean, bond?: number, owner?: string): string {
   st.mons = st.mons || [];

@@ -13,7 +13,7 @@ export const TOURNEY = {
     { who: 'andrea', lv: 12, line: 'Ho studiato le tue statistiche. Ti conviene ritirarti.' },
     { who: 'valentin', lv: 14, line: 'Weee! Torneo! Chi perde paga da bere.' },
     { who: 'zendavid', lv: 16, line: 'Cuffie in testa, modalità zen. Vieni.' },
-    { who: 'costanzo', lv: 18, line: 'Rivincita, Antonio: stavolta il comizio lo finisco io.' },
+    { who: 'costanzo', lv: 18, line: 'Rivincita, {hero}: stavolta il comizio lo finisco io.' },
     { who: 'forchetta', lv: 20, line: 'La finale. Poteva andare peggio: potevi non arrivarci.' }
   ] as Round[]
 };

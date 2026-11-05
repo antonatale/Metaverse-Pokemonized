@@ -9,14 +9,14 @@ import { TRAINERS } from '../../src/data/trainers';
 import { WARES } from '../../src/data/growth';
 import { st } from '../../src/save/story-progress';
 import { record } from '../../src/story/activities';
-import { addCreature, firstHuman, heroText, homeMons, joinFriend, leadCreature, level, monsOf, nameOf, setFirst, teamMons, TEAM_MAX } from '../../src/story/growth';
+import { addCreature, firstHuman, heroText, homeMons, joinFriend, leadCreature, level, monsOf, nameOf, sendHome, setFirst, setLead, teamMons, TEAM_MAX } from '../../src/story/growth';
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly } from '../../src/story/missions';
 import { epilogue } from '../../src/story/epilogue';
 import { rival, rivalFor } from '../../src/story/rival';
 
 /* Everyone in the company is a protagonist: its own creatures, and missions only it can do. */
 const mon = (uid: string, owner?: string) => ({ uid, sp: 'cicalina' as const, moves: ['botta'], bond: 20, nat: 'Sereno', ...(owner ? { owner } : {}) });
-beforeEach(() => { st.seen = {}; st.beaten = {}; st.lv = {}; st.mons = []; st.squad = ['antonio']; delete st.first; delete st.lead; st.dex = {}; st.bag = {}; st.done = {}; st.best = {}; st.money = 0; });
+beforeEach(() => { st.seen = {}; st.beaten = {}; st.lv = {}; st.mons = []; st.squad = ['antonio']; delete st.first; delete st.lead; delete st.leads; st.dex = {}; st.bag = {}; st.done = {}; st.best = {}; st.money = 0; });
 
 describe('who is being played', () => {
   it('is Antonio until the player says otherwise, and in an old save everything is his', () => {
@@ -40,6 +40,20 @@ describe('who is being played', () => {
     expect(leadCreature()).toBe('c2');
     setFirst('antonio');
     expect(leadCreature()).toBe('c1');
+  });
+  it('each one picks the creature that follows it, and Antonio\'s stays where an old save has it', () => {
+    st.mons = [mon('c1'), mon('c2'), mon('c3', 'costanzo'), mon('c4', 'costanzo')];
+    st.squad = ['antonio', 'costanzo'];
+    setLead('c2');
+    setFirst('costanzo'); setLead('c4');
+    expect(leadCreature()).toBe('c4');
+    setFirst('antonio');
+    expect(leadCreature()).toBe('c2');
+    expect(st.lead).toBe('c2');
+    setFirst('costanzo');
+    expect(leadCreature()).toBe('c4');
+    expect(sendHome('c4')).toBe(true);
+    expect(leadCreature(), 'gone home: the first of the team again').toBe('c3');
   });
   it('catches for itself', () => {
     st.squad = ['antonio', 'costanzo']; st.mons = [mon('c1', 'costanzo')];
@@ -66,13 +80,19 @@ describe('who is being played', () => {
 });
 
 describe('the story, told to who is being played', () => {
-  it('says its name, but Antonio\'s house stays his, and {Antonio} is always him', () => {
+  it('says its name where a line speaks to it, and Antonio written anywhere is always Antonio', () => {
     st.squad = ['antonio', 'costanzo']; setFirst('costanzo');
-    expect(heroText('Ciao Antonio! Antonio, sei tu?')).toBe('Ciao Costanzo! Costanzo, sei tu?');
-    expect(heroText('Casa di Antonio')).toBe('Casa di Antonio');
-    expect(heroText('Cerco {Antonio}, si chiama.')).toBe('Cerco Antonio, si chiama.');
+    expect(heroText('Ciao {hero}! {hero}, sei tu?')).toBe('Ciao Costanzo! Costanzo, sei tu?');
+    expect(heroText('Il motorino di Antonio. I sicari di Marco Antonio.')).toBe('Il motorino di Antonio. I sicari di Marco Antonio.');
     setFirst('antonio');
-    expect(heroText('Ciao Antonio, cerco {Antonio}.')).toBe('Ciao Antonio, cerco Antonio.');
+    expect(heroText('Ciao {hero}, cerco Antonio.')).toBe('Ciao Antonio, cerco Antonio.');
+  });
+  it('the old marker is gone: no line says {Antonio} any more', async () => {
+    const { TIPS, CHAPTERS } = await import('../../src/story/mentor');
+    const { CHOICES } = await import('../../src/data/choices');
+    const all = JSON.stringify([MISSIONS, TRAINERS, MAPS, TIPS, CHAPTERS, CHOICES]);
+    expect(all).not.toContain('{Antonio}');
+    expect(all, 'some lines speak to who is being played').toContain('{hero}');
   });
   it('Tullio and the ending look at Antonio\'s first creature, whoever joined before it', () => {
     st.squad = ['antonio', 'forchetta']; st.mons = [mon('c1', 'forchetta'), { ...mon('c2'), sp: 'polpino' as const }];
@@ -120,6 +140,13 @@ describe('a friend who joins', () => {
     joinFriend('andrea', 8);
     expect(level(monsOf('andrea')[0].uid).lv).toBe(29);
   });
+  it('played for the first time, its creature keeps up with the team of who was being played until then', () => {
+    st.squad = ['antonio', 'costanzo'];
+    st.mons = [mon('c1'), mon('c2'), mon('c3')];
+    st.lv = { c1: { lv: 30, xp: 0 }, c2: { lv: 30, xp: 0 }, c3: { lv: 30, xp: 0 } };
+    setFirst('costanzo');
+    expect(level(monsOf('costanzo')[0].uid).lv).toBe(29);
+  });
   it('someone who joined before there were teams gets its creature the first time it is played', () => {
     st.squad = ['antonio', 'costanzo'];
     expect(monsOf('costanzo')).toEqual([]);
@@ -132,6 +159,11 @@ describe('a friend who joins', () => {
       record(JOIN[id].activity!, 3);
       expect(st.squad as string[], id).toContain(id);
     }
+  });
+  it('only when it went well: a run out of time, or a game with no score, is not enough', () => {
+    record(JOIN.zendavid.activity!);
+    record(JOIN.andrea.activity!, 0);
+    expect(st.squad).toEqual(['antonio']);
   });
   it('the experience of what is done goes to whoever is being played', () => {
     st.squad = ['antonio', 'costanzo']; setFirst('costanzo');

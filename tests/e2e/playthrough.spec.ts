@@ -254,6 +254,24 @@ async function choose(p: Page, label: string) {
   await p.locator('#wopts button', { hasText: label }).first().click({ timeout: 5000 });
   await p.clock.runFor(300);
 }
+/** what an activity brought, told once its own sheet and words are over (a level, a friend who comes along): what was said */
+async function afterwards(p: Page): Promise<string[]> {
+  const said: string[] = [];
+  await p.clock.runFor(400);
+  for (let k = 0; k < 16; k++) {
+    const d = await p.evaluate(() => window.WORLD._debug.pos());
+    if (!d.dialog) {
+      /* a person changing its clothes, between two lines */
+      if (await p.locator('#overlay:not([hidden]) .award .btn.primary').count()) { await p.locator('#overlay .award .btn.primary').first().click(); await p.clock.runFor(400); continue; }
+      break;
+    }
+    await p.clock.runFor(1500);
+    said.push((await p.evaluate(() => window.WORLD._debug.pos().text)) || '');
+    if (d.opts) await p.locator('#wopts button').first().click(); else await p.keyboard.press('Enter');
+    await p.clock.runFor(400);
+  }
+  return said;
+}
 async function talkTo(p: Page, id: string) {
   await goTo(p, 'npc', id);
   await p.keyboard.press('Enter'); await p.clock.runFor(200);
@@ -275,6 +293,7 @@ test('activities around Formia', async ({ browser }) => {
     await until(p, () => window.WORLD._debug.pos().dialog);
     r.keep('run', await p.evaluate(() => window.WORLD._debug.pos().text));
     await talkThrough(p);
+    const told: string[] = await afterwards(p);
     /* the Eclipse: beach volley with Valentin, one good hit, then the ball drops */
     await talkTo(p, 'valentin');
     await choose(p, 'Gioca a beach volley');
@@ -289,6 +308,7 @@ test('activities around Formia', async ({ browser }) => {
     await p.click('#mg-x');
     await p.clock.runFor(300);
     await talkThrough(p);
+    told.push(...await afterwards(p));
     /* a windsurf lesson with Nicola Spadea: no pulling on the sail, so the wind soon catapults Antonio in */
     await talkTo(p, 'nicola');
     await choose(p, 'Prendi una lezione');
@@ -300,11 +320,13 @@ test('activities around Formia', async ({ browser }) => {
     await p.click('#mg-x');
     await p.clock.runFor(300);
     await talkThrough(p);
+    told.push(...await afterwards(p));
     /* a lettino from the bar of the lido */
     await talkTo(p, 'barista');
     await choose(p, 'Prendi un lettino');
     await talkThrough(p);
     await talkThrough(p);
+    told.push(...await afterwards(p));
     /* Morgana: in through the door, a drink at the counter and the quiz, always the first answer */
     await goTo(p, 'door', 'morgana');
     await walk(p, ['up']);
@@ -316,6 +338,7 @@ test('activities around Formia', async ({ browser }) => {
     await choose(p, 'Una rossa');
     await talkThrough(p);
     for (let q = 0; q < 5; q++) { await choose(p, ''); await talkThrough(p); }
+    told.push(...await afterwards(p));
     /* and out again into via Abate Tosti */
     await walk(p, (await p.evaluate(() => window.WORLD._debug.route(5, 7))) || []);
     await walk(p, ['down']);
@@ -326,6 +349,8 @@ test('activities around Formia', async ({ browser }) => {
     await choose(p, '');
     await choose(p, '');
     await talkThrough(p);
+    told.push(...await afterwards(p));
+    r.keep('told', told);
     await p.keyboard.press('m'); await p.clock.runFor(200);
     await r.shot('diary');
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
@@ -339,6 +364,11 @@ test('activities around Formia', async ({ browser }) => {
   expect(get('inside morgana')).toBe('morgana');
   expect(st.done).toEqual({ corsa: 1, volley: 1, windsurf: 1, lettino: 1, quiz: 1, gelato: 1 });
   expect(st.best.volley).toBe(1);
+  /* Valentin comes along after one good hit, and says so once the game is closed; Zendavid does not: the run ran out of time */
+  const told = get('told') as unknown as string[];
+  expect(told.join(' ')).toContain('Da oggi la festa si sposta dove vai tu.');
+  expect(told.join(' ')).toContain('Adesso anche');
+  expect((st as unknown as { squad: string[] }).squad).toEqual(['antonio', 'valentin']);
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);
 });
 

@@ -44,6 +44,8 @@ export interface StoryProgress {
   dex?: Record<string, number>;
   /** the creature that walks behind him on the map (his first one when missing) */
   lead?: string;
+  /** the creature that follows each of the others of the company, when it is played (Antonio's is lead) */
+  leads?: Record<string, string>;
   /** the first of his company: the person shown in the corner of the map and sent in first in a covo (Antonio when missing) */
   first?: FriendId;
   /** the creature his rival Tullio picked after him (story/rival.ts; worked out from Antonio's when missing) */
