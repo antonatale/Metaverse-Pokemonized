@@ -40,6 +40,7 @@ export const cisterna: MapDef = {
   place: {
     entry: [7, 8, 'up'],
     goal: [22, 1],
+    words: { rest: 'Un braciere acceso: se l\'acqua ti porta via, ripartirai da qui.', hit: 'L\'acqua si alza e ti porta indietro.' },
     things: [
       /* the first hall */
       { k: 'plate', x: 4, y: 3, flag: 'a' },

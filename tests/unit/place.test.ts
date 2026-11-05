@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { arrive, prove, startOf, stepTo, walk, type Solid, type Walker } from '../../src/story/place';
 import type { Dir, PlaceDef, Thing } from '../../src/data/maps/types';
 import { MAPS } from '../../src/data/maps';
-import { prepare } from '../../src/story/maps';
+import { prepare, isWall, isShallow } from '../../src/story/maps';
 import { placeProof } from '../../src/story/place-run';
 
 /* The rules of a place, and above all the validator: it is only worth something if it says no to what cannot be done.
@@ -94,6 +94,31 @@ describe('the places of the game', () => {
   }
 });
 
+describe('a place cannot be walked around', () => {
+  it('with a creature that climbs or swims: indoors a wall is a wall', () => {
+    for (const [id, m] of Object.entries(MAPS)) {
+      if (!m.place) continue;
+      expect(m.inside, id + ' is indoors').toBe(true);
+      const pm = prepare(id);
+      for (let y = 0; y < pm.h; y++) for (let x = 0; x < pm.w; x++) {
+        expect(isWall(pm, x, y), id + ' wall at ' + x + ',' + y).toBe(false);
+        expect(isShallow(pm, x, y), id + ' water at ' + x + ',' + y).toBe(false);
+      }
+    }
+  });
+});
+
+describe('the walk to Lamo', () => {
+  it('has to be looked at: straight up, a boulder gets you', () => {
+    const pm = prepare('telepilo'), p = MAPS.telepilo.place!, r = placeProof(pm);
+    const solid = (x: number, y: number) => pm.solid[y * pm.w + x] === 1 || (pm.npcs || []).some((n) => n.x === x && n.y === y);
+    let w = startOf(p), back = 0;
+    for (let k = 0; k < 14; k++) { const n = walk(p, solid, w, 'up'); if (!n) break; if (n.w.y > w.y) back++; w = n.w; }
+    expect(back, 'hit on the way up').toBeGreaterThan(0);
+    expect(r.way.some((d) => d !== 'up'), 'the way there is not a straight line').toBe(true);
+  });
+});
+
 describe('the validator', () => {
   const hall = room(['.......', 'xxxxxxx', '.......']);
   it('proves a place that works, and hands back the way', () => {
@@ -156,5 +181,17 @@ describe('the validator', () => {
     const solid = room(['.....']);
     const p = place([0, 0], [4, 0], [{ k: 'beat', x: 1, y: 0, every: 2, on: [0, 1] }]);
     expect(prove(p, solid).ok).toBe(false);
+  });
+});
+
+describe('coming back into a place', () => {
+  it('starts from the entry: the rest of the last visit does not throw you forward', async () => {
+    const { st } = await import('../../src/save/story-progress');
+    const { setMap } = await import('../../src/story/maps');
+    const { placeEntered, placeNow } = await import('../../src/story/place-run');
+    setMap('telepilo');
+    st.places = { telepilo: { flags: { a: true }, tick: 7, rest: [9, 6] } };
+    placeEntered();
+    expect(placeNow('telepilo')).toEqual({ flags: { a: true }, tick: 0, rest: null });
   });
 });

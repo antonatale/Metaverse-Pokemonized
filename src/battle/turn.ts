@@ -11,6 +11,7 @@ import { snap } from './labels';
 import { useMove } from './moves';
 import { ai, nextUp } from './ai';
 import { fire, turnEnd, sleeping, speedOf } from './passives';
+import { stageUp } from './stages';
 
 /* The flow of a battle: intro → begin (start of turn) → select (players choose) → busy → begin … → over.
    Each call returns the events for the UI to play back. */
@@ -96,7 +97,7 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
     return false;
   }
   let id = choice as string;
-  if (me.conf > 0 && id !== 'copenhagenRet') {
+  if (me.conf > 0 && id !== 'copenhagenRet' && !BAG[id]) {
     me.conf--;
     ev.push(anim(i, 'confused'));
     ev.push(say(cm.name + ' è confuso…'));
@@ -205,12 +206,16 @@ export function playTurn(s: BattleState, choices?: Record<number, string>): Batt
   for (let n = 0; n < 2; n++) {
     const k = order[n];
     if (s.sides[k].hp <= 0) continue;
+    /* the blow it was getting ready has been knocked out of its hands */
+    if (s.forced[k] && s.forced[k]!.move && !s.sides[k].charge) continue;
     if (isSwitch(choice[k])) { change(s, k, switchSlot(choice[k]!), ev); s.sides[k].fresh = true; s.sides[k].went = true; fire(s, k, 'enter', ev); ev.push(snap(s)); continue; }
     attacked[k] = act(s, k, choice[k] === 'skip' ? null : choice[k], ev);
     /* who has acted, for the abilities that care who came first: never written in a battle between friends */
     if (s.bench || isSpecies(s.sides[k].id)) s.sides[k].went = true;
     ev.push(snap(s));
     if (s.caught) { finish(s, 'catch', 0, ev); return ev; }
+    /* a legend that starts another part has other moves: what it had chosen is gone with the last one */
+    [0, 1].forEach(function (f) { if (stageUp(s, f, ev) && !s.sides[f].human && !s.forced[f]) choice[f] = ai(s, f); });
     const dead = s.sides[0].hp <= 0 ? 0 : s.sides[1].hp <= 0 ? 1 : -1;
     if (dead >= 0) {
       /* with someone left on the bench the battle goes on: nobody hits a fighter who is down, so the turn ends here */
@@ -238,6 +243,7 @@ export function playTurn(s: BattleState, choices?: Record<number, string>): Batt
     }
     if (x.id === 'zendavid' && x.zen && x.zen === s.turn) { ev.push(anim(e, 'phOff')); ev.push(say('Zendavid si toglie le cuffie.')); }
     turnEnd(s, e, ev);
+    stageUp(s, e, ev);
   }
   /* a state can bring a fighter down here, even both at once: every fall is told, then the battle is decided */
   [0, 1].forEach(function (f) { if (s.sides[f].hp <= 0 && !down[f]) faint(s, f, ev); });
@@ -273,7 +279,7 @@ function enter(s: BattleState, i: number, slot: number, ev: BattleEvent[]) {
   s.bench![i][slot] = out;
   s.sides[i] = inn;
   s.plan[i] = null; s.forced[i] = null;
-  ev.push({ k: 'swap', who: i, id: inn.id, gold: inn.gold, hp: inn.hp });
+  ev.push({ k: 'swap', who: i, id: inn.id, key: inn.key, gold: inn.gold, hp: inn.hp });
   ev.push(snap(s));
   ev.push(anim(i, 'enter'));
   ev.push(line(i, ch(inn).lines.entry));

@@ -12,6 +12,9 @@ function saved(id: string): PlaceSave {
   return st.places[id] || (st.places[id] = { flags: {}, tick: 0, rest: null });
 }
 export function placeNow(id: string): PlaceSave { return (st.places && st.places[id]) || { flags: {}, tick: 0, rest: null }; }
+/** Antonio comes into a place from outside: what he has opened stays open, but he starts from the entry. With the rest of
+    the last visit a fall would throw him forward, past what he has not crossed; and the proof starts from here */
+export function placeEntered() { const g = saved(M.id); g.tick = 0; g.rest = null; }
 /** Antonio has finished a step in a place: the step counts, the tile does what it does, the guards turn */
 export function placeArrived(p: PlaceDef): Arrival {
   const g = saved(M.id), w: Walker = { x: st.x, y: st.y, tick: g.tick + 1, flags: g.flags, rest: g.rest }, a = arrive(p, w);

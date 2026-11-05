@@ -104,6 +104,7 @@ export const TIPS: Record<string, string[]> = {
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
   wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure catturala: stancala, poi tocca un retino nella Borsa, sotto le mosse. Più è stanca, più è facile.',
     'Tra le creature conta la magia delle mosse. Oltre ai cinque tipi delle persone ne hanno cinque tutti loro: Corrente, Calore, Cielo, Corazza e Crepuscolo. Ogni tipo ne batte due: chi batte chi lo trovi nella Scheda della lotta.'],
+  legend: ['Una leggenda, Antonio. Questa non è una creatura qualunque: la lotta ha tre parti, e a ogni parte cambia.', 'Il retino regge solo nell\'ultima, e serve tutta la squadra. Se vedi che carica un colpo, hai un turno per decidere chi lo prende.'],
   trainer: ['Un allenatore: manda le sue creature una dopo l\'altra, e tu le tue. Ognuna tiene i PS che le restano; se cadono tutte, puoi scendere in campo tu.'],
   bench: ['Con più creature si lotta meglio: nella lotta c\'è il pulsante Cambia. Costa il turno, ma chi entra è in guardia e prende metà del colpo, e chi aspetta riprende fiato.', 'E quando un allenatore sta per mandare la creatura dopo, ti lascia il tempo di cambiare.'],
   evolve: ['Hai visto? È la magia dei Lestrigoni: a un certo livello una creatura cambia forma, e diventa più forte.'],

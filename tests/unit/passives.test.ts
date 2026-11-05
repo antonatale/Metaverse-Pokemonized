@@ -351,3 +351,54 @@ describe('the things creatures carry', () => {
     expect(first).toBeCloseTo(E.expected(s, 0, 'tentacolata') * 1.2, 5);
   });
 });
+
+describe('what the review of the legends found', () => {
+  it('a confused creature does not stop Antonio from using the bag', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const s = duel(mon('polpino', 20), mon('cicalina', 20), { bag: { tiella: 1 }, seed });
+      s.sides[0].hp -= 30; s.sides[0].conf = 2;
+      E.intro(s); E.beginTurn(s);
+      const ev = E.playTurn(s, { 0: 'tiella' });
+      expect(s.bag!.tiella, 'seed ' + seed).toBe(0);
+      expect(says(ev)).not.toContain('si fa male da solo');
+    }
+  });
+  it('a slice of tiella stays in the bag when nobody needs it', () => {
+    const s = duel(mon('polpino', 20), mon('cicalina', 20), { bag: { tiella: 2 } });
+    E.intro(s); E.beginTurn(s);
+    expect(E.available(s, 0)).not.toContain('tiella');
+    expect(E.moveLabel(s, 0, 'tiella').locked).toBe(true);
+    expect(E.moveLabel(s, 0, 'tiella').sub).toBe('PS al massimo');
+    s.sides[0].hp -= 1;
+    expect(E.available(s, 0)).toContain('tiella');
+    s.sides[0].hp = s.sides[0].max; put(s, 0, 'sole');
+    expect(E.available(s, 0), 'it cures a state too').toContain('tiella');
+  });
+  it('who falls to a sting does nothing more with its move', () => {
+    const a = mon('polpino', 20, { known: ['spruzzo'] }), b = mon('riccetto', 30);
+    const s = duel(a, b);
+    E.intro(s); E.beginTurn(s);
+    s.sides[0].hp = 1; s.plan[1] = 'botta';
+    const ev = E.playTurn(s, { 0: 'spruzzo' });
+    if (s.sides[0].hp <= 0 && says(ev).indexOf('si punge') >= 0) expect(s.sides[1].mods.filter((m) => m.tag === 'atkDown')).toEqual([]);
+  });
+  it('a first-hit effect is not used up on a blow that knocks the foe out', () => {
+    const s = E.newBattle({ a: 'polpino', b: 'cicalina', seed: 8, sideA: mon('polpino', 40, { abil: ['maggio'] }), sideB: mon('cicalina', 5), benchB: [mon('cicalina', 40)], bag: {} });
+    E.intro(s); E.beginTurn(s);
+    s.sides[0].stats = { ...s.sides[0].stats!, spe: 9999, atk: 9999 };
+    s.sides[1].hp = 1;
+    let ev: BattleEvent[] = [];
+    for (let k = 0; k < 6 && s.sides[1].hp > 0; k++) { ev = E.playTurn(s, { 0: attack(s, 0) }); if (s.phase === 'begin') E.beginTurn(s); }
+    expect(s.sides[1].hp).toBe(0);
+    expect(ev.some((e) => e.k === 'anim' && e.a === 'abil'), 'it does not say its name for nothing').toBe(false);
+    expect((s.sides[0].spent || {}).maggio, 'it is still there for the next one').toBeFalsy();
+  });
+  it('says how much a move gives back, as the numbers do', () => {
+    const lab = (sp: SpeciesId, id: string) => { const s = duel(mon(sp, 40, { known: [id] }), mon('cicalina', 40)); E.intro(s); E.beginTurn(s); return { s, sub: E.moveLabel(s, 0, id).sub }; };
+    expect(lab('gabbi', 'furto').sub).toContain('si cura metà');
+    const b = lab('gattomola', 'banco');
+    expect(b.sub).toContain('si cura il 40%');
+    b.s.sides[0].hp -= 30; b.s.sides[0].stats = { ...b.s.sides[0].stats!, spe: 9999 };
+    expect(says(E.playTurn(b.s, { 0: 'banco' }))).toMatch(/si riprende il 40% del danno|la scampa/);
+  });
+});

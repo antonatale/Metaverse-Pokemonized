@@ -27,7 +27,9 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
   let attacked = false, dmg;
   /* the bag is Antonio's: he throws the nets, the tiella says itself (story battles only) */
   if (id !== 'copenhagenRet' && !BAG[id]) ev.push(say(nm + ' usa ' + m!.name + '!'));
-  switch (id) {
+  /* a creature's moves are numbers: an id it shares with someone else's move (Radici, the Esame's too) must not end up
+     in that one's case */
+  switch (isSpecies(me.id) && !BAG[id] ? '' : id) {
     /* --- Antonio --- */
     case 'diagnosi':
       ev.push(expr(i, 'smirk'));
@@ -259,12 +261,21 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
   const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, fx = m.fx || {};
   let attacked = false;
   const type = ch(me).type;
+  /* a blow seen coming: this turn it only gets ready, and whoever is in front has a turn to do something about it */
+  if (m.windup && me.charge !== m.id) {
+    me.charge = m.id;
+    ev.push(expr(i, 'grin'));
+    ev.push(anim(i, 'magicUp', { style: m.mtype || type, move: m.id }));
+    ev.push(say(m.windup.replace('{n}', ch(me).name)));
+    return false;
+  }
+  if (m.windup) me.charge = null;
   if (m.kind === 'atk') {
     ev.push(expr(i, 'grin'));
     ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
     const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
-    if (dmg > 0 && m.drain && me.hp > 0 && me.hp < me.max) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
-    if (dmg <= 0 || foe.hp <= 0) return attacked;
+    if (dmg > 0 && m.drain && me.hp > 0 && me.hp < me.max) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende ' + (m.drain >= 0.5 ? 'metà' : 'il ' + Math.round(m.drain * 100) + '%') + ' del danno.');
+    if (dmg <= 0 || foe.hp <= 0 || me.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {
     ev.push(expr(i, 'grin'));
     ev.push(anim(i, 'magicUp', { style: type, move: m.id }));

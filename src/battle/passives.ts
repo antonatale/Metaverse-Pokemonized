@@ -24,8 +24,8 @@ function spend(x: Side, id: string) { x.spent = x.spent || {}; x.spent[id] = tru
 /** the hit comes from a type that beats one of the creature's own */
 function isWeak(x: Side, type: string | null | undefined): boolean {
   if (!type || !isSpecies(x.id)) return false;
-  const sp = SPECIES[x.id];
-  return magicBeats(type as TypeName, sp.type) || (!!sp.type2 && magicBeats(type as TypeName, sp.type2));
+  const sp = SPECIES[x.id], mine = x.types || (sp.type2 ? [sp.type, sp.type2] : [sp.type]);
+  return mine.some(function (t) { return magicBeats(type as TypeName, t); });
 }
 /** `side`: health lost without a blow (a state, a sting, one's own confusion): it counts for what looks at the health, and
     for nothing that answers to being hit */
@@ -56,6 +56,13 @@ export function statFx(s: BattleState, who: number, fx: StatFx, ev: BattleEvent[
   addMod(x, f.stat, f.mult, Math.max(s.turn + n, had ? had.until : 0), fx);
   ev.push(anim(who, 'stat', { style: fx }));
   ev.push(say(cap(f.text.replace('{n}', ch(x).name).replace(/\d turni/, n + ' turni'))));
+}
+
+/** a number that stays up for a whole part of a legend's fight: the next part takes it away */
+export function stageFx(s: BattleState, who: number, fx: StatFx, ev: BattleEvent[]) {
+  const f = FX[fx];
+  addMod(s.sides[who], f.stat, f.mult, s.maxTurns + 1, fx);
+  ev.push(anim(who, 'stat', { style: fx }));
 }
 
 /* ---------- states ---------- */
@@ -111,6 +118,8 @@ function doIt(s: BattleState, i: number, p: Passive, o: PassiveOn, ev: BattleEve
   const x = s.sides[i], j = 1 - i, foe = s.sides[j], a: PassiveDo = o.do;
   /* at full health a cure has nothing to do: it does not say its name, and a one-time one is not spent */
   if ((a.heal || a.drain) && x.hp >= x.max && !(a.thorn || a.foe || a.self || a.status || a.cure)) return;
+  /* the same with nobody left to take it: a blow that has just knocked the foe out does not use up the first hit's effect */
+  if (foe.hp <= 0 && (a.thorn || a.foe || a.status) && !(a.heal || a.drain || a.self || a.cure)) return;
   if (o.if && o.if.once) spend(x, p.id);
   ev.push(anim(i, 'abil', { text: p.name }));
   if (a.heal) heal(s, i, x.max * a.heal, ev, ch(x).name + ' si riprende un po\'.');

@@ -2,6 +2,7 @@ import { st, save } from '../save/story-progress';
 import type { Npc, Sign } from '../data/maps/types';
 import { CICERO } from '../story/mentor';
 import { STONES, flag, type Stone } from '../story/plot';
+import type { LegendDef } from '../data/legends';
 import { esc, $ } from './dom';
 import { say, sheet, closeSheet, renderHud } from './story-screen';
 import { sfx } from '../audio';
@@ -45,10 +46,26 @@ export function plotAfter(id: string) {
   else if (id === 'mamurr-peschiere') { st.seen['pietra-mare'] = true; save(); award('pietra-mare', function () {
     say(['Due pietre su tre. Per la terza, vieni a trovarmi alla mia tomba, sull\'Appia verso Gaeta.', 'Sì: la Pietra della Voce la custodisco io. Da duemila anni.'], CICERO);
   }); }
-  else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); say(['Hai battuto Mamurra! Le tre pietre tornano al loro posto: il sigillo di Telepilo è salvo, e la magia dei Lestrigoni resta a chi la rispetta.',
+  else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); say(['Hai battuto Mamurra! Il sigillo di Telepilo è salvo, e la magia dei Lestrigoni resta a chi la rispetta.',
     'Formia è nata due volte: dalla Formiae dei Romani, e da Castellone e Mola che nel 1862 tornarono a chiamarsi Formia. Oggi l\'hai salvata tu.',
-    'E adesso ascolta: di notte, sotto le mura di Castellone, qualcosa si è svegliato. Lamo, il re dei Lestrigoni. Ti aspetta, ma non si fa prendere facilmente.',
+    'E adesso ascolta: di notte, sotto le mura di Castellone, qualcosa si è svegliato. Lamo, il re dei Lestrigoni. Le tre pietre sanno dove tornare: portale là. Ti aspetta, ma non si fa prendere facilmente.',
     'Poi il treno: Torino, e un giorno Chicago. Vai pure lontano, Antonio. Ma ricordati da dove vieni.'], CICERO); }
+}
+
+/* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */
+export function legendWay(L: LegendDef) {
+  var key = 'enigma-' + L.id, t = L.trial!, R = L.riddle;
+  var down = function () { travel(t.to, t.x, t.y, t.dir); };
+  var offer = function (text: string[]) { say(text, null, [{ label: 'Scendi', fn: down }, { label: 'Non ora', fn: null }]); };
+  if (!R || flag(key)) { offer(t.again); return; }
+  var ask = function (k: number) {
+    if (k >= R!.steps.length) { st.seen[key] = true; save(); sfx('magic'); offer(R!.solved); return; }
+    var q = R!.steps[k];
+    say([q.ask], null, q.options.map(function (label, i) {
+      return { label: label, fn: function () { if (i === q.ok) ask(k + 1); else say(R!.wrong, null, null, function () { ask(0); }); } };
+    }));
+  };
+  say(R.intro, null, null, function () { ask(0); });
 }
 
 /* ---------- the archivist: the legend of the stones ---------- */

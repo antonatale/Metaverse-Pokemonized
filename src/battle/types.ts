@@ -1,6 +1,7 @@
 import type { FighterId, Stats } from '../data/characters';
 import type { TypeName } from '../data/types';
 import type { StatusId } from '../data/passives';
+import type { LegendStage } from '../data/legends';
 
 /* The state of a battle is plain JSON, RNG included: same seed and same choices, same battle.
    That is what the golden tests (tests/unit/engine-golden.test.ts) rely on, and what lets a battle be saved. */
@@ -88,15 +89,20 @@ export interface Side {
   status?: { id: StatusId; left: number } | null;
   /** it has already acted this turn */
   went?: boolean;
+  /** a legend's fight, in parts (data/legends.ts), and the part it has reached */
+  stages?: LegendStage[];
+  stage?: number;
+  /** its types of the moment, when they are not those of its kind */
+  types?: TypeName[];
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[] }
 /** someone on the bench when a team battle starts */
 export interface Member extends SideOpts { id: FighterId }
 /** one foe of a team battle: who fought it, and who brought it down. The story pays out from these */
 export interface Bout { key: string; foe: FighterId; lv: number; who: string[]; ko: boolean; by: string | null }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
-export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string }
+export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string; day?: boolean }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }
@@ -156,7 +162,7 @@ export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: numb
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }
-export interface Snap { k: 'sync'; turn: number; maxTurns: number; boss: boolean; chips: [Chip[], Chip[]]; revealed: [boolean, boolean]; ph: [boolean, boolean]; team?: [string[], string[]] }
+export interface Snap { k: 'sync'; turn: number; maxTurns: number; boss: boolean; chips: [Chip[], Chip[]]; revealed: [boolean, boolean]; ph: [boolean, boolean]; team?: [string[], string[]]; types?: [TypeName[], TypeName[]]; who?: [string, string] }
 export type BattleEvent =
   | { k: 'say'; text: string }
   | { k: 'line'; who: number; text: string }
@@ -164,7 +170,7 @@ export type BattleEvent =
   | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string; move?: string; shakes?: number }
   | { k: 'hp'; who: number; hp: number; dmg?: number; crit?: boolean; eff?: number; heal?: number; quiet?: boolean }
   /** another fighter on the field: the UI redraws that side with what it says */
-  | { k: 'swap'; who: number; id: FighterId; gold?: boolean; hp: number }
+  | { k: 'swap'; who: number; id: FighterId; key?: string; gold?: boolean; hp: number }
   | Snap
   | { k: 'end'; result: Result; winner: number | null; grade: Grade | null };
 

@@ -57,8 +57,11 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.key) side.key = o.key;
   if (o && o.last) side.last = true;
   if (o && o.item) side.item = o.item;
+  if (o && o.stages) { side.stages = o.stages; side.stage = 0; side.known = o.stages[0].moves.slice(); if (o.stages[0].types) side.types = o.stages[0].types.slice(); }
   /* a creature's ability comes with its kind */
   if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();
+  /* and one more, if the day has given it one (src/day/plan.ts) */
+  if (o && o.abil) side.abil = (side.abil || []).concat(o.abil);
   return side;
 }
 export function newBattle(o: NewBattle): BattleState {
@@ -149,9 +152,12 @@ export function available(s: BattleState, i: number): string[] {
   });
   if (side.encore && side.encore.until >= s.turn && all.indexOf(side.encore.move) >= 0) return [side.encore.move];
   /* the player's bag, in story battles: the nets only against a wild creature */
-  if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' || s.wild)) all.push(b); });
+  if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' ? side.hp < side.max || !!side.status : s.wild && !netShut(s))) all.push(b); });
   return all;
 }
+
+/** a legend's fight: a net holds only in its last part */
+export function netShut(s: BattleState): boolean { const x = s.sides[1]; return !!x.stages && x.stage! < x.stages.length - 1; }
 
 /** matchups depend on the characters' types; Costanzo's Personaggismo swaps his */
 export function sideType(s: BattleState, side: Side, foe: Side): TypeName {

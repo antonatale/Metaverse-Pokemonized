@@ -116,6 +116,7 @@ export const CMOVES: Record<string, Move> = {
   masso: atk('masso', 'Masso dei giganti', 110, 'Scaglia un masso, come contro le navi di Ulisse: va a segno 8 volte su 10.', { acc: 0.8 }),
   furia: atk('furia', 'Furia dei Lestrigoni', 80, 'Danno alto, e una volta su tre confonde.', { fx: { conf: 0.3 }, mtype: 'Caos' }),
   ruggito: { id: 'ruggito', name: 'Ruggito di Lamo', kind: 'status', text: 'Un ruggito che scuote il golfo: l\'Attacco avversario cala per 5 turni.', fx: { foe: 'atkDown' } },
+  naufragio: atk('naufragio', 'Massi sulle navi', 150, 'Un turno per sollevare il masso, e il turno dopo lo scaglia, come contro le navi di Ulisse: si vede arrivare, ma fa malissimo.', { twoTurn: true, windup: '{n} solleva il masso sopra la testa: al prossimo turno lo scaglia!', mtype: 'Corazza' }),
   telepilo: { id: 'telepilo', name: 'Porte di Telepilo', kind: 'heal', uses: 2, text: 'Chiude le porte della sua città: recupera il 25% dei PS e la Difesa sale.', fx: { heal: 0.25, self: 'defUp' } },
   /* ---------- the creatures found later: the sea, the night, the hills, the town ---------- */
   urtica: atk('urtica', 'Tocco urticante', 55, 'Brucia appena, come le meduse d\'estate: danno basso, e una volta su quattro confonde.', { fx: { conf: 0.25 } }),
@@ -161,6 +162,7 @@ export const CMOVES: Record<string, Move> = {
   bonaccia: { id: 'bonaccia', name: 'Bonaccia', kind: 'heal', uses: 2, text: 'Dopo la tempesta torna la calma: recupera il 30% dei PS.', fx: { heal: 0.3 } },
   /* the grand moves of the legends, each its own */
   portatempo: atk('portatempo', 'Porta del tempo', 120, 'Apre la porta tra il giorno e la notte, e il tempo si ferma per tutti tranne che per lui: danno enorme, va a segno 9 volte su 10.', { acc: 0.9, mtype: 'Crepuscolo' }),
+  lunargento: atk('lunargento', 'Luna d\'argento', 90, 'Il volto che guarda a occidente vede la notte prima di tutti: danno alto.', { mtype: 'Calma' }),
   primaluce: atk('primaluce', 'Prima luce', 85, 'Il volto che guarda a oriente vede l\'alba prima di tutti: danno alto, critico più facile (20%).', { crit: 0.2, mtype: 'Calore' }),
   tempestelmo: atk('tempestelmo', 'Tempesta di Sant\'Elmo', 120, 'Il cielo si rompe in fulmini e ogni onda prende fuoco d\'azzurro: danno enorme, va a segno 85 volte su 100, e una volta su cinque confonde.', { acc: 0.85, mtype: 'Calore', fx: { conf: 0.2 } }),
   vele: atk('vele', 'Vele di fuoco', 85, 'Spiega le ali come le vele di una nave e ci passa il vento della tempesta: danno alto.', { mtype: 'Cielo' }),
@@ -539,8 +541,8 @@ export const SPECIES: Record<SpeciesId, Species> = {
      both pins of Formia, and a net holds him only rarely */
   lamo: S({
     id: 'lamo', abil: ['gigante'], name: 'Lamo', wild: 'Lamo, il re dei Lestrigoni,', type: 'Corazza', type2: 'Caos', stage: 3, catchRate: 0.35, legend: true, sig: 'masso',
-    stats: { hp: 345, atk: 140, def: 130, spe: 100 },
-    learn: [[1, 'ruggito'], [1, 'telepilo'], [1, 'furia'], [1, 'passogigante'], [1, 'masso']],
+    stats: { hp: 300, atk: 140, def: 130, spe: 100 },
+    learn: [[1, 'naufragio'], [1, 'ruggito'], [1, 'telepilo'], [1, 'furia'], [1, 'passogigante'], [1, 'masso']],
     cry: { entry: 'CHI OSA SVEGLIARE IL RE DI TELEPILO?', win: 'Formia era mia, e lo è ancora.', ko: 'Torno… nella leggenda…' },
     text: 'Il re dei giganti Lestrigoni, quello che scagliava massi contro le navi di Ulisse. Si racconta che le mura poligonali di Castellone le abbia alzate lui, pietra su pietra, che dorma lì sotto e che esca solo di notte, davanti a chi ha salvato Formia, con un masso sopra la testa.',
     where: 'Le mura di Castellone, di notte', art: { body: 'giant', main: '#9a8f7c', dark: '#5e5546', belly: '#c9bfa8', accent: '#e0b44c', size: 1 }
@@ -552,8 +554,8 @@ export const SPECIES: Record<SpeciesId, Species> = {
      diver has been beaten */
   giano: S({
     id: 'giano', abil: ['leggenda'], name: 'Giano', wild: 'Giano, il signore delle soglie,', type: 'Crepuscolo', type2: 'Cervello', stage: 3, catchRate: 0.3, legend: true, sig: 'portatempo',
-    stats: { hp: 331, atk: 134, def: 134, spe: 114 },
-    learn: [[1, 'passato'], [1, 'futuro'], [1, 'duevolti'], [1, 'soglia'], [1, 'primaluce'], [1, 'portatempo']],
+    stats: { hp: 300, atk: 134, def: 134, spe: 114 },
+    learn: [[1, 'lunargento'], [1, 'passato'], [1, 'futuro'], [1, 'duevolti'], [1, 'soglia'], [1, 'primaluce'], [1, 'portatempo']],
     cry: { entry: 'IL TEMPO SI FERMA. CHI OSA PASSARE LA SOGLIA?', win: 'Lo sapevo da prima. E lo saprò dopo.', ko: 'Si chiude una porta… se ne apre un\'altra.' },
     text: 'Il dio delle porte e di ogni passaggio, con due teste: una d\'oro che guarda l\'alba e il passato, una d\'argento che guarda la notte e il futuro. Dietro di lui gira la ruota delle ore, e le sue ali sono le porte di un tempio. Si dice che Gianola porti il suo nome, e si racconta che al tramonto, quando il giorno passa alla notte, torni tra le rovine della villa.',
     where: 'Le rovine di Gianola, al tramonto', art: { body: 'janus', main: '#e8c662', dark: '#9a7424', belly: '#fff1c2', accent: '#b9c6e8', size: 1 }

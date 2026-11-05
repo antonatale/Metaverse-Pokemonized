@@ -16,6 +16,7 @@ import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeO
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
+import { dayAfter } from './day-screen';
 import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
 import { runeIcon } from '../render/svg/creatures';
 import { soundButton } from './sound';
@@ -25,7 +26,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -38,18 +39,21 @@ function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) 
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
   return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
-    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span></div></div>' +
+    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span>' + marksHtml(i) + '</div></div>' +
     '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
+/** on a legend's health, where each part of the fight starts */
+function marksHtml(i: number): string { return (S.sides[i].stages || []).slice(1).map(function (p) { return '<i class="hpmark" style="left:' + p.at * 100 + '%"></i>'; }).join(''); }
 /** a side's types, one tag each: two for the creatures' last forms */
-function typesHtml(i: number): string { return E.sideTypes(S, i).map(function (t) { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }).join(''); }
+function typesHtml(i: number, types?: TypeName[]): string { return (types || E.sideTypes(S, i)).map(function (t) { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }).join(''); }
 /* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
    the fighters stand on platforms of its ground */
 function sceneHtml(): string {
   var id = S.story && S.story.scene;
   battle.classList.toggle('has-scene', !!id);
   if (!id) { battle.style.removeProperty('--plat'); return ''; }
-  var info = sceneInfo(id), dark = darkness(new Date()) > 0.5;
+  /* a battle of «Un giorno a Formia» has its own hour */
+  var info = sceneInfo(id), dark = S.story!.day ? !!S.night : darkness(new Date()) > 0.5;
   battle.style.setProperty('--plat', info.ground);
   battle.classList.toggle('night', dark);
   return '<div class="scene" role="img" aria-label="' + esc(info.title) + '">' + scene(id, dark) + '</div>';
@@ -120,11 +124,11 @@ function countHp(i: number, from: number, to: number) {
 let onField: string[] = ['', ''];
 function renderSync(sn: Snap) {
   for (var i = 0; i < 2; i++) {
-    if (S.sides[i].id !== onField[i]) continue;
+    if (sn.who && sn.who[i] !== onField[i]) continue;
     shown.revealed[i] = i === 0 || S.mode === 'pvp' || S.sides[i].id !== 'esame' || sn.revealed[i];
     $('chips-' + i).innerHTML = sn.chips[i].map(function (c) { return '<span class="chip ' + c.c + '" title="' + esc(c.d) + '">' + ico(c.i) + esc(c.t) + '</span>'; }).join('');
     if (!counting[i]) hpText(i, uiHp[i]);
-    $('ty-' + i).innerHTML = typesHtml(i);
+    $('ty-' + i).innerHTML = typesHtml(i, sn.types && sn.types[i]);
     /* a team battle: one dot for each of the team, like the balls in the games */
     if (sn.team && sn.team[i].length > 1) $('dots-' + i).innerHTML = sn.team[i].map(function (d) { return '<i class="' + d + '"></i>'; }).join('');
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
@@ -356,6 +360,13 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     /* an ability at work says its name by the creature, as in the games */
     case 'abil': return popAt(i, '<div class="abil-pop">' + esc(ev.text || '') + '</div>', '', 0.5, 0.02, 1000);
     case 'status': return popAt(i, '<div class="pop">' + ico(STATUS[ev.style as StatusId].icon) + '</div>', '', 0.5, 0, 900);
+    /* a legend starts another part of its fight: the ground shakes as when it came on, its name goes by, the music turns */
+    case 'stage': {
+      var tys = E.sideTypes(S, i);
+      arrive(i, tys[0], tys[1]);
+      music('boss');
+      return banner(ev.text || '', 'stage');
+    }
     default: return Promise.resolve();
   }
 }
@@ -366,7 +377,7 @@ function swapEvent(ev: Extract<BattleEvent, { k: 'swap' }>) {
   m.innerHTML = '<div class="bob">' + bust(ev.id, 'smirk', '', undefined, ev.gold) + '</div>';
   if (counting[i]) { clearTimeout(counting[i]!); counting[i] = null; }
   $('box-' + i).outerHTML = boxHtml(i);
-  onField[i] = ev.id;
+  onField[i] = ev.key || ev.id;
   uiHp[i] = ev.hp;
   setHp(i, ev.hp);
 }
@@ -608,7 +619,7 @@ function curtain(trainer: boolean) {
 }
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
-    var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
+    var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
     S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart });
     S.story = cfg!.story || null;
   }
@@ -619,7 +630,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   home.hidden = true; battle.hidden = false;
   document.body.classList.add('in-battle');
   window.scrollTo(0, 0);
-  onField = [S.sides[0].id, S.sides[1].id];
+  onField = [S.sides[0].key || S.sides[0].id, S.sides[1].key || S.sides[1].id];
   renderShell();
   if (!restore && cfg && cfg.story && (cfg.wild || cfg.trainer)) curtain(!!cfg.trainer);
   music(S.boss ? 'boss' : 'battle');
@@ -646,7 +657,8 @@ export function goHome() {
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
-  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [];
+  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [], left: Record<string, number> = {}, turns = S ? S.turn : 0;
+  if (story.day && S && S.bench) [S.sides[0]].concat(S.bench[0]).forEach(function (x) { if (x.key) left[x.key] = x.hp / x.max; });
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
@@ -655,7 +667,8 @@ function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
   closeOverlay();
   renderLibretto();
   S = null as unknown as BattleState;
-  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
+  if (story.day) dayAfter(won, left, turns);
+  else if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
   else goHome();
 }
 /** the battle screen as one object, with the same names the old window.UI had */

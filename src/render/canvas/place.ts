@@ -55,6 +55,14 @@ function beat(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
   c.globalAlpha = danger ? 0.85 : 0.25; c.fillStyle = danger ? P.sea2 : P.sea; c.fillRect(X + 1, Y + 1, T - 2, T - 2); c.globalAlpha = 1;
   if (danger) { c.strokeStyle = P.foam; c.lineWidth = 2; c.strokeRect(X + 3, Y + 3, T - 6, T - 6); }
 }
+/** a boulder about to land: the shadow on the floor grows, and it shows the next step's danger like the water does */
+function boulder(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  c.globalAlpha = danger ? 0.5 : 0.14; c.fillStyle = P.ink; c.beginPath(); c.ellipse(X + T / 2, Y + T / 2 + 4, danger ? 13 : 8, danger ? 9 : 5, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+  if (!danger) return;
+  c.beginPath(); c.moveTo(X + 7, Y + 17); c.lineTo(X + 10, Y + 7); c.lineTo(X + 20, Y + 4); c.lineTo(X + 26, Y + 12); c.lineTo(X + 23, Y + 20); c.lineTo(X + 13, Y + 22); c.closePath();
+  fillStroke(c, P.rock, P.ink, 2);
+  c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(X + 13, Y + 10); c.lineTo(X + 18, Y + 14); c.lineTo(X + 16, Y + 19); c.stroke();
+}
 function rest(c: Ctx, P: Palette, X: number, Y: number) {
   c.fillStyle = P.lamp; c.beginPath(); c.moveTo(X + T / 2, Y + 7); c.quadraticCurveTo(X + 23, Y + 18, X + T / 2, Y + 24); c.quadraticCurveTo(X + 9, Y + 18, X + T / 2, Y + 7); c.fill();
   c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
@@ -71,7 +79,7 @@ export function drawThings(c: Ctx, P: Palette, p: PlaceDef, flags: Record<string
     else if (t.k === 'gate') gate(c, P, X, Y, hueOf(P, p, t.flag), gateShut(t, flags));
     else if (t.k === 'slide') slide(c, P, X, Y, t.dir, now, reduced);
     else if (t.k === 'pad') pad(c, P, X, Y, now, reduced);
-    else if (t.k === 'beat') beat(c, P, X, Y, beatOn(t, tick + 1));
+    else if (t.k === 'beat') (t.look === 'rock' ? boulder : beat)(c, P, X, Y, beatOn(t, tick + 1));
     else if (t.k === 'rest') rest(c, P, X, Y);
     else mark(c, P, X, Y);
   });

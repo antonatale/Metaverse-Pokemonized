@@ -30,7 +30,8 @@ import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
-import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
+import { plotTalk, plotSign, plotAfter, stonesHtml, legendWay } from './plot';
+import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage } from '../story/plot';
 import { idOf, sideOf, foeSide, fightPay, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
@@ -402,8 +403,9 @@ const MEET_LINE: Record<string, string> = { grotta: 'Qualcosa si muove nel buio�
 /* a place with a puzzle says what its floor has done, the first time at least */
 onPlace(function (a) {
   if (a.plate) { sfx('click'); notify(a.plate.on ? 'La lastra cede sotto il piede: da qualche parte si muove qualcosa.' : 'La lastra torna su.'); }
-  if (a.rested) { sfx('pickup'); notify('Un braciere acceso: se l\'acqua ti porta via, ripartirai da qui.'); }
-  if (a.hit) { sfx('weak'); notify('L\'acqua si alza e ti porta indietro.'); }
+  var w = M.place && M.place.words;
+  if (a.rested) { sfx('pickup'); notify(w ? w.rest : 'Da qui si riparte.'); }
+  if (a.hit) { sfx('weak'); notify(w ? w.hit : 'Si torna indietro.'); }
 });
 onEdge(function (kind, d) {
   var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
@@ -498,7 +500,7 @@ function safeMoves() { return foundItems().map(function (it) { return it.move; }
 /* One battle, with the two teams inside it (battle/turn.ts): Antonio's creatures wait on the bench, a trainer's come
    one after the other, a wild one is a single foe that can be caught. Antonio himself is the last on the bench: he
    steps in only when all his creatures are down. What the battle brings is paid at the end, from who fought whom. */
-interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[] }
+interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[]; stages?: LegendStage[] }
 interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[] }
 var fight: Fight | null = null;
 /** someone of Antonio's team, for the bench */
@@ -512,6 +514,7 @@ function foeMember(foe: Foe): Member {
   var b = Object.assign({ id: foe.sp }, foeSide(foe.sp, foe.lv)) as Member;
   if (foe.gold) b.gold = true;
   if (foe.moves) b.known = foe.moves.slice();
+  if (foe.stages) b.stages = foe.stages;
   return b;
 }
 /** the battle of a fight: Antonio picks who goes in first, the rest wait on the bench */
@@ -527,7 +530,9 @@ function fightOn() {
       story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
       wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined, dark: !!M.dark });
   };
-  pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, left, go, sp.type2);
+  /* a legend may start with other types than those of its kind */
+  var ty = foe.stages && foe.stages[0].types;
+  pickFighter('Chi mandi contro ' + sp.name + '?', ty ? ty[0] : sp.type, left, go, ty ? ty[1] : sp.type2);
 }
 /** a fight is over: a caught creature, a beaten trainer, or Antonio who has lost; each fighter gets what it earned */
 function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
@@ -604,19 +609,20 @@ function meet(h: Hiding) {
 }
 /** a wild creature in front of Antonio: fight it (with his creatures), or slip away */
 function wildMeet(id: string, first: string, foe: Foe) {
-  mentorTip('wild');
+  mentorTip(foe.stages ? 'legend' : 'wild');
   var sp = SPECIES[foe.sp];
   see(foe.sp); save();
-  say([first, sp.wild + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : []), null, [
+  say([first, sp.wild.replace(/,$/, '') + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : []), null, [
     { label: 'Lotta!', fn: function () { fight = { kind: 'wild', id: id, who: '', foes: [foe] }; fightOn(); } },
     { label: 'Scappa', fn: function () { say(['Antonio si allontana in punta di piedi.']); } }
   ]);
 }
-/* the legend is the one wild creature in sight: Lamo, under the walls of Castellone */
+/* the legends are the only wild creatures in sight (data/legends.ts): one with a place of its own is reached through it */
 function wildTalk(p: Person) {
-  var w = wildNow(p.n)!, lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1));
-  if (!st.mons || !st.mons.length) { say(['Un gigante di pietra dorme sotto le mura. Senza una creatura con te, meglio non svegliarlo.']); return; }
-  wildMeet(p.n.id, SPECIES[w.sp].text, { sp: w.sp, lv: lv });
+  var w = wildNow(p.n)!, lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1)), L = p.n.legend ? LEGENDS[p.n.legend] : null;
+  if (!st.mons || !st.mons.length) { say(['Una creatura così non si sveglia a mani vuote. Senza una creatura con te, meglio lasciarla stare.']); return; }
+  if (L && L.trial && M.id !== L.trial.to) { legendWay(L); return; }
+  wildMeet(p.n.id, SPECIES[w.sp].text, { sp: w.sp, lv: lv, stages: L ? L.stages : undefined });
 }
 /* ---------- the trainers of Formia: their creatures one after the other ---------- */
 /** a trainer's lines, with the rival's creature and Antonio's in them */

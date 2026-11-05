@@ -250,3 +250,22 @@ describe('a trainer who plays his team', () => {
     expect(E.planName(s, 1)).toBe(null);
   });
 });
+
+describe('what the screen is told', () => {
+  it('the card of a creature on the bench looks at the moves the foe knows, not at the first of its types', () => {
+    /* Polpino is Cervello, which does nothing to Olivella (Cuore), but the Tentacoli di marea are Corrente, which beats it */
+    const s = team([mon('gabbi', 20, 'a'), mon('olivella', 20, 'b')], [{ ...mon('polpino', 20), known: ['botta'] }]);
+    expect(E.benchLabels(s, 0)[0].takes).toBe(0);
+    s.sides[1].known = ['tentacolata'];
+    expect(E.benchLabels(s, 0)[0].takes, 'a move of the type that beats it').toBe(1);
+  });
+  it('each sync says who it is about and the types it had then, so the box never shows what comes later', () => {
+    const s = team([mon('polpino', 20, 'a'), mon('polpino', 22, 'b')], [mon('cicalina', 20)]);
+    const sn = E.snap(s);
+    expect(sn.who).toEqual(['a', 'f0']);
+    expect(sn.types![0]).toEqual(['Cervello']);
+    E.intro(s); E.beginTurn(s);
+    const ev = E.playTurn(s, { 0: 'switch:0' });
+    expect(ev.filter((e) => e.k === 'swap').map((e) => (e as { key?: string }).key), 'two of a kind are told apart').toEqual(['b']);
+  });
+});

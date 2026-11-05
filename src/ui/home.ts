@@ -11,6 +11,7 @@ import { ico } from './icons';
 import { tc, typeTag, kindTag, face, bust, home, overlay, view, closeOverlay } from './common';
 import { startBattle } from './battle-screen';
 import { WORLD } from './story-screen';
+import { renderDay } from './day-screen';
 import { soundButton } from './sound';
 
 /* The home page, a page of a squared exercise book: the story first (it is the game), then the free battles between
@@ -29,6 +30,7 @@ export function renderHome() {
     '<h1 id="title"><span class="hl">Lotte</span> tra Amici</h1>' +
     '<p>Un\'avventura a turni nella Formia vera: esplora la città, cattura le creature, sfida gli amici.</p>' + soundButton('snd-home') + '</header>';
   if (WORLD) h += '<section aria-labelledby="s-t"><h2 class="sec-title" id="s-t">Storia <small>Prima tappa: Formia</small></h2><div class="card story" id="story"></div></section>';
+  h += '<section aria-labelledby="d-t"><h2 class="sec-title" id="d-t">Un giorno a Formia <small>Una corsa di un quarto d\'ora</small></h2><div class="card" id="day-card"></div></section>';
   h += '<section aria-labelledby="r-t"><h2 class="sec-title" id="r-t">Lotte libere <small>Scegli un amico e sfida chi vuoi</small></h2><div class="roster">';
   ROSTER.forEach(function (id) {
     var c = C[id];
@@ -108,6 +110,7 @@ function renderCard() {
 }
 /* the story card: a still of Formia, the pins won so far, the way in */
 export function renderStory() {
+  renderDay();
   var el = $('story');
   if (!el || !WORLD) return;
   var sm = WORLD.summary();

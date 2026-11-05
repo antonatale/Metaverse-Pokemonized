@@ -11,7 +11,7 @@ const BY_AREA: Record<string, string> = {
   'Bruno Zauli': 'castellonorato', 'Parco Gramsci': 'castellonorato', 'Villaggio Don Bosco': 'castellonorato',
   'Gianola': 'gianola'
 };
-const BY_MAP: Record<string, string> = { casa: 'castellonorato', circolo: 'campo', morgana: 'birreria', cisterna: 'cisterna' };
+const BY_MAP: Record<string, string> = { casa: 'castellonorato', circolo: 'campo', morgana: 'birreria', cisterna: 'cisterna', telepilo: 'castellone' };
 /** the scene behind a battle on that map, in that part of town */
 export function sceneFor(map: string, area: string | null): string {
   return BY_MAP[map] || (area && BY_AREA[area]) || 'porto';

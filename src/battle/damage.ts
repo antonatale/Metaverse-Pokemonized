@@ -6,13 +6,15 @@ import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
 import { NET_IDS } from '../data/nets';
 import { say, line, expr, anim } from './events';
-import { ch, mv, eff, modMult, sideType, zenOn, statsOf } from './state';
+import { ch, mv, eff, modMult, sideType, zenOn, statsOf, netShut } from './state';
 import { dealtBy, takenBy, spendHit, statusMult, fire, cureStatus } from './passives';
 import { STATUS } from '../data/passives';
+import { stageFloor } from './stages';
 
 /* ---------- the creatures' magic ---------- */
 /** a side's types: a creature's own (one or two), a person's of the moment */
 export function typesOf(s: BattleState, side: Side, foe: Side): TypeName[] {
+  if (side.types) return side.types;
   if (isSpecies(side.id)) { const sp = SPECIES[side.id]; return sp.type2 ? [sp.type, sp.type2] : [sp.type]; }
   return [sideType(s, side, foe)];
 }
@@ -104,6 +106,7 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   /* a creature bound to Antonio may hold on, once (story battles only: the others have no endure) */
   let held = false;
   if (foe.endure && !foe.sturdy && dmg >= foe.hp && foe.hp > 1 && rand(s) < foe.endure) { dmg = foe.hp - 1; foe.sturdy = true; held = true; }
+  if (foe.stages) dmg = Math.min(dmg, foe.hp - stageFloor(foe));
   foe.hp = Math.max(0, foe.hp - dmg);
   spendHit(s, me, foe, p.type);
   me.st.dmg += dmg; if (crit) me.st.crits++;
@@ -121,7 +124,7 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   if (sturdy) { ev.push(say('Forchetta resta in piedi con 1 PS!')); ev.push(line(j, CHARS.forchetta.lines.sturdy)); }
   if (held) ev.push(say(ch(foe).name + ' non vuole deludere Antonio: resta in piedi con 1 PS!'));
   /* a wild creature worn out: the moment for a net, said once (story battles only) */
-  if (s.wild && j === 1 && foe.hp > 0 && foe.hp / foe.max < 0.35 && !s.tired && s.bag && NET_IDS.some(function (n) { return (s.bag![n] || 0) > 0; })) {
+  if (s.wild && j === 1 && foe.hp > 0 && foe.hp / foe.max < 0.35 && !s.tired && !netShut(s) && s.bag && NET_IDS.some(function (n) { return (s.bag![n] || 0) > 0; })) {
     s.tired = true;
     /* she or he: the wild ones are announced as "Una Cicalina selvatica", "Un Riccetto selvatico" */
     const she = isSpecies(foe.id) && /selvatica\b/.test(SPECIES[foe.id].wild);

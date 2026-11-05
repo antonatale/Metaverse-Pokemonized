@@ -2,7 +2,7 @@ import type { Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
 import { stepTime } from '../data/growth';
 import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall } from './maps';
-import { placeArrived } from './place-run';
+import { placeArrived, placeEntered } from './place-run';
 import type { Arrival } from './place';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
@@ -96,7 +96,7 @@ function warp(to: string, x: number, y: number, dir?: Dir) {
   setTimeout(function () {
     moveMode.swim = false; moveMode.climb = false;
     st.map = to; st.x = x; st.y = y; if (dir) st.dir = dir;
-    setMap(to); save(); renderHud();
+    setMap(to); if (M.place) placeEntered(); save(); renderHud();
     root.classList.remove('fade');
     busy = false;
   }, reduced ? 0 : 190);

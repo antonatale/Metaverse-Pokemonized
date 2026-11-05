@@ -13,7 +13,12 @@ import { catchChance } from './moves';
 
 export function snap(s: BattleState): Snap {
   const out: Snap = { k: 'sync', turn: s.turn, maxTurns: s.maxTurns, boss: s.boss, chips: [chips(s, 0), chips(s, 1)], revealed: [s.sides[0].revealed, s.sides[1].revealed], ph: [zenOn(s, s.sides[0]), zenOn(s, s.sides[1])] };
-  if (s.bench) out.team = [teamDots(s, 0), teamDots(s, 1)];
+  if (s.bench) {
+    out.team = [teamDots(s, 0), teamDots(s, 1)];
+    /* during the playback of a turn the state may be ahead of the screen: who this is about, and the types it had then */
+    out.types = [typesOf(s, s.sides[0], s.sides[1]).slice(), typesOf(s, s.sides[1], s.sides[0]).slice()];
+    out.who = [s.sides[0].key || s.sides[0].id, s.sides[1].key || s.sides[1].id];
+  }
   return out;
 }
 /** one dot for each of a side's team: whoever is up, and whoever is down */
@@ -33,12 +38,14 @@ export function benchLabels(s: BattleState, i: number): BenchLabel[] {
   return s.bench[i].map(function (x, k) {
     const c = ch(x), types = typesOf(s, x, foe);
     /* a person's magic is the person's own type; a creature's, the best of the moves it knows */
-    const foeHit = magicEff(ch(foe).type, types);
-    let hits = 0;
+    let hits = 0, takes = effLevel(magicEff(ch(foe).type, types));
+    if (isSpecies(foe.id)) {
+      const can = ch(foe).moves.filter(function (m) { return m.kind === 'atk' && (!foe.known || foe.known.indexOf(m.id) >= 0); });
+      takes = can.length ? Math.max.apply(null, can.map(function (m) { return effLevel(magicEff(moveType(foe, m), types)); })) : 0;
+    }
     if (isSpecies(x.id)) c.moves.forEach(function (m) {
       if (m.kind === 'atk' && (!x.known || x.known.indexOf(m.id) >= 0)) hits = Math.max(hits, effLevel(magicEff(moveType(x, m), typesOf(s, foe, x))));
     });
-    const takes = effLevel(foeHit);
     return { slot: k, id: x.id, name: c.name, lvl: x.lvl, gold: x.gold, hp: x.hp, max: x.max, types: types, last: !!x.last, ready: can.indexOf(k) >= 0, hits: hits, takes: takes,
       note: x.hp <= 0 ? 'KO' : x.last ? 'Lotto io!' : takes > 0 && hits <= 0 ? 'Svantaggio' : hits > 0 && takes <= 0 ? 'Vantaggio' : '' };
   });
@@ -66,7 +73,8 @@ function chips(s: BattleState, i: number): Chip[] {
   if (x.fresh) add('up', 'shield', 'In guardia', 'Appena entrato: per questo turno subisce metà del danno');
   if (x.status) { const st = STATUS[x.status.id]; add('bad', st.icon, st.name, st.text); }
   if (x.away) add('info', 'plane', 'A Copenhagen');
-  if (x.charge) add('info', 'plane', 'Di ritorno');
+  if (x.charge) { if (isSpecies(x.id)) add('bad', 'flame', 'Sta per colpire', 'Al prossimo turno: ' + mv(x, x.charge)!.name); else add('info', 'plane', 'Di ritorno'); }
+  if (x.stages) add('info', 'spark', 'Parte ' + (x.stage! + 1) + ' di ' + x.stages.length, x.stages[x.stage!].name);
   if (personaOn(s, x)) add('info', 'mic', 'Nel personaggio');
   if (x.id === 'costanzo' && x.lastAtk && x.atkStreak > 0) add('white', 'mic', 'Fissa ' + ((x.atkStreak - 1) % 3 + 1) + '/3', 'Fissa su ' + mv(x, x.lastAtk)!.name);
   if (x.id === 'forchetta' && !x.sturdy) add('white', 'shield', 'Resiste 1 volta');
@@ -110,12 +118,14 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     case 'stronger': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Forte · +20% cuffie' : 'Danno alto'; break;
     case 'retino': case 'retino2': case 'argento': case 'oro': case 'nassa': case 'lampara': {
       /* how likely it is to hold now, in words: the player learns to wear the creature out first */
+      out.icon = 'ball'; out.count = s.bag![id] || 0;
+      if (out.locked) { out.sub = 'Non regge ancora'; break; }
       const c = catchChance(s, i, id);
-      out.icon = 'ball'; out.chance = c; out.count = s.bag![id] || 0;
+      out.chance = c;
       out.sub = c >= 0.8 ? 'Quasi certo' : c >= 0.5 ? 'Probabile' : c >= 0.25 ? 'Difficile' : 'Molto difficile';
       break;
     }
-    case 'tiella': out.icon = 'heart'; out.count = s.bag!.tiella || 0; out.sub = 'Cura 40 PS'; break;
+    case 'tiella': out.icon = 'heart'; out.count = s.bag!.tiella || 0; out.sub = out.locked ? 'PS al massimo' : 'Cura 40 PS'; break;
     default: {
       /* the creatures' moves: what they do, from their numbers (the Esame's keep no label, as they always had) */
       if (!isSpecies(me.id)) break;
@@ -126,8 +136,9 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
         out.eff = magicEff(out.mtype, typesOf(s, s.sides[1 - i], me));
         bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
       }
+      if (m.windup) bits.push('Un turno per caricare');
       if (m.priority) bits.push('Attacca per primo');
-      if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura un terzo');
+      if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura il ' + Math.round(m.drain * 100) + '%');
       if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');
       if (fx.heal) bits.push('Cura il ' + Math.round(fx.heal * 100) + '%');
       if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');

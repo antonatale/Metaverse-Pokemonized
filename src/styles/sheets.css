@@ -55,3 +55,15 @@
 .btn.primary { background: var(--btn); color: var(--on-btn); }
 .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
 
+
+/* «Un giorno a Formia»: the home card and the sheets between battles */
+.day-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.day-offers { display: grid; gap: 8px; }
+.day-offer { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; text-align: left; border: 2px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); cursor: pointer; }
+.day-offer b { font: 18px/1.2 var(--font-display); }
+.day-offer small { font: 13px/1.3 var(--font-body); color: var(--muted); }
+.day-offer:not([disabled]):hover, .day-offer:not([disabled]):focus-visible { background: var(--grid); }
+.day-offer[disabled] { cursor: default; opacity: .6; }
+.day-score { margin: 0; color: var(--muted); }
+.day-score b { font: 44px/1 var(--font-display); color: var(--ink); }
+.day-line { width: 100%; padding: 8px 10px; border: 2px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: 13px/1.3 var(--font-body); }

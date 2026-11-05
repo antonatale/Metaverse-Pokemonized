@@ -790,6 +790,125 @@ test('the stones of Telepilo', async ({ browser }) => {
   expect(st.seen['pietra-voce']).toBe(true);
 });
 
+/* a legend: the riddle of the niches, the walk under the walls with the validator's own way, the fight in three parts, and
+   the net that holds only at the end */
+test('Lamo, in three parts', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 48, y: 36, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true },
+    mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: { oro: 6 } };
+  const r = await play(browser, 'legend', { seed: 21, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    await r.shot('niches');
+    await talkTo(p, 'selv-lamo');
+    /* a wrong stone falls back out, and nothing is lost */
+    await choose(p, 'Pietra della Voce');
+    r.keep('wrong', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await talkThrough(p);
+    await choose(p, 'Pietra delle Mura');
+    await choose(p, 'Pietra del Mare');
+    await talkThrough(p);
+    await r.shot('opens');
+    await choose(p, 'Scendi');
+    await p.clock.runFor(500);
+    r.keep('inside', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await r.shot('walk-in');
+    const way = await p.evaluate(() => window.WORLD._debug.way());
+    r.keep('way', way.length);
+    for (let k = 0; k < way.length; k++) { await walk(p, [way[k]]); if (k === 8) await r.shot('walk-mid'); }
+    r.keep('walked', await p.evaluate(() => window.WORLD._debug.pos()));
+    await r.shot('walk-end');
+    await p.keyboard.press('Enter'); await p.clock.runFor(200);
+    await talkThrough(p);
+    await r.shot('meet');
+    await choose(p, 'Lotta!');
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    const parts: string[] = [], nets: boolean[] = [];
+    for (let turn = 0; turn < 80; turn++) {
+      await toPrompt(p);
+      if (await battleOver(p)) break;
+      if (await p.evaluate(() => !document.getElementById('overlay')!.hidden)) { await p.locator('.bench-pick:not([disabled])').first().click({ timeout: 5000 }); continue; }
+      const part = await p.locator('#chips-1 .chip', { hasText: 'Parte' }).innerText(), net = p.locator('#pad .mv.bag[data-id="oro"]');
+      if (parts.indexOf(part) < 0) { parts.push(part); nets.push(await net.isDisabled()); await r.shot('part-' + parts.length); }
+      if (!await net.isDisabled()) { await net.click(); continue; }
+      const id = await p.evaluate(() => window.UI._debug.suggest());
+      await p.locator('#pad .mv[data-id="' + id + '"]:not([disabled])').click({ timeout: 5000 });
+    }
+    r.keep('parts', parts); r.keep('nets', nets);
+    await r.shot('end');
+    await p.click('#st-go'); await p.clock.runFor(500);
+    await talkThrough(p);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('wrong'))).toContain('scivola fuori');
+  expect(get('inside')).toBe('telepilo');
+  expect(get('way')).toBeGreaterThan(14);
+  expect((get('walked') as { map: string; y: number }).y, 'next to him, no boulder in the way').toBe(2);
+  expect(get('parts')).toEqual(['Parte 1 di 3', 'Parte 2 di 3', 'Parte 3 di 3']);
+  expect(get('nets'), 'the net waits for the last part').toEqual([true, true, false]);
+  const st = get('state') as { seen: Record<string, boolean>; dex: Record<string, number>; mons: { sp: string }[] };
+  expect(st.seen['enigma-lamo']).toBe(true);
+  expect(st.dex.lamo).toBe(2);
+  expect(st.mons.map((m) => m.sp)).toContain('lamo');
+});
+
+/* «Un giorno a Formia»: from the home page to the line for the friends, and a second player who gets the same day */
+test('a day in Formia', async ({ browser }) => {
+  const sheet = (p: Page) => p.evaluate(() => { const o = document.getElementById('overlay')!; return o.hidden ? '' : (o.querySelector('h2') || { textContent: '' }).textContent; });
+  const r = await play(browser, 'day', { seed: 5 }, async (r) => {
+    const p = r.page;
+    await r.shot('card', { selector: '#day-card' });
+    await p.click('#dy-today'); await p.clock.runFor(200);
+    await r.shot('floor');
+    r.keep('team', await p.locator('.bench-pick').allInnerTexts());
+    /* who goes first can be chosen */
+    const second = await p.locator('.bench-pick').nth(1).getAttribute('data-key');
+    await p.locator('.bench-pick').nth(1).click(); await p.clock.runFor(100);
+    r.keep('lead', [second, await p.locator('.bench-pick[aria-pressed="true"]').getAttribute('data-key')]);
+    const rewards: string[] = [];
+    for (let floor = 0; floor < 8; floor++) {
+      await p.click('#dy-go');
+      for (let k = 0; k < 6 && !await battleOver(p); k++) await fight(r, 'day-' + floor, floor === 0 ? 2 : 0);
+      if (!await battleOver(p)) break;
+      await p.click('#st-go'); await p.clock.runFor(300);
+      if (await p.locator('#dy-line').count()) break;
+      if (floor === 0) await r.shot('reward');
+      rewards.push(await p.locator('.day-offer').first().innerText());
+      const offer = p.locator('.day-offer:not([disabled])').first();
+      if (await offer.count()) await offer.click(); else await p.click('#dy-skip');
+      await p.clock.runFor(200);
+      if (await sheet(p) === 'A chi va?') { await p.locator('.bench-pick').first().click(); await p.clock.runFor(200); }
+    }
+    await r.shot('end');
+    r.keep('rewards', rewards.length);
+    r.keep('line', await p.locator('#dy-line').inputValue());
+    await p.click('#dy-close'); await p.clock.runFor(100);
+    r.keep('story', await p.evaluate(() => localStorage.getItem('lotte-tra-amici:storia:v1')));
+    r.keep('save', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!)));
+    r.keep('again', await p.locator('#dy-today').count());
+    r.keep('copy', await p.locator('#dy-copy').count());
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect((get('team') as string[]).length).toBe(3);
+  expect((get('lead') as string[])[0]).toBe((get('lead') as string[])[1]);
+  expect(String(get('line'))).toMatch(/^Un giorno a Formia, 14 marzo: \d su 8, \d+ punti [🟩🟨🟥⬜]{8} /u);
+  expect(get('story'), 'a run does not touch the story').toBeNull();
+  const save = get('save') as { run: unknown; days: Record<string, { line: string }>; best: number };
+  expect(save.run).toBeNull();
+  expect(save.days['2026-03-14'].line).toBe(get('line'));
+  expect(get('again'), 'the day\'s challenge is played once').toBe(0);
+  expect(get('copy')).toBe(1);
+  /* someone else, on the same day, with different dice: the same three creatures */
+  const other = await play(browser, 'day-other', { seed: 99 }, async (o) => {
+    await o.page.click('#dy-today'); await o.page.clock.runFor(200);
+    o.keep('team', await o.page.locator('.bench-pick').allInnerTexts());
+  });
+  expect(other.data[0].value).toEqual(get('team'));
+});
+
 /* a save already in town, with Formia as it is now (positions kept) */
 const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
   seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });

@@ -30,6 +30,8 @@ export interface Move {
   priority?: number;
   /** charges this turn, hits the next one */
   twoTurn?: boolean;
+  /** the creatures' moves: what the battle says as it gets ready for a blow that lands the next turn; {n} is who */
+  windup?: string;
   /** share of the damage healed back */
   drain?: number;
   /** chance that the move works at all (Battuta) */

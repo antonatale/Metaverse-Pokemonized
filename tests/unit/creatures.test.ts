@@ -60,6 +60,7 @@ describe('creatures of Formia', () => {
     const c = E.newBattle({ a: 'antonio', b: 'costanzo', seed: 3, bag: { retino: 2, tiella: 1 } });
     E.intro(c); E.beginTurn(c);
     expect(E.available(c, 0)).not.toContain('retino');
+    c.sides[0].hp -= 1;
     expect(E.available(c, 0)).toContain('tiella');
   });
 });
@@ -160,6 +161,26 @@ describe('Cicero, the guide', () => {
   });
 });
 
+describe('every move of the creatures', () => {
+  it('does what its numbers say, even with the id of someone else\'s move', () => {
+    const s = E.newBattle({ a: 'olivella', b: 'cicalina', seed: 3, sideA: { stats: atLevel(SPECIES.olivella.stats, 14), lvl: 14, known: ['radici'] }, sideB: { stats: atLevel(SPECIES.cicalina.stats, 14), lvl: 14, known: ['botta'] } });
+    E.intro(s); E.beginTurn(s);
+    const hp = s.sides[1].hp, ev = E.playTurn(s, { 0: 'radici' });
+    expect(s.sides[1].hp, 'a raise does no damage').toBe(hp);
+    expect(s.sides[0].mods.some((m) => m.tag === 'defUp')).toBe(true);
+    expect(ev.some((e) => e.k === 'hp' && e.who === 1)).toBe(false);
+  });
+  it('leaves every number a number', () => {
+    for (const id of Object.keys(CMOVES)) for (const [a, b] of [['muraglione', 'granchione'], ['lamo', 'polpastro']] as [SpeciesId, SpeciesId][]) {
+      const known = SPECIES[a].learn.map((l) => l[1]).concat([id]);
+      const s = E.newBattle({ a, b, seed: 41, sideA: { stats: atLevel(SPECIES[a].stats, 30), lvl: 30, known }, sideB: { stats: atLevel(SPECIES[b].stats, 30), lvl: 30, known: knownAt(b, 30) } });
+      s.sides[0].hp -= 40;
+      E.intro(s); E.beginTurn(s); E.playTurn(s, { 0: id });
+      for (const x of s.sides) expect(Number.isFinite(x.hp), id + ': ' + x.id + ' has ' + x.hp).toBe(true);
+    }
+  });
+});
+
 describe('Lamo, the legend', () => {
   it('is caught far less often than the others, and only comes out for whoever has conquered Formia', async () => {
     let lamo = 0, other = 0;
@@ -174,7 +195,7 @@ describe('Lamo, the legend', () => {
     expect(lamo).toBeGreaterThan(0);
     const { MAPS } = await import('../../src/data/maps');
     const n = (MAPS.formia.npcs || []).find((q) => q.wild && q.wild.sp === 'lamo')!;
-    expect(n.legend).toBe(true);
+    expect(n.legend).toBe('lamo');
   });
 });
 

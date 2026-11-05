@@ -11,6 +11,7 @@ import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { TRAINERS } from '../data/trainers';
 import { rivalHere } from './rival';
 import { shutAt } from './place';
+import { LEGENDS } from '../data/legends';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -120,14 +121,13 @@ export function present(p: Person): boolean {
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
 }
-/** a legend comes out at its hour, once the story has got that far, until it is caught: Lamo at night once the seal of
-    Telepilo is safe (Mamurra beaten); Janus at sunset (or dawn), the hour between day and night, once the three stones
-    are found; the fire of Sant'Elmo at night, once Mamurra's diver has been beaten at the fishponds */
+/** a legend comes out at its hour, once the story has got that far, until it is caught (data/legends.ts). Sunset is also
+    dawn, the hour between day and night. Down in a place of its own it waits for Antonio at any hour */
 function legendHere(n: Npc): boolean {
-  if (st.dex && n.wild && st.dex[n.wild.sp] === 2) return false;
-  if (n.legend === 'giano') return flag('pietra-voce') && sunset(new Date()) > 0.3;
-  if (n.legend === 'elmo') return flag('tr-mamurr-peschiere') && darkness(new Date()) > 0.5;
-  return flag('tr-mamurra') && darkness(new Date()) > 0.5;
+  var L = LEGENDS[n.legend!];
+  if (st.dex && st.dex[L.sp] === 2) return false;
+  if (L.trial && M && M.id === L.trial.to) return true;
+  return flag(L.after) && (L.hour === 'sunset' ? sunset(new Date()) > 0.3 : darkness(new Date()) > 0.5);
 }
 /** the wild creature on a spot right now: some come out only at night (the little owls), when the cicadas sleep */
 export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
@@ -158,7 +158,8 @@ export function personAt(m: PreparedMap, x: number, y: number): Person | null { 
 /** swimming with a sea creature, or climbing the walls with one of the walls: then water, or walls, can be walked */
 export const moveMode = { swim: false, climb: false };
 export function isShallow(m: PreparedMap, x: number, y: number): boolean { return !!m.shallow && x >= 0 && y >= 0 && x < m.w && y < m.h && m.shallow[y * m.w + x] === 1; }
-export function isWall(m: PreparedMap, x: number, y: number): boolean { return m.cell(x, y).g === 'mura'; }
+/** walls that can be climbed: out in town only, like the water. Indoors a wall is a wall, or a place could be walked around */
+export function isWall(m: PreparedMap, x: number, y: number): boolean { return !m.inside && m.cell(x, y).g === 'mura'; }
 export function blocked(m: PreparedMap, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
   if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isShallow(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;

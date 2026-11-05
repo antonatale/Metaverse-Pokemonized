@@ -96,8 +96,8 @@ export interface Npc {
   shop?: string;
   /** has creatures and challenges Antonio (data/trainers.ts) */
   trainer?: string;
-  /** the legend of Formia: there only at night, once the seal of Telepilo is safe, until he has caught it */
-  legend?: boolean | 'giano' | 'elmo';
+  /** a legend of Formia (data/legends.ts): there at its hour, once the story has got that far, until it is caught */
+  legend?: string;
   /** part of the plot (story/plot.ts): there only after a thing has happened, and until another has (a flag: a key
       of st.seen, or of st.beaten such as 'tr-mamurra') */
   when?: { after?: string; until?: string };
@@ -134,8 +134,9 @@ export type Thing =
   | { k: 'slide'; x: number; y: number; dir: Dir }
   /** takes you to another tile of the same map */
   | { k: 'pad'; x: number; y: number; tx: number; ty: number; tdir?: Dir }
-  /** dangerous on some steps out of every so many: stepping on it then sends you back to the last rest */
-  | { k: 'beat'; x: number; y: number; every: number; on: number[] }
+  /** dangerous on some steps out of every so many: stepping on it then sends you back to the last rest. `rock`: what
+      comes is a boulder, not the water */
+  | { k: 'beat'; x: number; y: number; every: number; on: number[]; look?: 'rock' }
   /** where a fall brings you back to, once you have been there */
   | { k: 'rest'; x: number; y: number }
   /** clears every flag: the way out of anything */
@@ -146,6 +147,8 @@ export interface PlaceDef {
   /** what the place is about: the validator proves that from anywhere you can get next to it (or on it) */
   goal: [number, number];
   things: Thing[];
+  /** what is said at a rest, and when a beat sends you back */
+  words?: { rest: string; hit: string };
 }
 
 export interface MapDef {

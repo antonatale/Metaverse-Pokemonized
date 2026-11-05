@@ -1,3 +1,4 @@
+import { LEGENDS } from '../../src/data/legends';
 import { SPECIES } from '../../src/data/creatures';
 import { describe, expect, it } from 'vitest';
 import { MAPS, LEGEND, type MapDef } from '../../src/data/maps';
@@ -42,6 +43,8 @@ function reachable() {
     for (const d of DIRS) {
       const nx = x + DV[d][0], ny = y + DV[d][1], way = (m.signs || []).find((g) => g.enter && g.x === nx && g.y === ny);
       if (way) visit(way.enter!.to, way.enter!.tx, way.enter!.ty);              /* a sign that opens with the story */
+      const beast = (m.npcs || []).find((n) => n.legend && n.x === nx && n.y === ny), down = beast && LEGENDS[beast.legend!].trial;
+      if (down) visit(down.to, down.x, down.y);                                 /* a legend with a place of its own */
       if (!blocked[map](nx, ny)) visit(map, nx, ny);
     }
   }

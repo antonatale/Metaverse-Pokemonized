@@ -188,7 +188,7 @@ const npcs: Npc[] = [
   npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
   /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
      sight: Lamo, at night, under the walls of Castellone */
-  npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: true }),
+  npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: 'lamo' }),
   npc('selv-giano', { dir: 'left', wild: { sp: 'giano', lv: [36, 36] }, legend: 'giano' }),
   npc('selv-elmo', { dir: 'down', wild: { sp: 'fuocelmo', lv: [32, 32] }, legend: 'elmo' }),
   /* the plot: the stones of Telepilo (story/plot.ts) */
