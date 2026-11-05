@@ -126,7 +126,8 @@ export function newRun(seed: number, day: string): DayRun {
 }
 /** one of the team, as the battle engine wants it */
 export function memberOf(m: DayMon): Member {
-  const stats = atLevel(SPECIES[m.sp].stats, m.lv), o: Member = { id: m.sp, key: m.key, stats: stats, lvl: m.lv, known: knownAt(m.sp, m.lv), hp: m.hp * stats.hp };
+  /* a day is too short for a bond: everyone can answer to the magic of the place */
+  const stats = atLevel(SPECIES[m.sp].stats, m.lv), o: Member = { id: m.sp, key: m.key, stats: stats, lvl: m.lv, known: knownAt(m.sp, m.lv), hp: m.hp * stats.hp, resonate: true };
   if (m.item) o.item = m.item;
   if (m.abil) o.abil = m.abil.slice();
   return o;

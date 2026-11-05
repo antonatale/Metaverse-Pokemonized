@@ -2,7 +2,7 @@ import { TUNE } from '../data/tuning';
 import { ITEMS } from '../data/items';
 import type { BattleState, BenchLabel, Chip, MoveLabel, Side, Snap } from './types';
 import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn, switches, senders, switchSlot } from './state';
-import { SWITCH_TUNE } from '../data/tuning';
+import { SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
 import { movePower, moveType, magicEff, typesOf, effLevel } from './damage';
 import { isSpecies } from '../data/creatures';
 import { STATUS } from '../data/passives';
@@ -18,6 +18,8 @@ export function snap(s: BattleState): Snap {
     /* during the playback of a turn the state may be ahead of the screen: who this is about, and the types it had then */
     out.types = [typesOf(s, s.sides[0], s.sides[1]).slice(), typesOf(s, s.sides[1], s.sides[0]).slice()];
     out.who = [s.sides[0].key || s.sides[0].id, s.sides[1].key || s.sides[1].id];
+    if (s.surge) out.surge = [s.surge[0], s.surge[1]];
+    if (s.field) out.place = s.field.type + ' +' + Math.round((FIELD_TUNE.boost - 1) * 100) + '%';
   }
   return out;
 }
@@ -74,6 +76,9 @@ function chips(s: BattleState, i: number): Chip[] {
   if (x.status) { const st = STATUS[x.status.id]; add('bad', st.icon, st.name, st.text); }
   if (x.away) add('info', 'plane', 'A Copenhagen');
   if (x.charge) { if (isSpecies(x.id)) add('bad', 'flame', 'Sta per colpire', 'Al prossimo turno: ' + mv(x, x.charge)!.name); else add('info', 'plane', 'Di ritorno'); }
+  if (i === 1 && s.shield) add(s.shield.left ? 'info' : 'bad', 'shield', s.shield.left ? s.shield.name + ' ' + s.shield.left + '/' + s.shield.max : s.shield.name + ' rotta', s.shield.left ? 'Ogni colpo superefficace la incrina' : 'Scudo rotto');
+  if (hasMod(s, x, 'broken')) add('bad', 'down', 'Esposto', 'Senza difese: subisce più danni');
+  if (x.boost && isSpecies(x.id)) add('up', 'spark', 'Risonanza', 'Il prossimo colpo fa il 50% in più');
   if (x.stages) add('info', 'spark', 'Parte ' + (x.stage! + 1) + ' di ' + x.stages.length, x.stages[x.stage!].name);
   if (personaOn(s, x)) add('info', 'mic', 'Nel personaggio');
   if (x.id === 'costanzo' && x.lastAtk && x.atkStreak > 0) add('white', 'mic', 'Fissa ' + ((x.atkStreak - 1) % 3 + 1) + '/3', 'Fissa su ' + mv(x, x.lastAtk)!.name);
@@ -137,6 +142,7 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
         bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
       }
       if (m.windup) bits.push('Un turno per caricare');
+      if (m.kind === 'atk' && s.field && out.mtype === s.field.type) bits.push('+' + Math.round((FIELD_TUNE.boost - 1) * 100) + '% qui');
       if (m.priority) bits.push('Attacca per primo');
       if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura il ' + Math.round(m.drain * 100) + '%');
       if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');

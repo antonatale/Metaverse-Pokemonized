@@ -21,6 +21,8 @@ export interface Trainer {
   /** how well they play their team: 0 or nothing, in the order of the team and never changing; 1 they send in the best
       against the one in front, and may change once; 2 twice */
   smart?: number;
+  /** a magic of his own that shields his side until the right blows have cracked it (battle/surge.ts) */
+  shield?: { left: number; name: string };
   /** Antonio's rival, Tullio, at his first, second or third meeting with him: his team is not here but follows
       Antonio's choice and the story (story/rival.ts); in his lines {rival} is his creature, {mine} Antonio's, {why}
       why his has the better of Antonio's */
@@ -86,6 +88,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Ancora tu?']
   },
   mamurra: {
+    shield: { left: 3, name: 'Ricchezza' },
     id: 'mamurra', title: 'Il fantasma di Mamurra', prize: 200, smart: 2,
     team: [{ sp: 'granchione', lv: 21 }, { sp: 'olivastro', lv: 19 }, { sp: 'civettona', lv: 23 }],
     intro: ['Lucio Mamurra, cavaliere di Formia, prefetto del genio di Gaio Giulio Cesare. Questa era la mia villa.', 'Catullo mi chiamava «lo scialacquatore di Formia», e Orazio chiamava Formia «la città dei Mamurra». Avevano ragione: Formia era mia.',

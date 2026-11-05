@@ -10,6 +10,7 @@ import { expected, typesOf, effLevel } from './damage';
 import { snap, moveLabel, benchLabels, changeText } from './labels';
 import { ai } from './ai';
 import { intro, beginTurn, needs, playTurn, sendNeeds, sendIn } from './turn';
+import { canResonate } from './surge';
 
 export * from './types';
 export { eff, beaterOf, move, newBattle, available, switches, expected, effLevel, snap, moveLabel, benchLabels, ai, intro, beginTurn, needs, playTurn, sendNeeds, sendIn };
@@ -27,7 +28,7 @@ export function sideTypes(s: BattleState, i: number): TypeName[] { return typesO
 export const ENGINE = {
   TYPES, TYPE_ORDER, eff, beaterOf, ITEMS, CHARS, ROSTER, TUNE,
   move, newBattle, intro, beginTurn, needs, playTurn, sendNeeds, sendIn,
-  available, switches, moveLabel, benchLabels, changeText, snap, ai, expected, BAG, BAG_IDS,
+  available, switches, moveLabel, benchLabels, changeText, snap, ai, expected, BAG, BAG_IDS, canResonate,
   ANTONIO: CHARS.antonio, ESAME: CHARS.esame,
   clock, planName, sideType, sideTypes, effLevel
 };

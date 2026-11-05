@@ -88,6 +88,8 @@ export function sideOf(key: string): SideOpts {
     var e = bond(sk) + hearts(key) * 0.03;
     if (e) o.endure = Math.round(e * 100) / 100;
     if (mon.item) o.item = mon.item;
+    /* three hearts: it can answer to the magic of a place */
+    if (hearts(key) >= RESONANCE_HEARTS) o.resonate = true;
   } else {
     o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
     if (key === 'antonio') o.perk = perksFor(sk);
@@ -147,6 +149,7 @@ function learn(mon: Mon, key: string, m: string, out: Growth) {
   else out.pending.push(m);
 }
 /* ---------- the bond between Antonio and a creature: 0 to 100, five hearts ---------- */
+const RESONANCE_HEARTS = 3;
 export function bondOf(key: string): number { var c = creatureOf(key); return c ? (c.bond != null ? c.bond : 30) : 0; }
 export function hearts(key: string): number { return Math.floor(bondOf(key) / 20); }
 export function addBond(key: string, n: number) { var c = creatureOf(key); if (c) c.bond = Math.max(0, Math.min(100, bondOf(key) + n)); }

@@ -35,4 +35,8 @@ export const MAGIC_TUNE = { se: 1.12, nve: 0.9 };
    it). So a change costs less instead: `guard` is how much of a hit reaches who has just come in, `rest` how much of its
    health who waits on the bench gets back each turn. The computer changes if the numbers say the team ends up `margin`
    fighters better off, with this `chance` (a change that always comes is one the player reads). */
+/** the magic of a place, and what a creature can do with it (battle/surge.ts). `boost`: the moves of the place's type do
+    this much more. Slancio goes up to `max`; Risonanza gives back `heal` of the health. `shield`: what a boss's magic takes
+    off a blow until it is broken, and how much more it takes for `open` turns once it is */
+export const FIELD_TUNE = { boost: 1.1, max: 3, heal: 0.15, shield: 0.8, broken: 1.3, open: 2 };
 export const SWITCH_TUNE = { guard: 0.5, rest: 0.05, margin: 0.15, chance: 0.75 };

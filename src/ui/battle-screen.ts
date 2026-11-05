@@ -26,19 +26,19 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
 /* =================== BATTLE SHELL =================== */
 export let arena: HTMLElement;
-let dialog: HTMLElement, whoEl: HTMLElement, txtEl: HTMLElement, pad: HTMLElement, turnbar: HTMLElement, padSide = 0, padOn = false, pending: Record<number, string> = {}, needQ: number[] = [];
+let dialog: HTMLElement, whoEl: HTMLElement, txtEl: HTMLElement, pad: HTMLElement, turnbar: HTMLElement, padSide = 0, padOn = false, pending: Record<number, string> = {}, needQ: number[] = [], resArmed = false;
 /** a side's name: the one Antonio gave his creature, or the character's */
 function sideName(i: number): string { return S.sides[i].nick || fighter(S.sides[i].id).name; }
 function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) : (i === 0 ? 'Tu' : 'CPU'); }
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
-  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
+  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="surge" id="sg-' + i + '"></span><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span>' + marksHtml(i) + '</div></div>' +
     '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
@@ -76,6 +76,7 @@ function renderShell() {
   pad.addEventListener('click', function (e) {
     var bt = (e.target as Element).closest ? (e.target as Element).closest('.mv') : null;
     if (bt && bt.id === 'sw-btn') { askChange(); return; }
+    if (bt && bt.id === 'res-btn') { arm(); return; }
     if (bt && bt.getAttribute('data-id')) onMove(bt.getAttribute('data-id')!);
   });
   var q = $('quit'), qt: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +132,9 @@ function renderSync(sn: Snap) {
     $('ty-' + i).innerHTML = typesHtml(i, sn.types && sn.types[i]);
     /* a team battle: one dot for each of the team, like the balls in the games */
     if (sn.team && sn.team[i].length > 1) $('dots-' + i).innerHTML = sn.team[i].map(function (d) { return '<i class="' + d + '"></i>'; }).join('');
+    /* Slancio: three dots, for whoever can do something with them */
+    var sg = $('sg-' + i);
+    if (sn.surge && S.sides[i].resonate) { sg.setAttribute('role', 'img'); sg.setAttribute('aria-label', 'Slancio ' + sn.surge[i] + ' su 3'); sg.innerHTML = [0, 1, 2].map(function (k) { return '<i class="' + (k < sn.surge![i] ? 'on' : '') + '"></i>'; }).join(''); } else sg.innerHTML = '';
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
     if (svg) svg.setAttribute('data-ph', sn.ph[i] ? 'on' : 'off');
   }
@@ -139,7 +143,7 @@ function renderSync(sn: Snap) {
     $('clock-t').textContent = Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2);
     $('clock').classList.toggle('low', left <= 30);
     $('turn-t').textContent = 'Turno ' + sn.turn + ' di ' + sn.maxTurns;
-  } else $('turn-t').textContent = 'Turno ' + sn.turn;
+  } else $('turn-t').textContent = 'Turno ' + sn.turn + (sn.place ? ' · ' + sn.place : '');
 }
 /** the moves on a side's pad: the four it knows */
 function padMoves(i: number): Move[] {
@@ -182,12 +186,14 @@ function renderPad(i: number) {
   });
   /* the bag: one button for each kind of net Antonio carries; against a wild creature with no nets, where to buy them.
      In a team battle the change sits beside it */
-  var row = $('bagrow'), bag = bagMoves(i), shelf = i === 0 && !!S.bag && (bag.length > 0 || !!S.wild), sw = E.switches(S, i).length;
-  row.hidden = !(shelf || sw);
+  var row = $('bagrow'), bag = bagMoves(i), shelf = i === 0 && !!S.bag && (bag.length > 0 || !!S.wild), sw = E.switches(S, i).length, res = E.canResonate(S, i);
+  if (!res) resArmed = false;
+  row.hidden = !(shelf || sw || res);
   if (row.hidden) { row.innerHTML = ''; return; }
   row.innerHTML = (shelf ? '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
     '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>') : '') +
-    (sw ? '<button class="mv swap" type="button" id="sw-btn"' + (padOn ? '' : ' disabled') + '><b>Cambia</b><small>' + esc(E.changeText(S, i).button) + '</small></button>' : '');
+    (sw ? '<button class="mv swap" type="button" id="sw-btn"' + (padOn ? '' : ' disabled') + '><b>Cambia</b><small>' + esc(E.changeText(S, i).button) + '</small></button>' : '') +
+    (res ? '<button class="mv swap res' + (resArmed ? ' armed' : '') + '" type="button" id="res-btn" aria-pressed="' + resArmed + '"' + (padOn ? '' : ' disabled') + '><b>Risonanza</b><small>' + (resArmed ? 'Adesso scegli la mossa' : 'Una volta sola: la prossima mossa fa il 50% in più') + '</small></button>' : '');
   each(row.querySelectorAll<HTMLButtonElement>('.mv.bag'), function (b, k) { moveButton(b, i, bag[k]); });
 }
 function setPad(on: boolean, i?: number | null) { padOn = on; pad.classList.toggle('off', !on); renderPad(i == null ? padSide : i); }
@@ -360,6 +366,10 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     /* an ability at work says its name by the creature, as in the games */
     case 'abil': return popAt(i, '<div class="abil-pop">' + esc(ev.text || '') + '</div>', '', 0.5, 0.02, 1000);
     case 'status': return popAt(i, '<div class="pop">' + ico(STATUS[ev.style as StatusId].icon) + '</div>', '', 0.5, 0, 900);
+    /* a creature answers to the magic of the place, with the show of a move of its own */
+    case 'resonance': return banner(ev.text || '', 'stage').then(function () { return castSelf(i, ev.style as TypeName, 'Risonanza', true); });
+    /* a boss's magic in pieces */
+    case 'broken': pulse(arena, 'quake', 420); return banner(ev.text || '', 'stage');
     /* a legend starts another part of its fight: the ground shakes as when it came on, its name goes by, the music turns */
     case 'stage': {
       var tys = E.sideTypes(S, i);
@@ -432,11 +442,15 @@ function askNext(handoff: boolean) {
   showPrompt(i);
   setPad(true, i);
 }
+/** Risonanza goes with the next move the player picks: pressed again, it is taken back */
+function arm() { if (padOn && E.canResonate(S, padSide)) { resArmed = !resArmed; renderPad(padSide); } }
 function onMove(id: string) {
   if (!padOn || !S || S.phase !== 'select' || !needQ.length) return;
   var i = needQ[0];
   if (E.available(S, i).indexOf(id) < 0 && E.switches(S, i).indexOf(id) < 0) return;
-  pending[i] = id;
+  /* it goes with a move of the creature: a change, or something from the bag, leaves it for later */
+  pending[i] = resArmed && !E.BAG[id] && E.switches(S, i).indexOf(id) < 0 ? 'res:' + id : id;
+  resArmed = false;
   needQ.shift();
   setPad(false, i);
   if (needQ.length) { askNext(true); return; }
@@ -589,6 +603,7 @@ function openSheet() {
     }
     h += '</div>';
   });
+  if (S.field) h += '<div class="card"><div class="block"><h3>La magia del luogo</h3><p>A ' + esc(S.field.name) + ' le mosse di tipo ' + esc(S.field.type) + ' fanno più male. Lo Slancio sale quando un colpo è critico o superefficace, dato o preso: con tre punti e un legame di tre cuori, una volta a lotta, la Risonanza dà a una creatura il tipo del luogo, un po\' di PS e un colpo fortissimo.</p></div></div>';
   h += '<div class="card"><div class="block"><h3>Tipi</h3><ul class="cycle-why">';
   if (isSpecies(S.sides[0].id) || isSpecies(S.sides[1].id)) {
     /* between creatures it is the magic that counts: ten types, each beats two */
@@ -620,7 +635,7 @@ function curtain(trainer: boolean) {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -678,6 +693,8 @@ export const UI = {
   _debug: {
     suggest: function () { return S && S.phase === 'select' && needQ.length ? E.ai(JSON.parse(JSON.stringify(S)), needQ[0]) : null; },
     battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; },
+    /* Slancio, set by hand: three points take a whole battle to come */
+    surge: function (n: number) { if (S && S.surge) { S.surge[0] = n; setPad(padOn, padSide); renderSync(E.snap(S)); } },
     /* a number going up or down, shown on demand */
     stat: function (i: number, what: string) { return S ? statShow(i, what) : null; },
     /* a spell's show on demand, to look at the shows: type (null for a plain move), what happens, who casts */
@@ -705,5 +722,6 @@ export function installBattleKeys() {
     if (e.key === ' ' || e.key === 'Enter') { if (tapHandler) { e.preventDefault(); advance(); } return; }
     if (/^[1-9]$/.test(e.key) && padOn) { var m = padMoves(padSide).concat(bagMoves(padSide))[+e.key - 1]; if (m) onMove(m.id); }
     if ((e.key === 'c' || e.key === 'C') && padOn && E.switches(S, padSide).length) askChange();
+    if ((e.key === 'r' || e.key === 'R') && padOn) arm();
   });
 }

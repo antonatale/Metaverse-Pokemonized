@@ -274,6 +274,7 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
     ev.push(expr(i, 'grin'));
     ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
     const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
+    if (dmg > 0) me.boost = false;
     if (dmg > 0 && m.drain && me.hp > 0 && me.hp < me.max) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende ' + (m.drain >= 0.5 ? 'metà' : 'il ' + Math.round(m.drain * 100) + '%') + ' del danno.');
     if (dmg <= 0 || foe.hp <= 0 || me.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {

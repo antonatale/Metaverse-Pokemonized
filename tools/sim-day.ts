@@ -5,11 +5,12 @@
 import { ENGINE as E, type BattleState } from '../src/battle';
 import { alive, afterFloor, canTake, foeMember, memberOf, needsTarget, newRun, offersNow, planOf, takeOffer, type DayRun, type Offer } from '../src/day/plan';
 import { DAY_FLOORS } from '../src/data/day';
+import { PLACE_MAGIC } from '../src/data/scenes';
 
 /** one floor to the end: what is left of the team, and the turns */
 export function playFloor(r: DayRun): { won: boolean; left: Record<string, number>; turns: number } {
   const f = planOf(r.seed).floors[r.floor], mine = alive(r).map(memberOf), foes = f.foeList.map((x) => foeMember(x, f.stages));
-  const s: BattleState = E.newBattle({ a: mine[0].id, b: foes[0].id, seed: f.seed, sideA: mine[0], sideB: foes[0], benchA: mine.slice(1), benchB: foes.slice(1), wild: f.foeList.length < 2, trainer: f.who, smart: [0, f.smart || 0], night: !!f.night });
+  const s: BattleState = E.newBattle({ a: mine[0].id, b: foes[0].id, seed: f.seed, sideA: mine[0], sideB: foes[0], benchA: mine.slice(1), benchB: foes.slice(1), wild: f.foeList.length < 2, trainer: f.who, smart: [0, f.smart || 0], night: !!f.night, field: PLACE_MAGIC[f.scene] });
   E.intro(s);
   for (let k = 0; k < 2000 && s.phase !== 'over'; k++) {
     if (s.phase === 'begin') { E.beginTurn(s); continue; }

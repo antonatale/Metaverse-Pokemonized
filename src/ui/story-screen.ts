@@ -27,7 +27,7 @@ import { SPECIES, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, wildLevel, type Hiding } from '../data/encounters';
 import { SHOPS, WARES, HELD_IDS, meetChance, luck, lastStand, coins, moneyFor } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
-import { sceneFor } from '../data/scenes';
+import { sceneFor, PLACE_MAGIC } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml, legendWay } from './plot';
@@ -526,7 +526,7 @@ function fightOn() {
     var place = sceneFor(M.id, areaName());
     startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: memberOf(k), sideB: foeMember(foe), bag: battleBag(),
       benchA: left.concat(['antonio']).filter(function (x) { return x !== k; }).map(memberOf), benchB: f.foes.slice(1).map(foeMember),
-      smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0],
+      smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0], field: PLACE_MAGIC[place], shield: f.kind === 'trainer' ? TRAINERS[f.id].shield : undefined,
       story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
       wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined, dark: !!M.dark });
   };
@@ -539,6 +539,7 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
   var f = fight!, foe = f.foes[0], sp = SPECIES[foe.sp], wild = f.kind === 'wild', tr = wild ? null : TRAINERS[f.id], bouts = res.bouts || [];
   bouts.forEach(function (b) { see(b.foe as SpeciesId); });
   if (teamMons().length > 1) mentorTip('bench');
+  if (teamMons().some(function (m) { return hearts(m.uid) >= 3; })) mentorTip('surge');
   var pay = fightPay(bouts, !wild);
   if (res.caught) {
     fight = null; wildGone[f.id] = Date.now();

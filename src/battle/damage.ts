@@ -1,6 +1,6 @@
 import { CHARS, type Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
-import { TUNE, K, CRIT, MAGIC_TUNE, SWITCH_TUNE } from '../data/tuning';
+import { TUNE, K, CRIT, MAGIC_TUNE, SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
 import { magicBeats, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
@@ -10,6 +10,7 @@ import { ch, mv, eff, modMult, sideType, zenOn, statsOf, netShut } from './state
 import { dealtBy, takenBy, spendHit, statusMult, fire, cureStatus } from './passives';
 import { STATUS } from '../data/passives';
 import { stageFloor } from './stages';
+import { surgeOn, shieldHit } from './surge';
 
 /* ---------- the creatures' magic ---------- */
 /** a side's types: a creature's own (one or two), a person's of the moment */
@@ -44,6 +45,10 @@ export function movePower(side: Side, m: Move): number {
   if (m.id === 'cucinato') return Math.round(20 + 100 * (1 - side.hp / side.max));
   return m.power!;
 }
+/** the magic of the place, on a creature's move of its type */
+function placeMult(s: BattleState, t: TypeName | null): number { return s.field && t === s.field.type ? FIELD_TUNE.boost : 1; }
+/** the boss's magic stands between the blow of side i and its foe */
+function shielded(s: BattleState, i: number): boolean { return i === 0 && !!s.shield && s.shield.left > 0; }
 interface Parts { base: number; eff: number; type: TypeName | null; critChance: number; forceCrit: boolean; acc: number; notes: string[] }
 function parts(s: BattleState, i: number, id: string): Parts {
   const me = s.sides[i], foe = s.sides[1 - i], m = mv(me, id)!;
@@ -67,6 +72,8 @@ function parts(s: BattleState, i: number, id: string): Parts {
   mult *= modMult(s, foe, 'guard');
   if (foe.fresh) mult *= SWITCH_TUNE.guard;
   mult *= dealtBy(s, me, foe) * takenBy(s, foe, me, type);
+  if (magic) mult *= placeMult(s, type);
+  if (shielded(s, i)) mult *= FIELD_TUNE.shield;
   const base = movePower(me, m) * atk / def * (s.K || K) * e * mult;
   return { base: base, eff: e, type: type, critChance: forceCrit ? 1 : critChance, forceCrit: forceCrit, acc: foe.away ? 0 : (m.acc || 1), notes: notes };
 }
@@ -74,7 +81,7 @@ function parts(s: BattleState, i: number, id: string): Parts {
     computer reads this to weigh a fighter who is not on the field */
 export function plainHit(s: BattleState, a: Side, d: Side, m: Move): number {
   const e = isSpecies(a.id) ? magicEff(moveType(a, m), typesOf(s, d, a)) : eff(sideType(s, a, d), sideType(s, d, a));
-  return movePower(a, m) * (m.acc || 1) * e * statsOf(a).atk / statsOf(d).def * (s.K || K);
+  return movePower(a, m) * (m.acc || 1) * e * statsOf(a).atk / statsOf(d).def * (s.K || K) * (isSpecies(a.id) ? placeMult(s, moveType(a, m)) : 1);
 }
 /** average damage of a move, for the computer's choice */
 export function expected(s: BattleState, i: number, id: string): number {
@@ -140,10 +147,13 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
     if (zenOn(s, foe)) ev.push(say('Costanzo prova a non farlo parlare, ma Zendavid ha le cuffie: non sente niente.'));
     else { foe.skip = { why: 'talk' }; ev.push(say('Costanzo non lo fa parlare: ' + ch(foe).name + ' perde il turno!')); }
   }
+  /* a blow that lands where it hurts: Slancio on both sides, and a crack in a boss's magic */
+  surgeOn(s, i, crit, p.eff, ev);
   /* a hit wakes a sleeper; then each side's passives answer (creatures only: the others have none) */
   if (foe.status && STATUS[foe.status.id].sleep && foe.hp > 0) cureStatus(s, j, ev);
   fire(s, i, 'hit', ev, { dmg: dmg });
   fire(s, j, 'hurt', ev, { dmg: dmg });
+  shieldHit(s, i, p.eff, ev);
   return dmg;
 }
 export function heal(s: BattleState, i: number, amt: number, ev: BattleEvent[], msg?: string): number {

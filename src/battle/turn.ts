@@ -1,7 +1,7 @@
 import { CHARS, PAIRS } from '../data/characters';
 import { NETS, isNet } from '../data/nets';
 import { ITEMS, FOUND } from '../data/items';
-import { TUNE, K, SWITCH_TUNE } from '../data/tuning';
+import { TUNE, K, SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
 import type { BattleEvent, BattleState, Grade, Result, Side } from './types';
 import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
@@ -12,6 +12,7 @@ import { useMove } from './moves';
 import { ai, nextUp } from './ai';
 import { fire, turnEnd, sleeping, speedOf } from './passives';
 import { stageUp } from './stages';
+import { canResonate, isResonance, moveOf, resonate, wantsResonance } from './surge';
 
 /* The flow of a battle: intro → begin (start of turn) → select (players choose) → busy → begin … → over.
    Each call returns the events for the UI to play back. */
@@ -26,6 +27,8 @@ export function intro(s: BattleState): BattleEvent[] {
   ev.push(expr(1, s.boss ? 'idle' : 'smirk'));
   ev.push(anim(0, 'enter'));
   ev.push(line(0, pair && A.id !== B.id ? pair[A.id] : ca.lines.entry));
+  if (s.field) ev.push(say('La magia di ' + s.field.name + ': qui le mosse di tipo ' + s.field.type + ' fanno il ' + Math.round((FIELD_TUNE.boost - 1) * 100) + '% in più.'));
+  if (s.shield) ev.push(say(s.shield.name + ' protegge ' + (s.trainer || ch(B).name) + ': ogni colpo superefficace la incrina.'));
   fire(s, 1, 'enter', ev); fire(s, 0, 'enter', ev);
   s.phase = 'begin';
   return ev;
@@ -93,6 +96,7 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
   if (me.skip) {
     const why = me.skip.why; me.skip = null;
     if (why === 'robot') { ev.push(expr(i, 'worried')); ev.push(anim(i, 'robotFix')); ev.push(say('Antonio sta rimettendo in piedi il robot…')); }
+    else if (why === 'broken') { ev.push(expr(i, 'worried')); ev.push(say(cm.name + ' resta senza difese e non riesce a reagire.')); }
     else { ev.push(expr(i, 'worried')); ev.push(say(cm.name + ' non riesce a dire una parola.')); }
     return false;
   }
@@ -190,15 +194,16 @@ function finish(s: BattleState, result: Result, winner: number | null, ev: Battl
 /** plays a whole turn with the players' choices (by side index); the computer and forced moves fill in the rest */
 export function playTurn(s: BattleState, choices?: Record<number, string>): BattleEvent[] {
   choices = choices || {};
-  const ev: BattleEvent[] = [], choice: (string | null)[] = [null, null], attacked = [false, false];
+  const ev: BattleEvent[] = [], choice: (string | null)[] = [null, null], attacked = [false, false], armed = [false, false];
   for (let i = 0; i < 2; i++) {
     const f = s.forced[i], side = s.sides[i];
     if (f && f.skip) choice[i] = 'skip';
     else if (f && f.move) choice[i] = f.move;
-    else if (!side.human) choice[i] = s.plan[i] || ai(s, i);
+    else if (!side.human) { choice[i] = s.plan[i] || ai(s, i); armed[i] = !isSwitch(choice[i]) && wantsResonance(s, i); }
     else {
-      const av = available(s, i);
-      choice[i] = av.indexOf(choices[i]) >= 0 || switches(s, i).indexOf(choices[i]) >= 0 ? choices[i] : av[0];
+      const av = available(s, i), want = moveOf(choices[i]);
+      armed[i] = isResonance(choices[i]) && canResonate(s, i);
+      choice[i] = av.indexOf(want) >= 0 || switches(s, i).indexOf(want) >= 0 ? want : av[0];
     }
   }
   s.phase = 'busy';
@@ -209,6 +214,7 @@ export function playTurn(s: BattleState, choices?: Record<number, string>): Batt
     /* the blow it was getting ready has been knocked out of its hands */
     if (s.forced[k] && s.forced[k]!.move && !s.sides[k].charge) continue;
     if (isSwitch(choice[k])) { change(s, k, switchSlot(choice[k]!), ev); s.sides[k].fresh = true; s.sides[k].went = true; fire(s, k, 'enter', ev); ev.push(snap(s)); continue; }
+    if (armed[k]) resonate(s, k, ev);
     attacked[k] = act(s, k, choice[k] === 'skip' ? null : choice[k], ev);
     /* who has acted, for the abilities that care who came first: never written in a battle between friends */
     if (s.bench || isSpecies(s.sides[k].id)) s.sides[k].went = true;

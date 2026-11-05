@@ -23,6 +23,7 @@ Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrat
 | `npm run sim` | simulatore di bilanciamento (vedi sotto) |
 | `npm run sim:fun` | duelli tra creature: quanto pesa il tipo e quanta profondità hanno le scelte nel turno (`greedy` contro l'IA, turni medi), e quanto vale giocare la panchina (squadre di tre), con gli obiettivi di `BRIEFING-IDEE.md` §4; `types`, `depth` o `team` per una misura sola, un numero per i duelli per cella |
 | `npx tsx tools/sim-story.ts` | bilanciamento della storia: quanto spesso una creatura o un amico a un livello batte un altro (`polpino:8 forchetta:9` per uno scontro solo; `trainers` per la lotta intera con ogni allenatore, contro ognuna delle tre iniziali e una seconda creatura) |
+| `npx tsx tools/sim-day.ts [corse]` | «Un giorno a Formia» giocato dal computer su molti semi: quante corse finisce e dove si ferma |
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | una leggenda contro una squadra intera, in una lotta sola come nella storia (`specie:livello` separati da virgole) |
 | `npm run golden` | rigenera i golden dal codice attuale, dopo un cambio voluto |
 | `npm run promo` | il trailer: registra le scene dal gioco, genera la musica, monta e codifica `promo/lotte-tra-amici-trailer.mp4` (serve macOS; vedi «Il trailer») |
@@ -54,6 +55,7 @@ src/
       telepilo.ts          La Porta di Telepilo: la strada per Lamo, sotto le mura di Castellone
     passives.ts            stati, abilità e oggetti che le creature portano: solo dati, «quando, se, fa»
     legends.ts             le leggende: quando escono, cosa apre la strada, la lotta in parti
+    day.ts                 «Un giorno a Formia»: i piani della giornata e i numeri
     covi.ts, gates.ts      i covi (palestre) con spille e frasi; le uscite dalle città
   battle/                  motore di lotta: puro, senza DOM, stato JSON con l'RNG dentro
     index.ts               API (ENGINE): newBattle, intro, beginTurn, playTurn, needs, available, moveLabel, snap, ai…
@@ -65,6 +67,8 @@ src/
     stages.ts              la lotta a parti delle leggende
     labels.ts              etichette dei pulsanti (moveLabel) e bollini (snap/chips)
     state.ts, rng.ts, events.ts, types.ts
+  day/
+    plan.ts                «Un giorno a Formia»: la giornata dal suo seme, la corsa, le ricompense, la riga per gli amici (puro)
   story/                   logica della modalità storia, senza disegno
     maps.ts                mappe preparate, collisioni, oggetti persi, quartieri, covi, percorso più breve
     movement.ts            passi, rotazioni, porte, warp e viaggi (travel)
@@ -79,6 +83,7 @@ src/
   save/
     story-progress.ts      salvataggio della storia  (chiave lotte-tra-amici:storia:v1)
     libretto.ts            vittorie, sconfitte, voti (chiave lotte-tra-amici:libretto:v2)
+    day-progress.ts        la corsa in corso, i giorni giocati e il record (chiave lotte-tra-amici:giorno:v1)
   render/
     svg/                   ritratti generati da parametri (looks.ts), espressioni, capelli, vestiti, Esame, robot;
                            badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna; type-shapes.ts: la forma
@@ -106,6 +111,7 @@ src/
     story-screen.ts        schermo della storia: HUD, croce, tastiera, dialoghi, covi, premi, menu (con il Diario
                            di Formia), motorino, ciclo dei frame
     activities.ts          le attività: beach volley, lettino, gelato, quiz da Morgana
+    day-screen.ts          «Un giorno a Formia»: la scheda nella home e i fogli tra una lotta e l'altra
     team.ts                le due squadre del menu, prima creatura, chi va in campo, ricompense ed evoluzioni, negozi,
                            l'albero delle abilità
     run.ts                 la corsetta in pineta: bandierine, cronometro nell'HUD
@@ -178,6 +184,17 @@ tools/
 - **Le persone della trama** stanno sulla mappa con `when` sull'Npc (`after`/`until`: chiavi di `st.seen` o di `st.beaten`, lette da `flag`): gli uomini di Mamurra hanno l'aspetto `mamurriano` (giacca grigia, cravatta d'oro, occhiali scuri), Mamurra è un fantasma dorato (`ghost: 'mamurra'`, disegnato in `render/svg/cicero.ts`, anche nei dialoghi).
 - **Le pietre** si vedono nel menu (`stonesHtml`) e ognuna ha la sua schermata quando si trova. Cicerone, chiamato con C, dice anche quanto sono forti le creature degli uomini di Mamurra (`PLOT_FOE` in `story/mentor.ts`).
 - **Test:** la partita `the stones of Telepilo` risolve l'indovinello del teatro e le domande alla tomba.
+
+## Un giorno a Formia
+
+- **Cos'è** (`data/day.ts`, `day/plan.ts`, `ui/day-screen.ts`): una corsa breve, dalla home, indipendente dalla storia. Tre creature a caso di tre tipi diversi al livello 10, otto lotte dalla mattina alla notte nelle scene di Formia, dopo ognuna una ricompensa tra tre (la tiella per tutti, un oggetto, una seconda abilità, una creatura nuova, l'allenamento), e alla fine una leggenda con le sue parti, a un'altra forza (`bossHp`). I PS restano da una lotta all'altra, con un po' di riposo (`rest`), e chi è KO resta fuori finché non c'è una cura.
+- **La sfida del giorno** è uguale per tutti: il seme viene dalla data (`seedOf`, FNV-1a, un test ne fissa il valore: **se cambia, due amici non giocano più la stessa giornata**). Si gioca una volta sola, poi resta la riga da copiare. La corsa libera ha un seme a caso e si gioca quanto si vuole.
+- **Riproducibile sul serio:** tutto quello che una giornata contiene (squadra, avversari, ricompense, seme di ogni lotta) viene da `planOf(seed)`, piano per piano, ognuno con un generatore suo (`stream`), e mai da quello che ha fatto il giocatore. Così due amici vedono le stesse cose comunque ci siano arrivati, e a parità di scelte una lotta va uguale. Niente `Math.random` e niente orologio in `day/plan.ts`: la data la passa la schermata.
+- **La riga per gli amici** (`shareLine`): «Un giorno a Formia, 5 novembre: 6 su 8, 812 punti» con un quadratino per piano (verde nessuno è caduto, giallo qualcuno, rosso persa) e la squadra. Niente server: si incolla in chat.
+- **Salvataggi:** una chiave sua (`lotte-tra-amici:giorno:v1`), la storia non si tocca. La corsa si salva tra una lotta e l'altra: si esce e si riprende dalla home. Uscire da una lotta la perde: i semi sono fissi, e riprovare sarebbe barare.
+- **Nel motore** non c'è niente di nuovo: è una lotta di squadra come quelle della storia (`story.day` sul tag la rimanda a `dayAfter` invece che alla mappa, `cfg.seed` fissa il seme, `SideOpts.abil` aggiunge l'abilità), quindi ogni cosa che migliora le lotte migliora anche la corsa.
+- **Bilanciamento** (`npx tsx tools/sim-day.ts`): il computer, che non cambia mai creatura, finisce il 25% delle corse e si ferma in modo distribuito lungo i piani, senza un muro. All'inizio gli avversari erano al livello della squadra e non finiva mai; un piano con quattro creature era un muro per un terzo delle corse. Si tocca `DAY_TUNE`.
+- **Test:** `tests/unit/day.test.ts` (stesso seme stessa giornata, quello che fa il giocatore non cambia cosa viene dopo, ogni ricompensa, i punti, la riga); la partita `a day in Formia` gioca dalla home alla riga da copiare, controlla che la storia non sia toccata e che un altro giocatore, con altri dadi, abbia la stessa squadra.
 
 ## Il giro di Formia
 
@@ -364,8 +381,17 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **L'IA dà un valore alle mosse** (`worthOf`, `statusWorth` in `battle/ai.ts`): non più costanti scritte a mano, ma quanto danno renderà la mossa nei colpi che restano, nella stessa unità del danno di un attacco. Chi ha `smart` ha meno dubbi (rumore ±5% invece di ±15%).
   - **Radici e Olivella:** i duelli tra creature sono gare vinte di poco (spesso chi vince resta con l'11–20% dei PS), quindi un recupero a ogni turno li ribalta. A 1/16 Polpino contro Olivella passava dal 90 al 13%. Ora il 4% a turno, e la linea di Olivella ha il 15% di PS in meno. Vale per chiunque aggiunga un recupero: si misura prima.
   - **Quanto valgono** (`npm run sim:fun`, confronto con il 4 novembre, con i dieci tipi): vantaggio di tipo dal 94 al 77% (obiettivo 70–85, raggiunto), «greedy» contro l'IA dal 43 al 39% (obiettivo 35), panchina 57%, turni medi da 5,6 a 6 (obiettivo 8–10, **non raggiunto, ed è una scelta**: abbassare i danni del 15–20% ci arriva, ma le rigenerazioni diventano muri, Polpino 6 contro Olivella 6 scendeva al 25–40%). Allenatori (`sim-story trainers`): le lotte facili restano com'erano, quelle impossibili si aprono (Mamurra con Ramarrino dall'1 al 16%, l'anziano dal 27 al 32%).
-  - **Le leggende hanno il doppio dei PS di prima.** Quando ogni avversario era una lotta a sé, una leggenda aveva due cure *per ogni avversario*, fino a dodici contro sei creature; con la lotta unica sono due in tutto, e cadeva sempre (100%, perdendo appena una creatura e mezza della squadra). Con i PS di adesso e la lotta a tre parti si torna a quello che era stato tarato: con sei forme finali tra il livello 28 e il 36 Lamo cade il 58% delle volte, Giano il 53% (`tools/sim-legend.ts`, l'IA della squadra non cambia mai: un giocatore fa meglio). Fuocelmo, che esce a metà storia, è al 45% contro una squadra al 22–26 e cade sempre contro una squadra finale. Per ritoccarle: gli `stats.hp` delle specie, o il livello sull'Npc in `formia.ts`.
+  - **Le leggende hanno il doppio dei PS di prima.** Quando ogni avversario era una lotta a sé, una leggenda aveva due cure *per ogni avversario*, fino a dodici contro sei creature; con la lotta unica sono due in tutto, e cadeva sempre (100%, perdendo appena una creatura e mezza della squadra). Con i PS di adesso e la lotta a tre parti si torna a quello che era stato tarato: con sei forme finali tra il livello 28 e il 36 Lamo cade il 60% delle volte, Giano il 53% (`tools/sim-legend.ts`, con la magia del luogo; l'IA della squadra non cambia mai e non usa la Risonanza: un giocatore fa meglio). Fuocelmo, che esce a metà storia, è al 46% contro una squadra al 22–26 e cade sempre contro una squadra finale. Per ritoccarle: gli `stats.hp` delle specie, o il livello sull'Npc in `formia.ts`.
   - **Regola per chi tocca questi numeri:** si controlla `sim-story trainers` oltre a `sim:fun`. I duelli a caso non vedono i problemi della storia.
+- **La magia del luogo, lo Slancio e la Risonanza** (`PLACE_MAGIC` in `data/scenes.ts`, `battle/surge.ts`, `FIELD_TUNE` in `data/tuning.ts`): ogni parte di Formia ha un tipo. Vale nelle lotte di creature della storia e di «Un giorno a Formia», non tra gli amici né nei covi, che sono al chiuso: senza `field` nello stato non esiste niente di questo, e i golden non cambiano.
+  - **La magia del luogo:** le mosse di quel tipo fanno il 10% in più, lo dice l'apertura della lotta, la barra in alto («Calma +10%») e il bottone della mossa («+10% qui»). Il briefing diceva 15, misurato era troppo: più di un vantaggio di tipo (la guida con Ramarrino dal 50 all'81%, con Polpino dal 10 al 2%). I posti: Castellone Calma, Gianola Cervello, il porto Caos, la pineta Chiacchiera, gli uliveti Cuore, Vindicio Calore, Mola e Caposele Corrente, i Monti Aurunci Cielo, piazza della Vittoria Corazza, il Cisternone Crepuscolo. La luna che rinforza la Calma di notte non c'è: è un'idea del briefing, si può aggiungere.
+  - **Lo Slancio** (`s.surge`, da 0 a 3, i pallini accanto al nome): sale a chi mette a segno un critico o un colpo superefficace, e a chi ne subisce uno superefficace, così chi è in svantaggio si rifà. È del lato, non della creatura: resta cambiando.
+  - **La Risonanza** (`res:<mossa>` come scelta, il pulsante o il tasto R, poi una mossa): con tre punti e **tre cuori di legame** (`resonate`, da `sideOf`), una volta a lotta. La creatura prende il tipo del posto come secondo tipo fino alla fine della lotta (chi ce l'ha già resta com'è), recupera il 15% dei PS, guarisce dagli stati e il prossimo colpo a segno fa il 50% in più. Non costa il turno: va con la mossa. Il pulsante si può ripremere per ripensarci. Il briefing diceva 20%: un duello finisce con un 10–20% di PS di scarto, e il recupero ribalta.
+  - **Quanto vale** (usata appena si può, due creature al livello dell'allenatore): nelle lotte incerte sposta molto (l'anziano con Ramarrino dal 25 al 59%, la guida dal 70 all'89%), in quelle perse poco (Mamurra con Polpino resta all'1%). Nelle lotte lunghe si riempie quasi sempre: è una decisione di quando, non di se.
+  - **Il computer** la usa poco e non sempre allo stesso modo (`wantsResonance`): a metà PS o per finire l'avversario, sette volte su dieci. Oggi nessun allenatore la ha: serve `resonate` sulla creatura. Le recensioni di Tera dicono che un'IA prevedibile rovina tutto, quindi prima si guarda se piace.
+  - **Lo scudo dei boss** (`shield` sull'allenatore, `s.shield`, `shieldHit`): Mamurra ha la Ricchezza, 3 punti per tutta la squadra. Finché regge i colpi fanno il 20% in meno; ogni colpo superefficace ne toglie uno. Rotta, chi è in campo perde il turno e per 2 turni prende il 30% in più. Non la rompe chi colpisce più forte ma chi cerca i punti deboli, cambiando creatura: è la lotta che fa usare la panchina. Una regola sola, in dati: un altro boss è una riga.
+  - **Quanto sono dure le lotte (correzione):** i numeri di `sim-story trainers` sono con **due** creature al livello dell'allenatore, e lì la guida, Mamurra e l'anziano sembrano quasi impossibili (0–25%, e 70% solo con Ramarrino contro la guida). Con **quattro** creature, livello dell'allenatore e poco sotto, la guida cade il 92–100% delle volte, l'anziano l'85–91%, Mamurra l'85–100% anche con la Ricchezza. Non sono muri: sono lotte che vogliono una squadra.
+  - **Test:** `tests/unit/surge.test.ts` (il luogo, lo Slancio, la Risonanza, lo scudo, uguali dopo il JSON); la partita `the magic of a place, and Risonanza` guarda la barra e i pallini, preme e ripensa, e vede la creatura prendere il tipo.
 - **Le leggende come eventi** (`data/legends.ts`): una voce di `LEGENDS` per leggenda e un solo esecutore. Dicono quando esce (`after`, `hour`, letti da `legendHere` in `story/maps.ts`), cosa apre la strada (`riddle`, `trial`, eseguiti da `legendWay` in `ui/plot.ts`) e la lotta (`stages`, eseguita da `battle/stages.ts`). Un'altra leggenda è una voce in più, con un po' d'arte. **Cosa succede dopo la lotta (catturarla, liberarla, un patto) non c'è ancora:** è una decisione di trama di Antonio; oggi si cattura col retino nell'ultima parte, oppure battuta torna a un'altra ora, come prima.
   - **La lotta a parti** (`Side.stages`, `stage`): quando i PS scendono a un segno (60 e 30%) parte la fase dopo, con un nome, una frase, altre mosse e a volte altri tipi (`types`) o numeri alzati per tutta la parte (`self`). Quello che era del momento se ne va con la parte vecchia (cali, confusione, stati), e la leggenda sceglie di nuovo cosa fare: non usa una mossa della parte che ha lasciato.
   - **Ogni parte si gioca:** un colpo non può scendere sotto il segno (`stageFloor`), per quanto forte. Per questo le tacche sulla barra dei PS non sono solo disegno.

@@ -7,12 +7,13 @@ import { SPECIES, knownAt, type SpeciesId } from '../src/data/creatures';
 import type { FighterId } from '../src/data/characters';
 import { atLevel } from '../src/data/growth';
 import { LEGENDS } from '../src/data/legends';
+import { PLACE_MAGIC } from '../src/data/scenes';
 const [foe, flv] = process.argv[2].split(':'), team = process.argv[3].split(',').map((x: string) => x.split(':'));
 let falls = 0, left = 0, sent = 0, turns = 0, reached = 0; const n = 200;
 const member = (id: string, lv: number, key: string): Member => ({ id: id as FighterId, key, stats: atLevel(SPECIES[id as SpeciesId].stats, lv), lvl: lv, known: knownAt(id as SpeciesId, lv) });
 const mine = team.map(([id, lv]: string[], k: number) => member(id, +lv, 'k' + k)), boss: Member = { ...member(foe, +flv, 'f0'), stages: Object.values(LEGENDS).find((l) => l.sp === foe)?.stages };
 for (let seed = 1; seed <= n; seed++) {
-  const s: BattleState = E.newBattle({ a: mine[0].id, b: boss.id, seed: seed * 7919, sideA: mine[0], sideB: boss, benchA: mine.slice(1), bag: {} });
+  const s: BattleState = E.newBattle({ a: mine[0].id, b: boss.id, seed: seed * 7919, sideA: mine[0], sideB: boss, benchA: mine.slice(1), bag: {}, field: PLACE_MAGIC[{ lamo: 'castellone', giano: 'gianola', fuocelmo: 'porto' }[foe] as string] });
   E.intro(s);
   for (let k = 0; k < 900 && s.phase !== 'over'; k++) {
     if (s.phase === 'begin') { E.beginTurn(s); continue; }

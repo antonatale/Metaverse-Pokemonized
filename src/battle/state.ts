@@ -57,6 +57,7 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.key) side.key = o.key;
   if (o && o.last) side.last = true;
   if (o && o.item) side.item = o.item;
+  if (o && o.resonate) side.resonate = true;
   if (o && o.stages) { side.stages = o.stages; side.stage = 0; side.known = o.stages[0].moves.slice(); if (o.stages[0].types) side.types = o.stages[0].types.slice(); }
   /* a creature's ability comes with its kind */
   if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();
@@ -82,6 +83,8 @@ export function newBattle(o: NewBattle): BattleState {
   if (o.bag) s.bag = Object.assign({}, o.bag);
   if (o.night) s.night = true;
   if (o.smart) s.smart = [o.smart[0], o.smart[1]];
+  if (o.field) { s.field = { type: o.field.type, name: o.field.name }; s.surge = [0, 0]; s.resonated = [false, false]; }
+  if (o.shield) s.shield = { left: o.shield.left, max: o.shield.left, name: o.shield.name };
   if (o.benchA || o.benchB) {
     const ba = o.benchA || [], bb = o.benchB || [];
     s.bench = [ba.map(function (m) { return newSide(m.id, true, m); }), bb.map(function (m) { return newSide(m.id, mode === 'pvp', m); })];

@@ -1,5 +1,6 @@
 import { DAY_FLOORS } from '../data/day';
 import { SPECIES } from '../data/creatures';
+import { PLACE_MAGIC } from '../data/scenes';
 import { afterFloor, alive, canTake, dayKey, foeMember, memberOf, needsTarget, newRun, offersNow, offerText, planOf, seedOf, shareLine, takeOffer, type DayRun, type Offer } from '../day/plan';
 import { daySave, saveDay } from '../save/day-progress';
 import { esc, each, $ } from './dom';
@@ -61,7 +62,7 @@ function fight() {
   var r = daySave.run!, f = planOf(r.seed).floors[r.floor], mine = alive(r).map(memberOf), foes = f.foeList.map(function (x) { return foeMember(x, f.stages); });
   closeOverlay();
   startBattle({ a: mine[0].id, b: foes[0].id, mode: 'cpu', seed: f.seed, sideA: mine[0], sideB: foes[0], benchA: mine.slice(1), benchB: foes.slice(1), smart: [0, f.smart || 0],
-    wild: foes.length < 2, trainer: f.who, dark: !!f.night, story: { day: true, scene: f.scene, sp: f.foeList[0].sp, foeLv: f.foeList[0].lv } });
+    wild: foes.length < 2, trainer: f.who, dark: !!f.night, field: PLACE_MAGIC[f.scene], story: { day: true, scene: f.scene, sp: f.foeList[0].sp, foeLv: f.foeList[0].lv } });
 }
 /** a battle of the day is over: called by the battle screen */
 export function dayAfter(won: boolean, left: Record<string, number>, turns: number) {

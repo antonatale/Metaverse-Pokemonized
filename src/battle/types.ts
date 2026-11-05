@@ -18,7 +18,7 @@ export interface Side {
   hp: number;
   max: number;
   /** loses the next turn: the robot fell, or Costanzo did not let him speak */
-  skip: { why: 'robot' | 'talk' } | null;
+  skip: { why: 'robot' | 'talk' | 'broken' } | null;
   /** turns of confusion left */
   conf: number;
   mods: Mod[];
@@ -94,9 +94,11 @@ export interface Side {
   stage?: number;
   /** its types of the moment, when they are not those of its kind */
   types?: TypeName[];
+  /** it can do Risonanza: its bond with Antonio is strong enough */
+  resonate?: boolean;
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[] }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[]; resonate?: boolean }
 /** someone on the bench when a team battle starts */
 export interface Member extends SideOpts { id: FighterId }
 /** one foe of a team battle: who fought it, and who brought it down. The story pays out from these */
@@ -156,13 +158,21 @@ export interface BattleState {
   swaps?: [number, number];
   /** who fought whom, foe by foe */
   bouts?: Bout[];
+  /* the magic of a place (missing elsewhere, as above) */
+  /** the type that is stronger here */
+  field?: { type: TypeName; name: string };
+  /** each side's Slancio, and whether it has done its Risonanza */
+  surge?: [number, number];
+  resonated?: [boolean, boolean];
+  /** a boss's magic on the second side: what is left of it (data/trainers.ts) */
+  shield?: { left: number; max: number; name: string };
 }
 
-export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number] }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }
-export interface Snap { k: 'sync'; turn: number; maxTurns: number; boss: boolean; chips: [Chip[], Chip[]]; revealed: [boolean, boolean]; ph: [boolean, boolean]; team?: [string[], string[]]; types?: [TypeName[], TypeName[]]; who?: [string, string] }
+export interface Snap { k: 'sync'; turn: number; maxTurns: number; boss: boolean; chips: [Chip[], Chip[]]; revealed: [boolean, boolean]; ph: [boolean, boolean]; team?: [string[], string[]]; types?: [TypeName[], TypeName[]]; who?: [string, string]; surge?: [number, number]; place?: string }
 export type BattleEvent =
   | { k: 'say'; text: string }
   | { k: 'line'; who: number; text: string }

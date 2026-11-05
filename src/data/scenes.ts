@@ -1,3 +1,5 @@
+import type { TypeName } from './types';
+
 /* Which drawn scene of Formia (render/svg/scenes.ts) is behind a story battle: the one of the part of town where
    Antonio is when it starts, or of the place he is inside. */
 const BY_AREA: Record<string, string> = {
@@ -12,6 +14,14 @@ const BY_AREA: Record<string, string> = {
   'Gianola': 'gianola'
 };
 const BY_MAP: Record<string, string> = { casa: 'castellonorato', circolo: 'campo', morgana: 'birreria', cisterna: 'cisterna', telepilo: 'castellone' };
+/** the magic of a place: a part of town has a type of its own, stronger there (data/tuning.ts FIELD_TUNE) and what a creature
+    can take with Risonanza. The fights of the friends, indoors, have none */
+export const PLACE_MAGIC: Record<string, { type: TypeName; name: string }> = {
+  castellone: { type: 'Calma', name: 'Castellone' }, gianola: { type: 'Cervello', name: 'Gianola' }, porto: { type: 'Caos', name: 'il porto' },
+  pineta: { type: 'Chiacchiera', name: 'la pineta' }, castellonorato: { type: 'Cuore', name: 'gli uliveti' }, vindicio: { type: 'Calore', name: 'Vindicio' },
+  mola: { type: 'Corrente', name: 'Mola' }, caposele: { type: 'Corrente', name: 'Caposele' }, maranola: { type: 'Cielo', name: 'i Monti Aurunci' },
+  centro: { type: 'Corazza', name: 'piazza della Vittoria' }, cisterna: { type: 'Crepuscolo', name: 'il Cisternone' }
+};
 /** the scene behind a battle on that map, in that part of town */
 export function sceneFor(map: string, area: string | null): string {
   return BY_MAP[map] || (area && BY_AREA[area]) || 'porto';

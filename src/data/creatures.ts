@@ -541,7 +541,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
      both pins of Formia, and a net holds him only rarely */
   lamo: S({
     id: 'lamo', abil: ['gigante'], name: 'Lamo', wild: 'Lamo, il re dei Lestrigoni,', type: 'Corazza', type2: 'Caos', stage: 3, catchRate: 0.35, legend: true, sig: 'masso',
-    stats: { hp: 300, atk: 140, def: 130, spe: 100 },
+    stats: { hp: 306, atk: 140, def: 130, spe: 100 },
     learn: [[1, 'naufragio'], [1, 'ruggito'], [1, 'telepilo'], [1, 'furia'], [1, 'passogigante'], [1, 'masso']],
     cry: { entry: 'CHI OSA SVEGLIARE IL RE DI TELEPILO?', win: 'Formia era mia, e lo è ancora.', ko: 'Torno… nella leggenda…' },
     text: 'Il re dei giganti Lestrigoni, quello che scagliava massi contro le navi di Ulisse. Si racconta che le mura poligonali di Castellone le abbia alzate lui, pietra su pietra, che dorma lì sotto e che esca solo di notte, davanti a chi ha salvato Formia, con un masso sopra la testa.',
@@ -562,7 +562,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
   }),
   fuocelmo: S({
     id: 'fuocelmo', abil: ['leggenda'], name: 'Fuocelmo', wild: 'Fuocelmo, il drago di Sant\'Elmo,', type: 'Calore', type2: 'Caos', stage: 3, catchRate: 0.4, legend: true, sig: 'tempestelmo',
-    stats: { hp: 294, atk: 148, def: 112, spe: 138 },
+    stats: { hp: 272, atk: 148, def: 112, spe: 138 },
     learn: [[1, 'scintille'], [1, 'bonaccia'], [1, 'alberomaestro'], [1, 'vele'], [1, 'fuocoelmo'], [1, 'tempestelmo']],
     cry: { entry: 'FSSSHHH… KRRRAAAK! IL MARE BRUCIA!', win: 'La tempesta passa. Io resto.', ko: 'Torno sulle onde…' },
     text: 'La fiamma azzurra che i marinai vedono sugli alberi delle navi nei temporali, il fuoco di Sant\'Elmo. Si racconta che sia un drago di fuoco e di fulmini, con le ali come vele, che dorme nelle nuvole sopra il golfo: porta fortuna a chi lo vede e lo lascia andare, e una tempesta a chi lo vuole tenere.',

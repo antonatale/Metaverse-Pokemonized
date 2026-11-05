@@ -9,7 +9,7 @@ const ANIM: Record<string, string> = {
   banner: 'banner', speech: 'speech', glint: 'shimmer', fox: 'whoosh', pump: 'shimmer', confetti: 'party',
   flyAway: 'plane', flyBack: 'planeBack', glowGreen: 'shimmer', ball: 'ball', cryptic: 'confused',
   bark: 'bark', laugh: 'laugh', cricket: 'cricket', confused: 'confused', phOn: 'headphones', phOff: 'click', notes: 'notes',
-  magic: 'magic', magicUp: 'magicUp', net: 'net', caught: 'caught', recall: 'whoosh', abil: 'shimmer', status: 'confused', stage: 'banner'
+  magic: 'magic', magicUp: 'magicUp', net: 'net', caught: 'caught', recall: 'whoosh', abil: 'shimmer', status: 'confused', stage: 'banner', resonance: 'banner', broken: 'crit'
 };
 export function cueBattle(ev: BattleEvent) {
   if (ev.k === 'anim') { const n = ANIM[ev.a]; if (n) sfx(n); }

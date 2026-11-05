@@ -7,7 +7,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 declare global {
   interface Window {
     WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null;
-        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
+        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -907,6 +907,51 @@ test('a day in Formia', async ({ browser }) => {
     o.keep('team', await o.page.locator('.bench-pick').allInnerTexts());
   });
   expect(other.data[0].value).toEqual(get('team'));
+});
+
+/* the magic of a place, and what a creature with a bond can do with it: the dots, the button, the choice taken back, the
+   show, and a creature that has taken the type of the place */
+test('the magic of a place, and Risonanza', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true },
+    mons: [{ uid: 'c1', sp: 'ramarrino', bond: 70 }, { uid: 'c2', sp: 'polpino', bond: 20 }], lv: { c1: { lv: 12, xp: 0 }, c2: { lv: 12, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'surge', { seed: 31, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    await p.evaluate(() => window.WORLD._debug.wild('cicalina', 12)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await toPrompt(p);
+    r.keep('turn', await p.locator('#turn-t').innerText());
+    r.keep('dots', await p.locator('#sg-0 i').count());
+    r.keep('no-button', await p.locator('#res-btn').count());
+    await p.evaluate(() => (window.UI._debug as unknown as { surge(n: number): void }).surge(3));
+    r.keep('full', await p.locator('#sg-0 i.on').count());
+    await r.shot('ready');
+    /* pressed and taken back: nothing happens */
+    await p.click('#res-btn');
+    r.keep('armed', await p.locator('#res-btn').getAttribute('aria-pressed'));
+    await p.click('#res-btn');
+    r.keep('back', await p.locator('#res-btn').getAttribute('aria-pressed'));
+    await p.keyboard.press('r');
+    await r.shot('armed');
+    await p.locator('#pad .mv[data-k]:not([disabled]):not([hidden])').first().click({ timeout: 5000 });
+    await toPrompt(p);
+    r.keep('types', await p.locator('#ty-0 .type').allInnerTexts());
+    r.keep('gone', await p.locator('#res-btn').count());
+    await r.shot('after');
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('turn'))).toMatch(/^Turno 1 · \w+ \+10%$/);
+  expect(get('dots')).toBe(3);
+  expect(get('no-button')).toBe(0);
+  expect(get('full')).toBe(3);
+  expect(get('armed')).toBe('true');
+  expect(get('back')).toBe('false');
+  expect((get('types') as string[]).length, 'it has taken the type of the place').toBe(2);
+  expect(get('gone'), 'once in a battle').toBe(0);
 });
 
 /* a save already in town, with Formia as it is now (positions kept) */

@@ -105,6 +105,12 @@
   background: linear-gradient(90deg, #3c3b6e 0 30%, transparent 30%), repeating-linear-gradient(180deg, #b22234 0 9px, #f4f1ea 9px 18px); animation: banner 1.25s ease-out forwards; white-space: nowrap; }
 .banner.roma { background: linear-gradient(90deg, #8e1f2f 0 50%, #f0bc42 50%); font-size: 50px; }
 .banner.formia { background: repeating-linear-gradient(90deg, #1f5fa8 0 26px, #f4f1ea 26px 52px); font-size: 34px; }
+.surge { display: inline-flex; gap: 2px; margin-inline-end: 4px; }
+.surge i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--line); background: transparent; }
+.surge i.on { background: var(--warn); }
+.mv.res { --tc: var(--warn); }
+.mv.res.armed { background: var(--warn); color: var(--ink); }
+.mv.res.armed small { color: var(--ink); }
 .banner.stage { background: linear-gradient(90deg, #5e5546, #9a8f7c 50%, #5e5546); font-size: 34px; }
 @keyframes banner { 0% { transform: translate(-50%, -50%) rotate(-10deg) scale(2.2); opacity: 0; } 16% { transform: translate(-50%, -50%) rotate(-5deg) scale(1); opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.04); opacity: 0; } }
 

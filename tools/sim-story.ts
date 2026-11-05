@@ -6,6 +6,8 @@
 import { ENGINE as E, type BattleState, type Member } from '../src/battle';
 import { SPECIES, knownAt, isSpecies, type SpeciesId } from '../src/data/creatures';
 import { TRAINERS } from '../src/data/trainers';
+import { MAPS } from '../src/data/maps';
+import { PLACE_MAGIC, sceneFor } from '../src/data/scenes';
 import { CHARS, type FighterId } from '../src/data/characters';
 import { atLevel } from '../src/data/growth';
 
@@ -34,13 +36,18 @@ function formAt(id: SpeciesId, lv: number): SpeciesId {
   return x;
 }
 const member = (id: string, lv: number, key?: string): Member => ({ id: id as FighterId, key, ...side(id, lv) });
-/** a whole battle against a trainer, Antonio's two played by the computer (who does not change: a player can do better) */
-export function trainerRate(first: SpeciesId, second: SpeciesId, id: string, n = 300): { win: number; turns: number } {
+/** the magic of the place where a trainer stands */
+function placeOf(id: string) {
+  const f = MAPS.formia, q = (f.npcs || []).find((x) => x.trainer === id), a = q && (f.areas || []).find((r) => q.x >= r.x && q.x < r.x + r.w && q.y >= r.y && q.y < r.y + r.h);
+  return PLACE_MAGIC[sceneFor('formia', a ? a.name : null)];
+}
+/** a whole battle against a trainer, Antonio's two (and `more`) played by the computer, who does not change: a player can do better */
+export function trainerRate(first: SpeciesId, second: SpeciesId, id: string, n = 300, more: SpeciesId[] = []): { win: number; turns: number } {
   const tr = TRAINERS[id], lv = Math.max.apply(null, tr.team.map((t) => t.lv)), foes = tr.team.map((t) => { const m = member(t.sp, t.lv); if (t.moves) m.known = t.moves.slice(); return m; });
   const a = member(formAt(first, lv), lv, 'c1'), b = member(formAt(second, Math.max(1, lv - 1)), Math.max(1, lv - 1), 'c2');
   let won = 0, turns = 0;
   for (let seed = 1; seed <= n; seed++) {
-    const s: BattleState = E.newBattle({ a: a.id, b: foes[0].id, seed: seed * 7919, sideA: a, sideB: foes[0], benchA: [b], benchB: foes.slice(1), trainer: tr.title, smart: [0, tr.smart || 0], bag: {} });
+    const s: BattleState = E.newBattle({ a: a.id, b: foes[0].id, seed: seed * 7919, sideA: a, sideB: foes[0], benchA: [b].concat(more.map((sp, k) => member(formAt(sp, Math.max(1, lv - 1)), Math.max(1, lv - 1), 'm' + k))), benchB: foes.slice(1), field: placeOf(id), shield: tr.shield, trainer: tr.title, smart: [0, tr.smart || 0], bag: {} });
     E.intro(s);
     for (let k = 0; k < 800 && s.phase !== 'over'; k++) {
       if (s.phase === 'begin') { E.beginTurn(s); continue; }
