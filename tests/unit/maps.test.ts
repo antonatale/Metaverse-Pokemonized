@@ -51,6 +51,19 @@ function reachable() {
   return (map: string, x: number, y: number) => seen.has(map + ':' + x + ',' + y);
 }
 const canStand = reachable();
+/** from where a warp leaves you, with the signs and the people where they stand, there is somewhere to go: the way out of
+    the Cisternone once came up between two signs, a wall and the Signore di Castellone */
+function walkAway(id: string, x0: number, y0: number): boolean {
+  const m = prepare(id), seen = new Set([x0 + ',' + y0]), todo = [[x0, y0]];
+  while (todo.length && seen.size < 12) {
+    const [x, y] = todo.pop()!;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const k = (x + dx) + ',' + (y + dy);
+      if (!seen.has(k) && !blocked(m, x + dx, y + dy)) { seen.add(k); todo.push([x + dx, y + dy]); }
+    }
+  }
+  return seen.size >= 12;
+}
 /** someone standing on a reachable tile next to (x, y), or across a net or a counter, can talk to it */
 function canTalkTo(map: string, x: number, y: number) {
   const m = MAPS[map];
@@ -104,6 +117,7 @@ for (const [id, m] of Object.entries(MAPS)) {
         expect(MAPS[w.to], 'warp to a missing map').toBeDefined();
         expect(solidity(MAPS[w.to])(w.tx, w.ty), 'warp lands on a blocked tile').toBe(false);
         expect(canStand(id, w.x, w.y), 'warp at ' + w.x + ',' + w.y + ' cannot be reached').toBe(true);
+        expect(walkAway(w.to, w.tx, w.ty), 'the warp at ' + w.x + ',' + w.y + ' leaves you shut in').toBe(true);
       });
     });
     it('has people that make sense', () => {

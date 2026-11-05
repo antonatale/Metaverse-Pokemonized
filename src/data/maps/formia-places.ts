@@ -134,8 +134,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-comune', near: { place: 'comune', dx: 9, dy: 2 } },
   { id: 'sign-piazza', near: { place: 'piazza', dx: -1, dy: 5 } },
   { id: 'sign-erasmo', near: { place: 'erasmo', dx: -1, dy: 3 } },
-  { id: 'sign-castellone', near: { place: 'torre-castellone', dx: 3, dy: 1 } },
-  { id: 'sign-cisternone', at: [41.25569, 13.60104] },
+  { id: 'sign-castellone', near: { place: 'torre-castellone', dx: 4, dy: 1 } },   /* one further on: it closed the way out of the Cisternone */
+  { id: 'sign-cisternone', tile: [64, 42] },   /* 41.25569, 13.60104: the way out comes up below it */
   { id: 'sign-mola', near: { place: 'torre-mola', dx: 3, dy: 2 } },
   { id: 'sign-morgana', near: { place: 'morgana', dx: -1, dy: 3 } },
   { id: 'sign-porto', near: { place: 'biglietti', dx: -1, dy: 2 } },
@@ -192,7 +192,7 @@ export const SPOTS: SpotSpec[] = [
      the ghost of Mamurra at his villa */
   { id: 'mamurr-scavi', near: { place: 'mamurra', dx: -1, dy: 3 } },
   { id: 'archivista', tile: [92, 39] },
-  { id: 'mamurr-cisterna', near: { place: 'cisternone', dx: 1, dy: 2 } },
+  { id: 'mamurr-cisterna', tile: [67, 43] },
   { id: 'mamurr-peschiere', at: [41.2510, 13.5981] },
   { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } },
   /* Tullio, the rival: by his grandfather at the park, and on the Appia, on the way to Cicero's tomb */
