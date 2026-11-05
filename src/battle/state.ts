@@ -83,7 +83,7 @@ export function newBattle(o: NewBattle): BattleState {
   if (o.bag) s.bag = Object.assign({}, o.bag);
   if (o.night) s.night = true;
   if (o.smart) s.smart = [o.smart[0], o.smart[1]];
-  if (o.field) { s.field = { type: o.field.type, name: o.field.name }; s.surge = [0, 0]; s.resonated = [false, false]; }
+  if (o.field) { s.field = { type: o.field.type, name: o.field.name }; s.surge = [o.surgeStart || 0, 0]; s.resonated = [false, false]; }
   if (o.shield) s.shield = { left: o.shield.left, max: o.shield.left, name: o.shield.name };
   if (o.benchA || o.benchB) {
     const ba = o.benchA || [], bb = o.benchB || [];

@@ -10,7 +10,7 @@ import { st, save, resetProgress } from '../save/story-progress';
 import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
 import { placeProof } from '../story/place-run';
-import { teamOf, trainerLine } from '../story/rival';
+import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
@@ -30,7 +30,8 @@ import { TRAINERS } from '../data/trainers';
 import { sceneFor, PLACE_MAGIC } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
-import { plotTalk, plotSign, plotAfter, stonesHtml, legendWay } from './plot';
+import { plotTalk, plotSign, plotAfter, plotBefore, stonesHtml, legendWay, legendEnd, legendPact, askPending } from './plot';
+import { endFlag, legendOf, legendOver, pactOpen, stagesNow, stonesKept } from '../story/choices';
 import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
@@ -132,6 +133,8 @@ function neighbourhood(name: string, note: string) {
   toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 5200);
 }
 /* what an activity brought Antonio, in the same corner, for a few seconds */
+/** the guardaparco has something for whoever has filled the diary some more */
+export function dexNotice() { if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
 function notify(html: string) {
   var el = $('wtoast');
   el.innerHTML = html;
@@ -508,7 +511,7 @@ function safeMoves() { return foundItems().map(function (it) { return it.move; }
 /* One battle, with the two teams inside it (battle/turn.ts): Antonio's creatures wait on the bench, a trainer's come
    one after the other, a wild one is a single foe that can be caught. Antonio himself is the last on the bench: he
    steps in only when all his creatures are down. What the battle brings is paid at the end, from who fought whom. */
-interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[]; stages?: LegendStage[] }
+interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[]; stages?: LegendStage[]; resonate?: boolean }
 interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[] }
 var fight: Fight | null = null;
 /** someone of Antonio's team, for the bench */
@@ -523,6 +526,7 @@ function foeMember(foe: Foe): Member {
   if (foe.gold) b.gold = true;
   if (foe.moves) b.known = foe.moves.slice();
   if (foe.stages) b.stages = foe.stages;
+  if (foe.resonate) b.resonate = true;
   return b;
 }
 /** the battle of a fight: Antonio picks who goes in first, the rest wait on the bench */
@@ -534,7 +538,7 @@ function fightOn() {
     var place = sceneFor(M.id, areaName());
     startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: memberOf(k), sideB: foeMember(foe), bag: battleBag(),
       benchA: left.concat(['antonio']).filter(function (x) { return x !== k; }).map(memberOf), benchB: f.foes.slice(1).map(foeMember),
-      smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0], field: PLACE_MAGIC[place], shield: f.kind === 'trainer' ? TRAINERS[f.id].shield : undefined,
+      smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0], field: PLACE_MAGIC[place], shield: f.kind === 'trainer' ? shieldNow(f.id) : undefined, surgeStart: stonesKept() ? 1 : 0,
       story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
       wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined, dark: !!M.dark });
   };
@@ -547,31 +551,41 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
   var f = fight!, foe = f.foes[0], sp = SPECIES[foe.sp], wild = f.kind === 'wild', tr = wild ? null : TRAINERS[f.id], bouts = res.bouts || [];
   bouts.forEach(function (b) { see(b.foe as SpeciesId); });
   if (teamMons().length > 1) mentorTip('bench');
-  if (teamMons().some(function (m) { return hearts(m.uid) >= 3; })) mentorTip('surge');
+  if (stonesKept() || teamMons().some(function (m) { return hearts(m.uid) >= 3; })) mentorTip('surge');
   var pay = fightPay(bouts, !wild);
+  var legend = foe.stages ? legendOf(foe.sp) : null;
   if (res.caught) {
     fight = null; wildGone[f.id] = Date.now();
+    if (legend) st.seen[endFlag(legend, 'preso')] = true;
     var caught = creatureOf(addCreature(foe.sp, foe.lv, foe.gold)); save();
     sfx('badge');
     say(caught && caught.home ? [sp.name + (foe.gold ? ' dorata' : '') + ' è tua, al livello ' + foe.lv + '!', 'La squadra è al completo: ti aspetta a casa, nel tuo appartamento. Lì puoi cambiare chi porti con te.']
-      : [sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewardsAll(pay, moneyFor(foe.lv, false)); });
+      : [sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewardsAll(pay, moneyFor(foe.lv, false), legend && legend.end ? function () { say(legend!.end!.net.cicero, CICERO); } : undefined); });
     return;
   }
   if (res.won) {
-    if (wild) { fight = null; wildGone[f.id] = Date.now(); rewardsAll(pay, moneyFor(foe.lv, false)); return; }
+    /* a legend does not just go away: what becomes of it is up to the player */
+    if (wild) {
+      var ending = legend && legend.end ? legend : null;
+      fight = null;
+      /* it stays where it is, on its knees, until the player has decided */
+      if (ending) { rewardsAll(pay, moneyFor(foe.lv, false), function () { legendEnd(ending!, foe.lv); }); return; }
+      wildGone[f.id] = Date.now(); rewardsAll(pay, moneyFor(foe.lv, false)); return;
+    }
     rewardsAll(pay, 0, function () {
-      var first = !st.beaten['tr-' + f.id];
+      var first = !st.beaten['tr-' + f.id], now = trainerNow(f.id), gift = first ? now.gift : undefined;
       st.beaten['tr-' + f.id] = true;
-      if (first) earn(tr!.prize);
+      if (first) earn(now.prize);
+      if (gift) { st.bag = st.bag || {}; for (var g in gift.items) st.bag[g] = (st.bag[g] || 0) + gift.items[g]; }
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(lines(tr!.win, f.id).concat(first ? ['Antonio vince ' + coins(tr!.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
+      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['Antonio vince ' + coins(now.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
     });
     return;
   }
   rewardsAll(pay, 0, function () {
     fight = null;
-    if (tr) say(lines(tr.lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']);
+    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']);
   });
 }
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
@@ -630,8 +644,9 @@ function wildMeet(id: string, first: string, foe: Foe) {
 function wildTalk(p: Person) {
   var w = wildNow(p.n)!, lv = w.lv[0] + Math.floor(Math.random() * (w.lv[1] - w.lv[0] + 1)), L = p.n.legend ? LEGENDS[p.n.legend] : null;
   if (!st.mons || !st.mons.length) { say(['Una creatura così non si sveglia a mani vuote. Senza una creatura con te, meglio lasciarla stare.']); return; }
+  if (L && pactOpen(L)) { legendPact(L, lv + legendOver(L)); return; }
   if (L && L.trial && M.id !== L.trial.to) { legendWay(L); return; }
-  wildMeet(p.n.id, SPECIES[w.sp].text, { sp: w.sp, lv: lv, stages: L ? L.stages : undefined });
+  wildMeet(p.n.id, SPECIES[w.sp].text, { sp: w.sp, lv: lv + (L ? legendOver(L) : 0), stages: L ? stagesNow(L) : undefined });
 }
 /* ---------- the trainers of Formia: their creatures one after the other ---------- */
 /** a trainer's lines, with the rival's creature and Antonio's in them */
@@ -639,11 +654,11 @@ function lines(t: string[], id: string): string[] { return t.map(function (l) { 
 /** a trainer challenges Antonio (`came`: he has walked up to him, and there is no saying later) */
 function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
-  var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id], team = teamOf(id);
+  var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id], team = teamOf(id);
   if (!st.mons || !st.mons.length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
   var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: team.slice() }; fightOn(); } }];
   if (!came) opts.push({ label: 'Più tardi', fn: null });
-  say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(['Creature: ' + team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, opts);
+  say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat(['Creature: ' + team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, opts);
 }
 
 /* ---------- trainers who see Antonio: a "!" over their head, and they come to challenge him ---------- */
@@ -777,7 +792,7 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   keepBag(res.bag); save(); renderHud();
   if (res.quit) { (res.bouts || []).forEach(function (b) { see(b.foe as SpeciesId); }); fight = null; save(); say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
   if (!res.won && !res.caught) mentorTip('loss');
-  if (res.caught) { mentorTip('catch'); if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
+  if (res.caught) { mentorTip('catch'); dexNotice(); }
   if ((tag.trainer || tag.wild) && fight) { fightAfter(res); return; }
   if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
@@ -999,6 +1014,7 @@ function open(quiet?: boolean) {
   var go = function () {
     invalidate(); start();
     if (!quiet && !st.seen.intro) intro();
+    else if (!quiet) askPending();
   };
   if (document.fonts && document.fonts.load) {
     var done = false, t = setTimeout(function () { if (!done) { done = true; go(); } }, 900);

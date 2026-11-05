@@ -3,6 +3,7 @@ import { SPECIES, STARTERS, type SpeciesId } from '../data/creatures';
 import { MAGIC_CHART, magicBeats } from '../data/types';
 import { TRAINERS, type Trainer } from '../data/trainers';
 import { flag } from './plot';
+import { tullioMood } from './choices';
 
 /* The rival, as in the Pokémon games: Tullio, the guardaparco's grandson. He picks his creature right after Antonio,
    the one of the three whose type beats Antonio's (none beats Ramarrino's Calma: he takes Polpino, the cleverest), and
@@ -48,7 +49,19 @@ export function teamOf(id: string): Trainer['team'] {
   if (!tr.rival) return tr.team;
   if (tr.rival === 1) return [{ sp: r, lv: 5, moves: FIRST_MOVES[r] }];
   if (tr.rival === 2) return [{ sp: 'cicalina', lv: 13 }, { sp: formAt(r, 2), lv: 16 }];
-  return [{ sp: 'granchione', lv: 27 }, { sp: 'civettona', lv: 28 }, { sp: formAt(r, 3), lv: 31 }];
+  /* made an enemy of him, he comes back stronger, and he has learned what Antonio has */
+  var angry = tullioMood() === 'bitter', up = angry ? 2 : 0;
+  return [{ sp: 'granchione', lv: 27 + up, resonate: angry }, { sp: 'civettona', lv: 28 + up, resonate: angry }, { sp: formAt(r, 3), lv: 31 + up, resonate: angry }];
+}
+/** a trainer as he is now: Tullio is what the player has made of him */
+export function trainerNow(id: string): Trainer {
+  var tr = TRAINERS[id], m = tullioMood(), over = tr.moods && m ? tr.moods[m] : null;
+  return over ? Object.assign({}, tr, over) : tr;
+}
+/** the magic that shields a trainer's side, as it stands: Tullio has cracked it, or has told Mamurra how Antonio fights */
+export function shieldNow(id: string): Trainer['shield'] {
+  var s = TRAINERS[id].shield, m = tullioMood();
+  return s ? { left: s.left + (m === 'ally' ? -1 : m === 'bitter' ? 1 : 0), name: s.name } : undefined;
 }
 /** a line of a trainer's: the rival's, with his creature and Antonio's in it */
 export function trainerLine(t: string, id: string): string {

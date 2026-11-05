@@ -53,7 +53,7 @@ export const CHAPTERS: Record<string, { title: string; intro: string[]; done: st
     done: ['Hai tutte e tre le pietre. Ora Mamurra verrà a cercarti.'] },
   'trama-mamurra': { title: 'Il fantasma di Mamurra',
     intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
-    done: ['Il sigillo di Telepilo è salvo. Formia ti deve un favore.'] },
+    done: ['Mamurra è caduto. Formia ti deve un favore.'] },
   padel: { title: 'Una partita al Bruno Zauli',
     intro: ['Ora un po\' di sport: Andrea ti aspetta al Bruno Zauli per il padel.', 'Le attività non si perdono: danno esperienza ad Antonio e qualche sesterzio.'],
     done: ['Ben giocato. Ogni livello di Antonio vale un punto abilità: spendilo nel menu, alla voce Squadra.'] },

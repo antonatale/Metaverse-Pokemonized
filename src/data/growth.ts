@@ -85,9 +85,10 @@ export const WARES = {
 } as Record<ItemId, Ware>;
 (Object.keys(NET_PRICE) as NetId[]).forEach(function (id) { WARES[id] = { id: id, name: NETS[id].name, price: NET_PRICE[id], text: NETS[id].text }; });
 /* what a creature can carry: it keeps it from battle to battle, so these cost more than what gets used up */
-const HELD_PRICE: Record<HeldId, number> = { fetta: 60, cozza: 60, ciambella: 70, oliva: 80, corno: 90 };
+const HELD_PRICE: Partial<Record<HeldId, number>> = { fetta: 60, cozza: 60, ciambella: 70, oliva: 80, corno: 90 };
+/** what is sold or found around town; the things the legends leave behind are in HELD and nowhere else */
 export const HELD_IDS = Object.keys(HELD_PRICE) as HeldId[];
-HELD_IDS.forEach(function (id) { WARES[id] = { id: id, name: HELD[id].name, price: HELD_PRICE[id], text: HELD[id].text + ' Si dà a una creatura dalla sua scheda.' }; });
+HELD_IDS.forEach(function (id) { WARES[id] = { id: id, name: HELD[id].name, price: HELD_PRICE[id]!, text: HELD[id].text + ' Si dà a una creatura dalla sua scheda.' }; });
 /** the shops: who sells what */
 export interface Shop { name: string; hello: string; sells: ItemId[] }
 export const SHOPS: Record<string, Shop> = {

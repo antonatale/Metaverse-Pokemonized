@@ -168,7 +168,7 @@ export interface BattleState {
   shield?: { left: number; max: number; name: string };
 }
 
-export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
+export interface NewBattle { a: FighterId; b: FighterId; mode?: Mode; seed: number; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; night?: boolean; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number }
 
 /* ---------- what the engine tells the UI ---------- */
 export interface Chip { c: string; i: string; t: string; d: string }

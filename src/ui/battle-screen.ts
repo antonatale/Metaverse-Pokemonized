@@ -26,7 +26,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string } }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -647,7 +647,7 @@ function curtain(trainer: boolean) {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart });
     S.story = cfg!.story || null;
   }
   flow++;

@@ -10,7 +10,7 @@ export interface Trainer {
   /** who sends the creatures in, in battle */
   title: string;
   /** their creatures, at a level, with the moves they know when not the ones of that level */
-  team: { sp: SpeciesId; lv: number; moves?: string[] }[];
+  team: { sp: SpeciesId; lv: number; moves?: string[]; resonate?: boolean }[];
   /** before the challenge, when beaten, when they win, and once beaten */
   intro: string[];
   win: string[];
@@ -21,6 +21,10 @@ export interface Trainer {
   /** how well they play their team: 0 or nothing, in the order of the team and never changing; 1 they send in the best
       against the one in front, and may change once; 2 twice */
   smart?: number;
+  /** what changes when the player has made a friend or an enemy of him (story/choices.ts): other words, another prize, a gift */
+  moods?: Partial<Record<'ally' | 'bitter', Partial<Pick<Trainer, 'intro' | 'win' | 'lose' | 'after' | 'prize' | 'gift'>>>>;
+  /** what he gives the first time he is beaten, and what he says giving it */
+  gift?: { items: Record<string, number>; say: string };
   /** a magic of his own that shields his side until the right blows have cracked it (battle/surge.ts) */
   shield?: { left: number; name: string };
   /** Antonio's rival, Tullio, at his first, second or third meeting with him: his team is not here but follows
@@ -118,7 +122,23 @@ export const TRAINERS: Record<string, Trainer> = {
     intro: ['Antonio. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
     win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, Antonio.', 'Quando vuoi la rivincita, sono qui al parco.'],
     lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
-    after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.']
+    after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.'],
+    moods: {
+      ally: {
+        intro: ['Antonio! Hai visto come si è crepata la Ricchezza? Un pezzo è merito mio, eh.', 'Però adesso, tra noi due, il più forte di Formia chi è? Il nonno guarda, e io non ti regalo niente.'],
+        win: ['…Sei tu il più forte di Formia. E mi va bene così.', 'Quando vuoi allenarti, sai dove trovarmi.'],
+        lose: ['Ho vinto io! Te l\'avevo detto che mi allenavo. Torna quando vuoi, amico.'],
+        after: ['Ci alleniamo? Stavolta ti batto, e te lo dico prima.'],
+        gift: { items: { oro: 2 }, say: 'Tieni: i retini d\'oro del nonno. Li userai meglio di me.' }
+      },
+      bitter: {
+        intro: ['Hai salvato Formia, eh? Bravo. Il nonno non parla d\'altro.', 'Lo sai chi ha detto a Mamurra come lotti? E lo sai cosa ho imparato io, nel frattempo?', 'Adesso ridi, se ci riesci.'],
+        win: ['…', 'Il nonno ha sempre saputo scegliere. A me non ha scelto.', 'Vattene, Antonio. Qui sto bene da solo.'],
+        lose: ['Tutto qui?', 'Te lo ricordi? L\'hai detto tu.'],
+        after: ['Che vuoi ancora?'],
+        prize: 500
+      }
+    }
   },
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150, smart: 2,

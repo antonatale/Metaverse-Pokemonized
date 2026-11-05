@@ -14,9 +14,9 @@ export const MAMURRA = 'Mamurra';
 export function flag(id: string): boolean { return !!(st.seen[id] || st.beaten[id]); }
 
 /** what someone says now: the world notices what Antonio has done */
-export function linesNow(n: { lines?: string[]; reacts?: { after: string; say: string[] }[] }): string[] {
+export function linesNow(n: { lines?: string[]; reacts?: { after: string; say: string[]; keep?: boolean }[] }): string[] {
   const r = (n.reacts || []).filter(function (x) { return flag(x.after); }).pop();
-  return r ? r.say : n.lines || [];
+  return r ? (r.keep ? r.say.concat(n.lines || []) : r.say) : n.lines || [];
 }
 export interface Stone { id: string; name: string; where: string; text: string; color: string; mark: 'wall' | 'wave' | 'voice' }
 export const STONES: Stone[] = [

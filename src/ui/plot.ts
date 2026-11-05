@@ -3,8 +3,14 @@ import type { Npc, Sign } from '../data/maps/types';
 import { CICERO } from '../story/mentor';
 import { STONES, flag, type Stone } from '../story/plot';
 import type { LegendDef } from '../data/legends';
+import { CHOICES } from '../data/choices';
+import { HELD } from '../data/passives';
+import { SPECIES } from '../data/creatures';
+import { NET_IDS } from '../data/nets';
+import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
+import { addCreature, creatureOf, has, own } from '../story/growth';
 import { esc, $ } from './dom';
-import { say, sheet, closeSheet, renderHud } from './story-screen';
+import { say, sheet, closeSheet, renderHud, dexNotice, type DialogOpt } from './story-screen';
 import { sfx } from '../audio';
 import { travel } from '../story/movement';
 
@@ -37,6 +43,68 @@ export function plotSign(s: Sign): boolean {
   tomb();
   return true;
 }
+/** what comes before a battle, with someone of the plot: Tullio, at Mamurra's villa, is what the player has made of him */
+export function plotBefore(id: string): string[] {
+  var m = tullioMood();
+  if (id !== 'mamurra' || !m) return [];
+  return m === 'ally' ? ['Da dietro una colonna spunta Tullio: «Antonio! Mentre parlava gli ho incrinato la Ricchezza. Il resto tocca a te.»']
+    : ['Da dietro una colonna spunta Tullio, con il suo sorrisetto: «Gli ho detto io come lotti. Così impari a prendermi in giro.»', 'La Ricchezza di Mamurra è più spessa del previsto.'];
+}
+/** a question of the story, once: who speaks speaks, the last one asks, the player answers and the answer stays */
+export function askChoice(id: string, then?: () => void) {
+  if (chosen(id)) { if (then) then(); return; }
+  var c = CHOICES[id], k = 0;
+  var next = function () {
+    var part = c.ask[k++];
+    if (k < c.ask.length) { say(part.say, part.who, null, next); return; }
+    say(part.say, part.who, c.options.map(function (o) {
+      return { label: o.label, fn: function () { decide(id, o.id); save(); renderHud(); say(o.say, o.who || part.who, null, then); } };
+    }));
+  };
+  next();
+}
+/** what opens each question: the moment it is asked is gone once the battle is won, so a question left unanswered (a page
+    closed in the middle, a save from before there were questions) is asked again as soon as the player comes back */
+const ASKED: [string, string][] = [['tr-rivale-1', 'tullio1'], ['tr-rivale-2', 'tullio2'], ['tr-mamurra', 'pietre']];
+export function askPending() {
+  var w = ASKED.filter(function (a) { return flag(a[0]) && !chosen(a[1]); })[0];
+  if (w) askChoice(w[1], askPending);
+}
+/* ---------- how a legend ends (data/legends.ts): the player decides ---------- */
+function joins(L: LegendDef, lv: number, bond: number | undefined, then: () => void) {
+  var c = creatureOf(addCreature(L.sp, lv, false, bond)), name = SPECIES[L.sp].name;
+  save(); renderHud(); sfx('badge'); dexNotice();
+  say(c && c.home ? [name + ' è con te! La squadra è al completo: ti aspetta a casa, nel tuo appartamento.'] : [name + ' entra nella tua squadra!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, then);
+}
+/** beaten and on its knees: the net, a pact, or letting it go */
+export function legendEnd(L: LegendDef, lv: number) {
+  var E0 = L.end!, name = SPECIES[L.sp].name, opts: DialogOpt[] = [], net = NET_IDS.filter(function (n) { return has(n) > 0; })[0];
+  if (net) opts.push({ label: E0.net.label, fn: function () {
+    st.bag![net] = has(net) - 1; st.seen[endFlag(L, 'preso')] = true;
+    say(E0.net.say, null, null, function () { joins(L, lv, undefined, function () { say(E0.net.cicero, CICERO); }); });
+  } });
+  if (E0.pact) { var P = E0.pact; opts.push({ label: P.label, fn: function () { st.seen[endFlag(L, 'patto')] = true; save(); say(P.say, name); } }); }
+  /* with the stones still in the bag, letting him go is giving them back */
+  var back = E0.back && stonesKept() ? E0.back : null;
+  opts.push({ label: back ? back.label : E0.free.label, fn: function () {
+    st.seen[endFlag(L, 'libero')] = true;
+    own(L.sp);
+    st.bag = st.bag || {}; st.bag[E0.free.gift] = has(E0.free.gift) + 1;
+    save(); renderHud(); sfx('badge'); dexNotice();
+    say(back ? back.say : E0.free.say, name, null, function () { say(['Hai ricevuto: ' + HELD[E0.free.gift].name + '.', 'Si dà a una creatura dalla sua scheda.'], null, null, function () { say(E0.free.cicero, CICERO); }); });
+  } });
+  say(E0.ask, name, opts);
+}
+/** back to a legend that has asked for something */
+export function legendPact(L: LegendDef, lv: number) {
+  var P = L.end!.pact!, name = SPECIES[L.sp].name;
+  if (has('tiella') < P.need) { say(P.wait, name); return; }
+  say(P.wait, name, [{ label: P.give, fn: function () {
+    st.bag!.tiella = has('tiella') - P.need; st.seen[endFlag(L, 'amico')] = true;
+    say(P.done, name, null, function () { joins(L, lv, 100, function () { say(P.cicero, CICERO); }); });
+  } }, { label: 'Non ora', fn: null }]);
+}
+
 /** after a battle won against someone of the plot (a trainer's id) */
 export function plotAfter(id: string) {
   if (id === 'mamurr-scavi') say(['Mamurra… Lucio Mamurra! Lo conoscevo: cavaliere di Formia, prefetto del genio di Cesare, il più ricco di tutti. La villa qui a Gianola era la sua.',
@@ -46,10 +114,10 @@ export function plotAfter(id: string) {
   else if (id === 'mamurr-peschiere') { st.seen['pietra-mare'] = true; save(); award('pietra-mare', function () {
     say(['Due pietre su tre. Per la terza, vieni a trovarmi alla mia tomba, sull\'Appia verso Gaeta.', 'Sì: la Pietra della Voce la custodisco io. Da duemila anni.'], CICERO);
   }); }
-  else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); say(['Hai battuto Mamurra! Il sigillo di Telepilo è salvo, e la magia dei Lestrigoni resta a chi la rispetta.',
-    'Formia è nata due volte: dalla Formiae dei Romani, e da Castellone e Mola che nel 1862 tornarono a chiamarsi Formia. Oggi l\'hai salvata tu.',
-    'E adesso ascolta: di notte, sotto le mura di Castellone, qualcosa si è svegliato. Lamo, il re dei Lestrigoni. Le tre pietre sanno dove tornare: portale là. Ti aspetta, ma non si fa prendere facilmente.',
-    'Poi il treno: Torino, e un giorno Chicago. Vai pure lontano, Antonio. Ma ricordati da dove vieni.'], CICERO); }
+  else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); askChoice('pietre'); }
+  /* the first two meetings with Tullio: what the player says to him stays */
+  else if (id === 'rivale-1') askChoice('tullio1');
+  else if (id === 'rivale-2') askChoice('tullio2');
 }
 
 /* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */
@@ -57,6 +125,7 @@ export function legendWay(L: LegendDef) {
   var key = 'enigma-' + L.id, t = L.trial!, R = L.riddle;
   var down = function () { travel(t.to, t.x, t.y, t.dir); };
   var offer = function (text: string[]) { say(text, null, [{ label: 'Scendi', fn: down }, { label: 'Non ora', fn: null }]); };
+  if (L.angry && stonesKept()) { offer(L.angry.way); return; }
   if (!R || flag(key)) { offer(t.again); return; }
   var ask = function (k: number) {
     if (k >= R!.steps.length) { st.seen[key] = true; save(); sfx('magic'); offer(R!.solved); return; }

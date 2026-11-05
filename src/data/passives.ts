@@ -132,12 +132,16 @@ export const ABILITIES: Record<string, Passive> = {
 };
 
 /* one thing to a creature; it comes back after the battle */
-export type HeldId = 'fetta' | 'ciambella' | 'oliva' | 'cozza' | 'corno';
+export type HeldId = 'fetta' | 'ciambella' | 'oliva' | 'cozza' | 'corno' | 'corona' | 'chiave' | 'fiammella';
 export const HELD: Record<HeldId, Passive> = {
   fetta: { id: 'fetta', name: 'Fetta di tiella', text: 'Sotto il 25% dei PS la mangia, e ne recupera il 30%. Una volta a lotta.',
     on: [{ when: 'hurt', if: { below: 0.25, once: true }, do: { heal: 0.3 } }] },
   ciambella: { id: 'ciambella', name: 'Ciambella all\'anice', text: 'Velocità +10%.', spe: 1.1 },
   oliva: { id: 'oliva', name: 'Oliva di Gaeta', text: 'Una volta a lotta, un colpo del tipo che batte il suo fa il 25% in meno.', taken: 0.75, if: { once: true, weak: true } },
   cozza: { id: 'cozza', name: 'Cozza', text: 'Ferma il primo stato alterato.', blocks: 'all', if: { once: true } },
-  corno: { id: 'corno', name: 'Corno di mare', text: 'Il primo colpo della lotta fa il 20% in più.', dealt: 1.2, if: { once: true } }
+  corno: { id: 'corno', name: 'Corno di mare', text: 'Il primo colpo della lotta fa il 20% in più.', dealt: 1.2, if: { once: true } },
+  /* what a legend leaves to who lets it go: not in any shop */
+  corona: { id: 'corona', name: 'Corona di Lamo', text: 'Subisce il 15% di danni in meno.', taken: 0.85 },
+  chiave: { id: 'chiave', name: 'Chiave di Giano', text: 'Velocità +20%.', spe: 1.2 },
+  fiammella: { id: 'fiammella', name: 'Fiammella di Sant\'Elmo', text: 'Fa il 15% di danni in più.', dealt: 1.15 }
 };

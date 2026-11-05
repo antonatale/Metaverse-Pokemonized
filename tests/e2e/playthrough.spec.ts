@@ -794,7 +794,7 @@ test('the stones of Telepilo', async ({ browser }) => {
    the net that holds only at the end */
 test('Lamo, in three parts', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 48, y: 36, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
-    seen: { intro: true, starter: true, 'cap-starter': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true },
+    seen: { intro: true, starter: true, 'cap-starter': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true, 'sc-pietre-sigillo': true },
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: { oro: 6 } };
   const r = await play(browser, 'legend', { seed: 21, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
     const p = r.page;
@@ -994,10 +994,137 @@ test('a battle of the day won, and the page closed on the result', async ({ brow
   expect(get('title')).toBe('Scegli una ricompensa');
 });
 
+/* the choices of the story, in the game: the stones after Mamurra, and what they do from there on */
+test('keeping the stones', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
+    mons: [{ uid: 'c1', sp: 'gabbiammiraglio', bond: 70 }, { uid: 'c2', sp: 'muraglione', bond: 70 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'stones-kept', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    const m = await p.evaluate(() => window.WORLD._debug.who('mamurra'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [m!.x, m!.y + 1]); await p.clock.runFor(500);
+    await talkTo(p, 'mamurra');
+    r.keep('column', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await choose(p, 'Sfida!');
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await toPrompt(p);
+    r.keep('ricchezza', await p.locator('#chips-1 .chip', { hasText: 'Ricchezza' }).innerText());
+    await fight(r, 'mamurra', 0);
+    for (let k = 0; k < 6 && !await battleOver(p); k++) await fight(r, 'mamurra', 0);
+    await p.click('#st-go'); await p.clock.runFor(500);
+    await talkThrough(p, 40);
+    await r.shot('stones');
+    r.keep('asked', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await choose(p, 'Le tengo io');
+    await talkThrough(p);
+    /* from now on they warm the bag: a point of Slancio to start with */
+    await p.evaluate(() => window.WORLD._debug.wild('cicalina', 12)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await toPrompt(p);
+    r.keep('slancio', await p.locator('#sg-0 i.on').count());
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('ricchezza')), 'Tullio, a friend, has cracked it').toContain('2/2');
+  expect(String(get('asked'))).toContain('l\'esame');
+  expect(get('slancio')).toBe(1);
+  const st = get('state') as { seen: Record<string, boolean> };
+  expect(st.seen['sc-pietre-tenute']).toBe(true);
+});
+
+/* a legend on its knees: what becomes of it is up to the player. Here the most ridiculous of the ways: three tielle */
+test('Lamo on his knees: a pact for three tielle', async ({ browser }) => {
+  const save = { v: 1, map: 'telepilo', x: 9, y: 2, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true, 'cic-legend': true, 'sc-pietre-sigillo': true, 'enigma-lamo': true },
+    mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 70, xp: 0 }, c2: { lv: 70, xp: 0 } }, money: 0, bag: { tiella: 2 } };
+  const r = await play(browser, 'pact', { seed: 13, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    await p.keyboard.press('Enter'); await p.clock.runFor(200);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    for (let t = 0; t < 80; t++) {
+      await toPrompt(p);
+      if (await battleOver(p)) break;
+      if (await p.evaluate(() => !document.getElementById('overlay')!.hidden)) { await p.locator('.bench-pick:not([disabled])').first().click({ timeout: 5000 }); continue; }
+      /* the moves only: the tielle in the bag are for him */
+      const id = await p.evaluate(() => window.UI._debug.suggest()), move = p.locator('#pad .mv[data-k][data-id="' + id + '"]:not([disabled])');
+      if (await move.count()) await move.click({ timeout: 5000 }); else await p.locator('#pad .mv.atk[data-k]:not([disabled])').first().click({ timeout: 5000 });
+    }
+    await p.click('#st-go'); await p.clock.runFor(500);
+    for (let k = 0; k < 30 && !(await p.evaluate(() => window.WORLD._debug.pos().opts)); k++) { await p.keyboard.press('Enter'); await p.clock.runFor(300); }
+    await r.shot('knees');
+    r.keep('still-there', await p.evaluate(() => window.WORLD._debug.who('selv-lamo')));
+    r.keep('no-net', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Facciamo un patto');
+    await talkThrough(p);
+    /* he stays there, hungry; two tielle are not three */
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    r.keep('hungry', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await talkThrough(p);
+    /* a third one from the oven of Castellone, and back */
+    await p.evaluate(() => { const k = 'lotte-tra-amici:storia:v1', v = JSON.parse(localStorage.getItem(k)!); v.bag.tiella = 3; localStorage.setItem(k, JSON.stringify(v)); });
+    await p.reload(); await p.clock.runFor(1500);
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await talkThrough(p);
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Dagli le tre tielle');
+    await talkThrough(p, 20);
+    await r.shot('fed');
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('no-net')).toEqual(['Facciamo un patto', 'Torna a dormire']);
+  expect(get('still-there'), 'he is there, on his knees, while the player decides').toBeTruthy();
+  expect(String(get('hungry'))).toContain('TRE TIELLE');
+  const st = get('state') as { seen: Record<string, boolean>; dex: Record<string, number>; bag: Record<string, number>; mons: { sp: string; bond: number }[] };
+  expect(st.seen['sc-lamo-amico']).toBe(true);
+  expect(st.dex.lamo).toBe(2);
+  expect(st.bag.tiella).toBe(0);
+  expect(st.mons.filter((m) => m.sp === 'lamo')[0].bond, 'he comes with all his heart').toBe(100);
+});
+
+/* a question left without an answer is not lost: Mamurra is gone, but he asks again as soon as the player is back */
+test('a question left unanswered', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'pending', { seed: 15, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p, 20);
+    r.keep('asked', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Le tengo io');
+    await talkThrough(p, 20);
+    r.keep('after', await p.evaluate(() => window.WORLD._debug.pos()));
+    /* with them in the bag, even a creature that hardly knows Antonio can do it */
+    await p.evaluate(() => window.WORLD._debug.wild('cicalina', 12)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await toPrompt(p);
+    r.keep('dots', await p.locator('#sg-0 i').count());
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('asked')).toEqual(['Le rimetto al loro posto', 'Le tengo io']);
+  expect((get('after') as { dialog: boolean }).dialog, 'asked once').toBe(false);
+  expect(get('dots'), 'the stones make up for the bond').toBe(3);
+  expect((get('state') as { seen: Record<string, boolean> }).seen['sc-pietre-tenute']).toBe(true);
+});
+
 /* the end of the story so far: at the train, the game told back */
 test('looking back, before the train', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
-    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true, 'sc-pietre-sigillo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
   const r = await play(browser, 'epilogue', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await p.click('#go-story');

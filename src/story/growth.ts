@@ -2,10 +2,11 @@ import { st } from '../save/story-progress';
 import type { FighterId } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
-import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, HELD_IDS, coins, type DexPrize, type ItemId, type SkillId, xpFor } from '../data/growth';
+import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, coins, type DexPrize, type ItemId, type SkillId, xpFor } from '../data/growth';
 import type { Bout, SideOpts } from '../battle';
 import { NET_IDS } from '../data/nets';
-import type { HeldId } from '../data/passives';
+import { HELD, type HeldId } from '../data/passives';
+import { stonesKept } from './choices';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
@@ -88,8 +89,8 @@ export function sideOf(key: string): SideOpts {
     var e = bond(sk) + hearts(key) * 0.03;
     if (e) o.endure = Math.round(e * 100) / 100;
     if (mon.item) o.item = mon.item;
-    /* three hearts: it can answer to the magic of a place */
-    if (hearts(key) >= RESONANCE_HEARTS) o.resonate = true;
+    /* three hearts, or the stones of Telepilo in Antonio's bag: it can answer to the magic of a place */
+    if (hearts(key) >= RESONANCE_HEARTS || stonesKept()) o.resonate = true;
   } else {
     o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
     if (key === 'antonio') o.perk = perksFor(sk);
@@ -208,7 +209,7 @@ export function money(): number { return st.money || 0; }
 export function earn(n: number) { st.money = money() + Math.round(n); }
 export function has(it: ItemId): number { return (st.bag || {})[it] || 0; }
 /** what Antonio has in the bag for his creatures to carry */
-export function heldInBag(): HeldId[] { return HELD_IDS.filter(function (it) { return has(it) > 0; }); }
+export function heldInBag(): HeldId[] { return (Object.keys(HELD) as HeldId[]).filter(function (it) { return has(it) > 0; }); }
 /** a creature carries this now (or nothing): what it had goes back in the bag */
 export function giveHeld(key: string, it: HeldId | null) {
   var mon = creatureOf(key);

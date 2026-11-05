@@ -7,6 +7,8 @@ import { TRAINERS } from '../../src/data/trainers';
 import { COVI } from '../../src/data/covi';
 import { STONES, flag, linesNow } from '../../src/story/plot';
 import { epilogue } from '../../src/story/epilogue';
+import { CHOICES } from '../../src/data/choices';
+import { endFlag, optionFlag } from '../../src/story/choices';
 import { st } from '../../src/save/story-progress';
 import { SPECIES } from '../../src/data/creatures';
 
@@ -20,7 +22,8 @@ function settable(): Set<string> {
   const out = new Set<string>();
   Object.keys(TRAINERS).forEach((id) => out.add('tr-' + id));
   Object.keys(COVI).forEach((id) => out.add(id));
-  Object.keys(LEGENDS).forEach((id) => out.add('enigma-' + id));
+  Object.entries(LEGENDS).forEach(([id, L]) => { out.add('enigma-' + id); if (L.end) (['preso', 'libero', 'patto', 'amico'] as const).forEach((e) => out.add(endFlag(L, e))); });
+  Object.values(CHOICES).forEach((c) => c.options.forEach((o) => out.add(optionFlag(c.id, o.id))));
   STONES.forEach((s) => out.add(s.id));
   for (const f of sources('src')) for (const m of fs.readFileSync(f, 'utf8').matchAll(/seen(?:\[['"]([a-z0-9-]+)['"]\]|\.([a-z0-9]+))\s*=[^=]/g)) out.add(m[1] || m[2]);
   return out;
@@ -64,6 +67,11 @@ describe('what people say', () => {
     expect(flag('tr-mamurra')).toBe(true);
     expect(linesNow(n)).toEqual(['Dopo.']);
   });
+  it('can come before what they always say, and not take its place', () => {
+    const k = { lines: ['Sempre.'], reacts: [{ after: 'pietra-mura', say: ['Oggi.'], keep: true }] };
+    st.seen['pietra-mura'] = true;
+    expect(linesNow(k)).toEqual(['Oggi.', 'Sempre.']);
+  });
   it('stays what it was for someone with nothing to react to', () => {
     expect(linesNow({ lines: ['Ciao.'] })).toEqual(['Ciao.']);
     expect(linesNow({})).toEqual([]);
@@ -103,7 +111,18 @@ describe('who says something new', () => {
   it('does not lose what it said about a legend it knows of', () => {
     const m = (MAPS.formia.npcs || []).find((n) => n.id === 'marinaio')!;
     expect(m.lines!.join(' ')).toContain('molo del faro');
-    expect(m.reacts!.map((r) => r.say.join(' ')).join(' '), 'it opens the very moment the legend comes out').toContain('molo del faro');
+    st.seen = {}; st.beaten = {};
+    st.beaten['tr-mamurr-peschiere'] = true;
+    expect(linesNow(m).join(' '), 'it opens the very moment the legend comes out').toContain('molo del faro');
+    expect(linesNow(m).join(' ')).toContain('peschiere');
+  });
+  it('the guardaparco keeps his word about who walks among the ruins at sunset', () => {
+    const g = (MAPS.formia.npcs || []).find((n) => n.id === 'guardaparco')!;
+    st.seen = {}; st.beaten = {};
+    expect(linesNow(g).join(' ')).toContain('due facce');
+    st.seen['sc-tullio1-amico'] = true;
+    expect(linesNow(g).join(' ')).toContain('Tullio');
+    expect(linesNow(g).join(' ')).toContain('due facce');
   });
 });
 

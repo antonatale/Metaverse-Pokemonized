@@ -28,6 +28,7 @@ export function intro(s: BattleState): BattleEvent[] {
   ev.push(anim(0, 'enter'));
   ev.push(line(0, pair && A.id !== B.id ? pair[A.id] : ca.lines.entry));
   if (s.field) ev.push(say('La magia ' + s.field.name + ': qui le mosse di tipo ' + s.field.type + ' fanno il ' + Math.round((FIELD_TUNE.boost - 1) * 100) + '% in più.'));
+  if (s.surge && s.surge[0]) ev.push(say('Le Pietre di Telepilo scaldano la borsa: si parte con un punto di Slancio.'));
   if (s.shield) ev.push(say(s.shield.name + ' protegge ' + (s.trainer || ch(B).name) + ': ogni colpo superefficace la incrina.'));
   fire(s, 1, 'enter', ev); fire(s, 0, 'enter', ev);
   s.phase = 'begin';
