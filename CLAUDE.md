@@ -2,7 +2,7 @@
 
 Gioco di lotte a turni in stile Pokémon ambientato a Formia. Il gioco è la modalità storia, su una mappa di Formia vista dall'alto, dove Antonio cresce di livello, guadagna e spende soldi e ha una squadra di creature di Formia (originali, non i Pokémon veri). Dalla prima versione restano le lotte libere tra i sei amici, con l'Esame di Controlli: era la prova della beta, e oggi è solo un avversario facoltativo nella scelta della sfida (non è nella storia e non ha più una sezione sua nella home). Vite + TypeScript strict, niente framework: DOM e SVG per home e lotta, canvas 2D per la mappa. La build è un unico file HTML autonomo.
 
-**Lavori in corso:** le richieste ancora da fare e le idee per le prossime sessioni sono in `PROSSIMI-PASSI.md`.
+**Lavori in corso:** le task di Antonio divise per modello sono in `TASK-MODELLI.md`: se ti ha detto di cercare le tue, parti da lì. Le altre idee sono in `PROSSIMI-PASSI.md`.
 
 Il gioco nasce come pagina singola (un Artifact di claude.ai) ed è stato migrato a moduli **senza cambiare nulla**: stesse meccaniche, numeri, testi, animazioni e salvataggi. Il prossimo passo previsto è spostare gradualmente il rendering su Phaser (vedi in fondo).
 

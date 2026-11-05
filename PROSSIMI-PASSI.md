@@ -10,6 +10,8 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 ## Da fare
 
+**Le task di Antonio dopo la prima prova a mano** (5 novembre 2026): sono in `TASK-MODELLI.md`, divise per modello. Vengono prima di tutto il resto.
+
 **Il briefing delle idee** (4 novembre 2026): `BRIEFING-IDEE.md` ha lo studio su cosa rende divertenti questi giochi, due misure sul motore (il tipo decide già i duelli; le scelte nel turno sono poche), le idee per lotte, mappa, progressione, avvenimenti, amici, luoghi misteriosi, animazioni, versi, musica, scelte, leggendari e palestre-labirinto, le priorità di tutto (§7) e chi fa cosa tra Opus, Sonnet e Haiku (§9). Delle cose da **Opus max** è fatto tutto (vedi le sezioni in `CLAUDE.md`), tranne le lotte in due: Antonio ha detto di lasciarle perdere per adesso. Il briefing le vuole per il secondo atto, che non c'è ancora, e sono il cambio di motore più rischioso. Il nome del gioco è da cambiare (§6; non le chiavi `lotte-tra-amici:*`). Il metro delle lotte è `npm run sim:fun`.
 
 **Il trailer è fermo** (4 novembre 2026): Antonio ha chiesto di non aggiornarlo più dopo ogni miglioramento del gioco, finché non lo chiede lui. Quando lo chiede, prima di registrare: la tappa `trama-dentro` è nuova e va aggiunta ai capitoli zittiti in `tools/promo/capture.ts`. Poi: `npm run promo` rifà da solo la versione nuova del video dal gioco com'è adesso (circa 40 minuti); se una novità merita una scena tutta sua, si aggiunge una clip in `tools/promo/capture.ts` e uno shot in `tools/promo/trailer.ts` (vedi «Il trailer» in `CLAUDE.md`).
