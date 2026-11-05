@@ -18,7 +18,8 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 | # | Cosa | Modello | Effort | Stato |
 |---|---|---|---|---|
 | O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | da fare |
-| O2 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | da fare |
+| O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | da fare |
+| O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | da fare |
 | S1 | Togliere «Un giorno a Formia» | Sonnet 5.5 | high | da fare |
 | S2 | Mosse in quadrato, con un design più bello | Sonnet 5.5 | high | da fare |
 | S3 | Schermata per imparare una mossa | Sonnet 5.5 | high | da fare |
@@ -26,20 +27,24 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 | S5 | La musica tra un quartiere e l'altro | Sonnet 5.5 | xhigh | da fare |
 | S6 | Negozi veri, ognuno diverso | Sonnet 5.5 | xhigh | da fare |
 | S7 | Il Lido Oriente | Sonnet 5.5 | high | da fare |
-| S8 | Animazioni: tutte le altre mosse | Sonnet 5.5 | xhigh | dopo O2 |
+| S8 | Animazioni: tutte le altre mosse | Sonnet 5.5 | xhigh | dopo O3 |
 | H1 | Il nome nuovo del gioco | Haiku 5.5 | high | da fare |
 
 **Perché così.** Opus dove un errore è silenzioso o tocca il motore, i salvataggi e il bilanciamento. Sonnet dove il compito è definito e il giudizio finale è di Antonio, a vista o a orecchio. Haiku solo per lavoro meccanico verificato dai test.
 
 ## Opus 5.5, max
 
-Non toccare queste due finché la tabella non dice «fatto»: ci sta lavorando Opus.
+Non toccare queste tre finché la tabella non dice «fatto»: ci sta lavorando Opus.
 
 ### O1. Le persone crescono
 
 Antonio: «è noioso che i personaggi umani partano nella fase finale e non aggiungono mosse, non cambiano aspetto e non si evolvono».
 
-### O2. Animazioni davvero diverse
+### O2. Tutti protagonisti
+
+Antonio: «antonio e gli amici devono essere tutti protagonisti della storia, ognuno con il proprio team di creature, alcune missioni le posso fare solo con un personaggio in particolare».
+
+### O3. Animazioni davvero diverse
 
 Antonio: «le animazioni di ogni mossa sono comunque ognuna molto simile all'altra, penso a idropompa, surf e cascata in pokemon che avevano ognuno un'animazione molto diversa nonostante fossero mosse dello stesso tipo».
 
@@ -59,7 +64,7 @@ Antonio: «togli 'un giorno a formia'».
 
 Antonio: «in battaglia le mosse le voglio a quadrato, cioè 2 file da 2, invece che 1 fila da 4 e anche con un design più figo, come quello di pokemon».
 
-- **Dove:** `.pad` e `.mv` in `src/styles/battle.css`, `moveButton` e `renderPad` in `ui/battle-screen.ts`. Su PC, che è dove gioca Antonio, le quattro mosse stanno in fila: trova la regola che lo fa e toglila.
+- **Dove:** `.pad` e `.mv` in `src/styles/battle.css`, `moveButton` e `renderPad` in `ui/battle-screen.ts`. La fila da quattro viene da `#battle.has-scene .pad` in `src/styles/team.css`, riga 177: sulle lotte con la scena, che sono quasi tutte. Togli quella regola.
 - **Come:** quattro bottoni grandi 2×2 su ogni larghezza, con il colore del tipo pieno, nome grande, tipo, potenza e usi rimasti: si deve leggere a colpo d'occhio cosa fa. La riga sotto (Borsa, Cambia, Risonanza) deve restare chiara. Niente disegni copiati dai Pokémon: stessa idea, stile del gioco.
 - **Fatto quando:** le partite passano, e hai guardato le schermate con `SHOTS=1` a 1280×800 e a 1920×1080. Le lotte libere tra amici devono funzionare anche loro: hanno le stesse quattro mosse.
 
@@ -107,9 +112,9 @@ Antonio: «il lido oriente è fatto male, se ci vai vicino dice città di Ferrar
 - **Come:** vai a guardarlo nel gioco, verifica l'indirizzo e cosa c'è davvero al lido (fonti), e rendilo un posto: come l'Eclipse, con il suo disegno, una persona, qualcosa da fare. Il testo deve dire che è un lungomare di Formia. Se cambi la mappa, si rigenera con `tools/formia/build.ts`.
 - **Fatto quando:** arrivandoci si capisce dove si è, e c'è un motivo per andarci.
 
-### S8. Animazioni: tutte le altre mosse (xhigh, dopo O2)
+### S8. Animazioni: tutte le altre mosse (xhigh, dopo O3)
 
-Le istruzioni arrivano quando O2 è finita: qui ci sarà il modello da seguire.
+Le istruzioni arrivano quando O3 è finita: qui ci sarà il modello da seguire.
 
 ## Haiku 5.5
 
