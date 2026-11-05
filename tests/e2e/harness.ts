@@ -125,7 +125,7 @@ export async function until(page: Page, cond: () => boolean, maxMs = 120_000, st
 export async function toPrompt(page: Page) {
   const ready = () => {
     const ov = document.getElementById('overlay')!;
-    if (!ov.hidden && (ov.classList.contains('result') || ov.classList.contains('pass'))) return true;
+    if (!ov.hidden && (ov.classList.contains('result') || ov.classList.contains('pass') || ov.classList.contains('bench'))) return true;
     const pad = document.getElementById('pad');
     return !!pad && !pad.classList.contains('off');
   };

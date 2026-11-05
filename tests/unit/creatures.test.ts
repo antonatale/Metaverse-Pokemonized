@@ -126,12 +126,12 @@ describe('the trainers of Formia', () => {
   it('have a rival who picks the creature that beats Antonio\'s, and comes back with its next forms', async () => {
     const { rivalFor, formAt, teamOf } = await import('../../src/story/rival');
     const { st } = await import('../../src/save/story-progress');
-    const { TYPES } = await import('../../src/data/types');
+    const { magicBeats } = await import('../../src/data/types');
     expect(rivalFor('polpino')).toBe('gabbi');
     expect(rivalFor('gabbi')).toBe('ramarrino');
     /* none beats Ramarrino's Calma: then not the one it beats */
     expect(rivalFor('ramarrino')).toBe('polpino');
-    for (const sp of ['polpino', 'gabbi'] as const) expect(TYPES[SPECIES[rivalFor(sp)].type].beats).toBe(SPECIES[sp].type);
+    for (const sp of ['polpino', 'gabbi'] as const) expect(magicBeats(SPECIES[rivalFor(sp)].type, SPECIES[sp].type)).toBe(true);
     expect(formAt('gabbi', 2)).toBe('gabbianotto');
     expect(formAt('gabbiammiraglio', 1)).toBe('gabbi');
     expect(formAt('ramarrino', 3)).toBe('muraglione');

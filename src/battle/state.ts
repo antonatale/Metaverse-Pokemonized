@@ -1,6 +1,8 @@
 import type { Character, FighterId, Move, Stats } from '../data/characters';
 import { NETS, NET_IDS } from '../data/nets';
 import { fighter } from '../data/fighters';
+import { SPECIES, isSpecies } from '../data/creatures';
+import { STATUS } from '../data/passives';
 import { TYPES, isPersonType, type PersonType, type TypeName } from '../data/types';
 import { TUNE } from '../data/tuning';
 import type { BattleState, NewBattle, Side, SideOpts } from './types';
@@ -52,6 +54,11 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.perk) side.perk = { lose: o.perk.lose, idea: o.perk.idea };
   if (o && o.endure) side.endure = o.endure;
   if (o && o.net) side.net = o.net;
+  if (o && o.key) side.key = o.key;
+  if (o && o.last) side.last = true;
+  if (o && o.item) side.item = o.item;
+  /* a creature's ability comes with its kind */
+  if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();
   return side;
 }
 export function newBattle(o: NewBattle): BattleState {
@@ -71,7 +78,49 @@ export function newBattle(o: NewBattle): BattleState {
   if (o.trainer) s.trainer = o.trainer;
   if (o.bag) s.bag = Object.assign({}, o.bag);
   if (o.night) s.night = true;
+  if (o.smart) s.smart = [o.smart[0], o.smart[1]];
+  if (o.benchA || o.benchB) {
+    const ba = o.benchA || [], bb = o.benchB || [];
+    s.bench = [ba.map(function (m) { return newSide(m.id, true, m); }), bb.map(function (m) { return newSide(m.id, mode === 'pvp', m); })];
+    s.sides[0].key = s.sides[0].key || 'antonio';
+    [s.sides[1]].concat(s.bench[1]).forEach(function (x, n) { x.key = 'f' + n; });
+    s.maxTurns = 30 * (1 + Math.max(ba.length, bb.length));
+    s.nextIn = [null, null];
+    s.swaps = o.smart ? [o.smart[0], o.smart[1]] : [0, 0];
+    s.bouts = [];
+    tally(s);
+  }
   return s;
+}
+
+/* ---------- team battles ---------- */
+/** the two on the field have met: the story pays by who fought whom */
+export function tally(s: BattleState) {
+  if (!s.bouts) return;
+  const me = s.sides[0], foe = s.sides[1];
+  if (me.hp <= 0 || foe.hp <= 0) return;
+  let b = s.bouts.filter(function (x) { return x.key === foe.key; })[0];
+  if (!b) { b = { key: foe.key!, foe: foe.id, lv: foe.lvl || 0, who: [], ko: false, by: null }; s.bouts.push(b); }
+  if (me.key && b.who.indexOf(me.key) < 0) b.who.push(me.key);
+}
+const SWITCH = 'switch:';
+/** a choice that is not a move: that place on the bench comes in, and it costs the turn */
+export function isSwitch(id: string | null | undefined): boolean { return !!id && id.indexOf(SWITCH) === 0; }
+export function switchSlot(id: string): number { return +id.slice(SWITCH.length); }
+/** the changes a side may make this turn, as choices (none if it is forced to do something else) */
+export function switches(s: BattleState, i: number): string[] {
+  if (!s.bench || s.forced[i]) return [];
+  const st = s.sides[i].status;
+  if (st && STATUS[st.id].trap) return [];
+  const out: string[] = [];
+  s.bench[i].forEach(function (x, k) { if (x.hp > 0 && !x.last) out.push(SWITCH + k); });
+  return out;
+}
+/** the places on the bench that can come in for one who is down: the last resort only when nobody else is left */
+export function senders(s: BattleState, i: number): number[] {
+  const out: number[] = [], rest: number[] = [];
+  if (s.bench) s.bench[i].forEach(function (x, k) { if (x.hp > 0) (x.last ? rest : out).push(k); });
+  return out.length ? out : rest;
 }
 
 /* ---------- modifiers ---------- */

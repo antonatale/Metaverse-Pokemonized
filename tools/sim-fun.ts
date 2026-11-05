@@ -3,8 +3,9 @@
      npx tsx tools/sim-fun.ts              both reports
      npx tsx tools/sim-fun.ts types        how much the type edge decides a duel (MAGIC_TUNE swept, then put back)
      npx tsx tools/sim-fun.ts depth        how deep the choices inside a turn are
-     npx tsx tools/sim-fun.ts all 500      both, with 500 duels per cell (300 by default; the noise is about ±3 points) */
-import { ENGINE as E, type BattleState } from '../src/battle';
+     npx tsx tools/sim-fun.ts team         teams of three: what playing the bench is worth
+     npx tsx tools/sim-fun.ts all 500      all of them, with 500 duels per cell (300 by default; the noise is about ±3 points) */
+import { ENGINE as E, type BattleState, type Member } from '../src/battle';
 import { SPECIES, knownAt, type SpeciesId } from '../src/data/creatures';
 import { atLevel } from '../src/data/growth';
 import { MAGIC_TUNE } from '../src/data/tuning';
@@ -34,7 +35,7 @@ interface Duel { win: number; turns: number; same: number }
 function duel(a: SpeciesId, la: number, b: SpeciesId, lb: number, pa: Policy, pb: Policy, n: number): Duel {
   let won = 0, turns = 0, same = 0, picks = 0;
   for (let seed = 1; seed <= n; seed++) {
-    const s: BattleState = E.newBattle({ a, b, seed: seed * 7919, sideA: side(a, la), sideB: side(b, lb) });
+    const s: BattleState = E.newBattle({ a, b, seed: seed * 7919, sideA: side(a, la), sideB: side(b, lb), smart: [2, 2] });
     E.intro(s);
     for (let k = 0; k < 120 && s.phase !== 'over'; k++) {
       E.beginTurn(s);
@@ -58,9 +59,9 @@ function duel(a: SpeciesId, la: number, b: SpeciesId, lb: number, pa: Policy, pb
 /* ---------- 1. the type edge ---------- */
 /** [A, B, level]: A has the type edge, except the neutral pairs at the end */
 const EDGES: [SpeciesId, SpeciesId, number][] = [
-  ['gabbi', 'polpino', 10], ['ramarrino', 'gabbi', 10], ['gabbianotto', 'polpetto', 20], ['ramarrone', 'gabbianotto', 20]
+  ['gabbi', 'polpino', 10], ['olivella', 'ramarrino', 10], ['gabbianotto', 'polpetto', 20], ['ramarrone', 'gabbianotto', 20]
 ];
-const NEUTRAL: [SpeciesId, SpeciesId, number][] = [['polpino', 'ramarrino', 10], ['polpetto', 'ramarrone', 20]];
+const NEUTRAL: [SpeciesId, SpeciesId, number][] = [['polpino', 'ramarrino', 10], ['olivella', 'civettina', 10]];
 const TUNES: [number, number][] = [[1, 1], [MAGIC_TUNE.se, MAGIC_TUNE.nve], [1.3, 0.77], [1.5, 0.67], [2, 0.5]];
 
 export function typeReport(n = 300): number {
@@ -101,8 +102,64 @@ export function depthReport(n = 300): { greedy: number; turns: number; same: num
   return { greedy: Math.round(sg / k), turns: +(st / k).toFixed(1), same: Math.round(ss / k) };
 }
 
+/* ---------- 3. what a bench is worth ---------- */
+const POOLS: [number, SpeciesId[]][] = [
+  [10, ['polpino', 'ramarrino', 'gabbi', 'cicalina', 'olivella', 'riccetto', 'granchietto', 'civettina']],
+  [20, ['polpetto', 'ramarrone', 'gabbianotto', 'cicalona', 'olivastro', 'riccione', 'granchione', 'civettona']],
+  [30, ['polpastro', 'muraglione', 'gabbiammiraglio', 'cicalona', 'olivastro', 'riccione', 'granchione', 'civettona']]
+];
+/** three different creatures, from a little seeded dice of its own */
+function threeOf(pool: SpeciesId[], lv: number, n: number): Member[] {
+  const left = pool.slice(), out: Member[] = [];
+  let x = (n * 2654435761) >>> 0;
+  for (let k = 0; k < 3; k++) {
+    x = (x * 1664525 + 1013904223) >>> 0;
+    const id = left.splice((x >>> 8) % left.length, 1)[0];
+    out.push({ id, key: 'k' + k, ...side(id, lv) });
+  }
+  return out;
+}
+/** a whole team battle, computer against computer, each playing as well as `smart` says */
+function teamBattle(a: Member[], b: Member[], smart: [number, number], budget: number, seed: number): { won: boolean; turns: number; changes: number } {
+  const s: BattleState = E.newBattle({ a: a[0].id, b: b[0].id, seed, sideA: a[0], sideB: b[0], benchA: a.slice(1), benchB: b.slice(1), smart });
+  s.sides[0].human = false; s.bench![0].forEach((x) => { x.human = false; });
+  s.swaps = [budget, smart[1]];
+  E.intro(s);
+  for (let k = 0; k < 800 && s.phase !== 'over'; k++) {
+    if (s.phase === 'begin') E.beginTurn(s);
+    else if (s.phase === 'send') E.sendIn(s);
+    else E.playTurn(s, {});
+  }
+  return { won: s.result === 'win' && s.winner === 0, turns: s.turn, changes: budget - s.swaps[0] };
+}
+/** how often a side that plays its bench (`good`, with `budget` changes) beats one that sends its team in order and never
+    changes: each pair of teams both ways round */
+function worth(good: number, budget: number, n: number) {
+  let won = 0, played = 0, turns = 0, changes = 0;
+  for (const [lv, pool] of POOLS) for (let k = 1; k <= n; k++) {
+    const t1 = threeOf(pool, lv, k * 2 + lv), t2 = threeOf(pool, lv, k * 2 + 1 + lv);
+    for (const [x, y] of [[t1, t2], [t2, t1]]) {
+      const r = teamBattle(x, y, [good, 0], budget, (k * 7919 + lv) >>> 0);
+      played++; if (r.won) won++;
+      turns += r.turns; changes += r.changes;
+    }
+  }
+  return { win: Math.round(100 * won / played), turns: +(turns / played).toFixed(1), changes: +(changes / played).toFixed(1) };
+}
+export function teamReport(n = 300): number {
+  const m = Math.ceil(n / 3);
+  console.log('Squadre di tre a caso, livelli 10, 20 e 30, ogni coppia giocata nei due sensi. A gioca come dice la riga, B segue l\'ordine della squadra e non cambia mai.');
+  console.log('A'.padEnd(46) + 'vince'.padStart(8) + 'turni'.padStart(8) + 'cambi'.padStart(8));
+  const row = (name: string, r: { win: number; turns: number; changes: number }) => { console.log(name.padEnd(46) + (r.win + '%').padStart(8) + String(r.turns).padStart(8) + String(r.changes).padStart(8)); return r.win; };
+  row('come B', worth(0, 0, m));
+  row('sceglie chi mandare dopo un KO', worth(1, 0, m));
+  row('e cambia una volta (smart 1)', worth(1, 1, m));
+  row('e cambia due volte (smart 2)', worth(2, 2, m));
+  return row('e cambia quando conviene', worth(2, 9, m));
+}
+
 /* ---------- the targets of BRIEFING-IDEE.md §4 ---------- */
-function targets(edge: number | null, d: { greedy: number; turns: number } | null) {
+function targets(edge: number | null, d: { greedy: number; turns: number } | null, bench: number | null) {
   const mark = (ok: boolean) => (ok ? '  ok ' : '  da fare ');
   console.log('\nObiettivi del briefing (§4):');
   if (d) {
@@ -110,14 +167,17 @@ function targets(edge: number | null, d: { greedy: number; turns: number } | nul
     console.log(mark(d.greedy <= 35) + '«greedy» contro IA al massimo 35%: oggi ' + d.greedy + '%');
   }
   if (edge != null) console.log(mark(edge >= 70 && edge <= 85) + 'vantaggio di tipo a pari livello 70–85%: oggi ' + edge + '%');
+  if (bench != null) console.log(mark(bench >= 55) + 'giocare la panchina deve pagare, almeno 55% contro chi non la gioca: oggi ' + bench + '%');
 }
 
 if (process.argv[1] && process.argv[1].indexOf('sim-fun') >= 0) {
   const args = process.argv.slice(2), which = /^\d+$/.test(args[0] || '') ? 'all' : args[0] || 'all';
   const n = +(args.find((x) => /^\d+$/.test(x)) || 300);
-  if (which !== 'all' && which !== 'types' && which !== 'depth') { console.log('uso: tools/sim-fun.ts [types|depth|all] [duelli per cella]'); process.exit(1); }
-  const edge = which !== 'depth' ? typeReport(n) : null;
+  if (which !== 'all' && which !== 'types' && which !== 'depth' && which !== 'team') { console.log('uso: tools/sim-fun.ts [types|depth|team|all] [duelli per cella]'); process.exit(1); }
+  const edge = which === 'all' || which === 'types' ? typeReport(n) : null;
   if (which === 'all') console.log('');
-  const d = which !== 'types' ? depthReport(n) : null;
-  targets(edge, d);
+  const d = which === 'all' || which === 'depth' ? depthReport(n) : null;
+  if (which === 'all') console.log('');
+  const bench = which === 'all' || which === 'team' ? teamReport(n) : null;
+  targets(edge, d, bench);
 }

@@ -2,6 +2,7 @@ import { CHARS as C } from '../data/characters';
 import { COVI } from '../data/covi';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
+import type { PlaceDef } from '../data/maps/types';
 import { st } from '../save/story-progress';
 import { activity, timesDone } from './activities';
 import { flag } from './plot';
@@ -69,7 +70,10 @@ export const STOPS: Stop[] = [
   doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   plot('trama-cisterna', 'L\'uomo del Cisternone', 'Castellone', 'A Castellone, davanti al Cisternone, c\'è uno con la torcia che cerca di forzare la porta.', 'mamurr-cisterna', 'tr-mamurr-cisterna'),
-  plot('trama-mura', 'La Pietra delle Mura', 'Castellone, dalla signora del teatro', 'La signora che abita dentro il teatro romano sa la parola che apre il Cisternone.', 'teatro', 'pietra-mura'),
+  { ...plot('trama-mura', 'La parola del Cisternone', 'Castellone, dalla signora del teatro', 'La signora che abita dentro il teatro romano sa la parola che apre il Cisternone.', 'teatro', 'porta-cisterna'),
+    done: () => flag('porta-cisterna') || flag('pietra-mura') },
+  { id: 'trama-dentro', text: 'La Pietra delle Mura', where: 'Il Cisternone', tip: 'La porta del Cisternone è aperta: la Pietra delle Mura sta in fondo, sull\'acqua ferma.',
+    map: 'cisterna', x: (MAPS.cisterna.place as PlaceDef).goal[0], y: (MAPS.cisterna.place as PlaceDef).goal[1], done: () => flag('pietra-mura') },
   lost('caricabatterie'),
   lost('appunti'),
   plot('trama-mare', 'La Pietra del Mare', 'Le peschiere di Caposele', 'Un sub si immerge tra le peschiere romane di Caposele: dicono che abbia tirato su una pietra che brilla.', 'mamurr-peschiere', 'pietra-mare'),
@@ -96,5 +100,7 @@ export function heading(map: string): Heading | null {
   const m = MAPS[map];
   if (m.inside) { const w = (m.warps || [])[0]; return w ? { stop: s, x: w.x, y: w.y, exact: false } : null; }
   const b = (m.buildings || []).find((q) => q.to === s.map);
-  return b ? { stop: s, x: b.door[0], y: b.door[1], exact: false } : null;
+  if (b) return { stop: s, x: b.door[0], y: b.door[1], exact: false };
+  const g = (m.signs || []).find((q) => q.enter && q.enter.to === s.map);
+  return g ? { stop: s, x: g.x, y: g.y, exact: false } : null;
 }

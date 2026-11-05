@@ -18,9 +18,10 @@ const DV: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1
 const DIRS = Object.keys(DV) as Dir[];
 const W = (m: MapDef) => m.rows[0].length, H = (m: MapDef) => m.rows.length;
 
-/** which tiles block: the story mode's own rules (walls, buildings, objects, signs, people, lost things) */
+/** which tiles block: the story mode's own rules (walls, buildings, objects, signs, people, lost things). The gates of a
+    place are not walls: what they let through, and when, is what tests/unit/place.test.ts proves */
 function solidity(m: MapDef) {
-  const id = Object.keys(MAPS).find((k) => MAPS[k] === m)!, pm = prepare(id);
+  const id = Object.keys(MAPS).find((k) => MAPS[k] === m)!, pm = { ...prepare(id), place: undefined };
   return (x: number, y: number) => blocked(pm, x, y);
 }
 
@@ -38,7 +39,11 @@ function reachable() {
     const warp = (m.warps || []).find((w) => w.x === x && w.y === y);
     const jump = door ? [door.to!, door.tx!, door.ty!] as const : warp ? [warp.to, warp.tx, warp.ty] as const : null;
     if (jump) { visit(jump[0], jump[1], jump[2]); continue; }   /* stepping on a door or warp takes you through */
-    for (const d of DIRS) { const nx = x + DV[d][0], ny = y + DV[d][1]; if (!blocked[map](nx, ny)) visit(map, nx, ny); }
+    for (const d of DIRS) {
+      const nx = x + DV[d][0], ny = y + DV[d][1], way = (m.signs || []).find((g) => g.enter && g.x === nx && g.y === ny);
+      if (way) visit(way.enter!.to, way.enter!.tx, way.enter!.ty);              /* a sign that opens with the story */
+      if (!blocked[map](nx, ny)) visit(map, nx, ny);
+    }
   }
   return (map: string, x: number, y: number) => seen.has(map + ':' + x + ',' + y);
 }

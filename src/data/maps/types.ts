@@ -58,7 +58,11 @@ export interface GroundObject {
 }
 /** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter),
     plates are the street-name plates at the corners */
-export interface Sign { x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean; sleep?: boolean }
+export interface Sign {
+  x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean; sleep?: boolean;
+  /** a way in that opens with the story: once one of these flags is there the sign offers to go in (a place under the town) */
+  enter?: { to: string; tx: number; ty: number; tdir: Dir; after: string[]; label: string };
+}
 export interface Npc {
   id: string;
   x: number; y: number;
@@ -101,6 +105,8 @@ export interface Npc {
   ghost?: 'mamurra';
   /** one of Antonio's creatures waiting at home (its place among them, story/growth.ts homeMons): drawn as that creature */
   pet?: number;
+  /** a guard of a place: at every step of Antonio's it looks the next way of this list */
+  patrol?: Dir[];
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {
@@ -115,6 +121,32 @@ export interface LostItem {
 /** a neighbourhood, for the place name in the corner; its note says what it is, the first time Antonio walks in */
 export interface Area { name: string; x: number; y: number; w: number; h: number; note?: string }
 export interface Warp { x: number; y: number; to: string; tx: number; ty: number; tdir: Dir }
+
+/* ---------- places with a puzzle: gyms, dungeons (story/place.ts does what these say, and proves it can be done) ---------- */
+/** something on the floor of a place. Everything that moves with time moves with Antonio's steps, not with the clock:
+    a player who stops to think loses nothing, and the validator can prove the place can be finished */
+export type Thing =
+  /** stepping on it turns a flag on, and off again (`once`: on for good) */
+  | { k: 'plate'; x: number; y: number; flag: string; once?: boolean }
+  /** solid until the flag is on; with `open`, the other way round */
+  | { k: 'gate'; x: number; y: number; flag: string; open?: boolean }
+  /** a floor that carries whoever steps on it, one tile after the other */
+  | { k: 'slide'; x: number; y: number; dir: Dir }
+  /** takes you to another tile of the same map */
+  | { k: 'pad'; x: number; y: number; tx: number; ty: number; tdir?: Dir }
+  /** dangerous on some steps out of every so many: stepping on it then sends you back to the last rest */
+  | { k: 'beat'; x: number; y: number; every: number; on: number[] }
+  /** where a fall brings you back to, once you have been there */
+  | { k: 'rest'; x: number; y: number }
+  /** clears every flag: the way out of anything */
+  | { k: 'reset'; x: number; y: number };
+export interface PlaceDef {
+  /** where Antonio comes in, and where he goes back to with no rest yet */
+  entry: [number, number, Dir];
+  /** what the place is about: the validator proves that from anywhere you can get next to it (or on it) */
+  goal: [number, number];
+  things: Thing[];
+}
 
 export interface MapDef {
   name: string;
@@ -131,4 +163,10 @@ export interface MapDef {
   areas?: Area[];
   warps?: Warp[];
   start: [number, number, Dir];
+  /** a place with a puzzle */
+  place?: PlaceDef;
+  /** no light of its own: dark by day and by night, only the lamps and Antonio's own light */
+  dark?: boolean;
+  /** the wild creatures of a place (data/encounters.ts): every step inside may meet one */
+  meet?: string;
 }

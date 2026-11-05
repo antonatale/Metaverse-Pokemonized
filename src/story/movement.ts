@@ -2,6 +2,8 @@ import type { Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
 import { stepTime } from '../data/growth';
 import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall } from './maps';
+import { placeArrived } from './place-run';
+import type { Arrival } from './place';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
 import { root, dialog, running, useDoor, renderPlace, renderHud, stepped, skyFrom } from '../ui/story-screen';
@@ -28,6 +30,9 @@ export function press(d: Dir) {
   if (st.dir !== d) st.dir = d; else tryStep(d, pressedAt);
 }
 export function release(d: Dir) { if (held === d) held = null; walking = false; lastBump = ''; }
+/** the story screen hears what the tiles of a place do, to say so */
+let placeHook: ((a: Arrival) => void) | null = null;
+export function onPlace(f: (a: Arrival) => void) { placeHook = f; }
 /** the story screen asks, when Antonio walks into the water or against the walls with a creature that can help */
 let edgeHook: ((kind: 'swim' | 'climb', d: Dir) => boolean) | null = null;
 export function onEdge(f: (kind: 'swim' | 'climb', d: Dir) => boolean) { edgeHook = f; }
@@ -68,6 +73,17 @@ function arrived(): boolean {
   var a = M.at[key(st.x, st.y)];
   if (a && a.kind === 'door' && a.b.to) { warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
   if (a && a.kind === 'warp') { warp(a.w.to, a.w.tx, a.w.ty, a.w.tdir); return true; }
+  /* a place with a puzzle: the tile does what it does; a floor that carries is one more step, with nobody asking */
+  if (M.place) {
+    var r = placeArrived(M.place);
+    if (placeHook) placeHook(r);
+    if (r.hit || r.pad) { warp(M.id, r.w.x, r.w.y, r.pad && r.pad.dir); return true; }
+    if (r.slide && !blocked(M, st.x + DV[r.slide][0], st.y + DV[r.slide][1])) {
+      st.dir = r.slide;
+      mover = { fx: st.x, fy: st.y, tx: st.x + DV[r.slide][0], ty: st.y + DV[r.slide][1], t0: performance.now() };
+      return true;
+    }
+  }
   save(); renderPlace();
   return stepped();
 }

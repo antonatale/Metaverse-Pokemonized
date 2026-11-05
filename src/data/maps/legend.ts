@@ -31,6 +31,8 @@ export const LEGEND: Record<string, Ground> = {
   'd': { g: 'stone', deco: 'cafe', solid: true },
   /* the quay of Mola: nets spread out to dry (you can walk over them) */
   'e': { g: 'stone', deco: 'nets' },
+  /* the Cisternone: water you can wade through, where a current may carry you (see `slide` in data/maps/types.ts) */
+  '%': { g: 'sea', deco: 'ford' },
   /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
   'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' }
 };

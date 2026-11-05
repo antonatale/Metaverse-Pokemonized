@@ -2,9 +2,10 @@ import { st } from '../save/story-progress';
 import type { FighterId } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
-import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, coins, type DexPrize, type ItemId, type SkillId } from '../data/growth';
-import type { SideOpts } from '../battle';
+import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, HELD_IDS, coins, type DexPrize, type ItemId, type SkillId, xpFor } from '../data/growth';
+import type { Bout, SideOpts } from '../battle';
 import { NET_IDS } from '../data/nets';
+import type { HeldId } from '../data/passives';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
@@ -86,6 +87,7 @@ export function sideOf(key: string): SideOpts {
     /* it holds on for Antonio: his ability, and the bond between them */
     var e = bond(sk) + hearts(key) * 0.03;
     if (e) o.endure = Math.round(e * 100) / 100;
+    if (mon.item) o.item = mon.item;
   } else {
     o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
     if (key === 'antonio') o.perk = perksFor(sk);
@@ -98,6 +100,21 @@ export function sideOf(key: string): SideOpts {
 export function foeSide(id: FighterId, lv: number): SideOpts {
   if (isSpecies(id)) return { stats: atLevel(SPECIES[id].stats, lv), lvl: lv, known: knownAt(id, lv) };
   return { stats: atLevel(fighter(id).stats, lv), lvl: lv };
+}
+
+/** what each fighter earned in a team battle: all the experience of a foe to who brought it down, a third to whoever
+    else fought it, or to everyone who fought it if it was left standing. In the order they took the field */
+export function fightPay(bouts: Bout[], covo: boolean): { key: string; xp: number; won: boolean }[] {
+  var out: { key: string; xp: number; won: boolean }[] = [];
+  bouts.forEach(function (b) {
+    b.who.forEach(function (k) {
+      var won = b.ko && b.by === k, x = out.filter(function (o) { return o.key === k; })[0];
+      if (!x) { x = { key: k, xp: 0, won: false }; out.push(x); }
+      x.xp += xpFor(b.lv, won, covo);
+      x.won = x.won || won;
+    });
+  });
+  return out;
 }
 
 export interface Growth {
@@ -187,6 +204,16 @@ export function takeSkill(id: SkillId): boolean {
 export function money(): number { return st.money || 0; }
 export function earn(n: number) { st.money = money() + Math.round(n); }
 export function has(it: ItemId): number { return (st.bag || {})[it] || 0; }
+/** what Antonio has in the bag for his creatures to carry */
+export function heldInBag(): HeldId[] { return HELD_IDS.filter(function (it) { return has(it) > 0; }); }
+/** a creature carries this now (or nothing): what it had goes back in the bag */
+export function giveHeld(key: string, it: HeldId | null) {
+  var mon = creatureOf(key);
+  if (!mon) return;
+  st.bag = st.bag || {};
+  if (mon.item) { st.bag[mon.item] = (st.bag[mon.item] || 0) + 1; delete mon.item; }
+  if (it && has(it) > 0) { st.bag[it] = has(it) - 1; mon.item = it; }
+}
 export function priceFor(it: ItemId): number { return priceOf(it, st.skills || {}); }
 export function buy(it: ItemId): boolean {
   var p = priceFor(it);

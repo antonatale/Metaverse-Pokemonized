@@ -30,3 +30,9 @@ export const CRIT = 1 / 16;
     friends' advantage (×se when it beats it, ×nve when it is beaten, multiplied for two types). Plain moves have no
     type. Tuned with tools/sim-story.ts. */
 export const MAGIC_TUNE = { se: 1.12, nve: 0.9 };
+/* A change in a team battle costs the turn and greets who comes in with the foe's hit: at ×1,12 / ×0,9 that is as much as
+   the type gives back, and raising the type's numbers breaks the story's early battles (`tools/sim-fun.ts team` measures
+   it). So a change costs less instead: `guard` is how much of a hit reaches who has just come in, `rest` how much of its
+   health who waits on the bench gets back each turn. The computer changes if the numbers say the team ends up `margin`
+   fighters better off, with this `chance` (a change that always comes is one the player reads). */
+export const SWITCH_TUNE = { guard: 0.5, rest: 0.05, margin: 0.15, chance: 0.75 };

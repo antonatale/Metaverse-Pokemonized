@@ -6,7 +6,8 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
 declare global {
   interface Window {
-    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
+    WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null;
+        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -26,6 +27,17 @@ async function fight(r: Run, label: string, shots = 4) {
     if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('pass'); })) {
       if (turn < shots) await r.shot(label + '-pass' + turn);
       await p.click('#ps-go');
+      continue;
+    }
+    /* a team battle: someone is down, or the foe's next is coming. The first who can come in, or stay as we are */
+    if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('bench'); })) {
+      if (turn < shots) await r.shot(label + '-bench' + turn);
+      /* a touch on the dark around the sheet must not close it: this question has to be answered */
+      await p.evaluate(() => document.getElementById('overlay')!.click());
+      expect(await p.locator('#overlay.bench').count()).toBe(1);
+      const pick = p.locator('.bench-pick:not([disabled])');
+      if (await p.locator('#overlay h2', { hasText: 'sta per mandare' }).count()) await p.click('#bn-no');
+      else await pick.first().click({ timeout: 10_000 });
       continue;
     }
     if (turn < shots) await r.shot(label + '-turn' + turn);
@@ -426,7 +438,7 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(first, 'menu')).toContain('???');
   expect(get(first, 'menu')).not.toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Chi scava tra le rovine di Gianola?');
-  expect(get(later, 'title').toLowerCase()).toContain('3 su 20');
+  expect(get(later, 'title').toLowerCase()).toContain('3 su 21');
 });
 
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
@@ -505,6 +517,8 @@ test('creatures of Formia', async ({ browser }) => {
     for (let turn = 0; turn < 12; turn++) {
       await toPrompt(p);
       if (await battleOver(p)) break;
+      /* Gabbì is down and only Antonio is left: he slips away */
+      if (await p.locator('#overlay.bench').count()) { await p.click('#bn-no'); await p.clock.runFor(300); continue; }
       const net = p.locator('#pad .mv[data-id="retino2"]:not([disabled])');
       if (await net.count()) await net.click(); else await p.click('#pad .mv[data-id="' + await p.evaluate(() => window.UI._debug.suggest()) + '"]');
     }
@@ -541,18 +555,113 @@ test('a trainer of Formia', async ({ browser }) => {
     await talkTo(p, 'animatore');
     await choose(p, 'Sfida!');
     await p.clock.runFor(800);
-    for (let fightNo = 0; fightNo < 2; fightNo++) {
-      await fight(r, 'duel' + fightNo, 1);
-      await p.click('#st-go'); await p.clock.runFor(800);
-      await talkThrough(p, 20);
-      await p.clock.runFor(800);
-      if (await p.evaluate(() => document.body.classList.contains('in-battle'))) continue;
-    }
+    /* his two creatures, in one battle */
+    await fight(r, 'duel', 1);
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    await p.clock.runFor(800);
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
   const st = r.data.find((x) => x.name === 'state')!.value as { beaten: Record<string, boolean>; money: number };
   expect(st.beaten['tr-animatore']).toBe(true);
   expect(st.money).toBe(25);
+});
+
+/* a change: Polpino comes off for Ramarrino, by the button on the pad; when the trainer's second creature is coming the
+   player may change again; both creatures get their share, and the trainer pays once */
+test('changing creature in a battle', async ({ browser }) => {
+  const r = await play(browser, 'change', { seed: 11, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpino' }, { uid: 'c2', sp: 'ramarrino' }], lv: { c1: { lv: 11, xp: 0 }, c2: { lv: 11, xp: 0 } }, money: 0 }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await talkTo(p, 'animatore');
+    await choose(p, 'Sfida!');
+    await p.clock.runFor(300);
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await p.clock.runFor(800);
+    await toPrompt(p);
+    await r.shot('pad');
+    r.keep('dots', await p.locator('#dots-0 i').count());
+    /* a look at the bench, and back to the pad: nothing has happened */
+    await p.click('#sw-btn');
+    await r.shot('bench');
+    r.keep('sheet', await p.locator('#overlay .sheet').innerText());
+    await p.click('#bn-no');
+    expect(await p.locator('#overlay').isHidden()).toBe(true);
+    await p.click('#sw-btn');
+    await p.locator('.bench-pick:not([disabled])').first().click();
+    await p.clock.runFor(100);
+    await toPrompt(p);
+    await r.shot('changed');
+    r.keep('box', await p.locator('#box-0 .box-h b').innerText());
+    r.keep('art', await p.evaluate(() => !!document.querySelector('#m-0 .bob svg')));
+    /* the first of his goes down: "he is about to send in…", and a change is on offer before it comes in */
+    await fight(r, 'on', 0);
+    r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 30);
+    await p.clock.runFor(800);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('dots')).toBe(2);
+  expect(String(get('sheet'))).toContain('Ramarrino');
+  expect(String(get('sheet'))).toContain('costa il turno');
+  expect(String(get('box'))).toContain('Ramarrino');
+  expect(get('art')).toBe(true);
+  const st = get('state') as { beaten: Record<string, boolean>; money: number; lv: Record<string, { lv: number; xp: number }>; dex: Record<string, number> };
+  expect(st.beaten['tr-animatore']).toBe(true);
+  expect(st.money).toBe(25);                                                /* paid once, by the trainer */
+  expect(st.lv.c1.lv > 11 || st.lv.c1.xp > 0).toBe(true);                    /* Polpino fought too */
+  expect(st.lv.c2.lv > 11 || st.lv.c2.xp > 0).toBe(true);
+  expect(st.dex.olivella).toBeGreaterThan(0);                               /* every creature of his has been seen */
+  expect(st.dex.cicalina).toBeGreaterThan(0);
+});
+
+/* the passives through the screen: an ability says its name as a Cicalina comes on, a thing goes from the bag to a
+   creature in its sheet, and a whole battle against the guide of the museum, whose creatures bring states, runs clean */
+test('abilities, states and things to carry', async ({ browser }) => {
+  const r = await play(browser, 'passives', { seed: 21, reduced: false, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpastro' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 40, xp: 0 }, c2: { lv: 40, xp: 0 } }, bag: { cozza: 1 }, money: 0 }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    /* the sheet says the ability, and takes the thing */
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.click('[data-cr="c1"]'); await p.clock.runFor(300);
+    await p.locator('[data-held="cozza"]').scrollIntoViewIfNeeded();
+    await r.shot('sheet');
+    r.keep('sheet', await p.locator('#overlay .sheet').innerText());
+    await p.click('[data-held="cozza"]'); await p.clock.runFor(300);
+    r.keep('given', await p.evaluate(() => window.WORLD.state()));
+    await p.click('#cr-x'); await p.clock.runFor(300);
+    await p.keyboard.press('Escape'); await p.clock.runFor(300);
+    /* a Cicalina out of the grass: Frinire d'agosto, by its side, as it comes on */
+    await p.evaluate(() => window.WORLD._debug.meet('gramsci')); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await p.clock.runFor(300);
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await until(p, () => !!document.querySelector('.abil-pop'), 60_000, 50);
+    r.keep('pop', await p.evaluate(() => document.querySelector('.abil-pop')!.textContent));
+    await p.clock.runFor(300);
+    r.shots.push({ name: 'ability', png: await p.screenshot() });          /* mid-show: r.shot would finish the animation */
+    await p.click('#quit'); await p.click('#quit'); await p.clock.runFor(800);
+    await talkThrough(p);
+    await talkTo(p, 'guida');
+    await choose(p, 'Sfida!');
+    await p.clock.runFor(300);
+    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
+    await p.clock.runFor(800);
+    await fight(r, 'guide', 2);
+    r.keep('stamp', await p.evaluate(() => document.querySelector('.stamp')!.textContent));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('pop')).toBe('Frinire d\'agosto');
+  expect(String(get('sheet'))).toContain('Ventose');
+  expect(String(get('sheet'))).toContain('Oratoria');
+  expect(String(get('sheet'))).toContain('Cozza');
+  const st = get('given') as { mons: { item?: string }[]; bag: Record<string, number> };
+  expect(st.mons[0].item).toBe('cozza');
+  expect(st.bag.cozza).toBe(0);
+  expect(String(get('stamp'))).toContain('Vince');
 });
 
 /* a trainer not beaten yet sees Antonio step in front of him: a "!", he walks up, challenges him with no saying
@@ -573,14 +682,10 @@ test('a trainer who sees Antonio', async ({ browser }) => {
     r.keep('opts', await p.locator('#wopts button').allInnerTexts());
     await choose(p, 'Sfida!');
     await p.clock.runFor(800);
-    for (let fightNo = 0; fightNo < 2; fightNo++) {
-      await fight(r, 'duel' + fightNo, 0);
-      await p.click('#st-go'); await p.clock.runFor(800);
-      await talkThrough(p, 20);
-      await p.clock.runFor(800);
-      if (await p.evaluate(() => document.body.classList.contains('in-battle'))) continue;
-    }
-    await p.clock.runFor(2500);
+    await fight(r, 'duel', 0);
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    await p.clock.runFor(3300);
     r.keep('after', await p.evaluate(() => window.WORLD._debug.who('studente')));
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
@@ -635,10 +740,32 @@ test('the stones of Telepilo', async ({ browser }) => {
     await r.shot('riddle');
     await choose(p, 'Dodici');
     await talkThrough(p);
-    await p.clock.runFor(300);
+    /* the word opens the door of the Cisternone: down the stairs, by the sign in front of it */
+    r.keep('no-stone-yet', await p.evaluate(() => (window.WORLD.state() as { seen: Record<string, boolean> }).seen['pietra-mura'] || false));
+    await goTo(p, 'sign', 'Il Cisternone romano');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Scendi nel Cisternone');
+    await p.clock.runFor(500);
+    r.keep('inside', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await r.shot('cisterna-in');
+    /* the validator's own way through, walked key by key: what it proved is what the game does */
+    const way = await p.evaluate(() => window.WORLD._debug.way());
+    r.keep('way', way.length);
+    for (let k = 0; k < way.length; k++) {
+      await walk(p, [way[k]]);
+      if (k === Math.floor(way.length / 2)) await r.shot('cisterna-mid');
+      /* the bats of the dark: he slips away */
+      if ((await p.evaluate(() => window.WORLD._debug.pos())).dialog) { await talkThrough(p); await choose(p, 'Scappa'); await talkThrough(p); }
+    }
+    await r.shot('cisterna-end');
+    r.keep('place', await p.evaluate(() => (window.WORLD.state() as { places: Record<string, { flags: Record<string, boolean> }> }).places.cisterna.flags));
+    await goTo(p, 'sign', 'Pietra delle Mura');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
     r.keep('stone', await p.locator('.award h2').innerText());
     await p.click('#st-ok'); await p.clock.runFor(300);
     await talkThrough(p);
+    await p.evaluate(() => window.WORLD._debug.travel('formia', 137, 20, 'down')); await p.clock.runFor(500);
     await goTo(p, 'sign', 'Tomba di Cicerone');
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     await talkThrough(p);
@@ -652,6 +779,10 @@ test('the stones of Telepilo', async ({ browser }) => {
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('no-stone-yet')).toBe(false);
+  expect(get('inside')).toBe('cisterna');
+  expect(get('way')).toBeGreaterThan(20);
+  expect(get('place')).toEqual({ a: true, b: true, c: true });
   expect(String(get('stone'))).toContain('Pietra delle Mura');
   expect(String(get('menu')).toLowerCase()).toContain('3 su 3');
   const st = get('state') as { seen: Record<string, boolean> };

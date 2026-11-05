@@ -420,6 +420,8 @@ Unisce le idee di §4 (A–E) e di §5 (F, G). L'ordine tiene conto di tre cose:
 
 ### Lista 1: Opus 5.5, max (in ordine di priorità)
 
+*Stato al 5 novembre 2026: fatti i punti 1, 2, 3 e 4 (vedi «Le lotte di squadra», «Stati, abilità e oggetti» e «I luoghi con un enigma» in `CLAUDE.md`). Due correzioni a questo briefing, misurate: i moltiplicatori di tipo non vanno alzati, ma per un motivo diverso da quello di §3 (rompono l'inizio della storia); e l'obiettivo «8–10 turni» non conviene inseguirlo abbassando i danni (le rigenerazioni diventano muri), mentre gli altri obiettivi si raggiungono senza.*
+
 1. **Cambio di creatura e squadra nello stato di lotta, e l'IA che cambia (A1).** Riscrive la catena di duelli in uno stato di squadra senza spostare l'ordine del generatore casuale né i golden: è il cuore del motore.
 2. **Ganci per stati alterati, abilità e oggetti tenuti (A2–A4).** Decidere dove si innestano (entrata, colpo dato, colpo subito, fine turno), quali eventi mandano alla UI e come si bilanciano. Il contenuto (le singole abilità) è poi di Sonnet.
 3. **Motore dei luoghi (F8).** Caselle solide che si aprono, interruttori, scivoli, pattuglie, pericoli a tempo, caselle a ritmo, ripartenze, stato salvato e il **validatore** nei test che dimostra che ogni palestra si può finire. Se sbagliato, una palestra è impossibile e non lo sa nessuno.

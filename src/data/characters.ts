@@ -1,4 +1,5 @@
 import type { TypeName } from './types';
+import type { StatusId } from './passives';
 import type { SpeciesId } from './creatures';
 
 /* The six friends and the boss. Stats, moves and `uses` were tuned with thousands of simulated
@@ -41,14 +42,17 @@ export interface Move {
   fx?: MoveFx;
 }
 export interface MoveFx {
-  /** raises its own Attack (+30%) or Defence (+25%) for 3 turns */
+  /** raises its own Attack (+30%) or Defence (+25%) for 5 turns */
   self?: 'atkUp' | 'defUp';
-  /** lowers the foe's Attack (−25%, 3 turns) or Defence (−20%, 2 turns) */
+  /** lowers the foe's Attack (−25%, 5 turns) or Defence (−20%, 4 turns) */
   foe?: 'atkDown' | 'defDown';
   /** chance to confuse the foe for 2 turns */
   conf?: number;
   /** share of its full health it gets back */
   heal?: number;
+  /** a state put on the foe (data/passives.ts), every time or with the chance in `odds` */
+  status?: StatusId;
+  odds?: number;
 }
 export interface Stats { hp: number; atk: number; def: number; spe: number }
 export interface Trait { name: string; text: string }

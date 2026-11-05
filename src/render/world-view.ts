@@ -6,6 +6,8 @@ import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, type P
 import { leadCreature, idOf, creatureOf } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
+import { placeNow } from '../story/place-run';
+import { drawThings } from './canvas/place';
 import { heading } from '../story/goals';
 import { darkness, sunset } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
@@ -201,6 +203,8 @@ const FLOOD: Record<string, number> = { tower: 1.3, octagon: 1.1, church: 1, col
 const LIVELY: Record<string, number> = { morgana: 2.4, bar: 1.7, gelati: 1.8, stazione: 2, eclipse: 2, forno: 1.3, biglietti: 1.3, casa: 1.4 };
 function lightsOf(m: PreparedMap): Light[] {
   var out: Light[] = [];
+  /* in the dark of a place, the braziers: where a fall brings Antonio back is where there is light */
+  if (m.dark && m.place) m.place.things.forEach(function (t) { if (t.k === 'rest') out.push({ x: t.x * T + T / 2, y: t.y * T + T / 2, r: T * 3.4, a: 0.95, warm: 1 }); });
   if (m.inside) return out;
   for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
     /* a street lamp: the head leans to the right of its pole; the light falls on the ground around the foot */
@@ -241,7 +245,20 @@ function glowOf(it: SceneItem): HTMLCanvasElement | null {
   c.putImageData(out, 0, 0);
   return (it.glow = c0);
 }
-var lightCv: HTMLCanvasElement | null = null, NIGHT_A = 0.76, NIGHT_Q = 3;
+var lightCv: HTMLCanvasElement | null = null, NIGHT_A = 0.76, NIGHT_Q = 3, DARK_A = 0.95;
+/** the tiles Antonio has walked in a dark place, by map: for this session of play, it is only a help to the eye */
+var walked: Record<string, Record<string, [number, number]>> = {};
+function remembered(id: string) { return walked[id] || (walked[id] = {}); }
+/** a tile remembered: a soft stamp, drawn once, because there can be many of them in view at every frame */
+var memCv: HTMLCanvasElement | null = null;
+function memStamp(): HTMLCanvasElement {
+  if (memCv) return memCv;
+  memCv = document.createElement('canvas'); memCv.width = memCv.height = 64;
+  var c = memCv.getContext('2d')!, g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(0,0,0,.3)'); g.addColorStop(0.45, 'rgba(0,0,0,.15)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 64, 64);
+  return memCv;
+}
 /** how much the lamps and windows are on: from nothing at dusk to full a little after */
 function lampsOn(dk: number) { return Math.max(0, Math.min(1, (dk - 0.12) / 0.35)); }
 function rgba(hex: string, a: number) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
@@ -266,6 +283,18 @@ function drawNight(now: number, dk: number, sn: number, camX: number, camY: numb
     lc.fillStyle = g; lc.fillRect(x - r, y - r, r * 2, r * 2);
   };
   cache.lights.forEach(function (l) { hole(l.x, l.y, l.r, l.a * on); });
+  /* a dark place stays readable: Antonio's own light, and a faint memory of the tiles he has walked (a labyrinth you cannot
+     see at all is not hard, it is only tedious) */
+  if (M.dark) {
+    var mem = remembered(M.id), tile = key(Math.round(pp.x / T), Math.round(pp.y / T));
+    if (!mem[tile]) mem[tile] = [Math.round(pp.x / T), Math.round(pp.y / T)];
+    var soft = memStamp(), mr = T * 1.8;
+    Object.keys(mem).forEach(function (k3) {
+      var mx = mem[k3][0] * T + T / 2, my = mem[k3][1] * T + T / 2;
+      if (seen(mx, my, mr)) lc.drawImage(soft, mx - mr, my - mr, mr * 2, mr * 2);
+    });
+    hole(pp.x + T / 2, pp.y + T / 2, T * 4.8, 1);
+  } else
   /* Antonio is never lost in the dark */
   hole(pp.x + T / 2, pp.y + T / 2, T * 2.4, 0.5);
   /* the creatures glow in the dark with the colour of their magic, softly breathing */
@@ -303,7 +332,7 @@ function drawNight(now: number, dk: number, sn: number, camX: number, camY: numb
     lc.fillStyle = g; lc.fillRect(l.x - r, l.y - r, r * 2, r * 2);
   });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = dk * NIGHT_A; ctx.imageSmoothingEnabled = true;
+  ctx.globalAlpha = dk * (M.dark ? DARK_A : NIGHT_A); ctx.imageSmoothingEnabled = true;
   ctx.drawImage(lightCv, 0, 0, lw * q, lh * q);
   ctx.globalAlpha = 1;
   /* a bright bulb on each lamp, and the lantern of the lighthouse */
@@ -385,6 +414,8 @@ function drawFrame(now: number, sk: number) {
     ctx.beginPath(); ctx.moveTo(tx * T + 5 + ox, ty * T + 8 + oy); ctx.quadraticCurveTo(tx * T + 10 + ox, ty * T + 5 + oy, tx * T + 15 + ox, ty * T + 8 + oy); ctx.stroke();
   }
   ctx.globalAlpha = 1;
+  /* the floor of a place with a puzzle: it changes with the steps, so it is not part of the ground */
+  if (M.place) { var ps = placeNow(M.id); drawThings(ctx, P, M.place, ps.flags, ps.tick, now, reduced, { x0: x0, x1: x1, y0: y0, y1: y1 }); }
   var people: Drawn[] = [], alerts: [number, number, number][] = [];
   M.people.filter(present).forEach(function (p) {
     if (p.n.ghost) {
@@ -422,7 +453,7 @@ function drawFrame(now: number, sk: number) {
   if (gh) people.push(gh);
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
-  var date = new Date(), dk = M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
+  var date = new Date(), dk = M.dark ? 1 : M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
   drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now, lampsOn(dk), lit);
   /* in the tall grass the blades hide Antonio's feet, and his creature's */
   [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {

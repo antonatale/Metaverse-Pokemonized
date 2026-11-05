@@ -5,7 +5,7 @@ import { ROSTER } from '../data/characters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
 import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -16,6 +16,7 @@ import { say, sheet, closeSheet, renderHud, mentorTip } from './story-screen';
 import { sfx } from '../audio';
 import { setPace } from '../story/movement';
 import { rivalFor } from '../story/rival';
+import { ABILITIES, HELD, type HeldId } from '../data/passives';
 
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
    money, new moves, a new form), the shops, the team and the bag in the menu, Antonio's abilities. */
@@ -133,7 +134,15 @@ function askLearn(key: string, list: string[], then: () => void) {
 /** after a story battle: experience for who fought (a third when lost), money for a win (not in the middle of a
     trainer's battle: the trainer pays at the end) */
 export function rewards(key: string, foeLv: number, won: boolean, covo: boolean, then?: () => void, noMoney?: boolean) {
-  var xp = xpFor(foeLv, won, covo), cash = won && !noMoney ? moneyFor(foeLv, covo) : 0, name = nameOf(key);
+  pay(key, xpFor(foeLv, won, covo), won, won && !noMoney ? moneyFor(foeLv, covo) : 0, then);
+}
+/** the end of a fight: one after the other, each with what it earned; the money goes with the first */
+export function rewardsAll(list: { key: string; xp: number; won: boolean }[], cash: number, then?: () => void) {
+  var n = 0, next = function () { var r = list[n++]; if (r) pay(r.key, r.xp, r.won, n === 1 ? cash : 0, next); else if (then) then(); };
+  next();
+}
+function pay(key: string, xp: number, won: boolean, cash: number, then?: () => void) {
+  var name = nameOf(key);
   /* a creature grows faster with a trainer, and every battle fought together brings it closer to Antonio */
   if (creatureOf(key)) { xp = trainerXp(xp, st.skills || {}); addBond(key, won ? 4 : 2); }
   var g = gainXp(key, xp);
@@ -331,6 +340,14 @@ function chainHtml(id: SpeciesId, lit: (sp: SpeciesId) => boolean): string {
     return (k ? '<span class="chain-at">Lv ' + prev + ' →</span>' : '') + '<span class="chain-c' + (sp === id ? ' now' : '') + (on ? '' : ' dark') + '"><span class="art">' + creature(sp, 'smirk', '', '0 16 200 184') + '</span><small>' + esc(on ? SPECIES[sp].name : '???') + '</small></span>';
   }).join('') + '</div>';
 }
+/** what the creature carries, and what else there is in the bag to give it */
+function heldRow(mon: Mon): string {
+  var cur = mon.item ? HELD[mon.item as HeldId] : null, bag = heldInBag();
+  return '<div class="pickrow"><h3>Oggetto</h3><ul class="wares">' +
+    (cur ? '<li><span><b>' + esc(cur.name) + '</b><small>' + esc(cur.text) + '</small></span><button class="btn" type="button" data-held="">Togli</button></li>' : '') +
+    bag.map(function (it) { return '<li><span><b>' + esc(HELD[it].name) + '</b><small>' + esc(HELD[it].text) + ' Ne hai ' + has(it) + '.</small></span><button class="btn" type="button" data-held="' + it + '">' + (cur ? 'Scambia' : 'Dai') + '</button></li>'; }).join('') +
+    '</ul>' + (cur || bag.length ? '' : '<p class="hint">Non porta niente. Le cose che può portare si comprano al forno di Castellone, al bar e dal pescatore di Mola; a volte le trova per terra la creatura che ti segue.</p>') + '</div>';
+}
 export function openCreature(key: string, back: () => void) {
   var mon = creatureOf(key);
   if (!mon) return;
@@ -345,6 +362,8 @@ export function openCreature(key: string, back: () => void) {
       '<small>' + esc(['Ancora diffidente', 'Comincia a fidarsi', 'Ti vuole bene', 'Non ti lascia mai', 'Inseparabili', 'Inseparabili'][h]) + (mon.nat ? ' · ' + esc(natureText(mon.nat)) : '') + '</small></p>' +
     '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.' + (sp.evolve && sp.evolve.bond ? ' Per cambiare forma, oltre al livello ' + sp.evolve.at + ', deve fidarsi di te (tre cuori).' : '') + '</p>' +
     '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { return '<li><span><b>' + esc(CMOVES[m].name) + '</b><small>' + esc(CMOVES[m].text) + '</small></span></li>'; }).join('') + '</ul>' +
+    '<div class="pickrow"><h3>Abilità</h3><ul class="wares">' + (sp.abil || []).map(function (a) { return '<li><span><b>' + esc(ABILITIES[a].name) + '</b><small>' + esc(ABILITIES[a].text) + '</small></span></li>'; }).join('') + '</ul></div>' +
+    heldRow(mon) +
     (next ? '<p class="hint">Al livello ' + next[0] + ' vorrà imparare ' + esc(CMOVES[next[1]].name) + (known.length >= 4 ? ': sceglierai tu quale mossa dimenticare' : '') + '.</p>' : '') + '</div>' +
     '<div class="pickrow"><h3>Forme</h3>' + chainHtml(mon.sp, function (x) { return dexOf(x) > 0 || x === mon!.sp; }) + '</div>' +
     '<div class="pickrow"><h3>Nome</h3><form class="nick" id="cr-f"><input id="cr-nick" maxlength="12" autocomplete="off" aria-label="Nome di ' + esc(sp.name) + '" placeholder="' + esc(sp.name) + '" value="' + esc(mon.nick || '') + '"><button class="btn" type="submit">Salva</button></form></div>' +
@@ -352,6 +371,7 @@ export function openCreature(key: string, back: () => void) {
   $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
   $('cr-f').addEventListener('submit', function (e) { e.preventDefault(); setNick(key, ($('cr-nick') as HTMLInputElement).value); save(); renderHud(); openCreature(key, back); });
   if ($('cr-lead')) $('cr-lead').addEventListener('click', function () { setLead(key); save(); openCreature(key, back); });
+  each(o.querySelectorAll('[data-held]'), function (b) { b.addEventListener('click', function () { var it = b.getAttribute('data-held'); giveHeld(key, (it || null) as HeldId | null); save(); sfx('pickup'); openCreature(key, back); }); });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('#cr-x'); if (b) b.focus(); }, 30);
 }
 

@@ -35,7 +35,9 @@ export interface StoryProgress {
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them;
       the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character,
       and home: true for one that waits at home instead of travelling with him (a team is six at most) */
-  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean }[];
+  /** what has been done in the places with a puzzle: by map, what is switched on, the steps taken, the last rest */
+  places?: Record<string, { flags: Record<string, boolean>; tick: number; rest: [number, number] | null }>;
+  mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean; item?: string }[];
   /** the creature diary: 1 for a species seen, 2 for one he has had */
   dex?: Record<string, number>;
   /** the creature that walks behind him on the map (his first one when missing) */

@@ -1,12 +1,14 @@
 import { CHARS, type Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
-import { TUNE, K, CRIT, MAGIC_TUNE } from '../data/tuning';
+import { TUNE, K, CRIT, MAGIC_TUNE, SWITCH_TUNE } from '../data/tuning';
 import { magicBeats, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
 import { NET_IDS } from '../data/nets';
 import { say, line, expr, anim } from './events';
 import { ch, mv, eff, modMult, sideType, zenOn, statsOf } from './state';
+import { dealtBy, takenBy, spendHit, statusMult, fire, cureStatus } from './passives';
+import { STATUS } from '../data/passives';
 
 /* ---------- the creatures' magic ---------- */
 /** a side's types: a creature's own (one or two), a person's of the moment */
@@ -46,7 +48,7 @@ function parts(s: BattleState, i: number, id: string): Parts {
   /* a person's advantage is the person's type against the other's; a creature's is the type of the spell it casts */
   const magic = isSpecies(me.id), type = magic ? moveType(me, m) : sideType(s, me, foe);
   const e = magic ? magicEff(type, typesOf(s, foe, me)) : eff(type, sideType(s, foe, me));
-  const atk = statsOf(me).atk * modMult(s, me, 'atk') * (me.id === 'zendavid' ? 1 - 0.06 * me.anx : 1);
+  const atk = statsOf(me).atk * modMult(s, me, 'atk') * (me.id === 'zendavid' ? 1 - 0.06 * me.anx : 1) * statusMult(me, 'atk');
   const def = statsOf(foe).def * modMult(s, foe, 'def');
   let mult = 1, forceCrit = false;
   const critChance = m.crit || CRIT, notes: string[] = [];
@@ -61,8 +63,16 @@ function parts(s: BattleState, i: number, id: string): Parts {
   }
   if (foe.id === 'andrea' && foe.seen[id]) { mult *= TUNE.calc; notes.push('calc'); }
   mult *= modMult(s, foe, 'guard');
+  if (foe.fresh) mult *= SWITCH_TUNE.guard;
+  mult *= dealtBy(s, me, foe) * takenBy(s, foe, me, type);
   const base = movePower(me, m) * atk / def * (s.K || K) * e * mult;
   return { base: base, eff: e, type: type, critChance: forceCrit ? 1 : critChance, forceCrit: forceCrit, acc: foe.away ? 0 : (m.acc || 1), notes: notes };
+}
+/** what a move of `a` is worth on `d`, whoever they are, from the numbers alone: no dice and no passing effects. The
+    computer reads this to weigh a fighter who is not on the field */
+export function plainHit(s: BattleState, a: Side, d: Side, m: Move): number {
+  const e = isSpecies(a.id) ? magicEff(moveType(a, m), typesOf(s, d, a)) : eff(sideType(s, a, d), sideType(s, d, a));
+  return movePower(a, m) * (m.acc || 1) * e * statsOf(a).atk / statsOf(d).def * (s.K || K);
 }
 /** average damage of a move, for the computer's choice */
 export function expected(s: BattleState, i: number, id: string): number {
@@ -95,6 +105,7 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   let held = false;
   if (foe.endure && !foe.sturdy && dmg >= foe.hp && foe.hp > 1 && rand(s) < foe.endure) { dmg = foe.hp - 1; foe.sturdy = true; held = true; }
   foe.hp = Math.max(0, foe.hp - dmg);
+  spendHit(s, me, foe, p.type);
   me.st.dmg += dmg; if (crit) me.st.crits++;
   if (!opt.noLunge) ev.push(anim(i, 'lunge'));
   ev.push({ k: 'hp', who: j, hp: foe.hp, dmg: dmg, crit: crit, eff: p.eff });
@@ -126,6 +137,10 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
     if (zenOn(s, foe)) ev.push(say('Costanzo prova a non farlo parlare, ma Zendavid ha le cuffie: non sente niente.'));
     else { foe.skip = { why: 'talk' }; ev.push(say('Costanzo non lo fa parlare: ' + ch(foe).name + ' perde il turno!')); }
   }
+  /* a hit wakes a sleeper; then each side's passives answer (creatures only: the others have none) */
+  if (foe.status && STATUS[foe.status.id].sleep && foe.hp > 0) cureStatus(s, j, ev);
+  fire(s, i, 'hit', ev, { dmg: dmg });
+  fire(s, j, 'hurt', ev, { dmg: dmg });
   return dmg;
 }
 export function heal(s: BattleState, i: number, amt: number, ev: BattleEvent[], msg?: string): number {

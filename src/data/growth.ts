@@ -1,5 +1,6 @@
 import type { Stats } from './characters';
 import { NETS, type NetId } from './nets';
+import { HELD, type HeldId } from './passives';
 
 /* Growing up in the story. Every fighter (Antonio, the friends who join him, his creatures) has a level, and
    the experience toward the next one; Antonio also gets a point a level for his abilities. The characters' own
@@ -74,7 +75,7 @@ export function bond(sk: Grades): number { return 0.15 * (sk.legame || 0); }
 export function friendsPay(n: number, sk: Grades): number { return Math.round(n * (1 + 0.25 * (sk.amici || 0))); }
 
 /* ---------- things to buy around Formia, and what they do ---------- */
-export type ItemId = NetId | 'tiella' | 'caffe';
+export type ItemId = NetId | 'tiella' | 'caffe' | HeldId;
 export interface Ware { id: ItemId; name: string; price: number; text: string }
 /** the nets, from data/nets.ts, with their prices: the better the net, the dearer */
 const NET_PRICE: Record<NetId, number> = { retino: 8, retino2: 20, argento: 45, oro: 120, nassa: 25, lampara: 25 };
@@ -83,14 +84,18 @@ export const WARES = {
   caffe: { id: 'caffe', name: 'Caffè al bancone', price: 3, text: 'Si beve subito, al bancone: 60 punti esperienza a chi scegli tu.' }
 } as Record<ItemId, Ware>;
 (Object.keys(NET_PRICE) as NetId[]).forEach(function (id) { WARES[id] = { id: id, name: NETS[id].name, price: NET_PRICE[id], text: NETS[id].text }; });
+/* what a creature can carry: it keeps it from battle to battle, so these cost more than what gets used up */
+const HELD_PRICE: Record<HeldId, number> = { fetta: 60, cozza: 60, ciambella: 70, oliva: 80, corno: 90 };
+export const HELD_IDS = Object.keys(HELD_PRICE) as HeldId[];
+HELD_IDS.forEach(function (id) { WARES[id] = { id: id, name: HELD[id].name, price: HELD_PRICE[id], text: HELD[id].text + ' Si dà a una creatura dalla sua scheda.' }; });
 /** the shops: who sells what */
 export interface Shop { name: string; hello: string; sells: ItemId[] }
 export const SHOPS: Record<string, Shop> = {
   /* the net maker of Gianola, by the guardaparco: every net there is */
   reti: { name: 'La bottega del retaio', hello: 'Reti e retini fatti a mano, uno per ogni creatura: più è buono il retino, meno scappano.', sells: ['retino', 'retino2', 'argento', 'oro', 'nassa', 'lampara'] },
-  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara'] },
-  forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella'] },
-  bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe'] }
+  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara', 'cozza', 'corno'] },
+  forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella', 'fetta', 'ciambella'] },
+  bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe', 'oliva'] }
 };
 /** the guardaparco's prizes for the creature diary: when so many species have been Antonio's (n, or all of them),
     he gives these, once each (story/growth.ts dexPrizesDue) */

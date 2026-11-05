@@ -27,7 +27,7 @@ export function setScreen(s: string) { view.screen = s; }
 
 export function closeOverlay() { overlay.hidden = true; overlay.innerHTML = ''; overlay.className = 'overlay'; }
 overlay.addEventListener('click', function (e) {
-  if (e.target === overlay && !overlay.classList.contains('result') && !overlay.classList.contains('pass')) closeOverlay();
+  if (e.target === overlay && !overlay.classList.contains('result') && !overlay.classList.contains('pass') && !overlay.classList.contains('bench')) closeOverlay();
 });
 
 

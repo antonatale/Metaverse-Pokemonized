@@ -7,7 +7,7 @@ import type { SpeciesId } from './creatures';
    a patch's id is the id of its table here. */
 export interface Meet { sp: SpeciesId; lv: [number, number]; w: number }
 export interface Hiding {
-  id: string; name: string; on: 'erba' | 'scogli' | 'acqua' | 'mura'; day: Meet[]; night?: Meet[];
+  id: string; name: string; on: 'erba' | 'scogli' | 'acqua' | 'mura' | 'grotta'; day: Meet[]; night?: Meet[];
   /** how many levels each stage of the story (a stone found, Mamurra beaten) lifts the place's band; 1 if missing */
   rise?: number;
   /** a place meant to be a challenge: its levels aim at the team's (see wildLevel) instead of staying in the band */
@@ -18,6 +18,9 @@ export const HIDINGS: Record<string, Hiding> = {
   /* how rare a creature is never shows: it is in the weights, in the places and in the hours. A common one is in many
      tables with a big weight, a rare one in one place, at one hour, with a weight of 1 (and an evolved one only where
      the place is a challenge). Nothing in the game says which is which: the diary only says where it was seen */
+  /* the first place inside: the bats of the dark, the snails of the damp walls, and one who is seldom met */
+  cisterna: { id: 'cisterna', name: 'Il Cisternone', on: 'grotta', follow: { off: 0, slack: 4 },
+    day: [{ sp: 'pipistrillo', lv: [8, 11], w: 5 }, { sp: 'lumacotta', lv: [8, 11], w: 3 }, { sp: 'pipistrega', lv: [20, 22], w: 1 }] },
   gramsci: { id: 'gramsci', name: 'Parco Gramsci', on: 'erba',
     day: [{ sp: 'cicalina', lv: [2, 4], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }],
     night: [{ sp: 'civettina', lv: [3, 5], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }, { sp: 'lucciolina', lv: [3, 5], w: 3 }] },

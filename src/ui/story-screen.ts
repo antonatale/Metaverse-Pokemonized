@@ -8,7 +8,8 @@ import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
 import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel, setPace, onEdge, stepNow, lock, STEP } from '../story/movement';
+import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
+import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine } from '../story/rival';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
@@ -24,18 +25,18 @@ import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, wildLevel, type Hiding } from '../data/encounters';
-import { SHOPS, meetChance, luck, lastStand, coins } from '../data/growth';
+import { SHOPS, WARES, HELD_IDS, meetChance, luck, lastStand, coins, moneyFor } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
 import { sceneFor } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, stonesHtml } from './plot';
 import { MAMURRA, storyStage } from '../story/plot';
-import { idOf, sideOf, foeSide, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
+import { idOf, sideOf, foeSide, fightPay, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
-import { chooseStarter, pickFighter, rewards, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
+import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
 import { onReward } from '../story/activities';
-import type { StoryTag } from '../battle';
+import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
 import { soundButton } from './sound';
 import { music, worldMusic, sfx, typeBlip } from '../audio';
@@ -396,8 +397,14 @@ function leaderTalk(id: string) {
   say(cv0.intro, cv0.leader, [{ label: 'Sfida!', fn: function () { challenge(id); } }, { label: 'Più tardi', fn: null }]);
 }
 /* ---------- the creatures' powers: swimming, climbing the walls, the view from above ---------- */
-const MEET_LINE: Record<string, string> = { erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
+const MEET_LINE: Record<string, string> = { grotta: 'Qualcosa si muove nel buio…', erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
 /* walking into the shallow sea, or against the walls of Castellone, with a creature that can help: it offers */
+/* a place with a puzzle says what its floor has done, the first time at least */
+onPlace(function (a) {
+  if (a.plate) { sfx('click'); notify(a.plate.on ? 'La lastra cede sotto il piede: da qualche parte si muove qualcosa.' : 'La lastra torna su.'); }
+  if (a.rested) { sfx('pickup'); notify('Un braciere acceso: se l\'acqua ti porta via, ripartirai da qui.'); }
+  if (a.hit) { sfx('weak'); notify('L\'acqua si alza e ti porta indietro.'); }
+});
 onEdge(function (kind, d) {
   var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
   if (!who || dialog || busy || run) return false;
@@ -488,72 +495,70 @@ function challenge(id: string) {
 function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
 
 /* ---------- creatures fight creatures: the wild ones, and the trainers' ---------- */
-/* Antonio sends his creatures in one after the other, each keeping the health the last battle left it; the foe keeps
-   its own. Only when all his creatures are down does he step in himself. A trainer's creatures come one after the
-   other; a wild one is a single foe, that can be caught. */
+/* One battle, with the two teams inside it (battle/turn.ts): Antonio's creatures wait on the bench, a trainer's come
+   one after the other, a wild one is a single foe that can be caught. Antonio himself is the last on the bench: he
+   steps in only when all his creatures are down. What the battle brings is paid at the end, from who fought whom. */
 interface Foe { sp: SpeciesId; lv: number; gold?: boolean; moves?: string[] }
-interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[]; idx: number; foeHp: number | null; down: string[]; hp: Record<string, number> }
+interface Fight { kind: 'wild' | 'trainer'; id: string; who: string; foes: Foe[] }
 var fight: Fight | null = null;
-function creaturesLeft(f: Fight): string[] { return teamMons().map(function (m) { return m.uid; }).filter(function (k) { return f.down.indexOf(k) < 0; }); }
-/** the next battle of a fight: the one who just won stays in, otherwise Antonio picks one of his creatures still up */
-function fightOn(key?: string) {
-  var f = fight!, foe = f.foes[f.idx], sp = SPECIES[foe.sp];
+/** someone of Antonio's team, for the bench */
+function memberOf(k: string): Member {
+  var a = Object.assign({ id: idOf(k), key: k }, sideOf(k)) as Member;
+  if (k === 'antonio') { a.stats = lastStand(a.stats!, st.skills || {}); a.last = true; }
+  return a;
+}
+/** one of the foes: its numbers at its level, with the moves it has been given */
+function foeMember(foe: Foe): Member {
+  var b = Object.assign({ id: foe.sp }, foeSide(foe.sp, foe.lv)) as Member;
+  if (foe.gold) b.gold = true;
+  if (foe.moves) b.known = foe.moves.slice();
+  return b;
+}
+/** the battle of a fight: Antonio picks who goes in first, the rest wait on the bench */
+function fightOn() {
+  var f = fight!, foe = f.foes[0], sp = SPECIES[foe.sp], left = teamMons().map(function (m) { return m.uid; });
   var go = function (k: string) {
     hide();
-    var a = sideOf(k), b = foeSide(foe.sp, foe.lv);
-    if (k === 'antonio') a.stats = lastStand(a.stats!, st.skills || {});
-    if (f.hp[k] != null) a.hp = f.hp[k];
-    if (f.foeHp != null) b.hp = f.foeHp;
-    if (foe.gold) b.gold = true;
-    if (foe.moves) b.known = foe.moves.slice();
     see(foe.sp); save();
     var place = sceneFor(M.id, areaName());
-    startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: a, sideB: b, bag: battleBag(),
+    startBattle({ a: idOf(k), b: foe.sp, mode: 'cpu', safe: safeMoves(), sideA: memberOf(k), sideB: foeMember(foe), bag: battleBag(),
+      benchA: left.concat(['antonio']).filter(function (x) { return x !== k; }).map(memberOf), benchB: f.foes.slice(1).map(foeMember),
+      smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0],
       story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
-      wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined });
+      wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined, dark: !!M.dark });
   };
-  if (key) { go(key); return; }
-  var left = creaturesLeft(f);
-  if (left.length) pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, left, go, sp.type2);
-  else go('antonio');
+  pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, left, go, sp.type2);
 }
-/** a fight is over, or goes on: a caught creature, the next of a trainer's, another of Antonio's, or Antonio himself */
-function fightAfter(res: { won: boolean; caught?: boolean; hp?: [number, number] }, key: string) {
-  var f = fight!, foe = f.foes[f.idx], sp = SPECIES[foe.sp], wild = f.kind === 'wild', tr = wild ? null : TRAINERS[f.id];
+/** a fight is over: a caught creature, a beaten trainer, or Antonio who has lost; each fighter gets what it earned */
+function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
+  var f = fight!, foe = f.foes[0], sp = SPECIES[foe.sp], wild = f.kind === 'wild', tr = wild ? null : TRAINERS[f.id], bouts = res.bouts || [];
+  bouts.forEach(function (b) { see(b.foe as SpeciesId); });
+  if (teamMons().length > 1) mentorTip('bench');
+  var pay = fightPay(bouts, !wild);
   if (res.caught) {
     fight = null; wildGone[f.id] = Date.now();
     var caught = creatureOf(addCreature(foe.sp, foe.lv, foe.gold)); save();
     sfx('badge');
     say(caught && caught.home ? [sp.name + (foe.gold ? ' dorata' : '') + ' è tua, al livello ' + foe.lv + '!', 'La squadra è al completo: ti aspetta a casa, nel tuo appartamento. Lì puoi cambiare chi porti con te.']
-      : [sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewards(key, foe.lv, true, false); });
+      : [sp.name + (foe.gold ? ' dorata' : '') + ' entra nella tua squadra, al livello ' + foe.lv + '!', 'Lo trovi nel menu, alla voce Squadra.'], null, null, function () { rewardsAll(pay, moneyFor(foe.lv, false)); });
     return;
   }
   if (res.won) {
-    f.hp[key] = res.hp ? res.hp[0] : 0; f.idx++; f.foeHp = null;
-    if (wild) { fight = null; wildGone[f.id] = Date.now(); rewards(key, foe.lv, true, false); return; }
-    rewards(key, foe.lv, true, true, function () {
-      if (f.idx < f.foes.length) { say([tr!.title + ' manda in campo ' + SPECIES[f.foes[f.idx].sp].name + '!'], null, null, function () { fightOn(key); }); return; }
+    if (wild) { fight = null; wildGone[f.id] = Date.now(); rewardsAll(pay, moneyFor(foe.lv, false)); return; }
+    rewardsAll(pay, 0, function () {
       var first = !st.beaten['tr-' + f.id];
       st.beaten['tr-' + f.id] = true;
       if (first) earn(tr!.prize);
       save(); renderHud(); fight = null;
       sfx('badge');
       say(lines(tr!.win, f.id).concat(first ? ['Antonio vince ' + coins(tr!.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id); });
-    }, true);
+    });
     return;
   }
-  /* this one is down: another creature, or Antonio himself when they all are */
-  f.down.push(key); f.foeHp = res.hp ? res.hp[1] : null;
-  var left = creaturesLeft(f), end = function () { fight = null; if (tr) say(lines(tr.lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']); };
-  rewards(key, foe.lv, false, !wild, function () {
-    var giveUp = { label: wild ? 'Scappa' : 'Mi arrendo', fn: end };
-    if (left.length) { say([nameOf(key) + ' non ce la fa più. Mandi un\'altra creatura?'], null, [{ label: 'Manda un\'altra creatura', fn: function () { fightOn(); } }, giveUp]); return; }
-    if (key !== 'antonio' && f.down.indexOf('antonio') < 0) {
-      say(['Le tue creature sono tutte stanche, e ' + sp.name + ' è ancora lì.', 'Scendi in campo tu, Antonio?'], null, [{ label: 'Lotto io!', fn: function () { fightOn('antonio'); } }, giveUp]);
-      return;
-    }
-    end();
-  }, true);
+  rewardsAll(pay, 0, function () {
+    fight = null;
+    if (tr) say(lines(tr.lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. Antonio e le sue creature vanno a riposare.']);
+  });
 }
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
 var calm = 0;
@@ -579,7 +584,9 @@ export function stepped(): boolean {
 function sniff(key: string) {
   var r = Math.random(), name = nameOf(key), what: string;
   if (r < 0.5) { var n = 3 + Math.floor(Math.random() * 10); earn(n); what = coins(n) + ' caduti a qualcuno'; }
-  else if (r < 0.8) { st.bag = st.bag || {}; st.bag.tiella = (st.bag.tiella || 0) + 1; what = 'una fetta di tiella ancora incartata'; }
+  else if (r < 0.75) { st.bag = st.bag || {}; st.bag.tiella = (st.bag.tiella || 0) + 1; what = 'una fetta di tiella ancora incartata'; }
+  /* now and then something for a creature to carry */
+  else if (r < 0.85) { var it = HELD_IDS[Math.floor(Math.random() * HELD_IDS.length)]; st.bag = st.bag || {}; st.bag[it] = (st.bag[it] || 0) + 1; what = WARES[it].name.toLowerCase(); }
   else { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + 1; what = 'un retino dimenticato'; }
   save(); renderHud(); sfx('pickup');
   notify('<b>' + esc(name) + '</b> annusa per terra e trova ' + esc(what) + '!');
@@ -601,7 +608,7 @@ function wildMeet(id: string, first: string, foe: Foe) {
   var sp = SPECIES[foe.sp];
   see(foe.sp); save();
   say([first, sp.wild + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : []), null, [
-    { label: 'Lotta!', fn: function () { fight = { kind: 'wild', id: id, who: '', foes: [foe], idx: 0, foeHp: null, down: [], hp: {} }; fightOn(); } },
+    { label: 'Lotta!', fn: function () { fight = { kind: 'wild', id: id, who: '', foes: [foe] }; fightOn(); } },
     { label: 'Scappa', fn: function () { say(['Antonio si allontana in punta di piedi.']); } }
   ]);
 }
@@ -619,7 +626,7 @@ function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
   var tr = TRAINERS[id], beaten = !!st.beaten['tr-' + id], team = teamOf(id);
   if (!st.mons || !st.mons.length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
-  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: team.slice(), idx: 0, foeHp: null, down: [], hp: {} }; fightOn(); } }];
+  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { fight = { kind: 'trainer', id: id, who: who, foes: team.slice() }; fightOn(); } }];
   if (!came) opts.push({ label: 'Più tardi', fn: null });
   say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(['Creature: ' + team.map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.']), who, opts);
 }
@@ -749,14 +756,14 @@ export function sheet(html: string, cls?: string) {
 export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
 function face(id: string) { return SPR.person(id, 'smirk', '', SPR.thumb(id)); }
 /** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
-export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; hp?: [number, number] }) {
+export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; bouts?: Bout[] }) {
   open(true);
   var tag = res.tag, key = tag.key || 'antonio';
   keepBag(res.bag); save(); renderHud();
-  if (res.quit) { fight = null; say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
+  if (res.quit) { (res.bouts || []).forEach(function (b) { see(b.foe as SpeciesId); }); fight = null; save(); say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
   if (!res.won && !res.caught) mentorTip('loss');
   if (res.caught) { mentorTip('catch'); if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
-  if ((tag.trainer || tag.wild) && fight) { fightAfter(res, key); return; }
+  if ((tag.trainer || tag.wild) && fight) { fightAfter(res); return; }
   if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
   if (!cv0) return;
@@ -1023,6 +1030,9 @@ export const WORLD = {
     /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */
     spotting: function (on: boolean) { spotting = on; },
     who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir } : null; },
+    /* the way through a place, from its entry, as the validator found it; and straight to another map (playtests) */
+    way: function () { return M.place ? placeProof(M).way : []; },
+    travel: travel,
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */

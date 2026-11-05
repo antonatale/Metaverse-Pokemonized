@@ -18,6 +18,9 @@ export interface Trainer {
   after: string[];
   /** sesterzi, the first time they are beaten */
   prize: number;
+  /** how well they play their team: 0 or nothing, in the order of the team and never changing; 1 they send in the best
+      against the one in front, and may change once; 2 twice */
+  smart?: number;
   /** Antonio's rival, Tullio, at his first, second or third meeting with him: his team is not here but follows
       Antonio's choice and the story (story/rival.ts); in his lines {rival} is his creature, {mine} Antonio's, {why}
       why his has the better of Antonio's */
@@ -42,7 +45,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Il mio Granchietto si allena tutti i giorni sugli scogli. Rivincita?']
   },
   studente: {
-    id: 'studente', title: 'Lo studente della Vitruvio Pollione', prize: 40,
+    id: 'studente', title: 'Lo studente della Vitruvio Pollione', prize: 40, smart: 1,
     team: [{ sp: 'cicalina', lv: 10 }, { sp: 'civettina', lv: 11 }],
     intro: ['Per la tesina ho studiato le creature di Formia: le leggende, i tipi, le mosse.', 'Adesso faccio la prova pratica. Con te.'],
     win: ['Bocciato in pratica… ma la teoria era giusta.', 'Tieni, te li sei meritati.'],
@@ -50,7 +53,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Ho ripassato tutto. Ricominciamo?']
   },
   guida: {
-    id: 'guida', title: 'La guida del museo', prize: 90,
+    id: 'guida', title: 'La guida del museo', prize: 90, smart: 1,
     team: [{ sp: 'riccione', lv: 17 }, { sp: 'granchione', lv: 18 }, { sp: 'civettona', lv: 19 }],
     intro: ['Al museo custodiamo le statue di Formiae; io custodisco anche le creature delle sue leggende.', 'Tre, come le età della storia di Formia: vediamo se le conosci.'],
     win: ['Notevole. Saresti un buon custode anche tu.', 'Prendi: è la ricompensa del museo.'],
@@ -67,7 +70,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Ancora tu?']
   },
   'mamurr-cisterna': {
-    id: 'mamurr-cisterna', title: 'L\'uomo con la torcia', prize: 45,
+    id: 'mamurr-cisterna', title: 'L\'uomo con la torcia', prize: 45, smart: 1,
     team: [{ sp: 'cicalina', lv: 10 }, { sp: 'olivella', lv: 11 }],
     intro: ['La Pietra delle Mura è qui sotto, nel Cisternone: settemila metri cubi d\'acqua e una pietra.', 'Il capo la vuole entro stasera. Togliti di mezzo.'],
     win: ['Quella porta non si apre! Ci ho provato tutta la notte.', 'Dice la vecchia del teatro che ci vuole una parola. Io la parola non la so.'],
@@ -75,7 +78,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Ancora tu?']
   },
   'mamurr-peschiere': {
-    id: 'mamurr-peschiere', title: 'Il sub con la muta', prize: 60,
+    id: 'mamurr-peschiere', title: 'Il sub con la muta', prize: 60, smart: 1,
     team: [{ sp: 'riccetto', lv: 13 }, { sp: 'granchietto', lv: 14 }],
     intro: ['Questa l\'ho tirata su da una peschiera romana: è fredda come il mare d\'inverno, e brilla.', 'La Pietra del Mare. Il capo me la pagherà oro. Prova a prenderla.'],
     win: ['Tienila, tienila! Mi scotta le mani.', 'Il capo dice che la terza la tiene un morto. Uno che parlava tanto.'],
@@ -83,7 +86,7 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Ancora tu?']
   },
   mamurra: {
-    id: 'mamurra', title: 'Il fantasma di Mamurra', prize: 200,
+    id: 'mamurra', title: 'Il fantasma di Mamurra', prize: 200, smart: 2,
     team: [{ sp: 'granchione', lv: 21 }, { sp: 'olivastro', lv: 19 }, { sp: 'civettona', lv: 23 }],
     intro: ['Lucio Mamurra, cavaliere di Formia, prefetto del genio di Gaio Giulio Cesare. Questa era la mia villa.', 'Catullo mi chiamava «lo scialacquatore di Formia», e Orazio chiamava Formia «la città dei Mamurra». Avevano ragione: Formia era mia.',
       'Con le tre pietre sveglierò Lamo, e i giganti costruiranno per me: ville, moli, cemento fino al mare.', 'Dammi le pietre. O devo prenderle con le mie creature?'],
@@ -101,21 +104,21 @@ export const TRAINERS: Record<string, Trainer> = {
     after: ['Rivincita? Il mio {rival} non vede l\'ora.']
   },
   'rivale-2': {
-    id: 'rivale-2', title: 'Tullio, il nipote del guardaparco', prize: 80, rival: 2, team: [],
+    id: 'rivale-2', title: 'Tullio, il nipote del guardaparco', prize: 80, smart: 1, rival: 2, team: [],
     intro: ['Antonio! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
     win: ['Di nuovo! Ma come fai?', 'Il nonno dice che le creature crescono con chi gli vuole bene. Forse ha ragione lui.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
     lose: ['Stavolta tocca a me! Le tue creature sono stanche: falle riposare e torna.'],
     after: ['Rivincita? Stavolta vinco io.']
   },
   'rivale-3': {
-    id: 'rivale-3', title: 'Tullio, il nipote del guardaparco', prize: 250, rival: 3, team: [],
+    id: 'rivale-3', title: 'Tullio, il nipote del guardaparco', prize: 250, smart: 2, rival: 3, team: [],
     intro: ['Antonio. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
     win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, Antonio.', 'Quando vuoi la rivincita, sono qui al parco.'],
     lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
     after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.']
   },
   anziano: {
-    id: 'anziano', title: 'Il signore di Castellone', prize: 150,
+    id: 'anziano', title: 'Il signore di Castellone', prize: 150, smart: 2,
     team: [{ sp: 'ramarrone', lv: 22 }, { sp: 'granchione', lv: 24 }, { sp: 'muraglione', lv: 28 }],
     intro: ['Lo sai chi ha messo le pietre delle mura di Castellone? I giganti, dicono. E io custodisco la loro creatura.', 'Se vuoi vedere il Dracastello, prima devi battere gli altri due.'],
     win: ['Duemila anni di mura… e tu le hai scavalcate.', 'Tieni. E rispetta le pietre di Castellone.'],

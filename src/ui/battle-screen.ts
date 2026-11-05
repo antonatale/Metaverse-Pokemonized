@@ -6,7 +6,8 @@ import { scene, sceneInfo } from '../render/svg/scenes';
 import { darkness } from '../story/daytime';
 import { MAGIC_CHART, MAGIC_ORDER, type TypeName } from '../data/types';
 import { COVI } from '../data/covi';
-import { ENGINE as E, type BattleEvent, type BattleState, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
+import { STATUS, type StatusId } from '../data/passives';
+import { ENGINE as E, type BattleEvent, type BattleState, type Bout, type BenchLabel, type Member, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
 import { SPR } from '../render/svg';
 import { record, saveRecord } from '../save/libretto';
 import { reduced, esc, each, $ } from './dom';
@@ -24,7 +25,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -36,7 +37,7 @@ function sideName(i: number): string { return S.sides[i].nick || fighter(S.sides
 function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) : (i === 0 ? 'Tu' : 'CPU'); }
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
-  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
+  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span></div></div>' +
     '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
@@ -70,6 +71,7 @@ function renderShell() {
   arena.addEventListener('click', advance);
   pad.addEventListener('click', function (e) {
     var bt = (e.target as Element).closest ? (e.target as Element).closest('.mv') : null;
+    if (bt && bt.id === 'sw-btn') { askChange(); return; }
     if (bt && bt.getAttribute('data-id')) onMove(bt.getAttribute('data-id')!);
   });
   var q = $('quit'), qt: ReturnType<typeof setTimeout> | undefined;
@@ -114,12 +116,17 @@ function countHp(i: number, from: number, to: number) {
   }
   tick();
 }
+/** who the box of each side shows right now: during the playback of a turn the state may already be ahead of the screen */
+let onField: string[] = ['', ''];
 function renderSync(sn: Snap) {
   for (var i = 0; i < 2; i++) {
+    if (S.sides[i].id !== onField[i]) continue;
     shown.revealed[i] = i === 0 || S.mode === 'pvp' || S.sides[i].id !== 'esame' || sn.revealed[i];
     $('chips-' + i).innerHTML = sn.chips[i].map(function (c) { return '<span class="chip ' + c.c + '" title="' + esc(c.d) + '">' + ico(c.i) + esc(c.t) + '</span>'; }).join('');
     if (!counting[i]) hpText(i, uiHp[i]);
     $('ty-' + i).innerHTML = typesHtml(i);
+    /* a team battle: one dot for each of the team, like the balls in the games */
+    if (sn.team && sn.team[i].length > 1) $('dots-' + i).innerHTML = sn.team[i].map(function (d) { return '<i class="' + d + '"></i>'; }).join('');
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
     if (svg) svg.setAttribute('data-ph', sn.ph[i] ? 'on' : 'off');
   }
@@ -169,13 +176,15 @@ function renderPad(i: number) {
     b.hidden = false;
     moveButton(b, i, m);
   });
-  /* the bag: one button for each kind of net Antonio carries; against a wild creature with no nets, where to buy them */
-  var row = $('bagrow'), bag = bagMoves(i);
-  row.hidden = !(i === 0 && S.bag && (bag.length || S.wild));
+  /* the bag: one button for each kind of net Antonio carries; against a wild creature with no nets, where to buy them.
+     In a team battle the change sits beside it */
+  var row = $('bagrow'), bag = bagMoves(i), shelf = i === 0 && !!S.bag && (bag.length > 0 || !!S.wild), sw = E.switches(S, i).length;
+  row.hidden = !(shelf || sw);
   if (row.hidden) { row.innerHTML = ''; return; }
-  row.innerHTML = '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
-    '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>');
-  each(row.querySelectorAll<HTMLButtonElement>('.mv'), function (b, k) { moveButton(b, i, bag[k]); });
+  row.innerHTML = (shelf ? '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
+    '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>') : '') +
+    (sw ? '<button class="mv swap" type="button" id="sw-btn"' + (padOn ? '' : ' disabled') + '><b>Cambia</b><small>' + esc(E.changeText(S, i).button) + '</small></button>' : '');
+  each(row.querySelectorAll<HTMLButtonElement>('.mv.bag'), function (b, k) { moveButton(b, i, bag[k]); });
 }
 function setPad(on: boolean, i?: number | null) { padOn = on; pad.classList.toggle('off', !on); renderPad(i == null ? padSide : i); }
 
@@ -343,8 +352,23 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     }
     case 'stat': return statShow(i, ev.style || 'atkUp');
     case 'caught': if (m.classList.contains('innet')) return sleep(reduced ? 60 : 500); m.classList.add('caught'); return sleep(800);
+    case 'recall': return pulse(m, 'recall', 420).then(function () { m.classList.add('gone'); });
+    /* an ability at work says its name by the creature, as in the games */
+    case 'abil': return popAt(i, '<div class="abil-pop">' + esc(ev.text || '') + '</div>', '', 0.5, 0.02, 1000);
+    case 'status': return popAt(i, '<div class="pop">' + ico(STATUS[ev.style as StatusId].icon) + '</div>', '', 0.5, 0, 900);
     default: return Promise.resolve();
   }
+}
+/** another fighter takes that side of the arena: the sprite and the box are drawn again, its numbers set at once */
+function swapEvent(ev: Extract<BattleEvent, { k: 'swap' }>) {
+  var i = ev.who, m = $('m-' + i);
+  m.className = 'mover';
+  m.innerHTML = '<div class="bob">' + bust(ev.id, 'smirk', '', undefined, ev.gold) + '</div>';
+  if (counting[i]) { clearTimeout(counting[i]!); counting[i] = null; }
+  $('box-' + i).outerHTML = boxHtml(i);
+  onField[i] = ev.id;
+  uiHp[i] = ev.hp;
+  setHp(i, ev.hp);
 }
 function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<unknown> {
   cueBattle(ev);
@@ -357,6 +381,7 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
     case 'anim': return animEvent(ev, evs, next);
     case 'hp': return hpEvent(ev);
     case 'sync': renderSync(ev); return Promise.resolve();
+    case 'swap': swapEvent(ev); return Promise.resolve();
     default: return Promise.resolve();
   }
 }
@@ -378,6 +403,7 @@ function runFlow() {
     if (my !== flow) return Promise.resolve();
     if (S.phase === 'over') { showResult(); return Promise.resolve(); }
     if (S.phase === 'intro') { setPad(false, 0); return play(E.intro(S), my).then(loop); }
+    if (S.phase === 'send') { setPad(false); return askSend({}, my); }
     if (S.phase === 'begin') { setPad(false); turnbar.hidden = true; return play(E.beginTurn(S), my).then(loop); }
     if (S.phase === 'select') {
       renderSync(E.snap(S));
@@ -398,7 +424,7 @@ function askNext(handoff: boolean) {
 function onMove(id: string) {
   if (!padOn || !S || S.phase !== 'select' || !needQ.length) return;
   var i = needQ[0];
-  if (E.available(S, i).indexOf(id) < 0) return;
+  if (E.available(S, i).indexOf(id) < 0 && E.switches(S, i).indexOf(id) < 0) return;
   pending[i] = id;
   needQ.shift();
   setPad(false, i);
@@ -408,6 +434,54 @@ function onMove(id: string) {
   resolveTurn(my).then(function () { if (my === flow) runFlow(); }).catch(caught);
 }
 function resolveTurn(my: number) { return play(E.playTurn(S, pending), my); }
+
+/* =================== WHO COMES IN =================== */
+/** the bench in a sheet: a card for each of the team, with its health and how it stands against the one it would face */
+function benchCard(b: BenchLabel): string {
+  var col = 'var(--t-' + b.types[0].toLowerCase() + ')', pct = Math.round(100 * b.hp / b.max), note = b.note;
+  return '<button class="pick bench-pick" type="button" data-slot="' + b.slot + '" style="--tc:' + col + '"' + (b.ready ? '' : ' disabled') + '><span class="face">' + face(b.id) + '</span>' +
+    '<span>' + esc(b.name) + (b.lvl ? ' <small class="lv">Lv ' + b.lvl + '</small>' : '') + '</span>' +
+    '<span class="benchhp" role="img" aria-label="' + b.hp + ' PS su ' + b.max + '"><i style="width:' + pct + '%"></i></span><small class="hpnum">' + b.hp + '/' + b.max + '</small>' +
+    (note ? '<small class="adv ' + (note === 'Svantaggio' || note === 'KO' ? 'bad' : '') + '">' + note + '</small>' : '') + '</button>';
+}
+/** opens the bench; `no` is the button that says no to it (none when the player has to pick) */
+function benchSheet(cls: string, title: string, hint: string, i: number, no: string | null, go: (slot: number | null) => void) {
+  overlay.className = 'overlay' + cls;
+  overlay.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bn-t"><div class="sheet-h"><h2 id="bn-t">' + esc(title) + '</h2></div>' +
+    '<p class="hint">' + esc(hint) + '</p><div class="pickgrid bench">' + E.benchLabels(S, i).filter(function (b) { return !b.last || b.ready; }).map(benchCard).join('') + '</div>' +
+    (no ? '<div class="res-actions"><button class="btn wide" type="button" id="bn-no">' + esc(no) + '</button></div>' : '') + '</div>';
+  overlay.hidden = false;
+  function close(slot: number | null) { closeOverlay(); go(slot); }
+  each(overlay.querySelectorAll<HTMLButtonElement>('.bench-pick'), function (b) { b.addEventListener('click', function () { close(+b.getAttribute('data-slot')!); }); });
+  if (no) $('bn-no').addEventListener('click', function () { close(null); });
+  setTimeout(function () { var b = overlay.querySelector<HTMLElement>('.bench-pick:not([disabled])') || $('bn-no'); if (b) b.focus(); }, 30);
+}
+/** the player's turn: change instead of moving. It can be taken back, and the pad is still there */
+function askChange() {
+  if (!padOn || !S || S.phase !== 'select' || !needQ.length) return;
+  var i = needQ[0];
+  benchSheet('', 'Chi mandi al posto di ' + sideName(i) + '?', E.changeText(S, i).hint, i, 'Resto con ' + sideName(i), function (slot) {
+    if (slot != null) onMove('switch:' + slot);
+  });
+}
+/** someone is down: the player says who comes in (or gives up), or, if it is the foe's, whether to change; then they enter */
+function askSend(picks: Record<number, number>, my: number): Promise<unknown> {
+  var asks = E.sendNeeds(S).filter(function (a) { return picks[a.side] === undefined; });
+  if (!asks.length) return play(E.sendIn(S, picks), my).then(function () { if (my === flow) runFlow(); });
+  var a = asks[0], i = a.side, f = 1 - i, next = function (slot: number | null) {
+    picks[i] = slot == null ? (a.must ? -1 : -2) : slot;
+    var mine = ++flow;
+    askSend(picks, mine).catch(caught);
+  };
+  if (a.must) {
+    var left = E.benchLabels(S, i).filter(function (b) { return b.ready; }), last = left.length === 1 && left[0].last, foe = S.sides[f].hp > 0 ? sideName(f) : '';
+    benchSheet(' bench', last ? 'Le tue creature sono tutte stanche' : sideName(i) + ' non ce la fa più', last ? 'E ' + (foe || 'l\'avversario') + ' è ancora lì. Scendi in campo tu, Antonio?' : foe ? 'Chi mandi contro ' + foe + '?' : 'Chi mandi adesso?', i, S.wild ? 'Scappa' : 'Mi arrendo', next);
+    return Promise.resolve();
+  }
+  var slotN = S.nextIn![f], x = S.bench![f][slotN as number], nm = x.nick || fighter(x.id).name;
+  benchSheet(' bench', (S.trainer || sideName(f)) + ' sta per mandare in campo ' + nm, nm + ' è di tipo ' + fighter(x.id).type + '. Cambi ' + sideName(i) + '?', i, 'Resto con ' + sideName(i), next);
+  return Promise.resolve();
+}
 
 /* =================== PASS THE PHONE =================== */
 function showPass(i: number) {
@@ -535,7 +609,7 @@ function curtain(trainer: boolean) {
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: !!cfg!.wild && darkness(new Date()) > 0.5 });
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -545,6 +619,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   home.hidden = true; battle.hidden = false;
   document.body.classList.add('in-battle');
   window.scrollTo(0, 0);
+  onField = [S.sides[0].id, S.sides[1].id];
   renderShell();
   if (!restore && cfg && cfg.story && (cfg.wild || cfg.trainer)) curtain(!!cfg.trainer);
   music(S.boss ? 'boss' : 'battle');
@@ -571,7 +646,7 @@ export function goHome() {
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
-  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, hp: [number, number] = S ? [S.sides[0].hp, S.sides[1].hp] : [0, 0];
+  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [];
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
@@ -580,7 +655,7 @@ function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
   closeOverlay();
   renderLibretto();
   S = null as unknown as BattleState;
-  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, hp: hp });
+  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
   else goHome();
 }
 /** the battle screen as one object, with the same names the old window.UI had */
@@ -612,9 +687,10 @@ export function resumeBattle(b: BattleState) {
 /** the battle's keys; registered after the story's, which stop the keys that belong to the map */
 export function installBattleKeys() {
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !overlay.hidden && !overlay.classList.contains('result') && !overlay.classList.contains('pass')) { closeOverlay(); return; }
+    if (e.key === 'Escape' && !overlay.hidden && !overlay.classList.contains('result') && !overlay.classList.contains('pass') && !overlay.classList.contains('bench')) { closeOverlay(); return; }
     if (view.screen !== 'battle' || !overlay.hidden) return;
     if (e.key === ' ' || e.key === 'Enter') { if (tapHandler) { e.preventDefault(); advance(); } return; }
     if (/^[1-9]$/.test(e.key) && padOn) { var m = padMoves(padSide).concat(bagMoves(padSide))[+e.key - 1]; if (m) onMove(m.id); }
+    if ((e.key === 'c' || e.key === 'C') && padOn && E.switches(S, padSide).length) askChange();
   });
 }

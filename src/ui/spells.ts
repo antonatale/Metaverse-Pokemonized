@@ -7,6 +7,8 @@ import { arena } from './battle-screen';
 import { fx, animate, anchor, ring, sparks, flashAt, shape, wob, pulse, streaks, SHAPE } from './effects';
 import { netSVG, netBall } from '../render/svg/nets';
 import { sfx } from '../audio';
+import { HELD } from '../data/passives';
+import { ico } from './icons';
 
 /* The creatures' moves, as shows: every type of magic has its own, big and clear.
    - The charge: the arena goes dark around the caster, a magic circle opens at its feet, the move's name crosses the
@@ -1043,6 +1045,7 @@ export function arrive(i: number, t: TypeName, t2?: TypeName) {
 export function bagIcon(id: string): string {
   if (id === 'tiella') return '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><path d="M8 48L56 48L32 12Z" fill="#e8b86a" stroke="' + INK + '" stroke-width="3.5"/>' +
     '<path d="M14 46L50 46L32 19Z" fill="#7a9a3a"/><circle cx="27" cy="38" r="3" fill="#d96a4a"/><circle cx="37" cy="40" r="2.6" fill="#d96a4a"/><circle cx="32" cy="30" r="2.4" fill="#f4efe6"/></svg>';
+  if (id in HELD) return ico(id === 'cozza' ? 'shield' : id === 'corno' ? 'music' : id === 'oliva' ? 'drop' : id === 'ciambella' ? 'wing' : 'heart');
   return netSVG(id, 34);
 }
 /** a net thrown at a wild creature: it flies, closes on it, falls to the ground and shakes; then it holds (stars, and

@@ -1,8 +1,11 @@
 /* Story balance: how often a fighter at a level beats a foe at a level, both played by the computer.
    npx tsx tools/sim-story.ts                      the usual matchups of the story
-   npx tsx tools/sim-story.ts polpino:8 forchetta:9  one matchup (a fighter id or a creature, and its level) */
-import { ENGINE as E, type BattleState } from '../src/battle';
-import { SPECIES, knownAt, isSpecies } from '../src/data/creatures';
+   npx tsx tools/sim-story.ts polpino:8 forchetta:9  one matchup (a fighter id or a creature, and its level)
+   npx tsx tools/sim-story.ts trainers             each trainer's whole battle, against each of the three first creatures
+                                                   and a second one, both at the level of the trainer's best */
+import { ENGINE as E, type BattleState, type Member } from '../src/battle';
+import { SPECIES, knownAt, isSpecies, type SpeciesId } from '../src/data/creatures';
+import { TRAINERS } from '../src/data/trainers';
 import { CHARS, type FighterId } from '../src/data/characters';
 import { atLevel } from '../src/data/growth';
 
@@ -24,8 +27,43 @@ export function winRate(a: string, la: number, b: string, lb: number, n = 400): 
   }
   return Math.round(100 * won / n);
 }
+/** the form a first creature has at a level */
+function formAt(id: SpeciesId, lv: number): SpeciesId {
+  let x = id;
+  while (SPECIES[x].evolve && lv >= SPECIES[x].evolve!.at) x = SPECIES[x].evolve!.into;
+  return x;
+}
+const member = (id: string, lv: number, key?: string): Member => ({ id: id as FighterId, key, ...side(id, lv) });
+/** a whole battle against a trainer, Antonio's two played by the computer (who does not change: a player can do better) */
+export function trainerRate(first: SpeciesId, second: SpeciesId, id: string, n = 300): { win: number; turns: number } {
+  const tr = TRAINERS[id], lv = Math.max.apply(null, tr.team.map((t) => t.lv)), foes = tr.team.map((t) => { const m = member(t.sp, t.lv); if (t.moves) m.known = t.moves.slice(); return m; });
+  const a = member(formAt(first, lv), lv, 'c1'), b = member(formAt(second, Math.max(1, lv - 1)), Math.max(1, lv - 1), 'c2');
+  let won = 0, turns = 0;
+  for (let seed = 1; seed <= n; seed++) {
+    const s: BattleState = E.newBattle({ a: a.id, b: foes[0].id, seed: seed * 7919, sideA: a, sideB: foes[0], benchA: [b], benchB: foes.slice(1), trainer: tr.title, smart: [0, tr.smart || 0], bag: {} });
+    E.intro(s);
+    for (let k = 0; k < 800 && s.phase !== 'over'; k++) {
+      if (s.phase === 'begin') { E.beginTurn(s); continue; }
+      if (s.phase === 'send') { const p: Record<number, number> = {}; E.sendNeeds(s).forEach((q) => { if (q.must) p[q.side] = E.benchLabels(s, q.side).filter((l) => l.ready)[0].slot; }); E.sendIn(s, p); continue; }
+      const ch: Record<number, string> = {};
+      E.needs(s).forEach((i) => { ch[i] = E.ai(s, i); });
+      E.playTurn(s, ch);
+    }
+    if (s.result === 'win' && s.winner === 0) won++;
+    turns += s.turn;
+  }
+  return { win: Math.round(100 * won / n), turns: Math.round(turns / n) };
+}
 const args = process.argv.slice(2);
-if (process.argv[1] && process.argv[1].indexOf('sim-story') >= 0 && args.length === 2) {
+if (process.argv[1] && process.argv[1].indexOf('sim-story') >= 0 && args[0] === 'trainers') {
+  const firsts: [SpeciesId, SpeciesId][] = [['polpino', 'cicalina'], ['ramarrino', 'olivella'], ['gabbi', 'granchietto']];
+  console.log('Vittorie del giocatore (%) e turni, con l\'iniziale al livello del più forte dell\'allenatore e una seconda creatura un livello sotto.');
+  console.log('allenatore'.padEnd(36) + firsts.map((f) => SPECIES[f[0]].name.padStart(14)).join(''));
+  for (const id of Object.keys(TRAINERS)) {
+    if (!TRAINERS[id].team.length) continue;
+    console.log((id + (TRAINERS[id].smart ? ' (smart ' + TRAINERS[id].smart + ')' : '')).padEnd(36) + firsts.map((f) => { const r = trainerRate(f[0], f[1], id); return (r.win + '% ' + r.turns + 't').padStart(14); }).join(''));
+  }
+} else if (process.argv[1] && process.argv[1].indexOf('sim-story') >= 0 && args.length === 2) {
   const [a, la] = args[0].split(':'), [b, lb] = args[1].split(':');
   console.log(a + ' Lv' + la + ' vs ' + b + ' Lv' + lb + ': ' + winRate(a, +la, b, +lb) + '%');
 } else if (process.argv[1] && process.argv[1].indexOf('sim-story') >= 0) {

@@ -354,7 +354,31 @@ function birreria(): Scene {
   return { title: 'Dentro la Birreria Morgana', ground: '#b07a45', base: s + lit.join(''), lights: '', indoor: true };
 }
 
-const SCENES: Record<string, () => Scene> = { vindicio: vindicio, pineta: pineta, porto: porto, mola: mola, castellone: castellone, maranola: monti, castellonorato: golfo, gianola: gianola, caposele: caposele, centro: centro, campo: campo, birreria: birreria };
+function cisterna(): Scene {
+  var lit: string[] = [];
+  /* under Castellone: vaults on their pillars going off into the dark, still water, a torch left on a wall */
+  var s = '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#141a2e"/>';
+  for (var r = 0; r < 3; r++) {
+    var span = 220 + r * 150, top = 330 - r * 110, foot = 640 + r * 12, tone = ['#222b45', '#2e3857', '#3c486c'][r];
+    for (var k = -1; k * span < W + span; k++) {
+      var x0 = k * span + (r % 2 ? span / 2 : 0);
+      s += path('M' + x0 + ' ' + foot + ' L' + x0 + ' ' + (top + span * 0.42) + ' Q' + (x0 + span / 2) + ' ' + (top - span * 0.28) + ' ' + (x0 + span) + ' ' + (top + span * 0.42) + ' L' + (x0 + span) + ' ' + foot + ' L' + (x0 + span + 46 + r * 26) + ' ' + foot + ' L' + (x0 + span + 46 + r * 26) + ' -10 L' + (x0 - 46 - r * 26) + ' -10 L' + (x0 - 46 - r * 26) + ' ' + foot + 'Z', tone, 4);
+    }
+  }
+  /* the still water, with the pale line of the far pillars in it */
+  s += rect(-10, 640, W + 20, 90, '#26406a', 4);
+  for (var w = 0; w < 16; w++) s += line(40 + w * 104, 660 + rnd(w) * 50, 100 + w * 104, 660 + rnd(w) * 50, '#5f86b3', 3);
+  /* the stone they stand on */
+  s += rect(-10, 725, W + 20, 285, '#59627e', 4);
+  for (var f = 0; f < 5; f++) s += line(-10, 770 + f * f * 9 + f * 26, W + 10, 770 + f * f * 9 + f * 26, '#454d68', 3);
+  for (var j = 0; j < 12; j++) s += line(40 + j * 150 + rnd(j + 40) * 60, 725, 20 + j * 170 + rnd(j + 60) * 60, 1000, '#454d68', 2);
+  /* the torch */
+  lit.push('<defs><radialGradient id="sc-torch"><stop offset="0" stop-color="#ffb950" stop-opacity=".5"/><stop offset=".45" stop-color="#ffb950" stop-opacity=".14"/><stop offset="1" stop-color="#ffb950" stop-opacity="0"/></radialGradient></defs>' +
+    '<circle cx="800" cy="300" r="280" fill="url(#sc-torch)"/>' + rect(793, 320, 14, 62, '#5e3a20', 3) + path('M800 262 Q828 300 800 324 Q772 300 800 262Z', '#ffb950', 3));
+  return { title: 'Dentro il Cisternone', ground: '#59627e', base: s + lit.join(''), lights: '', indoor: true };
+}
+
+const SCENES: Record<string, () => Scene> = { cisterna: cisterna, vindicio: vindicio, pineta: pineta, porto: porto, mola: mola, castellone: castellone, maranola: monti, castellonorato: golfo, gianola: gianola, caposele: caposele, centro: centro, campo: campo, birreria: birreria };
 /** a scene's name and the colour of its ground (for the platforms the fighters stand on) */
 export function sceneInfo(id: string): { title: string; ground: string } { NIGHT = false; var sc = (SCENES[id] || porto)(); return { title: sc.title, ground: sc.ground }; }
 /** the whole picture, by day or by night */

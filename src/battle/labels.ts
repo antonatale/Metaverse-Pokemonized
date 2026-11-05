@@ -1,16 +1,53 @@
 import { TUNE } from '../data/tuning';
 import { ITEMS } from '../data/items';
-import type { BattleState, Chip, MoveLabel, Snap } from './types';
-import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn } from './state';
-import { movePower, moveType, magicEff, typesOf } from './damage';
+import type { BattleState, BenchLabel, Chip, MoveLabel, Side, Snap } from './types';
+import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn, switches, senders, switchSlot } from './state';
+import { SWITCH_TUNE } from '../data/tuning';
+import { movePower, moveType, magicEff, typesOf, effLevel } from './damage';
 import { isSpecies } from '../data/creatures';
+import { STATUS } from '../data/passives';
 import { catchChance } from './moves';
 
 /* What the UI shows, decided here so the UI never needs to know the rules:
    the status chips under each name, and the label of every move button. */
 
 export function snap(s: BattleState): Snap {
-  return { k: 'sync', turn: s.turn, maxTurns: s.maxTurns, boss: s.boss, chips: [chips(s, 0), chips(s, 1)], revealed: [s.sides[0].revealed, s.sides[1].revealed], ph: [zenOn(s, s.sides[0]), zenOn(s, s.sides[1])] };
+  const out: Snap = { k: 'sync', turn: s.turn, maxTurns: s.maxTurns, boss: s.boss, chips: [chips(s, 0), chips(s, 1)], revealed: [s.sides[0].revealed, s.sides[1].revealed], ph: [zenOn(s, s.sides[0]), zenOn(s, s.sides[1])] };
+  if (s.bench) out.team = [teamDots(s, 0), teamDots(s, 1)];
+  return out;
+}
+/** one dot for each of a side's team: whoever is up, and whoever is down */
+function teamDots(s: BattleState, i: number): string[] {
+  return [s.sides[i]].concat(s.bench![i]).filter(function (x) { return !x.last; }).map(function (x) { return x.hp > 0 ? 'up' : 'ko'; });
+}
+
+/* ---------- who can come in, for the screen that picks ---------- */
+/** the one a side will be facing: the foe on the field, or the one announced to take its place */
+function facing(s: BattleState, i: number): Side {
+  const j = 1 - i, n = s.nextIn ? s.nextIn[j] : null;
+  return s.sides[j].hp > 0 || n == null ? s.sides[j] : s.bench![j][n];
+}
+export function benchLabels(s: BattleState, i: number): BenchLabel[] {
+  if (!s.bench) return [];
+  const foe = facing(s, i), must = s.sides[i].hp <= 0, can = must ? senders(s, i) : switches(s, i).map(switchSlot);
+  return s.bench[i].map(function (x, k) {
+    const c = ch(x), types = typesOf(s, x, foe);
+    /* a person's magic is the person's own type; a creature's, the best of the moves it knows */
+    const foeHit = magicEff(ch(foe).type, types);
+    let hits = 0;
+    if (isSpecies(x.id)) c.moves.forEach(function (m) {
+      if (m.kind === 'atk' && (!x.known || x.known.indexOf(m.id) >= 0)) hits = Math.max(hits, effLevel(magicEff(moveType(x, m), typesOf(s, foe, x))));
+    });
+    const takes = effLevel(foeHit);
+    return { slot: k, id: x.id, name: c.name, lvl: x.lvl, gold: x.gold, hp: x.hp, max: x.max, types: types, last: !!x.last, ready: can.indexOf(k) >= 0, hits: hits, takes: takes,
+      note: x.hp <= 0 ? 'KO' : x.last ? 'Lotto io!' : takes > 0 && hits <= 0 ? 'Svantaggio' : hits > 0 && takes <= 0 ? 'Vantaggio' : '' };
+  });
+}
+/** what the change is, in words: for its button, and for the sheet that opens */
+export function changeText(s: BattleState, i: number): { button: string; hint: string } {
+  const n = switches(s, i).length, foe = s.sides[1 - i];
+  return { button: (n === 1 ? '1 pronta' : n + ' pronte') + ' · costa il turno',
+    hint: 'Cambiare costa il turno: ' + ch(foe).name + ' (' + typesOf(s, foe, s.sides[i]).join(' e ') + ') colpisce chi entra, che però è in guardia e prende il ' + Math.round(SWITCH_TUNE.guard * 100) + '% del danno. Chi aspetta recupera il ' + Math.round(SWITCH_TUNE.rest * 100) + '% dei PS a turno.' };
 }
 function chips(s: BattleState, i: number): Chip[] {
   const x = s.sides[i], out: Chip[] = [];
@@ -26,6 +63,8 @@ function chips(s: BattleState, i: number): Chip[] {
   if (hasMod(s, x, 'defUp')) add('up', 'shield', 'Difesa +25%');
   if (hasMod(s, x, 'defDown')) add('down', 'down', 'Difesa −20%');
   if (hasMod(s, x, 'guard')) add('up', 'shield', 'Danni −30%');
+  if (x.fresh) add('up', 'shield', 'In guardia', 'Appena entrato: per questo turno subisce metà del danno');
+  if (x.status) { const st = STATUS[x.status.id]; add('bad', st.icon, st.name, st.text); }
   if (x.away) add('info', 'plane', 'A Copenhagen');
   if (x.charge) add('info', 'plane', 'Di ritorno');
   if (personaOn(s, x)) add('info', 'mic', 'Nel personaggio');
@@ -94,7 +133,8 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
       if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');
       if (fx.foe) bits.push(fx.foe === 'atkDown' ? 'Attacco avv. −25%' : 'Difesa avv. −20%');
       if (fx.conf) bits.push(fx.conf >= 1 ? 'Confonde' : 'può confondere');
-      out.icon = m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : 'down';
+      if (fx.status) bits.push(STATUS[fx.status].name + (fx.odds ? ' ' + Math.round(fx.odds * 100) + '%' : '') + (m.kind !== 'atk' && m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
+      out.icon = m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : fx.status ? STATUS[fx.status].icon : 'down';
       out.sub = bits.join(', ');
     }
   }

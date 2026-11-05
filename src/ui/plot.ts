@@ -5,6 +5,7 @@ import { STONES, flag, type Stone } from '../story/plot';
 import { esc, $ } from './dom';
 import { say, sheet, closeSheet, renderHud } from './story-screen';
 import { sfx } from '../audio';
+import { travel } from '../story/movement';
 
 /* What the people of the plot say (story/plot.ts): the archivist of the Torre di Mola, the lady of the Roman theatre,
    Cicero at his tomb, and what happens after the battles with Mamurra's men and with Mamurra himself. */
@@ -12,12 +13,26 @@ import { sfx } from '../audio';
 /** someone of the plot has something to say now: true when the plot takes the talk */
 export function plotTalk(n: Npc): boolean {
   if (n.id === 'archivista' && flag('tr-mamurr-scavi') && !flag('trama-archivio')) { archive(n.name || ''); return true; }
-  if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura')) { riddle(n.name || ''); return true; }
+  if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura') && !flag('porta-cisterna')) { riddle(n.name || ''); return true; }
   return false;
 }
 /** a sign of the plot: Cicero's tomb, once Antonio has the other two stones */
 export function plotSign(s: Sign): boolean {
-  if (s.text.join(' ').indexOf('Tomba di Cicerone') < 0 || !flag('pietra-mura') || !flag('pietra-mare') || flag('pietra-voce')) return false;
+  var t = s.text.join(' ');
+  /* a way in that the story has opened */
+  if (s.enter && s.enter.after.some(flag)) {
+    var e = s.enter;
+    say(s.text, null, [{ label: e.label, fn: function () { travel(e.to, e.tx, e.ty, e.tdir); } }, { label: 'Non ora', fn: null }]);
+    return true;
+  }
+  /* the Pietra delle Mura, on the still water at the bottom of the Cisternone */
+  if (t.indexOf('Pietra delle Mura') >= 0) {
+    if (flag('pietra-mura')) { say(['Sull\'acqua ferma è rimasto solo un cerchio di luce.']); return true; }
+    st.seen['pietra-mura'] = true; save();
+    award('pietra-mura', function () { say(['La prima pietra! Quella del mare, dicono, sta tra le peschiere romane di Caposele. E là c\'è già qualcuno che si immerge.'], CICERO); });
+    return true;
+  }
+  if (t.indexOf('Tomba di Cicerone') < 0 || !flag('pietra-mura') || !flag('pietra-mare') || flag('pietra-voce')) return false;
   tomb();
   return true;
 }
@@ -58,10 +73,8 @@ function riddle(who: string) {
   };
   var wrong = function () { say(['No, no. Chiedi al signore di Castellone, vicino alla torre ottagonale: lui le conta da quando è nato.'], who); };
   var right = function () {
-    say(['Dodici! Intera ne è rimasta solo una, quella ottagonale: le altre se le è prese la guerra.', 'Ecco: la porta del Cisternone si apre. Sull\'acqua ferma, in fondo, c\'è una pietra che brilla.'], who, null, function () {
-      st.seen['pietra-mura'] = true; save();
-      award('pietra-mura', function () { say(['La prima pietra! Quella del mare, dicono, sta tra le peschiere romane di Caposele. E là c\'è già qualcuno che si immerge.'], CICERO); });
-    });
+    st.seen['porta-cisterna'] = true; save(); renderHud();
+    say(['Dodici! Intera ne è rimasta solo una, quella ottagonale: le altre se le è prese la guerra.', 'Ecco: la porta del Cisternone è aperta. Sull\'acqua ferma, in fondo, c\'è una pietra che brilla.', 'Là sotto è buio, e l\'acqua si muove. Guarda bene dove metti i piedi.'], who);
   };
   say(['Hai mandato via quello con la torcia? Bravo: ha svegliato mezzo teatro.', 'La Pietra delle Mura sta nel Cisternone da quando è nato Castellone. La porta si apre solo a chi conosce le mura.'], who, null, ask);
 }

@@ -10,6 +10,7 @@ import { HIDINGS, type Hiding } from '../data/encounters';
 import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { TRAINERS } from '../data/trainers';
 import { rivalHere } from './rival';
+import { shutAt } from './place';
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -135,6 +136,8 @@ export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null 
 }
 /** the hiding place of wild creatures Antonio is standing in (tall grass, rock pools), with its table, or null */
 export function hidingAt(x: number, y: number): Hiding | null {
+  /* a place with its own creatures: anywhere inside */
+  if (M.meet) return HIDINGS[M.meet] || null;
   if (M.id !== 'formia') return null;
   /* in the water, and up on the walls, other creatures live */
   if (moveMode.swim && M.cell(x, y).g === 'sea') return HIDINGS.mare || null;
@@ -159,6 +162,7 @@ export function isWall(m: PreparedMap, x: number, y: number): boolean { return m
 export function blocked(m: PreparedMap, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
   if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isShallow(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;
+  if (m.place && shutAt(m.place, (st.places && st.places[m.id] && st.places[m.id].flags) || {}, x, y)) return true;
   return !!personAt(m, x, y) || !!itemAt(m, x, y);
 }
 /** at the bottom of one of the Roman fish tanks of Gianola, an amphora: found swimming there */

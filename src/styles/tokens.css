@@ -47,6 +47,8 @@
   --m-wall-b: #fbe8b8; --m-wall-c: #f7cdb9; --m-wall-d: #f4dec6; --m-wall-e: #dbe7ef; --m-shutter-a: #5f9e6e; --m-shutter-b: #a5714c; --m-tent-a: #e9765f; --m-tent-b: #3f9fc4;
   /* the night over Formia, the light of sunset, the warm light of street lamps and windows */
   --m-night: #0b1640; --m-dusk: #ff8a4c; --m-lamp: #ffc96b;
+  /* in a place with a puzzle, a plate and the gates it opens share one of these */
+  --m-rune-a: #ffd166; --m-rune-b: #6fd3ff; --m-rune-c: #ff8fc1; --m-rune-d: #8fe388;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

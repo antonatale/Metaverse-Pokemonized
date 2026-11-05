@@ -4,6 +4,7 @@ import type { BattleEvent, BattleState } from './types';
 import { rand, pick } from './rng';
 import { say, line, expr, anim } from './events';
 import { ch, mv, addMod, available, beaterOf, zenOn, BAG } from './state';
+import { statFx, inflict, cureStatus } from './passives';
 import type { Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { applyHit, heal, confuse } from './damage';
@@ -240,6 +241,7 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       s.bag!.tiella = (s.bag!.tiella || 0) - 1;
       ev.push(expr(i, 'grin'));
       heal(s, i, 40, ev, nm + ' mangia una fetta di tiella: si sente meglio.');
+      cureStatus(s, i, ev);
       break;
     /* --- the creatures of Formia: their moves are numbers, done here --- */
     default:
@@ -252,14 +254,6 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
   if (m && m.uses) me.uses[id] = (me.uses[id] || 0) + 1;
   return attacked;
 }
-/* the standard effects of the creatures' moves, the same numbers as the friends' (Palestra, Pit stop, Abbaia, Diagnosi) */
-const FX: Record<string, { stat: string; mult: number; turns: number; text: string }> = {
-  atkUp: { stat: 'atk', mult: 1.3, turns: 3, text: 'l\'Attacco di {n} sale per 3 turni.' },
-  defUp: { stat: 'def', mult: 1.25, turns: 3, text: 'la Difesa di {n} sale per 3 turni.' },
-  atkDown: { stat: 'atk', mult: 0.75, turns: 3, text: 'l\'Attacco di {n} cala per 3 turni.' },
-  defDown: { stat: 'def', mult: 0.8, turns: 2, text: 'la Difesa di {n} cala per 2 turni.' }
-};
-function cap(t: string) { return t.charAt(0).toUpperCase() + t.slice(1); }
 /** a creature's move: damage, a heal, a raise or a drop, a confusion; true if it attacked */
 function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boolean {
   const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, fx = m.fx || {};
@@ -269,7 +263,7 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
     ev.push(expr(i, 'grin'));
     ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
     const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
-    if (dmg > 0 && m.drain && me.hp > 0) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
+    if (dmg > 0 && m.drain && me.hp > 0 && me.hp < me.max) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende metà del danno.');
     if (dmg <= 0 || foe.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {
     ev.push(expr(i, 'grin'));
@@ -277,21 +271,14 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
     heal(s, i, me.max * fx.heal, ev);
   } else {
     ev.push(expr(i, 'smirk'));
-    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: type, move: m.id }));
+    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: m.mtype || type, move: m.id }));
+    /* a spell on the foe can miss, if it says so */
+    if (m.acc && !fx.self && rand(s) > m.acc) { ev.push(anim(j, 'dodge')); ev.push(say('Ma ' + ch(foe).name + ' la scampa!')); return attacked; }
   }
   /* a number going up or down shows itself (story battles only: only the creatures' moves come here) */
-  if (fx.self) {
-    const f = FX[fx.self];
-    addMod(me, f.stat, f.mult, s.turn + f.turns, fx.self);
-    ev.push(anim(i, 'stat', { style: fx.self }));
-    ev.push(say(cap(f.text.replace('{n}', ch(me).name))));
-  }
-  if (fx.foe && foe.hp > 0) {
-    const f = FX[fx.foe];
-    addMod(foe, f.stat, f.mult, s.turn + f.turns, fx.foe);
-    ev.push(anim(j, 'stat', { style: fx.foe }));
-    ev.push(say(cap(f.text.replace('{n}', ch(foe).name))));
-  }
+  if (fx.self) statFx(s, i, fx.self, ev);
+  if (fx.foe && foe.hp > 0) statFx(s, j, fx.foe, ev);
   if (fx.conf && foe.hp > 0 && (fx.conf >= 1 || rand(s) < fx.conf)) confuse(s, j, 2, ev);
+  if (fx.status && foe.hp > 0 && (fx.odds == null || rand(s) < fx.odds)) inflict(s, j, fx.status, ev);
   return attacked;
 }

@@ -281,6 +281,12 @@ export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
   }
 }
 const DECO: Record<string, DecoFn> = {
+  /* water you can wade through: lighter, with stones showing under it */
+  ford: function (c, X, Y, P, x, y) {
+    c.globalAlpha = 0.45; c.fillStyle = P.sea2; c.fillRect(X, Y, T, T); c.globalAlpha = 0.5;
+    for (var k = 0; k < 3; k++) { ell(c, X + 5 + hash(x, y, 160 + k) * 22, Y + 5 + hash(x, y, 170 + k) * 22, 3 + hash(x, y, 180 + k) * 2, 2); c.fillStyle = P.stone; c.fill(); }
+    c.globalAlpha = 1;
+  },
   /* tall grass, where the wild creatures hide: four tufts of long blades that fill the tile */
   tall: function (c, X, Y, P, x, y) {
     for (var k = 0; k < 4; k++) {
