@@ -61,7 +61,8 @@ export function bringAlong(uid: string): boolean {
 /** what a creature can do for Antonio, by the shape of its body: the sea ones swim, the ones of the walls and the trees
     climb, the ones with wings fly up and show Formia from above */
 export type Power = 'nuoto' | 'scalata' | 'volo';
-const POWER_OF: Record<string, Power> = { octo: 'nuoto', urchin: 'nuoto', crab: 'nuoto', lizard: 'scalata', cicada: 'scalata', bird: 'volo', owl: 'volo' };
+const POWER_OF: Record<string, Power> = { octo: 'nuoto', urchin: 'nuoto', crab: 'nuoto', jelly: 'nuoto', star: 'nuoto', eel: 'nuoto', dolphin: 'nuoto', fish: 'nuoto',
+  lizard: 'scalata', cicada: 'scalata', snail: 'scalata', cat: 'scalata', bird: 'volo', owl: 'volo', bat: 'volo', falcon: 'volo', firefly: 'volo' };
 export function powerOfSpecies(sp: SpeciesId): Power | null { return POWER_OF[SPECIES[sp].art.body] || null; }
 /** the creature of the team that has a power (the one at his side first), or null */
 export function powerOf(p: Power): string | null {

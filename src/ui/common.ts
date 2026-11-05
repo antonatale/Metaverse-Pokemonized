@@ -9,7 +9,8 @@ import { reduced, $ } from './dom';
 /* What the screens share: type colours and tags, portraits, the three screen elements and the overlay,
    and what the player has picked so far. */
 
-export const TC: Record<string, string> = { Calma: 'var(--t-calma)', Caos: 'var(--t-caos)', Cervello: 'var(--t-cervello)', Chiacchiera: 'var(--t-chiacchiera)', Cuore: 'var(--t-cuore)' };
+export const TC: Record<string, string> = { Calma: 'var(--t-calma)', Caos: 'var(--t-caos)', Cervello: 'var(--t-cervello)', Chiacchiera: 'var(--t-chiacchiera)', Cuore: 'var(--t-cuore)',
+  Corrente: 'var(--t-corrente)', Calore: 'var(--t-calore)', Cielo: 'var(--t-cielo)', Corazza: 'var(--t-corazza)', Crepuscolo: 'var(--t-crepuscolo)' };
 export function tc(id: string): string { return TC[fighter(id).type]; }
 export function typeTag(t: string): string { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }
 export function kindTag(m: Move): string { return m.kind === 'atk' ? '<span class="type">Attacco</span>' : '<span class="type">Supporto</span>'; }

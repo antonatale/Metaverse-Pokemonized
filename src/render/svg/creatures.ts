@@ -1,5 +1,6 @@
-import { SPECIES, type SpeciesId, type Species } from '../../data/creatures';
-import type { TypeName } from '../../data/types';
+import { SPECIES, type SpeciesId, type Species, type Body } from '../../data/creatures';
+import { isPersonType, type TypeName } from '../../data/types';
+import { fit } from './type-shapes';
 
 /* The creatures of Formia, drawn whole in one SVG each: no shared <defs>, so the same picture works in battle
    (expressions switch with data-expr, like the friends') and, as an image, on the map. Sticker style: flat colours
@@ -9,7 +10,11 @@ import type { TypeName } from '../../data/types';
 
 const INK = '#1c2340', BLUSH = '#ff8fa3';
 const EXPRS = ['smirk', 'grin', 'pout', 'worried', 'sleepy', 'cool'];
-interface Face { eyes: [number, number][]; r: number; mouth: [number, number] | null; w: number; iris?: string; lid: string; rune: [number, number] }
+interface Face {
+  eyes: [number, number][]; r: number; mouth: [number, number] | null; w: number; iris?: string; lid: string; rune: [number, number];
+  /** a legend's heavy brows, one tilt per eye (1: lower toward +x, −1: toward −x): no blush, a stern look */
+  brows?: number[];
+}
 
 function ell(cx: number, cy: number, rx: number, ry: number, fill: string, sw = 4, extra = '') {
   return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="' + fill + '"' + (sw ? ' stroke="' + INK + '" stroke-width="' + sw + '"' : '') + extra + '/>';
@@ -59,7 +64,11 @@ function eye(x: number, y: number, r: number, f: Face, look = 0) {
 }
 function faceGroup(f: Face, x: string): string {
   var s = '', r = f.r, m = f.mouth, w = f.w;
-  var blush = f.eyes.map(function (e, k) { return ell(e[0] + (k ? r * 0.9 : -r * 0.9), e[1] + r * 1.25, r * 0.55, r * 0.32, BLUSH, 0, ' opacity=".55"'); }).join('');
+  var blush = f.brows ? '' : f.eyes.map(function (e, k) { return ell(e[0] + (k ? r * 0.9 : -r * 0.9), e[1] + r * 1.25, r * 0.55, r * 0.32, BLUSH, 0, ' opacity=".55"'); }).join('');
+  if (f.brows && x !== 'grin' && x !== 'sleepy') blush = f.eyes.map(function (e, k) {
+    var d = f.brows![k] || 1, x0 = e[0] - d * r * 1.3, x1 = e[0] + d * r * 1.2, y0 = e[1] - r * (x === 'worried' ? 1.1 : 1.7), y1 = e[1] - r * (x === 'worried' ? 1.7 : 0.85);
+    return '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' L' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' L' + (x1 - d * r * 0.2).toFixed(1) + ' ' + (y1 - r * 0.6).toFixed(1) + ' L' + x0.toFixed(1) + ' ' + (y0 - r * 0.5).toFixed(1) + 'Z" fill="' + INK + '"/>';
+  }).join('');
   if (x === 'grin') {
     s += f.eyes.map(function (e) { return path('M' + (e[0] - r) + ' ' + (e[1] + 2) + ' Q' + e[0] + ' ' + (e[1] - r * 1.2) + ' ' + (e[0] + r) + ' ' + (e[1] + 2), 'none', 4); }).join('');
     if (m) s += path('M' + (m[0] - w / 2) + ' ' + m[1] + ' Q' + m[0] + ' ' + (m[1] + w * 0.9) + ' ' + (m[0] + w / 2) + ' ' + m[1] + 'Z', '#7a2a35', 3) + ell(m[0], m[1] + w * 0.32, w * 0.22, w * 0.13, '#ff8fa3', 0);
@@ -83,7 +92,7 @@ function faceGroup(f: Face, x: string): string {
       else s += path('M' + (m[0] - w / 2) + ' ' + m[1] + ' Q' + m[0] + ' ' + (m[1] + w * 0.5) + ' ' + (m[0] + w / 2) + ' ' + m[1], 'none', 3.5);
     }
   }
-  return blush + s;
+  return f.brows ? s + blush : blush + s;
 }
 
 /* ---------- the bodies: [picture, face] for a species ---------- */
@@ -385,34 +394,444 @@ function sibilla(sp: Species): [string, Face] {
   s += ell(100, 160, 22, 22, '#bfe3ff', 0, ' opacity=".5"') + ell(100, 160, 16, 16, '#d8f0ff', 3.5) + ell(94, 154, 4, 3, '#ffffff', 0);
   return [s, { eyes: [[84, 102], [116, 102]], r: 13, mouth: null, w: 0, iris: a.accent, lid: a.belly, rune: [100, 160] }];
 }
-/* the king of the giants: a body of polygonal stones like the walls of Castellone, a beard of moss, a gold crown */
 function giant(sp: Species): [string, Face] {
-  var a = sp.art, s = '';
-  s += path('M70 150 L66 188 L92 188 L94 150Z', a.dark, 4) + path('M106 150 L108 188 L134 188 L130 150Z', a.dark, 4);
-  s += path('M40 80 Q26 110 30 142 L46 146 Q50 118 58 100Z', a.main, 4) + path('M160 80 Q174 110 170 142 L154 146 Q150 118 142 100Z', a.main, 4);
-  s += ell(36, 148, 13, 11, a.dark) + ell(164, 148, 13, 11, a.dark);
-  s += path('M48 76 L152 76 L140 156 L60 156Z', a.main, 4);
-  [[58, 82, 82, 80, 86, 104, 62, 108], [86, 80, 114, 80, 112, 102, 90, 104], [118, 80, 142, 82, 138, 108, 116, 104], [64, 112, 92, 108, 96, 132, 68, 136],
-   [100, 108, 134, 112, 132, 136, 104, 134], [70, 140, 100, 138, 102, 154, 72, 154], [106, 140, 134, 140, 130, 154, 108, 154]].forEach(function (q) {
-    s += path('M' + q[0] + ' ' + q[1] + ' L' + q[2] + ' ' + q[3] + ' L' + q[4] + ' ' + q[5] + ' L' + q[6] + ' ' + q[7] + 'Z', a.belly, 2.4, ' opacity=".9"');
+  /* the king of the giants, titanic: a boulder held over his head with both arms (the ones he threw at Ulysses'
+     ships), a body of polygonal stone like the walls of Castellone, the magic glowing in the cracks, the crown */
+  var a = sp.art, s = '', LAVA = '#ffb03a', MOSS = '#6f9a54';
+  /* the arms, up; the boulder over the head, with its cracks of fire; the hands gripping it */
+  s += limb('M54 92 Q36 66 56 36', a.main, 22) + limb('M146 92 Q164 66 144 36', a.main, 22);
+  s += poly([52, 34, 62, 10, 92, 0, 122, 2, 146, 14, 152, 36, 138, 54, 104, 60, 66, 56], '#8c8270', 4);
+  s += poly([64, 12, 92, 3, 120, 5, 106, 22, 78, 24], '#b3a891', 0) + line('M84 16 L98 32 L90 50 M98 32 L122 40 L134 30', LAVA, 3.2);
+  s += cloud([[62, 48, 6], [74, 54, 5], [140, 46, 5]], MOSS, 2);
+  s += ell(54, 34, 13, 12, a.dark) + ell(146, 34, 13, 12, a.dark) + line('M48 28 L58 26 M142 26 L152 28', INK, 2.4);
+  /* the legs like two towers, the feet cracking the ground */
+  s += path('M66 150 L60 188 L94 188 L94 150Z', a.dark, 4) + path('M106 150 L106 188 L140 188 L134 150Z', a.dark, 4);
+  s += line('M44 192 L58 186 L66 194 M136 194 L146 186 L160 192', LAVA, 3);
+  /* the body of the giants' walls: big polygonal blocks, fire between them */
+  s += path('M40 86 L160 86 L144 160 L56 160Z', a.main, 4);
+  [[50, 92, 80, 90, 84, 112, 54, 116], [84, 90, 116, 90, 112, 110, 88, 112], [120, 90, 150, 92, 146, 116, 116, 112], [58, 120, 90, 116, 94, 138, 62, 142],
+   [98, 116, 142, 120, 138, 142, 100, 140], [66, 146, 98, 144, 100, 158, 68, 158], [104, 146, 136, 146, 132, 158, 106, 158]].forEach(function (q) {
+    s += path('M' + q[0] + ' ' + q[1] + ' L' + q[2] + ' ' + q[3] + ' L' + q[4] + ' ' + q[5] + ' L' + q[6] + ' ' + q[7] + 'Z', a.belly, 2.4, ' opacity=".92"');
   });
-  s += path('M72 46 Q72 20 100 18 Q128 20 128 46 L126 76 Q100 86 74 76Z', a.main, 4);
-  s += path('M74 72 Q78 104 100 110 Q122 104 126 72 Q112 84 100 84 Q88 84 74 72Z', '#6f9a54', 3.5);
-  s += path('M74 28 L80 6 L90 20 L100 2 L110 20 L120 6 L126 28Z', a.accent, 3.5) + ell(100, 16, 4, 4, '#e8473a', 2) + ell(84, 20, 3, 3, '#3f7ccf', 1.8) + ell(116, 20, 3, 3, '#3f7ccf', 1.8);
-  s += path('M80 54 L94 58 M120 54 L106 58', 'none', 4);
-  return [s, { eyes: [[87, 64], [113, 64]], r: 8, mouth: [100, 80], w: 14, iris: a.accent, lid: a.main, rune: [100, 124] }];
+  s += line('M84 112 L86 116 L94 116 M112 110 L116 114 L98 116 M94 138 L98 142 L100 140', LAVA, 2.6);
+  /* the shoulders of stone, as big as boulders */
+  s += poly([30, 84, 44, 70, 66, 74, 70, 96, 50, 104, 32, 98], a.dark, 4) + poly([170, 84, 156, 70, 134, 74, 130, 96, 150, 104, 168, 98], a.dark, 4);
+  s += line('M40 84 L52 88 L58 80 M160 84 L148 88 L142 80', LAVA, 2.4);
+  /* the head, the beard of ivy, the crown */
+  s += path('M78 60 Q78 44 100 42 Q122 44 122 60 L120 88 Q100 98 80 88Z', a.main, 4);
+  s += path('M80 84 Q84 110 100 116 Q116 110 120 84 Q110 94 100 94 Q90 94 80 84Z', MOSS, 3.5);
+  s += path('M78 50 L84 30 L92 42 L100 26 L108 42 L116 30 L122 50Z', a.accent, 3.5) + ell(100, 38, 4, 4, '#e8473a', 2) + ell(87, 42, 3, 3, '#3f7ccf', 1.8) + ell(113, 42, 3, 3, '#3f7ccf', 1.8);
+  /* pebbles that float round him, lifted by his magic */
+  s += poly([18, 120, 26, 114, 30, 124, 22, 128], '#9a8f7c', 2.5) + poly([176, 128, 184, 120, 190, 130, 180, 134], '#9a8f7c', 2.5) + poly([24, 160, 30, 156, 34, 164, 26, 166], '#9a8f7c', 2);
+  return [s, { eyes: [[90, 70], [110, 70]], r: 6.5, mouth: null, w: 14, iris: LAVA, lid: a.main, rune: [100, 128], brows: [1, -1] }];
 }
-const BODIES = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl, giant: giant };
+/* ---------- the creatures found later: the sea, the night, the hills, the town, and two more legends ---------- */
+/* the jellyfish of the summer currents: a bell like a lantern, tentacles in two colours */
+function jelly(sp: Species): [string, Face] {
+  if (sp.stage === 2) return medusaurora(sp);
+  var a = sp.art, s = '';
+  [[62, 0], [80, 1], [100, 0], [120, 1], [138, 0]].forEach(function (t, k) {
+    var x = t[0], w = k % 2 ? -10 : 10;
+    s += limb('M' + x + ' 122 Q' + (x + w) + ' 142 ' + x + ' 160 Q' + (x - w) + ' 172 ' + (x + w * 0.4) + ' 184', t[1] ? a.accent : a.dark, 5);
+  });
+  s += path('M48 124 Q46 62 100 58 Q154 62 152 124 Q140 132 128 124 Q114 132 100 124 Q86 132 72 124 Q60 132 48 124Z', a.main, 4);
+  s += ell(78, 84, 16, 10, a.belly, 0, ' opacity=".75"') + ell(128, 100, 5, 5, a.belly, 0, ' opacity=".7"') + ell(66, 106, 4, 4, a.belly, 0, ' opacity=".7"');
+  return [s, { eyes: [[84, 100], [116, 100]], r: 9.5, mouth: [100, 114], w: 12, lid: a.main, rune: [100, 74] }];
+}
+/* its last form: a taller bell with a frilled rim, and long ribbons of light like the lights of the north */
+function medusaurora(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  [[56, a.accent, 26], [84, '#ffb3e6', 34], [116, a.belly, 30], [144, a.accent, 22]].forEach(function (r, k) {
+    var x = r[0] as number, c = r[1] as string, w = r[2] as number, d = k % 2 ? -1 : 1;
+    s += path('M' + (x - 7) + ' 112 Q' + (x + d * w) + ' 140 ' + (x - 6) + ' 162 Q' + (x - d * w * 0.6) + ' 176 ' + (x + 2) + ' 188 L' + (x + 10) + ' 186 Q' + (x - d * w * 0.4) + ' 172 ' + (x + 8) + ' 160 Q' + (x + d * w + 10) + ' 138 ' + (x + 7) + ' 112Z', c, 3, ' opacity=".9"');
+  });
+  s += path('M40 116 Q36 44 100 40 Q164 44 160 116 Q150 128 138 118 Q126 130 114 118 Q100 130 86 118 Q74 130 62 118 Q50 128 40 116Z', a.main, 4);
+  s += path('M52 110 Q100 128 148 110', 'none', 0, ' stroke="' + a.belly + '" stroke-width="4" opacity=".7"');
+  s += ell(74, 70, 18, 11, a.belly, 0, ' opacity=".75"');
+  s += star4(100, 26, 7, a.accent) + star4(76, 32, 4.5, '#ffffff') + star4(124, 32, 4.5, '#ffffff');
+  return [s, { eyes: [[84, 90], [116, 90]], r: 11, mouth: [100, 106], w: 14, lid: a.main, rune: [100, 60] }];
+}
+/* a five-pointed star of the rock pools, with dots along its arms */
+function starPts(cx: number, cy: number, R: number, r: number): number[] {
+  var pts: number[] = [];
+  for (var k = 0; k < 10; k++) { var t = -Math.PI / 2 + k * Math.PI / 5, q = k % 2 ? r : R; pts.push(+(cx + Math.cos(t) * q).toFixed(1), +(cy + Math.sin(t) * q).toFixed(1)); }
+  return pts;
+}
+function star(sp: Species): [string, Face] {
+  if (sp.stage === 2) return astromarina(sp);
+  var a = sp.art, s = '';
+  s += poly(starPts(100, 126, 64, 30), a.main, 4, ' stroke-linejoin="round"');
+  for (var k = 0; k < 5; k++) {
+    var t = -Math.PI / 2 + k * Math.PI * 2 / 5;
+    [0.62, 0.8].forEach(function (f) { s += ell(+(100 + Math.cos(t) * 64 * f).toFixed(1), +(126 + Math.sin(t) * 64 * f).toFixed(1), 3.4, 3.4, a.belly, 0); });
+  }
+  s += star4(150, 70, 6, a.accent);
+  return [s, { eyes: [[88, 122], [112, 122]], r: 8.5, mouth: [100, 138], w: 12, lid: a.main, rune: [100, 84] }];
+}
+/* its last form: a star of the night sky, standing, the constellations drawn on it and a halo of small stars */
+function astromarina(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += ell(100, 112, 70, 66, a.dark, 0, ' opacity=".35"');
+  [[40, 64], [158, 58], [30, 120], [170, 118], [62, 34], [140, 30]].forEach(function (p, k) { s += star4(p[0], p[1], k % 2 ? 4 : 5.5, k % 3 ? '#ffffff' : a.accent); });
+  s += poly(starPts(100, 118, 76, 34), a.main, 4, ' stroke-linejoin="round"');
+  s += line('M100 58 L112 92 L148 104 M112 92 L124 140 M88 92 L52 104 M88 92 L76 140', a.accent, 1.8, ' opacity=".9"');
+  [[100, 58], [148, 104], [52, 104], [124, 140], [76, 140], [112, 92], [88, 92]].forEach(function (p) { s += star4(p[0], p[1], 4, a.accent, 1.2); });
+  return [s, { eyes: [[88, 114], [112, 114]], r: 9, mouth: [100, 130], w: 13, iris: a.accent, lid: a.main, rune: [100, 78] }];
+}
+/* the moray of the rock dens: the head out of a hole in the rocks, the mouth always a little open */
+function eel(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += cloud([[56, 172, 26], [100, 178, 30], [146, 172, 24], [78, 158, 20], [124, 160, 20]], '#8f95a3') + ell(104, 156, 24, 12, '#2a2f3a', 3);
+  s += limb('M104 156 Q76 124 100 100 Q120 82 112 70', a.main, 28);
+  s += path('M118 96 Q140 86 132 70 Q146 78 138 98Z', a.dark, 3) + path('M92 140 Q76 128 80 112 Q70 128 80 142Z', a.dark, 3);
+  [[96, 128], [104, 108], [88, 116], [110, 92], [98, 146]].forEach(function (p) { s += ell(p[0], p[1], 3.5, 2.6, a.belly, 0); });
+  s += path('M84 66 Q86 40 112 38 Q140 40 142 62 Q142 84 120 88 Q96 90 84 66Z', a.main, 4);
+  s += path('M88 74 Q112 92 138 76 Q132 90 112 92 Q94 90 88 74Z', a.belly, 3);
+  s += path('M98 82 l3 6 l3 -6 M112 86 l3 6 l3 -6 M124 82 l3 6 l3 -5', '#ffffff', 1.6);
+  s += line('M96 46 L110 52 M134 44 L122 50', INK, 3.5);
+  return [s, { eyes: [[104, 58], [126, 56]], r: 7.5, mouth: [114, 74], w: 16, iris: a.belly, lid: a.main, rune: [100, 120] }];
+}
+/* the dolphin of the gulf: out of a wave, the tail up behind, a curious face */
+function dolphinBody(a: Species['art'], big: boolean): string {
+  var s = '', k = big ? 1.08 : 1;
+  s += path('M138 112 Q164 86 160 58 Q176 66 180 54 Q178 80 164 90 Q170 104 146 122Z', a.main, 4);
+  s += path('M' + (52 / k) + ' 160 Q44 100 98 ' + (90 / k) + ' Q150 86 152 130 Q152 162 120 170 Q86 178 52 160Z', a.main, 4);
+  s += path('M104 94 Q112 66 130 62 Q122 82 124 96Z', a.dark, 3.5);
+  s += ell(98, 148, 36, 18, a.belly, 0);
+  s += path('M60 128 Q34 130 30 142 Q48 150 70 142Z', a.main, 4) + path('M38 142 Q50 146 66 140', 'none', 0, ' stroke="' + INK + '" stroke-width="2.5" stroke-linecap="round"');
+  s += path('M72 156 Q58 172 70 178 Q80 168 86 160Z', a.dark, 3) + path('M126 158 Q142 172 132 180 Q122 170 116 162Z', a.dark, 3);
+  s += path('M24 180 Q46 168 68 180 Q90 192 112 180 Q134 168 156 180 Q170 188 182 180 L182 192 L24 192Z', '#8fd0f6', 3);
+  return s;
+}
+function dolphin(sp: Species): [string, Face] {
+  if (sp.stage === 2) return delfaro(sp);
+  var a = sp.art;
+  return [dolphinBody(a, false), { eyes: [[80, 114], [106, 110]], r: 8, mouth: [56, 140], w: 14, lid: a.main, rune: [118, 132] }];
+}
+/* its last form: the light of the lighthouse on its head, in red and white bands, the beams round it */
+function delfaro(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += path('M92 44 L58 20 M108 44 L142 20 M100 40 L100 10', 'none', 0, ' stroke="' + a.accent + '" stroke-width="7" stroke-linecap="round" opacity=".55"');
+  s += dolphinBody(a, true);
+  s += path('M84 92 L88 66 L112 66 L116 92Z', '#ffffff', 3.5) + path('M85 84 L115 84 L113 74 L87 74Z', '#e8473a', 0);
+  s += path('M86 66 L114 66 L112 52 L88 52Z', a.accent, 3.5) + path('M84 52 L116 52 L100 40Z', '#e8473a', 3.5);
+  s += line('M80 106 Q98 114 120 104', '#e8473a', 4);
+  return [s, { eyes: [[80, 116], [108, 112]], r: 8.5, mouth: [56, 140], w: 15, lid: a.main, rune: [122, 134] }];
+}
+/* the mullet of the harbour: wide eyes, mouth open, flapping; it does nothing at all */
+function fish(sp: Species): [string, Face] {
+  if (sp.stage === 2) return cefaldrago(sp);
+  var a = sp.art, s = '';
+  s += path('M146 132 L182 104 L176 132 L182 160Z', a.main, 4);
+  s += path('M84 102 Q104 84 126 102Z', a.dark, 3.5) + path('M96 160 Q110 176 124 160Z', a.dark, 3.5);
+  s += ell(98, 132, 58, 34, a.main) + path('M44 140 Q98 172 154 138 Q140 160 98 164 Q58 162 44 140Z', a.belly, 0);
+  [[110, 120], [126, 126], [118, 136], [134, 116]].forEach(function (p) { s += path('M' + (p[0] - 5) + ' ' + p[1] + ' Q' + p[0] + ' ' + (p[1] - 6) + ' ' + (p[0] + 5) + ' ' + p[1], 'none', 0, ' stroke="' + a.dark + '" stroke-width="2.2" opacity=".7"'); });
+  s += path('M40 128 Q24 132 28 146 Q38 148 48 142', 'none', 0, ' stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"');
+  s += path('M108 186 Q112 176 120 178 Q114 168 104 176', 'none', 0, ' stroke="#8fd0f6" stroke-width="3" stroke-linecap="round"') + ell(150, 182, 4, 3, '#8fd0f6', 2);
+  return [s, { eyes: [[62, 120], [84, 116]], r: 10, mouth: [44, 138], w: 12, lid: a.main, rune: [112, 140] }];
+}
+/* its last form: the dragon of the gulf, coiled, a frill along the neck, horns and long whiskers */
+function cefaldrago(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += limb('M30 182 Q22 140 64 136 Q112 134 116 168 Q120 188 160 178', a.main, 26);
+  s += limb('M30 182 Q22 140 64 136 Q112 134 116 168 Q120 188 160 178', a.belly, 8);
+  s += path('M150 170 L182 150 L178 176 L188 192 L160 184Z', a.dark, 3.5);
+  s += limb('M128 172 Q166 134 132 96', a.main, 30);
+  s += path('M150 160 L170 148 L162 136 L178 126 L166 116 L174 104 L156 100Z', a.accent, 3.5);
+  s += path('M90 62 Q98 34 128 36 Q156 40 158 70 Q156 96 128 100 Q98 100 90 82Z', a.main, 4);
+  s += path('M84 82 Q110 108 146 92 Q136 112 110 112 Q88 108 84 82Z', a.belly, 3.5) + path('M96 94 l4 7 l4 -7 M112 100 l4 7 l4 -6 M128 98 l3 7 l4 -7', '#ffffff', 1.8);
+  s += path('M112 40 Q102 14 84 10 Q100 24 102 44Z', a.accent, 3.5) + path('M140 44 Q150 18 170 16 Q156 30 150 50Z', a.accent, 3.5);
+  s += line('M90 86 Q64 92 52 120 M92 92 Q76 108 78 128', a.dark, 3);
+  s += line('M100 52 L114 58 M150 54 L136 58', INK, 4);
+  return [s, { eyes: [[110, 66], [134, 66]], r: 8, mouth: [116, 92], w: 18, iris: a.accent, lid: a.main, rune: [72, 150] }];
+}
+/* the firefly: a little dark body, wings like glass, and the light behind that it turns on for its friends */
+function firefly(sp: Species): [string, Face] {
+  if (sp.stage === 2) return lanternella(sp);
+  var a = sp.art, s = '';
+  s += ell(100, 150, 46, 44, a.accent, 0, ' opacity=".45"');
+  s += ell(70, 116, 30, 14, '#eaf4ff', 3, ' opacity=".8" transform="rotate(-30 70 116)"') + ell(130, 116, 30, 14, '#eaf4ff', 3, ' opacity=".8" transform="rotate(30 130 116)"');
+  s += path('M84 176 l-8 10 M100 180 l0 10 M116 176 l8 10', 'none', 4);
+  s += ell(100, 150, 30, 32, a.belly) + line('M74 146 Q100 154 126 146 M76 160 Q100 168 124 160', a.dark, 2, ' opacity=".5"');
+  s += ell(100, 112, 24, 14, a.main) + ell(100, 94, 24, 22, a.main);
+  s += line('M90 74 Q82 54 70 50 M110 74 Q118 54 130 50', INK, 3) + ell(70, 50, 5, 5, a.accent, 2.5) + ell(130, 50, 5, 5, a.accent, 2.5);
+  return [s, { eyes: [[91, 92], [109, 92]], r: 7.5, mouth: [100, 104], w: 9, lid: a.main, rune: [100, 152] }];
+}
+/* its last form: the light is a paper lantern now, ribbed and capped, with a little flame inside */
+function lanternella(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += ell(100, 146, 62, 56, a.accent, 0, ' opacity=".4"');
+  s += ell(62, 98, 36, 16, '#eaf4ff', 3, ' opacity=".8" transform="rotate(-35 62 98)"') + ell(138, 98, 36, 16, '#eaf4ff', 3, ' opacity=".8" transform="rotate(35 138 98)"');
+  s += path('M72 118 L128 118 L124 110 L76 110Z', a.dark, 3) + path('M76 178 L124 178 L120 186 L80 186Z', a.dark, 3);
+  s += ell(100, 148, 34, 32, a.belly);
+  s += line('M84 120 Q76 148 84 176 M100 118 L100 178 M116 120 Q124 148 116 176', a.dark, 2, ' opacity=".55"');
+  s += path('M100 136 Q92 150 100 160 Q108 150 100 136Z', '#fff6a8', 2);
+  s += ell(100, 78, 28, 26, a.main);
+  s += line('M88 56 Q80 36 66 32 M112 56 Q120 36 134 32', INK, 3) + ell(66, 32, 5.5, 5.5, a.accent, 2.5) + ell(134, 32, 5.5, 5.5, a.accent, 2.5);
+  [[40, 150], [160, 140], [54, 180], [150, 176]].forEach(function (p) { s += star4(p[0], p[1], 4, '#fff6a8'); });
+  return [s, { eyes: [[88, 76], [112, 76]], r: 9, mouth: [100, 90], w: 11, lid: a.main, rune: [100, 168] }];
+}
+/* the bat of the caves: big ears, scalloped wings, two little fangs */
+function batWing(c: string): string { return path('M70 112 Q42 84 14 102 Q24 118 18 136 Q34 126 42 142 Q50 128 64 140Z', c, 4); }
+function bat(sp: Species): [string, Face] {
+  if (sp.stage === 2) return pipistrega(sp);
+  var a = sp.art, s = '';
+  s += batWing(a.dark) + mirror(batWing(a.dark));
+  s += path('M74 98 L62 56 L94 86Z', a.main, 4) + path('M126 98 L138 56 L106 86Z', a.main, 4) + path('M76 90 L68 66 L88 84Z', a.belly, 0) + path('M124 90 L132 66 L112 84Z', a.belly, 0);
+  s += path('M88 160 l-4 16 M112 160 l4 16', 'none', 4);
+  s += ell(100, 126, 36, 38, a.main) + ell(100, 140, 22, 20, a.belly, 0);
+  s += path('M93 134 l3 6 l3 -6Z M101 134 l3 6 l3 -6Z', '#ffffff', 1.6);
+  return [s, { eyes: [[88, 116], [112, 116]], r: 9, mouth: [100, 130], w: 12, lid: a.main, rune: [100, 152] }];
+}
+/* its last form: the witch of the caves, with a pointed hat, a cloak of wings and the moon behind */
+function pipistrega(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += crescent(150, 60, 22, '#fff2b3', -30, 3);
+  s += path('M66 110 Q30 72 4 96 Q18 116 8 140 Q28 128 34 150 Q46 132 58 148 Q62 130 70 134Z', a.dark, 4) + mirror(path('M66 110 Q30 72 4 96 Q18 116 8 140 Q28 128 34 150 Q46 132 58 148 Q62 130 70 134Z', a.dark, 4));
+  s += path('M86 164 l-4 18 M114 164 l4 18', 'none', 4);
+  s += ell(100, 130, 40, 42, a.main) + ell(100, 146, 24, 22, a.belly, 0);
+  s += path('M93 140 l3 7 l3 -7Z M101 140 l3 7 l3 -7Z', '#ffffff', 1.6);
+  s += path('M58 96 Q100 108 142 96 Q138 86 100 84 Q62 86 58 96Z', a.dark, 3.5);
+  s += path('M74 90 L104 14 Q112 10 114 20 L124 90Z', a.dark, 3.5) + path('M76 84 L124 84 L122 76 L78 76Z', a.accent, 0);
+  return [s, { eyes: [[87, 118], [113, 118]], r: 9.5, mouth: [100, 134], w: 12, iris: a.accent, lid: a.main, rune: [100, 160] }];
+}
+/* the young boar: striped like all wild piglets, the snout in the ground */
+function boar(sp: Species): [string, Face] {
+  if (sp.stage === 2) return zannaferro(sp);
+  var a = sp.art, s = '';
+  s += path('M74 168 l-2 18 M90 172 l0 16 M110 172 l0 16 M126 168 l2 18', 'none', 7) + path('M74 168 l-2 18 M90 172 l0 16 M110 172 l0 16 M126 168 l2 18', 'none', 0, ' stroke="' + a.dark + '" stroke-width="4" stroke-linecap="round"');
+  s += ell(100, 146, 48, 34, a.main);
+  [76, 92, 108, 124].forEach(function (x) { s += path('M' + x + ' 118 Q' + (x + 4) + ' 146 ' + x + ' 174', 'none', 0, ' stroke="' + a.belly + '" stroke-width="5" stroke-linecap="round" opacity=".8"'); });
+  s += path('M70 86 L62 62 L86 78Z', a.dark, 3.5) + path('M130 86 L138 62 L114 78Z', a.dark, 3.5);
+  s += ell(100, 102, 36, 30, a.main);
+  s += ell(100, 118, 16, 11, a.belly, 3.5) + ell(94, 118, 2.6, 3.6, INK, 0) + ell(106, 118, 2.6, 3.6, INK, 0);
+  s += path('M84 124 Q80 116 78 112 M116 124 Q120 116 122 112', 'none', 0, ' stroke="#ffffff" stroke-width="3" stroke-linecap="round"');
+  return [s, { eyes: [[86, 96], [114, 96]], r: 8, mouth: [100, 131], w: 10, lid: a.main, rune: [100, 158] }];
+}
+/* its last form: the boar who leads the woods, with a bristling crest and iron tusks */
+function zannaferro(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += path('M66 170 l-4 18 M88 176 l0 14 M112 176 l0 14 M134 170 l4 18', 'none', 9);
+  s += poly([44, 120, 52, 92, 62, 106, 70, 78, 82, 98, 92, 70, 102, 94, 114, 72, 122, 98, 136, 82, 140, 108, 156, 100, 156, 130], a.dark, 3.5);
+  s += ell(100, 144, 58, 40, a.main);
+  s += path('M64 84 L54 56 L84 74Z', a.dark, 3.5) + path('M136 84 L146 56 L116 74Z', a.dark, 3.5);
+  s += ell(100, 104, 40, 32, a.main);
+  s += path('M78 126 Q60 120 58 96 Q68 112 84 116Z', a.accent, 3.5) + path('M122 126 Q140 120 142 96 Q132 112 116 116Z', a.accent, 3.5);
+  s += ell(100, 120, 18, 12, a.belly, 3.5) + ell(93, 120, 3, 4, INK, 0) + ell(107, 120, 3, 4, INK, 0);
+  s += line('M70 82 L80 90 M130 82 L120 90', INK, 4) + line('M112 84 l10 -10 M116 88 l8 -6', '#e8d2b8', 2.2);
+  return [s, { eyes: [[84, 96], [116, 96]], r: 8, mouth: [100, 134], w: 12, iris: '#ff6b4a', lid: a.main, rune: [100, 160] }];
+}
+/* the falcon of the cliffs: a dark hood with the "moustache", a hooked beak, a barred chest */
+function falconHead(a: Species['art'], y: number, k: number): string {
+  var s = ell(100, y, 30 * k, 27 * k, a.main);
+  s += path('M' + (100 - 30 * k) + ' ' + (y - 2) + ' Q100 ' + (y - 34 * k) + ' ' + (100 + 30 * k) + ' ' + (y - 2) + ' Q' + (100 + 20 * k) + ' ' + (y - 14 * k) + ' 100 ' + (y - 14 * k) + ' Q' + (100 - 20 * k) + ' ' + (y - 14 * k) + ' ' + (100 - 30 * k) + ' ' + (y - 2) + 'Z', a.dark, 0);
+  s += path('M84 ' + (y + 6) + ' Q80 ' + (y + 18) + ' 86 ' + (y + 22) + ' Q90 ' + (y + 14) + ' 88 ' + (y + 6) + 'Z', a.dark, 0) + path('M116 ' + (y + 6) + ' Q120 ' + (y + 18) + ' 114 ' + (y + 22) + ' Q110 ' + (y + 14) + ' 112 ' + (y + 6) + 'Z', a.dark, 0);
+  s += path('M92 ' + (y + 10) + ' Q100 ' + (y + 4) + ' 108 ' + (y + 10) + ' Q104 ' + (y + 22) + ' 100 ' + (y + 26) + ' Q98 ' + (y + 18) + ' 92 ' + (y + 10) + 'Z', '#f2c94c', 3);
+  return s;
+}
+function falcon(sp: Species): [string, Face] {
+  if (sp.stage === 2) return pellegrino(sp);
+  var a = sp.art, s = '';
+  s += path('M88 176 l-6 10 M88 176 l0 11 M88 176 l6 10 M112 176 l-6 10 M112 176 l0 11 M112 176 l6 10', 'none', 0, ' stroke="#e8a33c" stroke-width="4" stroke-linecap="round"');
+  s += path('M64 118 Q50 150 68 178 Q80 158 80 132Z', a.dark, 4) + path('M136 118 Q150 150 132 178 Q120 158 120 132Z', a.dark, 4);
+  s += ell(100, 140, 36, 40, a.main) + ell(100, 150, 24, 28, a.belly, 0);
+  [[92, 140], [108, 140], [100, 152], [92, 164], [108, 164]].forEach(function (p) { s += line('M' + (p[0] - 4) + ' ' + p[1] + ' l8 0', a.dark, 2.4); });
+  s += falconHead(a, 94, 1);
+  return [s, { eyes: [[88, 92], [112, 92]], r: 8.5, mouth: null, w: 0, lid: a.main, rune: [100, 176] }];
+}
+/* its last form: the peregrine in its dive, wings swept back and the wind round it */
+function pellegrino(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += line('M20 60 L50 70 M14 90 L44 96 M156 66 L186 56 M160 94 L190 88', '#ffffff', 3, ' opacity=".8"');
+  var wing = path('M76 110 Q44 70 6 66 Q20 82 18 92 Q30 92 32 102 Q44 100 46 112 Q58 108 60 122 Q70 120 78 132Z', a.dark, 4) + line('M18 92 Q40 96 60 116 M32 102 Q50 106 66 124', a.main, 2.4);
+  s += wing + mirror(wing);
+  s += path('M92 168 L100 190 L108 168Z', a.dark, 3.5);
+  s += ell(100, 136, 34, 42, a.main) + ell(100, 146, 22, 30, a.belly, 0);
+  [[92, 136], [108, 136], [100, 148], [92, 160], [108, 160]].forEach(function (p) { s += line('M' + (p[0] - 4) + ' ' + p[1] + ' l8 0', a.dark, 2.4); });
+  s += falconHead(a, 88, 1.08);
+  return [s, { eyes: [[87, 86], [113, 86]], r: 9, mouth: null, w: 0, iris: a.accent, lid: a.main, rune: [100, 170] }];
+}
+/* the broom of the hills: a green bud with leafy arms and a crown of yellow flowers */
+function flowerCrown(cx: number, cy: number, w: number, a: Species['art'], n: number): string {
+  var list: number[][] = [];
+  for (var k = 0; k < n; k++) { var t = Math.PI * (1.05 + 0.9 * k / (n - 1)); list.push([+(cx + Math.cos(t) * w).toFixed(1), +(cy + Math.sin(t) * w * 0.7).toFixed(1), 11 + (k % 2) * 3]); }
+  list.push([cx, cy - w * 0.25, 14]);
+  var s = cloud(list, a.accent, 3);
+  list.forEach(function (b) { s += ell(b[0], b[1] + 2, 3, 2.4, '#e88a1a', 0); });
+  return s;
+}
+function flower(sp: Species): [string, Face] {
+  if (sp.stage === 2) return ginestrona(sp);
+  var a = sp.art, s = '';
+  s += path('M86 176 Q80 186 70 186 M100 178 L100 190 M114 176 Q120 186 130 186', 'none', 0, ' stroke="' + a.dark + '" stroke-width="5" stroke-linecap="round"');
+  s += path('M66 138 Q40 130 34 110 Q56 112 70 128Z', a.dark, 3.5) + path('M134 138 Q160 130 166 110 Q144 112 130 128Z', a.dark, 3.5);
+  s += ell(100, 144, 34, 36, a.main) + ell(100, 154, 20, 20, a.belly, 0, ' opacity=".7"');
+  s += flowerCrown(100, 104, 34, a, 6);
+  return [s, { eyes: [[88, 136], [112, 136]], r: 8.5, mouth: [100, 152], w: 12, lid: a.main, rune: [100, 172] }];
+}
+/* its last form: a bush in flower, a sea of yellow, with two bees busy about it */
+function ginestrona(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += path('M78 180 Q70 190 56 190 M100 182 L100 192 M122 180 Q130 190 144 190', 'none', 0, ' stroke="' + a.dark + '" stroke-width="6" stroke-linecap="round"');
+  s += path('M62 140 Q30 136 20 110 Q48 110 66 128Z', a.dark, 3.5) + path('M138 140 Q170 136 180 110 Q152 110 134 128Z', a.dark, 3.5);
+  s += ell(100, 146, 42, 40, a.main) + ell(100, 158, 26, 22, a.belly, 0, ' opacity=".7"');
+  s += flowerCrown(100, 104, 50, a, 8) + flowerCrown(100, 82, 26, a, 4);
+  [[34, 70], [168, 84]].forEach(function (b) { s += ell(b[0], b[1], 9, 7, '#ffd23c', 2.5) + line('M' + (b[0] - 3) + ' ' + (b[1] - 6) + ' l0 12 M' + (b[0] + 3) + ' ' + (b[1] - 6) + ' l0 12', INK, 2) + ell(b[0], b[1] - 9, 6, 4, '#ffffff', 2, ' opacity=".85"'); });
+  return [s, { eyes: [[86, 138], [114, 138]], r: 9.5, mouth: [100, 156], w: 13, lid: a.main, rune: [100, 176] }];
+}
+/* the snail of the dry-stone walls: the shell with its spiral, the eyes up on their stalks */
+function snailFoot(a: Species['art'], k: number): string {
+  return path('M30 186 Q28 150 52 ' + (142 - 6 * k) + ' Q70 ' + (136 - 6 * k) + ' 76 152 L156 176 Q170 186 150 190 L36 190Z', a.main, 4) + path('M40 182 L150 182', 'none', 0, ' stroke="' + a.belly + '" stroke-width="5" stroke-linecap="round" opacity=".7"');
+}
+function snail(sp: Species): [string, Face] {
+  if (sp.stage === 2) return torrelumaca(sp);
+  var a = sp.art, s = '';
+  s += line('M52 140 L44 104 M64 138 L68 100', INK, 4);
+  s += snailFoot(a, 0);
+  s += ell(114, 132, 42, 40, a.belly) + path('M114 132 m-30 0 a30 28 0 1 1 30 28 a22 20 0 1 1 -18 -26 a13 12 0 1 1 14 10', 'none', 0, ' stroke="' + a.accent + '" stroke-width="4" stroke-linecap="round"');
+  return [s, { eyes: [[44, 100], [68, 96]], r: 8, mouth: [52, 160], w: 10, lid: a.main, rune: [118, 128] }];
+}
+/* its last form: the shell is a round stone tower with battlements, like the Angevin tower of Mola */
+function torrelumaca(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += line('M48 136 L38 96 M62 132 L66 92', INK, 4);
+  s += snailFoot(a, 1);
+  s += path('M80 168 L80 74 Q116 66 152 74 L152 168 Q116 176 80 168Z', a.belly, 4);
+  [80, 96, 112, 128, 144].forEach(function (x) { s += path('M' + x + ' 74 L' + x + ' 60 L' + (x + 9) + ' 60 L' + (x + 9) + ' 72Z', a.belly, 3); });
+  s += line('M80 98 Q116 92 152 98 M80 124 Q116 118 152 124 M80 148 Q116 142 152 148', a.dark, 2, ' opacity=".55"');
+  s += path('M106 112 L106 100 Q112 92 118 100 L118 112Z', INK, 0) + path('M128 140 L128 130 Q133 124 138 130 L138 140Z', INK, 0) + path('M92 140 L92 130 Q97 124 102 130 L102 140Z', INK, 0);
+  s += line('M148 60 L148 38', INK, 3) + path('M148 38 L166 44 L148 50Z', '#e8473a', 2.5);
+  return [s, { eyes: [[38, 92], [66, 88]], r: 8.5, mouth: [50, 156], w: 11, lid: a.main, rune: [116, 158] }];
+}
+/* the cat of the old town: sitting up, tail round its feet, ears up */
+function catHead(a: Species['art'], y: number, k: number): string {
+  var s = path('M' + (100 - 36 * k) + ' ' + (y - 6) + ' L' + (100 - 40 * k) + ' ' + (y - 46 * k) + ' L' + (100 - 10 * k) + ' ' + (y - 26 * k) + 'Z', a.main, 4) + path('M' + (100 + 36 * k) + ' ' + (y - 6) + ' L' + (100 + 40 * k) + ' ' + (y - 46 * k) + ' L' + (100 + 10 * k) + ' ' + (y - 26 * k) + 'Z', a.main, 4);
+  s += path('M' + (100 - 32 * k) + ' ' + (y - 12) + ' L' + (100 - 34 * k) + ' ' + (y - 36 * k) + ' L' + (100 - 16 * k) + ' ' + (y - 24 * k) + 'Z', '#ffb3c1', 0) + path('M' + (100 + 32 * k) + ' ' + (y - 12) + ' L' + (100 + 34 * k) + ' ' + (y - 36 * k) + ' L' + (100 + 16 * k) + ' ' + (y - 24 * k) + 'Z', '#ffb3c1', 0);
+  s += ell(100, y, 40 * k, 34 * k, a.main);
+  s += line('M92 ' + (y - 30 * k) + ' l2 10 M100 ' + (y - 33 * k) + ' l0 11 M108 ' + (y - 30 * k) + ' l-2 10', a.dark, 3);
+  s += ell(100, y + 14 * k, 6, 4, '#ff8fa3', 2.5);
+  s += line('M84 ' + (y + 14 * k) + ' l-26 -4 M84 ' + (y + 19 * k) + ' l-26 4 M116 ' + (y + 14 * k) + ' l26 -4 M116 ' + (y + 19 * k) + ' l26 4', INK, 2);
+  return s;
+}
+function cat(sp: Species): [string, Face] {
+  if (sp.stage === 2) return gattomola(sp);
+  var a = sp.art, s = '';
+  s += limb('M130 176 Q170 176 164 140 Q160 120 172 108', a.main, 12) + line('M160 150 l8 -2 M166 132 l8 2', a.dark, 3);
+  s += ell(100, 150, 38, 34, a.main) + ell(100, 156, 22, 24, a.belly, 0);
+  s += ell(84, 182, 12, 7, a.belly, 3.5) + ell(116, 182, 12, 7, a.belly, 3.5);
+  s += catHead(a, 106, 1);
+  return [s, { eyes: [[86, 104], [114, 104]], r: 9.5, mouth: [100, 126], w: 10, iris: a.accent, lid: a.main, rune: [100, 158] }];
+}
+/* its last form: the king of the cats of Mola, a fisherman's cap and a fish he will never pay for */
+function gattomola(sp: Species): [string, Face] {
+  var a = sp.art, s = '';
+  s += limb('M136 178 Q182 176 174 136 Q168 112 182 98', a.main, 15) + line('M168 152 l9 -2 M174 128 l9 3', a.dark, 3.5);
+  s += ell(100, 150, 46, 38, a.main) + ell(100, 158, 28, 26, a.belly, 0);
+  [[72, 140], [128, 140], [70, 160], [130, 160]].forEach(function (p) { s += line('M' + p[0] + ' ' + (p[1] - 8) + ' Q' + (p[0] + (p[0] < 100 ? 6 : -6)) + ' ' + p[1] + ' ' + p[0] + ' ' + (p[1] + 8), a.dark, 3.5); });
+  s += ell(82, 184, 13, 7, a.belly, 3.5) + ell(118, 184, 13, 7, a.belly, 3.5);
+  s += catHead(a, 100, 1.08);
+  s += path('M62 70 Q66 44 100 42 Q134 44 138 70 Q100 62 62 70Z', a.accent, 3.5) + path('M60 72 Q100 60 140 72 L140 80 Q100 70 60 80Z', a.accent, 3.5) + ell(100, 42, 6, 5, '#e8473a', 2.5);
+  s += path('M126 124 Q150 114 166 124 Q150 134 126 124Z', '#a9b4bf', 3) + path('M166 124 L178 116 L176 132Z', '#a9b4bf', 3) + ell(134, 122, 2, 2, INK, 0);
+  return [s, { eyes: [[86, 98], [114, 98]], r: 10, mouth: [100, 122], w: 12, iris: '#ffd166', lid: a.main, rune: [100, 164] }];
+}
+function janus(sp: Species): [string, Face] {
+  /* the lord of thresholds, a titan of the ages: behind him the wheel of the hours, half gold (the day) and half silver
+     (the night); his wings are the two doors of a temple, open; he stands on four legs like columns, with the door of
+     light on his chest; two heads on two necks, one of gold that looks to the dawn and the past, with the sun for a
+     crest, one of silver that looks to the night and the future, with the moon */
+  var a = sp.art, s = '', SIL = a.accent, SILD = '#6f7ea8', GLOW = '#fff6c8';
+  /* the wheel of the hours */
+  s += '<circle cx="100" cy="84" r="80" fill="none" stroke="' + INK + '" stroke-width="15"/>' +
+    '<path d="M100 4A80 80 0 0 0 100 164" fill="none" stroke="' + a.main + '" stroke-width="9"/><path d="M100 4A80 80 0 0 1 100 164" fill="none" stroke="' + SIL + '" stroke-width="9"/>';
+  for (var k = 0; k < 12; k++) {
+    var t = k / 12 * Math.PI * 2, cx = 100 + Math.sin(t) * 80, cy = 84 - Math.cos(t) * 80;
+    s += k % 3 ? ell(Math.round(cx), Math.round(cy), 3.5, 3.5, k < 6 ? SIL : a.main, 2) : star4(Math.round(cx), Math.round(cy), 8, GLOW, 2);
+  }
+  /* the doors, open like wings: studded panels, gold on the side of the day, silver on the side of the night */
+  var door = function (main: string, dark: string) {
+    return poly([62, 104, 14, 50, 8, 138, 56, 146], main, 4) + line('M38 76 L34 142 M60 104 L10 92', dark, 3) +
+      [[26, 74], [48, 92], [22, 112], [44, 120], [20, 130], [42, 136]].map(function (q) { return ell(q[0], q[1], 2.8, 2.8, dark, 1.5); }).join('') +
+      ell(52, 118, 4, 4, GLOW, 2);
+  };
+  s += door(a.main, a.dark) + mirror(door(SIL, SILD));
+  /* the four legs, columns with their capitals and claws */
+  var leg = function (x: number, main: string, dark: string) {
+    return path('M' + x + ' 142 L' + (x + 4) + ' 182 L' + (x + 22) + ' 182 L' + (x + 26) + ' 142Z', main, 4) + line('M' + (x + 9) + ' 148 L' + (x + 10) + ' 180 M' + (x + 17) + ' 148 L' + (x + 16) + ' 180', dark, 2) +
+      path('M' + (x - 4) + ' 182 L' + (x + 30) + ' 182 L' + (x + 30) + ' 190 L' + (x - 4) + ' 190Z', dark, 3.5) +
+      poly([x - 2, 190, x + 2, 196, x + 6, 190], '#ffffff', 1.8) + poly([x + 11, 190, x + 13, 197, x + 17, 190], '#ffffff', 1.8) + poly([x + 22, 190, x + 26, 196, x + 30, 190], '#ffffff', 1.8);
+  };
+  s += leg(48, a.dark, INK) + leg(126, SILD, INK) + leg(64, a.main, a.dark) + leg(110, SIL, SILD);
+  /* the body, half and half, with plates; the door of light on the chest */
+  s += ell(100, 124, 52, 32, a.main) + '<path d="M100 92A52 32 0 0 1 100 156Z" fill="' + SIL + '"/>' + ell(100, 124, 52, 32, 'none');
+  s += line('M60 112 Q70 104 82 106 M60 132 Q72 140 84 138 M140 112 Q130 104 118 106 M140 132 Q128 140 116 138', INK, 2.4, ' opacity=".5"');
+  s += path('M86 150 L86 122 Q100 102 114 122 L114 150Z', GLOW, 4) + line('M100 112 L100 150', '#f2c94c', 2.5) + path('M90 150 L90 124 Q100 110 110 124 L110 150', 'none', 0, ' stroke="#ffd84d" stroke-width="2" opacity=".8"');
+  /* one neck and one head; the other is the same, mirrored, in silver */
+  var head = function (main: string, dark: string, crest: string) {
+    return limb('M80 106 Q58 100 56 72', main, 22) + crest +
+      path('M72 62 Q70 38 48 38 Q30 40 16 52 L4 62 L16 70 Q30 82 50 80 Q70 78 72 62Z', main, 4) +
+      line('M8 64 L30 70 L46 68', INK, 2.6) + poly([14, 64, 17, 70, 20, 65], '#ffffff', 1.6) + poly([24, 67, 27, 73, 30, 68], '#ffffff', 1.6) +
+      ell(12, 56, 2, 2, INK, 0) + path('M40 42 Q52 36 64 46', 'none', 0, ' stroke="' + dark + '" stroke-width="3" stroke-linecap="round"');
+  };
+  var sun = '';
+  for (var q = 0; q < 6; q++) { var u = (-160 + q * 26) * Math.PI / 180; sun += poly([56 + Math.cos(u - 0.16) * 20, 42 + Math.sin(u - 0.16) * 20, 56 + Math.cos(u) * 38, 42 + Math.sin(u) * 38, 56 + Math.cos(u + 0.16) * 20, 42 + Math.sin(u + 0.16) * 20].map(function (v) { return Math.round(v); }), '#ffd84d', 2.5); }
+  sun += ell(56, 42, 16, 16, '#ffd84d', 3);
+  var moon = crescent(58, 30, 20, '#e8f0ff', -30, 3) + star4(80, 18, 5, '#ffffff') + star4(36, 20, 4, '#ffffff');
+  s += head(a.main, a.dark, sun) + mirror(head(SIL, SILD, moon));
+  return [s, { eyes: [[44, 56], [156, 56]], r: 6, mouth: null, w: 12, iris: '#ff9a3c', lid: a.main, rune: [100, 134], brows: [-1, 1] }];
+}
+function flame(sp: Species): [string, Face] {
+  /* the dragon of Sant'Elmo: a long body of blue fire coiled in the storm, wings like the sails of a ship with the
+     fire on the yards, a mane of flame, horns, fangs and lightning all round */
+  var a = sp.art, s = '', HOT = '#9fe0ff';
+  var tongue = function (x: number, y: number, h: number, rot: number, col: string) {
+    return path('M' + x + ' ' + y + ' q' + (-h * 0.35) + ' ' + (-h * 0.45) + ' 0 ' + (-h) + ' q' + (h * 0.35) + ' ' + (h * 0.55) + ' 0 ' + h + 'Z', col, 2.4, ' transform="rotate(' + rot + ' ' + x + ' ' + y + ')"');
+  };
+  /* the storm behind, and its lightning */
+  s += cloud([[30, 22, 16], [52, 14, 14], [150, 14, 14], [172, 24, 16]], '#4a4f7a', 3);
+  s += bolt(24, 30, 40, a.accent) + bolt(170, 34, 36, a.accent);
+  /* the wings: two lateen sails with their ribs, fire running along the edges and on the tips of the yards */
+  var sail = function () {
+    return path('M78 84 L10 18 Q2 70 22 128 Q44 96 78 100Z', '#eaf4ff', 4) + line('M78 86 L10 18', '#8a6a3c', 5) +
+      line('M70 90 Q40 70 18 48 M72 96 Q40 92 16 92 M74 100 Q48 110 22 126', a.dark, 2.2, ' opacity=".55"') +
+      tongue(10, 20, 22, -30, a.main) + tongue(10, 20, 14, -30, HOT) + tongue(22, 128, 18, -150, a.main) + tongue(4, 74, 14, -90, a.main);
+  };
+  s += sail() + mirror(sail());
+  /* the body: a coil of blue fire down to a tail that ends in a bolt */
+  var d = 'M100 96 C148 100 172 128 148 150 C122 172 58 146 46 168 C38 182 64 192 96 186 C130 180 158 186 176 176';
+  s += limb(d, a.main, 30) + line(d, a.belly, 10, ' stroke-dasharray="11 7" opacity=".9"');
+  [[150, 104, 30], [170, 134, 70], [132, 166, 160], [78, 152, 200], [44, 178, 230], [120, 182, 175]].forEach(function (f) { s += tongue(f[0], f[1], 18, f[2], HOT); });
+  s += bolt(176, 160, 34, a.accent);
+  /* the mane of flame all round the head */
+  for (var m = 0; m < 9; m++) { var u = (-170 + m * 20) * Math.PI / 180, mx = Math.round(100 + Math.cos(u) * 30), my = Math.round(58 + Math.sin(u) * 30); s += tongue(mx, my, 30, Math.round(u * 180 / Math.PI) + 90, m % 2 ? a.dark : a.main); }
+  [-150, -90, -30].forEach(function (r) { var u = r * Math.PI / 180; s += tongue(Math.round(100 + Math.cos(u) * 30), Math.round(58 + Math.sin(u) * 30), 18, r + 90, HOT); });
+  /* the horns, swept back, burning at the tips */
+  s += path('M80 40 Q60 24 52 4 Q72 12 90 32Z', a.belly, 3.5) + path('M120 40 Q140 24 148 4 Q128 12 110 32Z', a.belly, 3.5);
+  s += tongue(52, 6, 14, -20, HOT) + tongue(148, 6, 14, 20, HOT);
+  /* the head: a dragon's, front on, with brow ridges, a long muzzle, nostrils smoking sparks, the fangs */
+  s += path('M68 56 L76 34 Q100 22 124 34 L132 56 Q130 72 120 80 L114 98 Q100 106 86 98 L80 80 Q70 72 68 56Z', a.main, 4);
+  s += path('M72 48 L92 52 M128 48 L108 52', 'none', 0, ' stroke="' + a.dark + '" stroke-width="3.5" stroke-linecap="round"');
+  s += path('M84 78 Q100 70 116 78 L112 96 Q100 102 88 96Z', a.belly, 3.5) + ell(94, 82, 2.2, 3, INK, 0) + ell(106, 82, 2.2, 3, INK, 0);
+  s += line('M88 94 Q100 99 112 94', INK, 3) + poly([89, 94, 92, 102, 95, 95], '#ffffff', 1.8) + poly([105, 95, 108, 102, 111, 94], '#ffffff', 1.8);
+  s += star4(112, 70, 3, '#ffffff') + star4(88, 70, 3, '#ffffff');
+  s += star4(36, 150, 6, '#ffffff') + star4(164, 92, 5, '#ffffff') + star4(26, 98, 5, a.accent);
+  return [s, { eyes: [[86, 60], [114, 60]], r: 6.5, mouth: null, w: 12, iris: a.accent, lid: a.main, rune: [100, 124], brows: [1, -1] }];
+}
+const BODIES: Record<Body, (sp: Species) => [string, Face]> = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl, giant: giant,
+  jelly: jelly, star: star, eel: eel, dolphin: dolphin, fish: fish, firefly: firefly, bat: bat, boar: boar, falcon: falcon, flower: flower, snail: snail, cat: cat, janus: janus, flame: flame };
 
 /* ---------- magic: each type has its own, the creatures carry it ----------
    An aura behind them, a rune on the forehead or the chest, motes of light in the air; from the second form a magic
    circle under the feet, doubled in the third. Calma is the moon, Caos the lightning, Cervello the star, Chiacchiera
-   the song, Cuore the heart. */
+   the song, Cuore the heart; the creatures' own types are the wave (Corrente), the flame (Calore), the feather
+   (Cielo), the stone (Corazza) and the setting sun (Crepuscolo). */
 export const MAGIC: Record<TypeName, { col: string; name: string }> = {
   Calma: { col: '#8fd0f6', name: 'luna' }, Caos: { col: '#ffa04a', name: 'fulmine' }, Cervello: { col: '#c3a0ff', name: 'stella' },
-  Chiacchiera: { col: '#ffd84d', name: 'canto' }, Cuore: { col: '#ff8fc1', name: 'cuore' }
+  Chiacchiera: { col: '#ffd84d', name: 'canto' }, Cuore: { col: '#ff8fc1', name: 'cuore' },
+  Corrente: { col: '#4fd8c8', name: 'onda' }, Calore: { col: '#ff6a4a', name: 'fiamma' }, Cielo: { col: '#b0f08a', name: 'piuma' },
+  Corazza: { col: '#d9ad7c', name: 'pietra' }, Crepuscolo: { col: '#8f8cf0', name: 'tramonto' }
 };
 function glyph(t: TypeName, x: number, y: number, r: number): string {
+  if (!isPersonType(t)) return fit(t, x, y, r * 1.1);
   if (t === 'Calma') return 'M' + (x + r * 0.25) + ' ' + (y - r) + ' A' + r + ' ' + r + ' 0 1 0 ' + (x + r * 0.25) + ' ' + (y + r) + ' A' + (r * 0.72) + ' ' + (r * 0.72) + ' 0 1 1 ' + (x + r * 0.25) + ' ' + (y - r) + 'Z';
   if (t === 'Caos') return 'M' + (x + r * 0.25) + ' ' + (y - r) + ' L' + (x - r * 0.55) + ' ' + (y + r * 0.12) + ' L' + (x - r * 0.02) + ' ' + (y + r * 0.12) + ' L' + (x - r * 0.25) + ' ' + (y + r) + ' L' + (x + r * 0.6) + ' ' + (y - r * 0.2) + ' L' + (x + r * 0.06) + ' ' + (y - r * 0.2) + 'Z';
   if (t === 'Cervello') return 'M' + x + ' ' + (y - r) + ' L' + (x + r * 0.28) + ' ' + (y - r * 0.28) + ' L' + (x + r) + ' ' + y + ' L' + (x + r * 0.28) + ' ' + (y + r * 0.28) + ' L' + x + ' ' + (y + r) + ' L' + (x - r * 0.28) + ' ' + (y + r * 0.28) + ' L' + (x - r) + ' ' + y + ' L' + (x - r * 0.28) + ' ' + (y - r * 0.28) + 'Z';
@@ -425,10 +844,19 @@ export function runeIcon(t: TypeName, size: number): string {
   return '<svg viewBox="0 0 40 40" width="' + size + '" height="' + size + '" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="' + c + '" opacity=".4"/>' +
     '<path d="' + glyph(t, 20, 20, 12) + '" fill="' + c + '" stroke="' + INK + '" stroke-width="2.2" stroke-linejoin="round"/></svg>';
 }
+/** behind a legend: a burst of rays in the colours of its two types, turning slowly (sprites.css, .lrays) */
+function legendRays(c: string, c2: string): string {
+  var d1 = '', d2 = '';
+  for (var k = 0; k < 16; k++) {
+    var t = k / 16 * Math.PI * 2, w = 0.09, seg = 'M100 100 L' + (100 + Math.cos(t - w) * 110).toFixed(1) + ' ' + (100 + Math.sin(t - w) * 110).toFixed(1) + ' L' + (100 + Math.cos(t + w) * 110).toFixed(1) + ' ' + (100 + Math.sin(t + w) * 110).toFixed(1) + 'Z ';
+    if (k % 2) d2 += seg; else d1 += seg;
+  }
+  return '<g class="lrays" opacity=".42"><path d="' + d1 + '" fill="' + c + '"/><path d="' + d2 + '" fill="' + c2 + '"/></g>';
+}
 function magic(sp: Species, rune: [number, number]): { back: string; rune: string; front: string } {
   /* with two types the aura goes from one colour to the other, and the motes are of both */
   var m = MAGIC[sp.type], c = m.col, c2 = sp.type2 ? MAGIC[sp.type2].col : c, st = sp.stage, r = 9 + st * 1.5, gid = 'au-' + sp.type + (sp.type2 || '');
-  var back = '<defs><radialGradient id="' + gid + '"><stop offset="0" stop-color="' + c + '" stop-opacity=".7"/><stop offset=".6" stop-color="' + c2 + '" stop-opacity=".25"/><stop offset="1" stop-color="' + c2 + '" stop-opacity="0"/></radialGradient></defs>' +
+  var back = (sp.legend ? legendRays(c, c2) : '') + '<defs><radialGradient id="' + gid + '"><stop offset="0" stop-color="' + c + '" stop-opacity=".7"/><stop offset=".6" stop-color="' + c2 + '" stop-opacity=".25"/><stop offset="1" stop-color="' + c2 + '" stop-opacity="0"/></radialGradient></defs>' +
     '<ellipse class="aura" cx="100" cy="122" rx="' + (70 + st * 8) + '" ry="' + (64 + st * 7) + '" fill="url(#' + gid + ')"/>';
   if (st >= 2) {
     back += '<ellipse cx="100" cy="184" rx="' + (60 + st * 6) + '" ry="' + (11 + st) + '" fill="none" stroke="' + c + '" stroke-width="2.5" stroke-dasharray="7 5" opacity=".85"/>';
@@ -452,7 +880,7 @@ const SPARKS = [[34, 60, 7], [168, 84, 6], [150, 30, 5], [46, 150, 5]].map(funct
 export function creature(id: SpeciesId, expr?: string, cls?: string, vb?: string, only?: string, gold?: boolean): string {
   var sp = gold ? goldOf(SPECIES[id]) : SPECIES[id], bf = BODIES[sp.art.body](sp), k = sp.art.size, mg = magic(sp, bf[1].rune);
   var faces = only ? '<g>' + faceGroup(bf[1], only) + '</g>' : EXPRS.map(function (x) { return '<g class="ex ex-' + x + '">' + faceGroup(bf[1], x) + '</g>'; }).join('');
-  return '<svg xmlns="http://www.w3.org/2000/svg" class="spr spr-c spr-' + id + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 200 200') + '" data-expr="' + (expr || 'smirk') + '" role="img" aria-label="' + sp.name + '">' +
+  return '<svg xmlns="http://www.w3.org/2000/svg" class="spr spr-c spr-' + id + (sp.legend ? ' spr-legend' : '') + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 200 200') + '" data-expr="' + (expr || 'smirk') + '" role="img" aria-label="' + sp.name + '">' +
     mg.back + '<ellipse cx="100" cy="190" rx="' + (54 * k) + '" ry="7" fill="' + INK + '" opacity=".14"/>' +
     '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + mg.rune + faces + '</g>' + mg.front + (gold ? SPARKS : '') + '</svg>';
 }
@@ -464,4 +892,5 @@ export const MAGIC_CSS = '.spr-c .mg{animation:mote 3.2s ease-in-out infinite;tr
   '.spr-c .aura{animation:aura 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}' +
   '@keyframes mote{0%,100%{transform:translateY(0) scale(1);opacity:.9}50%{transform:translateY(-7px) scale(.75);opacity:.45}}' +
   '@keyframes aura{50%{opacity:.6;transform:scale(1.05)}}' +
-  '@media (prefers-reduced-motion:reduce){.spr-c .mg,.spr-c .aura{animation:none}}';
+  '.spr-legend .lrays{animation:lrays 24s linear infinite;transform-origin:100px 100px}@keyframes lrays{to{transform:rotate(360deg)}}' +
+  '@media (prefers-reduced-motion:reduce){.spr-c .mg,.spr-c .aura,.spr-legend .lrays{animation:none}}';

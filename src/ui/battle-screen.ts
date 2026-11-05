@@ -4,7 +4,7 @@ import { SPECIES, isSpecies } from '../data/creatures';
 import { cry, cryEventOf } from '../audio';
 import { scene, sceneInfo } from '../render/svg/scenes';
 import { darkness } from '../story/daytime';
-import type { TypeName } from '../data/types';
+import { MAGIC_CHART, MAGIC_ORDER, type TypeName } from '../data/types';
 import { COVI } from '../data/covi';
 import { ENGINE as E, type BattleEvent, type BattleState, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
 import { SPR } from '../render/svg';
@@ -505,7 +505,10 @@ function openSheet() {
     h += '</div>';
   });
   h += '<div class="card"><div class="block"><h3>Tipi</h3><ul class="cycle-why">';
-  E.TYPE_ORDER.forEach(function (t) { h += '<li>' + typeTag(t) + '<span>batte ' + E.TYPES[t].beats + ': ' + E.TYPES[t].why + '.</span></li>'; });
+  if (isSpecies(S.sides[0].id) || isSpecies(S.sides[1].id)) {
+    /* between creatures it is the magic that counts: ten types, each beats two */
+    MAGIC_ORDER.forEach(function (t) { var m = MAGIC_CHART[t]; h += '<li>' + typeTag(t) + '<span>' + esc(m.what) + ' · batte ' + m.beats.map(function (b, k) { return b + ' (' + m.why[k] + ')'; }).join(' e ') + '.</span></li>'; });
+  } else E.TYPE_ORDER.forEach(function (t) { h += '<li>' + typeTag(t) + '<span>batte ' + E.TYPES[t].beats + ': ' + E.TYPES[t].why + '.</span></li>'; });
   h += '</ul></div></div></div>';
   overlay.className = 'overlay';
   overlay.innerHTML = h;

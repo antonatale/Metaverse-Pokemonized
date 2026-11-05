@@ -24,7 +24,7 @@ import { FPS, fr, FRAMES } from './timeline';
 
 const W = 1920, H = 1080;
 const INK = '#1f2c6e', PAPER = '#f7f6f0', RED = '#e0533d', NAVY = '#0f1430', LINE = '#1c2340';
-const TYPE: Record<string, string> = { Calma: '#8fd0f6', Caos: '#ffa35a', Cervello: '#bba0ff', Chiacchiera: '#ffe45c', Cuore: '#ff8fc1' };
+const TYPE: Record<string, string> = { Calma: '#8fd0f6', Caos: '#ffa35a', Cervello: '#bba0ff', Chiacchiera: '#ffe45c', Cuore: '#ff8fc1', Corrente: '#5fd3c6', Calore: '#ff7a5c', Cielo: '#b4ec8c', Corazza: '#d8b083', Crepuscolo: '#9a9be6' };
 const stage = document.getElementById('stage') as HTMLDivElement;
 
 /* ---------- motion ---------- */
@@ -509,7 +509,7 @@ clipShot(fr(27), fr(28), 'starters', { at: 12, zoom: [1, 1.05], cap: 'Scegli la 
 clipShot(fr(28), fr(29), 'catch', { at: 454, speed: 2, zoom: [1.02, 1.1], cap: 'Catturale!', capY: 150, hi: TYPE.Cuore });
 shot(fr(29), fr(30), function (el) {
   paper(el);
-  const cap = caption(el, '20 creature da scoprire', { y: 110, size: 104, hi: TYPE.Chiacchiera });
+  const cap = caption(el, '45 creature da scoprire', { y: 110, size: 104, hi: TYPE.Chiacchiera });
   const grid = div(el, 'dexgrid');
   const cells = (Object.keys(SPECIES) as SpeciesId[]).map(function (id) { return div(grid, 'cell secret', creature(id, 'smirk') + '<span>???</span>'); });
   return function (k) {

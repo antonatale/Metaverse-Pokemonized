@@ -460,8 +460,390 @@ function plainHit(from: number, to: number, c: Cast, k: number): Promise<void> {
   });
 }
 
-const FLY: Record<TypeName, (from: number, end: P, c: Cast, mc: string, k: number) => Promise<void>> = { Calma: moonFly, Caos: boltFly, Cervello: starFly, Chiacchiera: songFly, Cuore: heartFly };
-const HIT: Record<TypeName, (b: P, to: number, c: Cast, mc: string, k: number) => void> = { Calma: moonHit, Caos: boltHit, Cervello: starHit, Chiacchiera: songHit, Cuore: heartHit };
+/* ---------- Corrente: the sea ---------- */
+function waveBig(mc: string): string {
+  return '<svg viewBox="0 0 200 130" aria-hidden="true" stroke-linejoin="round">' +
+    '<path d="M4 126C10 70 50 18 116 10C164 4 196 34 188 64C182 88 150 92 140 74C134 62 144 48 158 52C146 34 112 36 90 58C70 78 62 104 60 126Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="6"/>' +
+    '<path d="M30 112C40 76 70 42 112 30" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity=".8"/>' +
+    '<path d="M120 16C150 12 178 26 182 50" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>' +
+    '<circle cx="186" cy="30" r="7" fill="#ffffff" stroke="' + INK + '" stroke-width="3"/><circle cx="170" cy="14" r="5" fill="#ffffff" stroke="' + INK + '" stroke-width="2.5"/></svg>';
+}
+function drop(mc: string, s: number): string {
+  return '<svg viewBox="0 0 20 26" width="' + s + '" height="' + Math.round(s * 1.3) + '" aria-hidden="true"><path d="M10 2C13 8 17 12 17 17A7 7 0 0 1 3 17C3 12 7 8 10 2Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="2"/><path d="M7 16A3 3 0 0 0 9 20" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg>';
+}
+function waveFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const g = anchor(from, 0.5, 0.92), f = body(from, 0.5, 0.5), dir = end[0] > f[0] ? 1 : -1, w = 210 * k;
+  /* the water rises around the caster's feet */
+  for (let n = 0; n < 3; n++) sleep(n * 120).then(function () { ring(g[0], g[1], n % 2 ? '#ffffff' : mc, 240 * k, 700, true); });
+  sparks(g[0], g[1] - 10, 10, function (n) { return drop(n % 3 ? mc : '#ffffff', 14 + (n % 3) * 4); }, 110 * k, 700);
+  const wave = piece(waveBig(mc), 'sp-wave-big', w);
+  wave.style.height = (w * 0.65).toFixed(0) + 'px';
+  const flip = dir < 0 ? ' scaleX(-1)' : '', start: P = [g[0] - dir * 40 * k, g[1] - 50 * k];
+  animate(wave, [{ transform: tr(start) + flip + ' scale(.2,.05)', opacity: 0 }, { transform: tr([start[0], start[1] - 40 * k]) + flip + ' scale(1)', opacity: 1 }], { duration: 460, easing: 'cubic-bezier(.2,.9,.3,1.2)', fill: 'both' });
+  return sleep(500).then(function () {
+    sfx('whoosh');
+    const dur = 520, to: P = [end[0], end[1] - 20 * k];
+    animate(wave, along(function (t) { return mid([start[0], start[1] - 40 * k], to, t); }, 10, function (t) { return flip + ' scale(' + lerp(1, 1.25, t).toFixed(2) + ') rotate(' + (dir * t * 18).toFixed(0) + 'deg)'; }, function (t) { return t > 0.85 ? (1 - t) / 0.15 : 1; }),
+      { duration: dur, easing: 'cubic-bezier(.5,0,.8,1)', fill: 'both' }).then(gone(wave));
+    /* spray behind it */
+    for (let n = 1; n <= 5; n++) sleep(n * 80).then(function () { const p = mid(start, to, n / 6); sparks(p[0], p[1] + 30 * k, 3, function () { return drop('#ffffff', 12); }, 50 * k, 500); });
+    if (c.big) {
+      /* the grand one: a whirlpool opens under the foe as the wave comes */
+      const wf = anchor(1 - from, 0.5, 0.9), wp = piece('<svg viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke-linecap="round"><path d="M50 50m-6 0a6 6 0 1 1 12 0a12 12 0 1 1-24 0a18 18 0 1 1 36 0a24 24 0 1 1-48 0a30 30 0 1 1 60 0a36 36 0 1 1-72 0" stroke="' + INK + '" stroke-width="7"/><path d="M50 50m-6 0a6 6 0 1 1 12 0a12 12 0 1 1-24 0a18 18 0 1 1 36 0a24 24 0 1 1-48 0a30 30 0 1 1 60 0a36 36 0 1 1-72 0" stroke="' + mc + '" stroke-width="4"/></svg>', 'sp-whirl', 260 * k);
+      const at = tr(wf) + ' scaleY(.32)';
+      animate(wp, [{ transform: at + ' scale(.2) rotate(0deg)', opacity: 0 }, { transform: at + ' scale(1) rotate(-360deg)', opacity: 1, offset: 0.4 }, { transform: at + ' scale(1.1) rotate(-900deg)', opacity: 0 }], { duration: 1300, easing: 'linear', fill: 'both' }).then(gone(wp));
+    }
+    return sleep(dur * 0.85);
+  });
+}
+function waveHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  /* a splash: a column of water, foam rings, drops everywhere */
+  const col = piece('', 'sp-splash', 150 * k);
+  col.style.setProperty('--mc', mc);
+  animate(col, [{ transform: tr([b[0], b[1] + 30 * k]) + ' scale(.3,.1)', opacity: 0.9 }, { transform: tr([b[0], b[1] - 20 * k]) + ' scale(1,1.4)', opacity: 0.9, offset: 0.4 }, { transform: tr([b[0], b[1] - 40 * k]) + ' scale(1.3,1.6)', opacity: 0 }], { duration: 700, easing: 'ease-out', fill: 'both' }).then(gone(col));
+  for (let n = 0; n < 2; n++) sleep(n * 130).then(function () { ring(b[0], b[1], n ? '#ffffff' : mc, (280 + n * 80) * k, 620); });
+  flashAt(b[0], b[1], '#e6fffb', 420 * k, 360);
+  sparks(b[0], b[1], 18, function (n) { return n % 4 ? drop(n % 2 ? mc : '#ffffff', 14 + (n % 3) * 5) : shape('Corrente', mc, 24); }, 180 * k, 950);
+  const m = $('m-' + to); if (m) pulse(m, 'soaked', 760);
+}
+
+/* ---------- Calore: the sun and the fire ---------- */
+function fireball(mc: string): string {
+  return '<svg viewBox="0 0 100 100" aria-hidden="true" stroke-linejoin="round">' +
+    '<path d="M50 4C58 18 74 18 80 30C90 32 96 44 92 56C96 74 82 94 56 96C30 98 6 84 8 58C4 44 12 34 22 32C26 18 40 20 50 4Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="5"/>' +
+    '<path d="M50 24C56 34 68 36 70 48C76 58 70 78 50 80C32 80 24 66 28 54C30 42 42 38 50 24Z" fill="#ffd24a"/><circle cx="50" cy="58" r="14" fill="#fff6c8"/></svg>';
+}
+function sunDisc(mc: string): string {
+  let rays = '';
+  for (let s = 0; s < 12; s++) { const a = s / 12 * Math.PI * 2; rays += '<path d="M' + (100 + Math.cos(a - 0.12) * 62).toFixed(1) + ' ' + (100 + Math.sin(a - 0.12) * 62).toFixed(1) + ' L' + (100 + Math.cos(a) * 96).toFixed(1) + ' ' + (100 + Math.sin(a) * 96).toFixed(1) + ' L' + (100 + Math.cos(a + 0.12) * 62).toFixed(1) + ' ' + (100 + Math.sin(a + 0.12) * 62).toFixed(1) + 'Z"/>'; }
+  return '<svg viewBox="0 0 200 200" aria-hidden="true"><g fill="' + mc + '" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round">' + rays + '</g>' +
+    '<circle cx="100" cy="100" r="60" fill="#ffd24a" stroke="' + INK + '" stroke-width="6"/><circle cx="100" cy="100" r="42" fill="#fff3b0"/></svg>';
+}
+function fireFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const f = body(from, from === 0 ? 0.66 : 0.34, 0.3), w = 96 * k, ball = piece(fireball(mc), 'sp-fire', w);
+  /* embers spiral into the caster's mouth, the ball of fire grows there */
+  for (let n = 0; n < 10; n++) {
+    const el = piece(shape('Calore', n % 2 ? '#ffd24a' : mc, 18), 'sp-ember'), a0 = n / 10 * Math.PI * 2, fr: Keyframe[] = [];
+    for (let q = 0; q <= 8; q++) { const t = q / 8, a = a0 + t * Math.PI * 1.6, r = lerp(120, 6, t) * k; fr.push({ transform: tr([f[0] + Math.cos(a) * r, f[1] + Math.sin(a) * r * 0.7]) + ' scale(' + lerp(0.6, 1.1, t).toFixed(2) + ')', opacity: t < 0.15 ? t / 0.15 : 1 - Math.max(0, t - 0.8) * 5 }); }
+    animate(el, fr, { duration: 520, delay: n * 22, easing: 'ease-in', fill: 'both' }).then(gone(el));
+  }
+  animate(ball, [{ transform: tr(f) + ' scale(.1)', opacity: 0 }, { transform: tr(f) + ' scale(1.15)', opacity: 1, offset: 0.8 }, { transform: tr(f) + ' scale(1)', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.2,.9,.3,1.2)', fill: 'both' });
+  sfx('lunge');
+  let sun: HTMLElement | null = null;
+  if (c.big) {
+    /* the grand one: a sun rises over the arena, and the fire falls from it */
+    sun = piece(sunDisc(mc), 'sp-sun', 200 * k);
+    const top: P = [lerp(f[0], end[0], 0.5), Math.max(80 * k, end[1] - 230 * k)];
+    animate(sun, [{ transform: tr([top[0], top[1] + 60]) + ' scale(.3) rotate(0deg)', opacity: 0 }, { transform: tr(top) + ' scale(1) rotate(60deg)', opacity: 1, offset: 0.5 }, { transform: tr(top) + ' scale(1.05) rotate(120deg)', opacity: 1 }], { duration: 900, easing: 'ease-out', fill: 'both' });
+  }
+  return sleep(600).then(function () {
+    sfx('whoosh');
+    const cv = curve(f, end, 70 * k), dur = 430;
+    animate(ball, along(cv.at, 12, function (t) { return 'scale(' + lerp(1, 1.3, t).toFixed(2) + ') rotate(' + (t * 260).toFixed(0) + 'deg)'; }), { duration: dur, easing: 'cubic-bezier(.5,0,.8,1)', fill: 'both' }).then(function () { fade(ball, c.outcome === 'miss' ? 200 : 60); });
+    /* a trail of fire */
+    for (let n = 1; n <= 7; n++) sleep(n * 50).then(function () {
+      const p = cv.at(Math.min(1, n * 50 / dur)), el = piece(shape('Calore', n % 2 ? mc : '#ffd24a', Math.round(26 * k)), 'sp-ember');
+      animate(el, [{ transform: tr(p) + ' scale(1)', opacity: 0.95 }, { transform: tr([p[0], p[1] - 40]) + ' scale(.3)', opacity: 0 }], { duration: 520, easing: 'ease-out', fill: 'both' }).then(gone(el));
+    });
+    if (sun) { const s0 = sun; sleep(dur).then(function () { fade(s0, 500); }); }
+    return sleep(dur);
+  });
+}
+function fireHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  /* an explosion of flame: a ball that swells, tongues of fire all round, the heat ring */
+  const boom = piece(fireball(mc), 'sp-fire', 150 * k);
+  animate(boom, [{ transform: tr(b) + ' scale(.4)', opacity: 1 }, { transform: tr(b) + ' scale(1.6)', opacity: 0.9, offset: 0.4 }, { transform: tr([b[0], b[1] - 30]) + ' scale(2.1)', opacity: 0 }], { duration: 640, easing: 'ease-out', fill: 'both' }).then(gone(boom));
+  if (c.big) for (let n = 0; n < 8; n++) {
+    const x = b[0] + (n - 3.5) * 30 * k, el = piece(fireball(mc), 'sp-fire', 46 * k);
+    animate(el, [{ transform: tr([x + 90 * k, -40]) + ' scale(.7)', opacity: 0 }, { transform: tr([x + 30 * k, lerp(-40, b[1], 0.6)]) + ' scale(1)', opacity: 1, offset: 0.6 }, { transform: tr([x, b[1] + 20]) + ' scale(1.2)', opacity: 0 }], { duration: 520, delay: 80 + n * 60, easing: 'ease-in', fill: 'both' }).then(gone(el));
+  }
+  ring(b[0], b[1], mc, 340 * k, 600);
+  flashAt(b[0], b[1], '#fff1c4', 480 * k, 400);
+  sparks(b[0], b[1], 18, function (n) { return shape('Calore', n % 3 ? mc : '#ffd24a', 18 + (n % 3) * 7); }, 170 * k, 950);
+  const m = $('m-' + to); if (m) pulse(m, 'scorched', 760);
+}
+
+/* ---------- Cielo: the wind ---------- */
+function tornado(mc: string): string {
+  let s = '<svg viewBox="0 0 120 200" aria-hidden="true" fill="none" stroke-linecap="round">';
+  for (let q = 0; q < 7; q++) {
+    const y = 20 + q * 26, rx = lerp(54, 10, q / 6), ry = lerp(12, 4, q / 6), dx = Math.sin(q * 1.3) * 6;
+    s += '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + INK + '" stroke-width="7"/>' +
+      '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + (q % 2 ? '#ffffff' : mc) + '" stroke-width="4"/>';
+  }
+  return s + '</svg>';
+}
+function windFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const g = anchor(from, 0.5, 0.92), f = body(from, 0.5, 0.45), w = 120 * k;
+  /* the caster beats its wings: feathers and gusts around it */
+  sparks(f[0], f[1], 10, function (n) { return shape('Cielo', n % 2 ? '#ffffff' : mc, 22 + (n % 3) * 4); }, 120 * k, 800);
+  const tw = piece(tornado(mc), 'sp-tornado', w);
+  tw.style.height = (w * 1.66).toFixed(0) + 'px';
+  const base: P = [g[0], g[1] - w * 0.8];
+  animate(tw, [{ transform: tr(base) + ' scale(.2,.05)', opacity: 0 }, { transform: tr(base) + ' scale(1)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1.2)', fill: 'both' });
+  sfx('plane');
+  return sleep(440).then(function () {
+    sfx('whoosh');
+    const dur = 620, endB = anchor(1 - from, 0.5, 0.92), to: P = [end[0], endB[1] - w * 0.8];
+    const fr: Keyframe[] = [];
+    for (let q = 0; q <= 14; q++) { const t = q / 14, p = mid(base, to, t); fr.push({ transform: tr([p[0] + Math.sin(t * Math.PI * 4) * 16 * k, p[1] - Math.sin(t * Math.PI) * 30 * k]) + ' scale(' + (q % 2 ? -1 : 1) * lerp(1, 1.25, t) + ',' + lerp(1, 1.25, t).toFixed(2) + ')', opacity: t > 0.9 ? (1 - t) * 10 : 1 }); }
+    animate(tw, fr, { duration: dur, easing: 'ease-in-out', fill: 'both' }).then(gone(tw));
+    /* feathers riding the twister */
+    for (let n = 0; n < 6; n++) {
+      const el = piece(shape('Cielo', n % 2 ? mc : '#ffffff', Math.round(24 * k)), 'sp-feather');
+      animate(el, along(function (t) { const p = mid(base, to, t), a = t * Math.PI * 6 + n; return [p[0] + Math.cos(a) * 60 * k, p[1] + (n - 2.5) * 24 * k + Math.sin(a) * 10]; }, 14, function (t) { return 'rotate(' + (t * 720 + n * 40).toFixed(0) + 'deg)'; }, function (t) { return t > 0.85 ? (1 - t) / 0.15 : 1; }),
+        { duration: dur, delay: n * 20, easing: 'ease-in-out', fill: 'both' }).then(gone(el));
+    }
+    if (c.big) {
+      /* the grand one: the whole arena swept by the gale */
+      for (let n = 0; n < 9; n++) {
+        const el = piece('', 'sp-gust'), y = (n + 0.5) / 9 * size().h, x0 = from === 0 ? -80 : size().w + 80, x1 = from === 0 ? size().w + 80 : -80;
+        el.style.setProperty('--mc', n % 2 ? '#ffffff' : mc);
+        animate(el, [{ transform: 'translate(' + x0 + 'px,' + y.toFixed(0) + 'px) scaleX(.4)', opacity: 0 }, { transform: 'translate(' + lerp(x0, x1, 0.5).toFixed(0) + 'px,' + y.toFixed(0) + 'px) scaleX(1.4)', opacity: 0.9, offset: 0.5 }, { transform: 'translate(' + x1 + 'px,' + y.toFixed(0) + 'px) scaleX(.4)', opacity: 0 }],
+          { duration: 520, delay: 60 + n * 40, easing: 'linear', fill: 'both' }).then(gone(el));
+      }
+    }
+    return sleep(dur * 0.9);
+  });
+}
+function windHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  /* a gust: the foe is thrown sideways, feathers burst out, wind rings */
+  const bob = document.querySelector('#m-' + to + ' .bob');
+  if (bob) animate(bob, [{ transform: 'rotate(0) translateX(0)' }, { transform: 'rotate(' + (to === 1 ? 14 : -14) + 'deg) translateX(' + (to === 1 ? 18 : -18) + 'px)', offset: 0.25 }, { transform: 'rotate(' + (to === 1 ? -6 : 6) + 'deg)', offset: 0.6 }, { transform: 'rotate(0) translateX(0)' }], { duration: 640, easing: 'ease-out' });
+  for (let n = 0; n < 3; n++) sleep(n * 90).then(function () { ring(b[0], b[1], n % 2 ? '#ffffff' : mc, (230 + n * 60) * k, 520); });
+  flashAt(b[0], b[1], '#f2ffe8', 400 * k, 320);
+  sparks(b[0], b[1], 16, function (n) { return shape('Cielo', n % 3 ? mc : '#ffffff', 20 + (n % 3) * 6); }, 200 * k, 1100);
+  const m = $('m-' + to); if (m) pulse(m, 'gusted', 640);
+}
+
+/* ---------- Corazza: the stone ---------- */
+function rock(mc: string, v: number): string {
+  const pts = [[50, 4], [86, 20], [96, 58], [74, 92], [30, 96], [6, 62], [14, 24]].map(function (p, i) { return [p[0] + ((v * 7 + i * 13) % 9) - 4, p[1] + ((v * 5 + i * 11) % 9) - 4]; });
+  return '<svg viewBox="0 0 100 100" aria-hidden="true" stroke-linejoin="round"><path d="M' + pts.map(function (p) { return p.join(' '); }).join(' L') + 'Z" fill="#9a8a78" stroke="' + INK + '" stroke-width="6"/>' +
+    '<path d="M' + pts[0].join(' ') + ' L' + pts[1].join(' ') + ' L58 46 L' + pts[6].join(' ') + 'Z" fill="' + mc + '"/>' +
+    '<path d="M58 46 L52 70 L64 82M52 70L36 76" fill="none" stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"/></svg>';
+}
+function stoneFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const g = anchor(from, 0.5, 0.92), f = body(from, 0.5, 0.4), n = c.big ? 7 : 5, rocks: HTMLElement[] = [], spots: P[] = [];
+  /* the ground cracks at the caster's feet and stones rise out of it, floating around it */
+  const L = layer(beam(boltPath(g[0] - 110 * k, g[1] + 2, g[0] + 110 * k, g[1] - 2, 8, 14 * k), mc, 4 * k));
+  trace(L, 200).then(function () { fade(L, 600, 300); });
+  sfx('shake');
+  for (let s = 0; s < n; s++) {
+    const el = piece(rock(mc, s), 'sp-rock', Math.round((34 + (s % 3) * 10) * k)), a = Math.PI + (s + 0.5) / n * Math.PI, p: P = [f[0] + Math.cos(a) * 95 * k, f[1] + Math.sin(a) * 60 * k];
+    spots.push(p); rocks.push(el);
+    animate(el, [{ transform: tr([p[0], g[1]]) + ' scale(.3) rotate(0deg)', opacity: 0 }, { transform: tr(p) + ' scale(1) rotate(' + (s * 50) + 'deg)', opacity: 1 }], { duration: 420, delay: s * 50, easing: 'cubic-bezier(.2,.9,.3,1.3)', fill: 'both' });
+  }
+  return sleep(460 + n * 50).then(function () {
+    sfx('whoosh');
+    rocks.forEach(function (el, s) {
+      animate(el, along(curve(spots[s], c.outcome === 'miss' ? beyond(spots[s], end) : [end[0] + (s - n / 2) * 10, end[1] + (s % 2) * 12], 30 * k).at, 8, function (t) { return 'scale(' + lerp(1, 1.15, t).toFixed(2) + ') rotate(' + (s * 50 + t * 400).toFixed(0) + 'deg)'; }),
+        { duration: 300, delay: s * 45, easing: 'ease-in', fill: 'both' }).then(function () { el.remove(); if (c.outcome !== 'miss') flashAt(end[0], end[1], mc, 120 * k, 160); });
+    });
+    if (c.big) {
+      /* the grand one: a boulder as big as a house falls on the foe */
+      const big = piece(rock(mc, 9), 'sp-rock', Math.round(170 * k));
+      animate(big, [{ transform: tr([end[0], -160]) + ' rotate(-30deg)', opacity: 1 }, { transform: tr([end[0], end[1] - 10]) + ' rotate(20deg)', opacity: 1 }], { duration: 420, delay: n * 45 + 80, easing: 'cubic-bezier(.6,0,1,1)', fill: 'both' }).then(function () { fade(big, 260); });
+      return sleep(n * 45 + 500);
+    }
+    return sleep(300 + n * 45);
+  });
+}
+function stoneHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  const g = anchor(to, 0.5, 0.9);
+  const L = layer(beam(boltPath(g[0] - 130 * k, g[1] + 4, g[0] + 130 * k, g[1] - 4, 10, 20 * k), mc, 5 * k));
+  trace(L, 160).then(function () { fade(L, 500, 200); });
+  ring(b[0], b[1], mc, 300 * k, 560);
+  flashAt(b[0], b[1], '#fff2de', 380 * k, 320);
+  sparks(b[0], b[1], 16, function (n) { return n % 3 ? rock(mc, n).replace('<svg ', '<svg width="' + (16 + (n % 3) * 6) + '" height="' + (16 + (n % 3) * 6) + '" ') : shape('Corazza', mc, 22); }, 170 * k, 900);
+  sfx('shake');
+  pulse(arena, 'quake', 420);
+  const m = $('m-' + to); if (m) pulse(m, 'stoned', 700);
+}
+
+/* ---------- Crepuscolo: the dusk ---------- */
+function blackSun(mc: string): string {
+  let rays = '';
+  for (let s = 0; s < 16; s++) { const a = s / 16 * Math.PI * 2, r = s % 2 ? 78 : 96; rays += (s ? ' L' : 'M') + (100 + Math.cos(a) * r).toFixed(1) + ' ' + (100 + Math.sin(a) * r).toFixed(1) + ' L' + (100 + Math.cos(a + Math.PI / 16) * 62).toFixed(1) + ' ' + (100 + Math.sin(a + Math.PI / 16) * 62).toFixed(1); }
+  return '<svg viewBox="0 0 200 200" aria-hidden="true" stroke-linejoin="round"><path d="' + rays + 'Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="5"/>' +
+    '<circle cx="100" cy="100" r="60" fill="#ffb36b" stroke="' + INK + '" stroke-width="5"/><circle cx="100" cy="100" r="54" fill="#1a1530"/>' +
+    '<path d="M68 82Q100 60 132 82" fill="none" stroke="' + mc + '" stroke-width="5" stroke-linecap="round"/><circle cx="84" cy="98" r="7" fill="' + mc + '"/><circle cx="116" cy="98" r="7" fill="' + mc + '"/></svg>';
+}
+function duskFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const f = body(from, 0.5, 0.4), top: P = [f[0], Math.max(70 * k, f[1] - 150 * k)], sun = piece(blackSun(mc), 'sp-blacksun', 150 * k);
+  /* the dark grows: a black sun with eyes rises over the caster, with its ring of dusk */
+  const veil = piece('', 'sp-veil');
+  const z = size(); veil.style.width = z.w + 'px'; veil.style.height = z.h + 'px';
+  animate(veil, [{ opacity: 0 }, { opacity: 0.55 }], { duration: 400, fill: 'both' });
+  animate(sun, [{ transform: tr([top[0], top[1] + 80]) + ' scale(.2) rotate(-90deg)', opacity: 0 }, { transform: tr(top) + ' scale(1) rotate(0deg)', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'both' });
+  sfx('reveal');
+  return sleep(600).then(function () {
+    /* shadow hands reach from the sun to the foe, one after the other */
+    const n = c.big ? 5 : 3, paths: string[] = [];
+    for (let s = 0; s < n; s++) {
+      const off = (s - (n - 1) / 2) * 40 * k, cx = lerp(top[0], end[0], 0.5) + off, cy = lerp(top[1], end[1], 0.5) - 60 * k + Math.abs(off);
+      paths.push('M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' Q' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ' ' + (end[0] + off * 0.3).toFixed(1) + ' ' + (end[1] + off * 0.2).toFixed(1));
+    }
+    const L = layer(paths.map(function (d) { return '<path d="' + d + '" pathLength="1" stroke="' + mc + '" stroke-width="' + (26 * k).toFixed(1) + '" opacity=".3"/><path d="' + d + '" pathLength="1" stroke="#1a1530" stroke-width="' + (12 * k).toFixed(1) + '"/><path d="' + d + '" pathLength="1" stroke="' + mc + '" stroke-width="' + (3 * k).toFixed(1) + '"/>'; }).join(''));
+    sfx('whoosh');
+    return trace(L, 380).then(function () {
+      fade(L, 380, 60);
+      animate(sun, [{ transform: tr(top) + ' scale(1)', opacity: 1 }, { transform: tr(top) + ' scale(.2) rotate(180deg)', opacity: 0 }], { duration: 420, easing: 'ease-in', fill: 'both' }).then(gone(sun));
+      animate(veil, [{ opacity: 0.55 }, { opacity: 0 }], { duration: 500, delay: 100, fill: 'both' }).then(gone(veil));
+    });
+  });
+}
+function duskHit(b: P, to: number, c: Cast, mc: string, k: number) {
+  /* the shadow closes in on the one hit and then bursts: an inward ring, a dark burst, the dusk's shapes */
+  const imp = piece('', 'sp-implode', 360 * k);
+  imp.style.setProperty('--mc', mc);
+  animate(imp, [{ transform: tr(b) + ' scale(1.2)', opacity: 0 }, { transform: tr(b) + ' scale(.6)', opacity: 1, offset: 0.5 }, { transform: tr(b) + ' scale(.1)', opacity: 0 }], { duration: 420, easing: 'ease-in', fill: 'both' }).then(function () {
+    imp.remove();
+    ring(b[0], b[1], mc, 320 * k, 600);
+    flashAt(b[0], b[1], mc, 440 * k, 360);
+    sparks(b[0], b[1], 16, function (n) { return shape('Crepuscolo', n % 3 ? mc : '#ffb36b', 20 + (n % 3) * 6); }, 170 * k, 950);
+  });
+  if (c.big) for (let n = 0; n < 6; n++) {
+    const el = piece('<i class="sp-eye"></i>', 'sp-star'), a = n / 6 * Math.PI * 2;
+    animate(el, [{ transform: tr([b[0] + Math.cos(a) * 120 * k, b[1] + Math.sin(a) * 80 * k]) + ' scale(0)', opacity: 0 }, { transform: tr([b[0] + Math.cos(a) * 120 * k, b[1] + Math.sin(a) * 80 * k]) + ' scale(1)', opacity: 1, offset: 0.4 }, { transform: tr(b) + ' scale(.2)', opacity: 0 }],
+      { duration: 700, delay: n * 50, easing: 'ease-in', fill: 'both' }).then(gone(el));
+  }
+  const m = $('m-' + to); if (m) pulse(m, 'shadowed', 800);
+}
+
+const FLY: Record<TypeName, (from: number, end: P, c: Cast, mc: string, k: number) => Promise<void>> = { Calma: moonFly, Caos: boltFly, Cervello: starFly, Chiacchiera: songFly, Cuore: heartFly,
+  Corrente: waveFly, Calore: fireFly, Cielo: windFly, Corazza: stoneFly, Crepuscolo: duskFly };
+const HIT: Record<TypeName, (b: P, to: number, c: Cast, mc: string, k: number) => void> = { Calma: moonHit, Caos: boltHit, Cervello: starHit, Chiacchiera: songHit, Cuore: heartHit,
+  Corrente: waveHit, Calore: fireHit, Cielo: windHit, Corazza: stoneHit, Crepuscolo: duskHit };
+
+/* ---------- the legends' own moves: a show of their own, as big as the arena ---------- */
+type Epic = (from: number, end: P, c: Cast, mc: string, k: number) => Promise<void>;
+/** a veil over the whole arena, darker than the charge */
+function veilOn(op: number) {
+  const v = piece('', 'sp-veil'), z = size();
+  v.style.width = z.w + 'px'; v.style.height = z.h + 'px';
+  animate(v, [{ opacity: 0 }, { opacity: op }], { duration: 380, fill: 'both' });
+  return function (ms: number) { animate(v, [{ opacity: op }, { opacity: 0 }], { duration: ms, fill: 'both' }).then(gone(v)); };
+}
+/** Giano's Porta del tempo: the wheel of the hours fills the arena, its hands run backwards, time stops, and the door
+    in the middle opens on a blast of light */
+function timeGate(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const z = size(), mid0: P = [z.w / 2, z.h * 0.46], w = Math.min(z.w * 0.92, z.h * 1.05), off = veilOn(0.7), GOLD = '#f2c94c', SIL = '#c9d3ea';
+  let dial = '<svg viewBox="0 0 200 200" aria-hidden="true" fill="none" stroke-linecap="round">' +
+    '<circle cx="100" cy="100" r="92" stroke="' + INK + '" stroke-width="12"/><path d="M100 8A92 92 0 0 0 100 192" stroke="' + GOLD + '" stroke-width="7"/><path d="M100 8A92 92 0 0 1 100 192" stroke="' + SIL + '" stroke-width="7"/>' +
+    '<circle cx="100" cy="100" r="74" stroke="' + mc + '" stroke-width="2.5" stroke-dasharray="4 6"/>';
+  const ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+  for (let h = 0; h < 12; h++) {
+    const a = h / 12 * Math.PI * 2, x = 100 + Math.sin(a) * 82, y = 100 - Math.cos(a) * 82;
+    dial += '<text x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff" stroke="' + INK + '" stroke-width="3" paint-order="stroke" font-family="serif">' + ROMAN[h] + '</text>';
+  }
+  dial += '</svg>';
+  const D = piece(dial, 'sp-dial', w);
+  animate(D, [{ transform: tr(mid0) + ' scale(.2) rotate(-90deg)', opacity: 0 }, { transform: tr(mid0) + ' scale(1) rotate(0deg)', opacity: 1, offset: 0.5 }, { transform: tr(mid0) + ' scale(1.02) rotate(4deg)', opacity: 1 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.3,1.1)', fill: 'both' });
+  sfx('reveal');
+  /* the two hands, running backwards faster and faster */
+  const hands = ['<svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 100 L100 30" stroke="' + INK + '" stroke-width="11" stroke-linecap="round"/><path d="M100 100 L100 30" stroke="' + GOLD + '" stroke-width="6" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 100 L100 52" stroke="' + INK + '" stroke-width="13" stroke-linecap="round"/><path d="M100 100 L100 52" stroke="' + SIL + '" stroke-width="7" stroke-linecap="round"/><circle cx="100" cy="100" r="9" fill="' + mc + '" stroke="' + INK + '" stroke-width="4"/></svg>'];
+  const H = hands.map(function (hh, q) {
+    const el = piece(hh, 'sp-dial', w);
+    animate(el, [{ transform: tr(mid0) + ' rotate(0deg)', opacity: 0 }, { transform: tr(mid0) + ' rotate(' + (q ? -200 : -900) + 'deg)', opacity: 1, offset: 0.6 }, { transform: tr(mid0) + ' rotate(' + (q ? -260 : -1300) + 'deg)', opacity: 1 }], { duration: 1500, delay: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'both' });
+    return el;
+  });
+  /* time stops on the foe */
+  const foe = $('m-' + (1 - from)); if (foe) sleep(500).then(function () { pulse(foe, 'hexed', 1200); });
+  return sleep(1500).then(function () {
+    /* the door in the middle of the wheel opens on the light */
+    const leaf = function (dir: number) { return '<svg viewBox="0 0 60 120" aria-hidden="true"><rect x="2" y="2" width="56" height="116" rx="4" fill="' + (dir < 0 ? GOLD : SIL) + '" stroke="' + INK + '" stroke-width="4"/><path d="M14 14H46V54H14ZM14 66H46V106H14Z" fill="none" stroke="' + INK + '" stroke-width="2.5" opacity=".6"/></svg>'; };
+    const dw = w * 0.22, light = piece('', 'sp-halo', w * 0.7);
+    light.style.setProperty('--mc', '#fff6c8');
+    animate(light, [{ transform: tr(mid0) + ' scale(.1)', opacity: 0 }, { transform: tr(mid0) + ' scale(1)', opacity: 1, offset: 0.4 }, { transform: tr(mid0) + ' scale(1.3)', opacity: 0 }], { duration: 900, easing: 'ease-out', fill: 'both' }).then(gone(light));
+    [-1, 1].forEach(function (dir) {
+      const el = piece(leaf(dir), 'sp-dial', dw);
+      el.style.height = (dw * 2).toFixed(0) + 'px';
+      animate(el, [{ transform: tr([mid0[0] + dir * dw * 0.5, mid0[1]]) + ' scaleX(1)', opacity: 1 }, { transform: tr([mid0[0] + dir * dw * 1.3, mid0[1]]) + ' scaleX(.2)', opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'both' }).then(gone(el));
+    });
+    sfx('magic');
+    const L = layer(beam('M' + mid0[0].toFixed(1) + ' ' + mid0[1].toFixed(1) + ' L' + end[0].toFixed(1) + ' ' + end[1].toFixed(1), mc, 30 * k) + beam('M' + mid0[0].toFixed(1) + ' ' + mid0[1].toFixed(1) + ' L' + end[0].toFixed(1) + ' ' + end[1].toFixed(1), '#fff6c8', 12 * k));
+    return trace(L, 240).then(function () {
+      fade(L, 500, 80);
+      [D].concat(H).forEach(function (el) { animate(el, [{ opacity: 1 }, { opacity: 0, transform: tr(mid0) + ' scale(1.25)' }], { duration: 500, easing: 'ease-in', fill: 'both' }).then(gone(el)); });
+      off(700);
+    });
+  });
+}
+/** Fuocelmo's Tempesta di Sant'Elmo: the sky breaks, lightning falls all over the arena, a serpent of blue fire
+    crosses it, and blue fire rains on the foe */
+function elmoStorm(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const z = size(), off = veilOn(0.62), BLUE = '#5fb6ff', HOT = '#9fe0ff';
+  /* storm clouds over the arena */
+  for (let q = 0; q < 3; q++) {
+    const cw = z.w * 0.4, cl = piece(stormCloud(), 'sp-cloud', cw), at: P = [z.w * (0.18 + q * 0.32), cw * 0.08];
+    cl.style.height = (cw / 2).toFixed(0) + 'px';
+    animate(cl, [{ transform: tr([at[0], at[1] - 40]) + ' scale(.7)', opacity: 0 }, { transform: tr(at) + ' scale(1)', opacity: 1, offset: 0.2 }, { transform: tr(at) + ' scale(1)', opacity: 1, offset: 0.85 }, { transform: tr(at) + ' scale(1.05)', opacity: 0 }], { duration: 2300, delay: q * 80, fill: 'both' }).then(gone(cl));
+  }
+  sfx('thunder');
+  /* lightning all over the arena, one at a time (lit where it lands: never more than a flash or two a second) */
+  let chain: Promise<unknown> = sleep(350);
+  [0.12, 0.88, 0.35, 0.66].forEach(function (fx0, n) {
+    chain = chain.then(function () {
+      const x = z.w * fx0, y2 = z.h * (0.55 + (n % 2) * 0.25), L = layer(beam(boltPath(x + (wob() - 0.5) * 30, z.h * 0.12, x, y2, 9, 50 * k), HOT, 8 * k), 'sp-bolt');
+      animate(L, [{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 0.3, offset: 0.4 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }], { duration: 300, fill: 'both' }).then(gone(L));
+      flashAt(x, y2, HOT, 200 * k, 260);
+      sparks(x, y2, 6, function () { return shape('Calore', BLUE, 20); }, 80 * k, 600);
+      if (n === 2) sfx('thunder');
+      return sleep(170);
+    });
+  });
+  return chain.then(function () {
+    /* the serpent of blue fire, from the caster to the foe, winding */
+    const a = body(from, 0.5, 0.4);
+    let d = 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1);
+    for (let q = 1; q <= 12; q++) { const t = q / 12, p = mid(a, end, t); d += ' L' + p[0].toFixed(1) + ' ' + (p[1] + Math.sin(t * Math.PI * 3) * 50 * k * (1 - t * 0.6) - Math.sin(t * Math.PI) * 60 * k).toFixed(1); }
+    const L = layer(beam(d, BLUE, 26 * k) + beam(d, HOT, 8 * k));
+    sfx('whoosh');
+    return trace(L, 420).then(function () {
+      fade(L, 420, 60);
+      /* and the blue fire rains down */
+      for (let q = 0; q < 9; q++) {
+        const x = end[0] + (q - 4) * 26 * k, el = piece(fireball(BLUE), 'sp-fire', Math.round(40 * k));
+        animate(el, [{ transform: tr([x + 70 * k, -40]) + ' scale(.6)', opacity: 0 }, { transform: tr([x + 20 * k, lerp(-40, end[1], 0.6)]) + ' scale(1)', opacity: 1, offset: 0.6 }, { transform: tr([x, end[1] + 10]) + ' scale(1.2)', opacity: 0 }], { duration: 420, delay: q * 40, easing: 'ease-in', fill: 'both' }).then(gone(el));
+      }
+      /* the last bolt on the foe: the one flash of the whole screen */
+      return sleep(380).then(function () {
+        const B = layer(beam(boltPath(end[0], 0, end[0], end[1], 10, 40 * k), HOT, 13 * k), 'sp-bolt');
+        animate(B, [{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 0 }], { duration: 320, fill: 'both' }).then(gone(B));
+        flash('#ffffff', 240, 0.5); sfx('thunder'); pulse(arena, 'quake', 420);
+        off(800);
+      });
+    });
+  });
+}
+/** Lamo's Masso dei giganti: a boulder as big as a house rises behind the king, the ground shaking, and falls on the foe */
+function boulder(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
+  const g = anchor(from, 0.5, 0.9), f = body(from, 0.5, 0.2), w = 230 * k, R = piece(rock(mc, 4), 'sp-rock', w), off = veilOn(0.45);
+  const up: P = [f[0], Math.max(w * 0.4, f[1] - 120 * k)];
+  /* the ground cracks, pebbles jump, the rock rises slowly out of it */
+  const L = layer(beam(boltPath(g[0] - 160 * k, g[1] + 3, g[0] + 160 * k, g[1] - 3, 12, 22 * k), mc, 6 * k));
+  trace(L, 300).then(function () { fade(L, 900, 400); });
+  pulse(arena, 'quake', 420); sfx('shake');
+  sleep(450).then(function () { pulse(arena, 'quake', 420); sfx('shake'); });
+  for (let q = 0; q < 8; q++) sparks(g[0] + (q - 3.5) * 30 * k, g[1], 2, function (n) { return rock(mc, n + q).replace('<svg ', '<svg width="16" height="16" '); }, 60 * k, 700);
+  animate(R, [{ transform: tr([g[0], g[1] + 40]) + ' scale(.5) rotate(0deg)', opacity: 0 }, { transform: tr(up) + ' scale(1) rotate(-12deg)', opacity: 1, offset: 0.8 }, { transform: tr([up[0], up[1] - 10]) + ' scale(1.02) rotate(-14deg)', opacity: 1 }],
+    { duration: 1000, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'both' });
+  return sleep(1050).then(function () {
+    sfx('whoosh');
+    const cv = curve(up, c.outcome === 'miss' ? beyond(up, end) : [end[0], end[1] - 10], 140 * k);
+    return animate(R, along(cv.at, 12, function (t) { return 'scale(' + lerp(1, 0.8, t).toFixed(2) + ') rotate(' + (-14 + t * 200).toFixed(0) + 'deg)'; }), { duration: 520, easing: 'cubic-bezier(.5,0,.9,.9)', fill: 'both' }).then(function () {
+      fade(R, 300);
+      if (c.outcome !== 'miss') {
+        pulse(arena, 'quake', 420);
+        for (let q = 0; q < 3; q++) sleep(q * 110).then(function () { ring(end[0], end[1] + 20, '#c9b8a0', (300 + q * 120) * k, 700, true); });
+      }
+      off(700);
+    });
+  });
+}
+const EPIC: Record<string, Epic> = { portatempo: timeGate, tempestelmo: elmoStorm, masso: boulder };
 
 /* ---------- the gestures: how a move travels, whatever it is made of (data/move-fx.ts) ---------- */
 type Flight = (from: number, end: P, c: Cast, mc: string, k: number, t: TypeName) => Promise<void>;
@@ -570,8 +952,8 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
   glow(from, mc, 900);
   magicCircle(from, t, mc, 200 * k, 1200);
   const end = c.outcome === 'miss' ? beyond(body(from, 0.5, 0.45), b) : b;
-  const gesture = c.id ? MOVE_FX[c.id] : undefined;
-  return (gesture ? FLIGHT[gesture](from, end, c, mc, k, t) : FLY[t](from, end, c, mc, k)).then(function () {
+  const gesture = c.id ? MOVE_FX[c.id] : undefined, epic = c.sig && c.id ? EPIC[c.id] : undefined;
+  return (epic ? epic(from, end, c, mc, k) : gesture ? FLIGHT[gesture](from, end, c, mc, k, t) : FLY[t](from, end, c, mc, k)).then(function () {
     if (c.outcome === 'hit') {
       HIT[t](b, to, c, mc, k);
       if (c.drain) lifeBack(from, to, mc);
@@ -644,6 +1026,15 @@ export function arrive(i: number, t: TypeName, t2?: TypeName) {
     ring(f[0], f[1], mc2, 260, 700, true);
     flashAt(c[0], c[1], mc, 360, 420);
     sparks(c[0], c[1], 12, function (n) { return shape(n % 2 && t2 ? t2 : t, n % 3 ? (n % 2 ? mc2 : mc) : '#ffffff', 18 + (n % 3) * 5); }, 130, 800);
+    if (document.querySelector('#m-' + i + ' .spr-legend')) {
+      /* a legend comes on: the ground shakes, rays of its two colours, rings that go all over the arena */
+      pulse(arena, 'quake', 420);
+      const rays = piece('', 'sp-rays', 520);
+      rays.style.setProperty('--mc', mc);
+      animate(rays, [{ transform: tr(c) + ' scale(.2) rotate(0deg)', opacity: 0.95 }, { transform: tr(c) + ' scale(1.3) rotate(90deg)', opacity: 0 }], { duration: 1400, easing: 'ease-out', fill: 'both' }).then(gone(rays));
+      for (let n = 0; n < 3; n++) sleep(n * 200).then(function () { ring(c[0], c[1], n % 2 ? mc2 : mc, 520 + n * 160, 900); });
+      sparks(c[0], c[1], 20, function (n) { return shape(n % 2 && t2 ? t2 : t, n % 2 ? mc2 : mc, 26 + (n % 3) * 6); }, 260, 1300);
+    }
   });
 }
 

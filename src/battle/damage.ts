@@ -1,7 +1,7 @@
 import { CHARS, type Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { TUNE, K, CRIT, MAGIC_TUNE } from '../data/tuning';
-import { TYPES, type TypeName } from '../data/types';
+import { magicBeats, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
 import { NET_IDS } from '../data/nets';
@@ -20,7 +20,7 @@ export function moveType(side: Side, m: Move): TypeName | null { return m.plain 
 export function magicEff(t: TypeName | null, against: TypeName[]): number {
   let e = 1;
   if (!t) return e;
-  for (const d of against) { if (TYPES[t].beats === d) e *= MAGIC_TUNE.se; else if (TYPES[d].beats === t) e *= MAGIC_TUNE.nve; }
+  for (const d of against) { if (magicBeats(t, d)) e *= MAGIC_TUNE.se; else if (magicBeats(d, t)) e *= MAGIC_TUNE.nve; }
   return Math.round(e * 1000) / 1000;
 }
 

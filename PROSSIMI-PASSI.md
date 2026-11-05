@@ -16,9 +16,11 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
 
 
 
-9. **Creature, il resto**: altre specie selvatiche con disegni nuovi (meduse e ricci in acqua bassa, un pipistrello
-   della Grotta della Janara), una mossa che cambia con il terreno, e altri posti da raggiungere con i poteri
-   (fatti: nuotare, arrampicarsi, vedere dall'alto).
+9. **Creature, il resto**: una mossa che cambia con il terreno, altri posti da raggiungere con i poteri (fatti:
+   nuotare, arrampicarsi, vedere dall'alto), e per i tipi nuovi le tracce che mancano: una musica per lotta di tipo,
+   gli allenatori con squadre dei tipi nuovi (oggi hanno le creature di prima), una scheda dei dieci tipi anche fuori
+   dalla lotta (nel diario). Le leggende sono pensate per una squadra intera (`tools/sim-legend.ts`): se Antonio le
+   trova troppo dure o troppo facili, si toccano il livello sull'Npc (`formia.ts`) e i numeri della specie.
 10. **La trama, il seguito**: dopo le Pietre di Telepilo (fatte), un secondo atto: Torino e poi Chicago come capitoli
     veri (una mappa di Torino, il cancello del treno in `data/gates.ts` è già il punto d'aggancio); altre missioni a
     più passi in città (la Fonte Artacia dell'Odissea, la Grotta della Janara a Gianola, il presepe vivente di
@@ -43,6 +45,8 @@ in inglese, commit in italiano; niente versione per telefono (solo PC); creature
     sulla mappa (`LOOKS.tullio`). Si può mostrare nei suoi dialoghi o all'inizio della lotta con lui.
 
 ## Fatti
+
+- **Venticinque creature nuove, cinque tipi nuovi, tre leggende enormi** (5 novembre 2026): meduse, stelle marine, murene, delfini, cefali (con il Cefaldrago alla Magikarp), lucciole, pipistrelli, cinghiali, falchi, ginestre, lumache, gatti, ognuno con il suo disegno, le mosse, il verso e l'evoluzione; la rarità nascosta nei pesi, nei posti e nelle ore. I tipi delle sole creature (Corrente, Calore, Cielo, Corazza, Crepuscolo), con la tabella dei dieci tipi (`MAGIC_CHART`), i colori, le rune, i versi e una magia per tipo (l'onda, la palla di fuoco, il tornado, i sassi, il sole nero); le creature di prima con i tipi nuovi dove hanno senso (Riccetto e Lunaspina Corrente, Solleone Calore, le forme di mezzo delle iniziali con un secondo tipo…) e le mosse ritipate. Lamo diventa un titano col masso sopra la testa, Giano (al tramonto a Gianola) un titano del tempo con due teste e la ruota delle ore, Fuocelmo (di notte al molo) un drago di fuoco azzurro con le ali a vela; tutti e tre più grandi in lotta, con la raggiera, l'entrata che fa tremare l'arena e una scena tutta loro per la mossa speciale.
 
 - **Il primo giro di cose da Sonnet del briefing** (4 novembre 2026): `tools/sim-fun.ts` (`npm run sim:fun`, le due misure con gli obiettivi); le **selvatiche che seguono la squadra** nei posti di sfida e la trama che alza gli altri (`wildLevel`); **un verso per ogni specie**, in tre versioni (entrata, vittoria, KO), e il gigante di Lamo non è più muto (`audio/cries.ts`); la **musica per luogo** con la sua notte (Castellone, Mola e il porto, Vindicio e la pineta; `audio/zones.ts`); **cinque gesti** per le mosse, 25 mosse con il loro (`data/move-fx.ts`). Restano di questo giro: il tasto «Veloce» per le animazioni, gli altri temi (Gianola, Monti Aurunci, interni, lotte per tipo, stinger, un motivo per ogni amico), le scene firma delle mosse speciali, e tutto quello che aspetta il motore di Opus (Cisternone, covi-labirinto, contenuto di abilità e oggetti, leggende, rami delle scelte).
 - **Il trailer rifatto dal gioco di adesso** (4 novembre 2026): tutte le clip registrate di nuovo (il terreno senza griglia, le creature ridisegnate, le magie nuove, l'albero delle abilità), e i tagli delle lotte rimessi a tempo: la magia parte con la sua fascia e colpisce sul battito, il retino vola, trema e regge con le stelle. Al posto dell'Esame c'è il rivale: Tullio presentato dopo i sei amici con il suo «!», lo studente che vede Antonio e gli viene incontro, la lotta con Tullio che si apre con le fasce rosse.

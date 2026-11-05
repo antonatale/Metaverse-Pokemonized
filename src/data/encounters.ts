@@ -15,33 +15,40 @@ export interface Hiding {
 }
 
 export const HIDINGS: Record<string, Hiding> = {
+  /* how rare a creature is never shows: it is in the weights, in the places and in the hours. A common one is in many
+     tables with a big weight, a rare one in one place, at one hour, with a weight of 1 (and an evolved one only where
+     the place is a challenge). Nothing in the game says which is which: the diary only says where it was seen */
   gramsci: { id: 'gramsci', name: 'Parco Gramsci', on: 'erba',
     day: [{ sp: 'cicalina', lv: [2, 4], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }],
-    night: [{ sp: 'civettina', lv: [3, 5], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }] },
+    night: [{ sp: 'civettina', lv: [3, 5], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }, { sp: 'lucciolina', lv: [3, 5], w: 3 }] },
   gianola: { id: 'gianola', name: 'Gianola', on: 'scogli',
-    day: [{ sp: 'riccetto', lv: [3, 6], w: 4 }, { sp: 'granchietto', lv: [4, 5], w: 1 }],
-    night: [{ sp: 'riccetto', lv: [4, 7], w: 3 }, { sp: 'granchietto', lv: [5, 6], w: 2 }] },
+    day: [{ sp: 'riccetto', lv: [3, 6], w: 4 }, { sp: 'granchietto', lv: [4, 5], w: 1 }, { sp: 'stellina', lv: [4, 6], w: 3 }],
+    night: [{ sp: 'riccetto', lv: [4, 7], w: 3 }, { sp: 'granchietto', lv: [5, 6], w: 2 }, { sp: 'stellina', lv: [5, 7], w: 1 }, { sp: 'medusella', lv: [5, 7], w: 2 }] },
   pineta: { id: 'pineta', name: 'Pineta di Vindicio', on: 'erba',
     day: [{ sp: 'cicalina', lv: [4, 7], w: 5 }, { sp: 'civettina', lv: [5, 6], w: 1 }],
-    night: [{ sp: 'civettina', lv: [5, 8], w: 5 }, { sp: 'cicalina', lv: [5, 6], w: 1 }] },
+    night: [{ sp: 'civettina', lv: [5, 8], w: 5 }, { sp: 'cicalina', lv: [5, 6], w: 1 }, { sp: 'lucciolina', lv: [5, 8], w: 4 }, { sp: 'lanternella', lv: [18, 20], w: 1 }] },
   scogliera: { id: 'scogliera', name: 'La Scogliera', on: 'scogli',
-    day: [{ sp: 'granchietto', lv: [6, 9], w: 6 }, { sp: 'riccetto', lv: [6, 7], w: 2 }, { sp: 'granchione', lv: [18, 19], w: 1 }] },
+    day: [{ sp: 'granchietto', lv: [6, 9], w: 6 }, { sp: 'riccetto', lv: [6, 7], w: 2 }, { sp: 'granchione', lv: [18, 19], w: 1 }, { sp: 'murenaccia', lv: [9, 12], w: 2 }],
+    night: [{ sp: 'murenaccia', lv: [10, 13], w: 4 }, { sp: 'granchietto', lv: [7, 9], w: 2 }, { sp: 'medusella', lv: [7, 9], w: 2 }] },
   ulivi: { id: 'ulivi', name: 'Gli uliveti', on: 'erba',
-    day: [{ sp: 'olivella', lv: [7, 10], w: 5 }, { sp: 'cicalina', lv: [7, 8], w: 1 }],
-    night: [{ sp: 'civettina', lv: [8, 10], w: 3 }, { sp: 'olivella', lv: [7, 9], w: 2 }] },
+    day: [{ sp: 'olivella', lv: [7, 10], w: 5 }, { sp: 'cicalina', lv: [7, 8], w: 1 }, { sp: 'lumacotta', lv: [7, 10], w: 3 }, { sp: 'ginestrella', lv: [7, 9], w: 2 }],
+    night: [{ sp: 'civettina', lv: [8, 10], w: 3 }, { sp: 'olivella', lv: [7, 9], w: 2 }, { sp: 'lumacotta', lv: [7, 9], w: 2 }, { sp: 'pipistrillo', lv: [8, 10], w: 2 }] },
   monti: { id: 'monti', name: 'Monti Aurunci', on: 'erba',
-    day: [{ sp: 'civettina', lv: [10, 13], w: 4 }, { sp: 'olivella', lv: [10, 12], w: 2 }, { sp: 'olivastro', lv: [18, 20], w: 1 }],
-    night: [{ sp: 'civettina', lv: [11, 14], w: 4 }, { sp: 'civettona', lv: [18, 21], w: 1 }],
+    day: [{ sp: 'civettina', lv: [10, 13], w: 4 }, { sp: 'olivella', lv: [10, 12], w: 2 }, { sp: 'olivastro', lv: [18, 20], w: 1 },
+      { sp: 'cinghialetto', lv: [10, 13], w: 4 }, { sp: 'ginestrella', lv: [10, 12], w: 3 }, { sp: 'falchetto', lv: [11, 14], w: 1 }, { sp: 'zannaferro', lv: [20, 22], w: 1 }],
+    night: [{ sp: 'civettina', lv: [11, 14], w: 4 }, { sp: 'civettona', lv: [18, 21], w: 1 }, { sp: 'pipistrillo', lv: [11, 14], w: 3 }, { sp: 'pipistrega', lv: [20, 22], w: 1 }],
     rise: 2, follow: { off: 0, slack: 5 } },
   /* reached with the creatures' powers (story/growth.ts): swimming in the shallow sea, climbing the walls of Castellone.
      The starters nobody chose live here: a Polpino in the sea, a Ramarrino (and, now and then, a Gabbì) on the walls */
   mare: { id: 'mare', name: 'Il mare di Formia', on: 'acqua',
-    day: [{ sp: 'riccetto', lv: [7, 11], w: 4 }, { sp: 'granchietto', lv: [7, 11], w: 3 }, { sp: 'polpino', lv: [6, 9], w: 1 }, { sp: 'riccione', lv: [18, 20], w: 1 }],
-    night: [{ sp: 'riccetto', lv: [8, 12], w: 3 }, { sp: 'polpino', lv: [7, 10], w: 2 }, { sp: 'granchione', lv: [18, 20], w: 1 }],
+    day: [{ sp: 'riccetto', lv: [7, 11], w: 4 }, { sp: 'granchietto', lv: [7, 11], w: 3 }, { sp: 'polpino', lv: [6, 9], w: 1 }, { sp: 'riccione', lv: [18, 20], w: 1 },
+      { sp: 'medusella', lv: [7, 11], w: 4 }, { sp: 'cefalino', lv: [5, 9], w: 5 }, { sp: 'delfi', lv: [10, 13], w: 1 }],
+    night: [{ sp: 'riccetto', lv: [8, 12], w: 3 }, { sp: 'polpino', lv: [7, 10], w: 2 }, { sp: 'granchione', lv: [18, 20], w: 1 },
+      { sp: 'medusella', lv: [8, 12], w: 4 }, { sp: 'medusaurora', lv: [20, 22], w: 1 }, { sp: 'cefalino', lv: [6, 10], w: 2 }],
     follow: { off: 0, slack: 4 } },
   mura: { id: 'mura', name: 'Le mura di Castellone', on: 'mura',
-    day: [{ sp: 'ramarrino', lv: [7, 10], w: 3 }, { sp: 'cicalina', lv: [6, 9], w: 2 }, { sp: 'gabbi', lv: [7, 10], w: 1 }],
-    night: [{ sp: 'civettina', lv: [8, 11], w: 3 }, { sp: 'ramarrino', lv: [8, 10], w: 1 }],
+    day: [{ sp: 'ramarrino', lv: [7, 10], w: 3 }, { sp: 'cicalina', lv: [6, 9], w: 2 }, { sp: 'gabbi', lv: [7, 10], w: 1 }, { sp: 'micetto', lv: [7, 10], w: 3 }, { sp: 'lumacotta', lv: [7, 9], w: 2 }],
+    night: [{ sp: 'civettina', lv: [8, 11], w: 3 }, { sp: 'ramarrino', lv: [8, 10], w: 1 }, { sp: 'pipistrillo', lv: [8, 11], w: 3 }, { sp: 'micetto', lv: [7, 10], w: 1 }],
     follow: { off: 0, slack: 4 } }
 };
 /** The level of a creature met in a hiding place: `stage` is how far the story has gone (0–4), `ref` the average of

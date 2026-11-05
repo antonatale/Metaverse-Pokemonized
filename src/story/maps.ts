@@ -3,7 +3,7 @@ import type { Area, Building, Dir, Ground, LostItem, MapDef, Npc, Sign, Warp } f
 import { COVI, type Covo } from '../data/covi';
 import { T, hash } from '../render/canvas/draw';
 import { st } from '../save/story-progress';
-import { darkness } from './daytime';
+import { darkness, sunset } from './daytime';
 import { flag } from './plot';
 import type { SpeciesId } from '../data/creatures';
 import { HIDINGS, type Hiding } from '../data/encounters';
@@ -119,8 +119,15 @@ export function present(p: Person): boolean {
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
 }
-/** the legend comes out at night, once the seal of Telepilo is safe (Mamurra beaten), until it is caught */
-function legendHere(n: Npc): boolean { return flag('tr-mamurra') && !(st.dex && n.wild && st.dex[n.wild.sp] === 2) && darkness(new Date()) > 0.5; }
+/** a legend comes out at its hour, once the story has got that far, until it is caught: Lamo at night once the seal of
+    Telepilo is safe (Mamurra beaten); Janus at sunset (or dawn), the hour between day and night, once the three stones
+    are found; the fire of Sant'Elmo at night, once Mamurra's diver has been beaten at the fishponds */
+function legendHere(n: Npc): boolean {
+  if (st.dex && n.wild && st.dex[n.wild.sp] === 2) return false;
+  if (n.legend === 'giano') return flag('pietra-voce') && sunset(new Date()) > 0.3;
+  if (n.legend === 'elmo') return flag('tr-mamurr-peschiere') && darkness(new Date()) > 0.5;
+  return flag('tr-mamurra') && darkness(new Date()) > 0.5;
+}
 /** the wild creature on a spot right now: some come out only at night (the little owls), when the cicadas sleep */
 export function wildNow(n: Npc): { sp: SpeciesId; lv: [number, number] } | null {
   if (!n.wild) return null;

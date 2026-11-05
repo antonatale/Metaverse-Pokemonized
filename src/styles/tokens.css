@@ -26,6 +26,11 @@
   --t-cervello: #bba0ff;
   --t-chiacchiera: #ffe45c;
   --t-cuore: #ff8fc1;
+  --t-corrente: #5fd3c6; /* i tipi delle sole creature */
+  --t-calore: #ff7a5c;
+  --t-cielo: #b4ec8c;
+  --t-corazza: #d8b083;
+  --t-crepuscolo: #9a9be6;
   --t-none: #dde1ea;
   --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -48,7 +53,7 @@
     --paper: #1e2a26; --grid: #2b3934; --margin: #9c4f48; --ink: #e9efe7; --text: #eef2ec; --muted: #a9b5ae;
     --card: #26332f; --line: #dbe4dc; --track: #36443f; --red: #ff7d70; --good: #4cc27a; --hp-lag: #d9b54a; --warn: #f0b93a;
     --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
-    --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-none: #c9d0cc;
+    --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-corrente: #4cc2b5; --t-calore: #f06a4d; --t-cielo: #a2dc7a; --t-corazza: #c9a074; --t-crepuscolo: #8a8bd8; --t-none: #c9d0cc;
     --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
     --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
     --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;
@@ -65,7 +70,7 @@
   --paper: #1e2a26; --grid: #2b3934; --margin: #9c4f48; --ink: #e9efe7; --text: #eef2ec; --muted: #a9b5ae;
   --card: #26332f; --line: #dbe4dc; --track: #36443f; --red: #ff7d70; --good: #4cc27a; --hp-lag: #d9b54a; --warn: #f0b93a;
   --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
-  --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-none: #c9d0cc;
+  --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-corrente: #4cc2b5; --t-calore: #f06a4d; --t-cielo: #a2dc7a; --t-corazza: #c9a074; --t-crepuscolo: #8a8bd8; --t-none: #c9d0cc;
   --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
   --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
   --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;

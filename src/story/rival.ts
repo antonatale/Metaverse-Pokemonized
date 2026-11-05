@@ -1,6 +1,6 @@
 import { st } from '../save/story-progress';
 import { SPECIES, STARTERS, type SpeciesId } from '../data/creatures';
-import { TYPES } from '../data/types';
+import { MAGIC_CHART, magicBeats } from '../data/types';
 import { TRAINERS, type Trainer } from '../data/trainers';
 import { flag } from './plot';
 
@@ -13,7 +13,7 @@ import { flag } from './plot';
 /** the starter that beats this one; when none does, one this one does not beat */
 export function rivalFor(mine: SpeciesId): SpeciesId {
   var t = SPECIES[mine].type, others = STARTERS.filter(function (s) { return s !== mine; });
-  return others.filter(function (s) { return TYPES[SPECIES[s].type].beats === t; })[0] || others.filter(function (s) { return TYPES[t].beats !== SPECIES[s].type; })[0] || others[0];
+  return others.filter(function (s) { return magicBeats(SPECIES[s].type, t); })[0] || others.filter(function (s) { return !magicBeats(t, SPECIES[s].type); })[0] || others[0];
 }
 /** the first form of a line */
 function firstForm(sp: SpeciesId): SpeciesId {
@@ -55,7 +55,7 @@ export function trainerLine(t: string, id: string): string {
   if (!TRAINERS[id].rival) return t;
   var team = teamOf(id), r = team[team.length - 1].sp, m = mine();
   var rt = SPECIES[r].type, mt = m ? SPECIES[m].type : null, mn = m ? SPECIES[m].name : 'creatura';
-  var why = mt && TYPES[rt].beats === mt ? rt + ' contro ' + mt + ': il ' + rt + ' ' + TYPES[rt].why + '. Contro il tuo ' + mn + ' ho il vantaggio!'
+  var why = mt && magicBeats(rt, mt) ? rt + ' contro ' + mt + ': il ' + rt + ' ' + MAGIC_CHART[rt].why[MAGIC_CHART[rt].beats.indexOf(mt)] + '. Contro il tuo ' + mn + ' ho il vantaggio!'
     : 'Nessuna delle tre batte il tuo ' + mn + ', e allora ho preso la più sveglia.';
   return t.replace(/\{rival\}/g, SPECIES[r].name).replace(/\{mine\}/g, mn).replace(/\{why\}/g, why);
 }

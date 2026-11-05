@@ -100,6 +100,8 @@ export const DEX_PRIZES: DexPrize[] = [
   { n: 6, give: { argento: 2 } },
   { n: 10, give: { oro: 1 }, coins: 100 },
   { n: 15, give: { oro: 2 } },
+  { n: 25, give: { oro: 2 }, coins: 150 },
+  { n: 35, give: { oro: 3 }, coins: 200 },
   { n: 0, all: true, give: { oro: 3 }, coins: 300 }
 ];
 /** the price with Antonio's bargaining */

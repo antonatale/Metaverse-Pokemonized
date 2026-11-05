@@ -44,6 +44,9 @@
 .spr-wrap.opp::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -2px; height: 16px; border-radius: 50%; background: var(--shadow); z-index: -1; }
 .bob { animation: bob 2.8s ease-in-out infinite; }
 .opp .bob { animation-duration: 3.4s; animation-delay: -1.2s; }
+/* a legend is bigger than everyone else */
+.bob > .spr-legend { transform: scale(1.28); transform-origin: 50% 88%; }
+.opp .bob > .spr-legend { transform: scale(1.22); transform-origin: 62% 30%; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 .mover.lunge-me { animation: lungeMe .34s ease-out; }
 .mover.lunge-opp { animation: lungeOpp .34s ease-out; }
@@ -200,6 +203,23 @@
 .sp-wave svg { display: block; overflow: visible; }
 .sp-mote { display: block; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0, var(--mc) 55%, transparent 72%); box-shadow: 0 0 12px var(--mc); }
 .sp-dust { display: block; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 9px #bfe6ff, 0 0 0 1.5px #1c2340; }
+/* the creatures' own types: the sea, the fire, the wind, the stone, the dusk */
+.sp-dial > svg, .sp-wave-big > svg, .sp-whirl > svg, .sp-fire > svg, .sp-sun > svg, .sp-tornado > svg, .sp-rock > svg, .sp-blacksun > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sp-wave-big > svg { filter: drop-shadow(0 0 14px #9ff5ea) drop-shadow(0 0 3px #ffffff); }
+.fx.sp-whirl { z-index: 1; }
+.fx.sp-dial { z-index: 1; }
+.sp-dial > svg { filter: drop-shadow(0 0 18px #fff1c4); }
+.sp-splash { border-radius: 45% 45% 50% 50% / 70% 70% 30% 30%; background: radial-gradient(ellipse at 50% 80%, #ffffff 0, color-mix(in srgb, var(--mc) 85%, #ffffff) 35%, color-mix(in srgb, var(--mc) 40%, transparent) 60%, transparent 72%); }
+.sp-fire > svg { filter: drop-shadow(0 0 16px #ff9a4a) drop-shadow(0 0 4px #fff1c4); }
+.sp-sun > svg { filter: drop-shadow(0 0 24px #ffd24a); }
+.sp-ember svg, .sp-feather svg { display: block; }
+.sp-tornado > svg { filter: drop-shadow(0 0 10px #d8ffc4); }
+.sp-gust { width: 150px; height: 6px; margin-top: -3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--mc) 40%, #ffffff 60%, transparent); }
+.sp-rock > svg { filter: drop-shadow(0 4px 0 rgba(28, 35, 64, .35)); }
+.sp-blacksun > svg { filter: drop-shadow(0 0 22px #8f8cf0) drop-shadow(0 0 6px #ffb36b); }
+.fx.sp-veil { left: 0; top: 0; z-index: 0; background: radial-gradient(circle at 50% 30%, rgba(26, 21, 48, .3), rgba(26, 21, 48, .85)); }
+.sp-implode { border-radius: 50%; border: 10px solid var(--mc); box-shadow: 0 0 30px var(--mc), inset 0 0 30px #1a1530; background: radial-gradient(circle, #1a1530 0, rgba(26, 21, 48, .6) 40%, transparent 70%); }
+.sp-eye { display: block; width: 26px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #1a1530 0 28%, #ffb36b 30% 45%, #8f8cf0 47%); box-shadow: 0 0 12px #8f8cf0, 0 0 0 2px #1c2340; }
 .sp-pillar { z-index: 5; transform-origin: 50% 100%; border-radius: 45% 45% 0 0 / 8% 8% 0 0;
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--mc) 55%, transparent) 26%, rgba(255, 255, 255, .78) 50%, color-mix(in srgb, var(--mc) 55%, transparent) 74%, transparent);
   -webkit-mask: linear-gradient(transparent, #000 35%); mask: linear-gradient(transparent, #000 35%); }
@@ -229,6 +249,16 @@
 @keyframes smitten { 25%, 60% { filter: saturate(1.8) brightness(1.2) drop-shadow(0 0 16px #ff8fc1); } }
 .mover.hexed .spr { animation: hexed .82s ease-in-out; }
 @keyframes hexed { 30%, 70% { filter: grayscale(.6) brightness(.75) drop-shadow(0 0 14px #bba0ff); } }
+.mover.soaked .spr { animation: soaked .76s ease-out; }
+@keyframes soaked { 20%, 60% { filter: saturate(.7) brightness(1.15) hue-rotate(-20deg) drop-shadow(0 0 14px #4fd8c8); } 40% { transform: translateY(4px); } }
+.mover.scorched .spr { animation: scorched .76s ease-out; }
+@keyframes scorched { 20%, 55% { filter: sepia(.6) saturate(2.2) brightness(1.2) drop-shadow(0 0 16px #ff6a4a); } }
+.mover.gusted .spr { animation: gusted .64s ease-out; }
+@keyframes gusted { 25%, 55% { filter: brightness(1.3) drop-shadow(0 0 12px #b0f08a); } }
+.mover.stoned .spr { animation: stoned .7s steps(1); }
+@keyframes stoned { 0%, 40% { filter: grayscale(.8) contrast(1.3) drop-shadow(0 0 10px #d9ad7c); } 20%, 60% { filter: brightness(.7) contrast(1.4); } 100% { filter: none; } }
+.mover.shadowed .spr { animation: shadowed .8s ease-in-out; }
+@keyframes shadowed { 25%, 65% { filter: brightness(.45) saturate(.6) drop-shadow(0 0 16px #8f8cf0); } }
 /* a net thrown: the hoop in the air, then the sack on the ground */
 .fx.sp-net { z-index: 6; }
 .sp-net > svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(28, 35, 64, .25)); }

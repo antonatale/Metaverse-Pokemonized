@@ -185,6 +185,9 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-monti-2', tile: [75, 9] },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
   { id: 'selv-lamo', tile: [48, 35] },
+  /* the other legends: Janus by the ruins of Gianola, the fire of Sant'Elmo on the mole by the lighthouse */
+  { id: 'selv-giano', tile: [164, 60] },
+  { id: 'selv-elmo', tile: [95, 51] },
   /* the plot (story/plot.ts): Mamurra's men where the stones of Telepilo are, the archivist in the Torre di Mola,
      the ghost of Mamurra at his villa */
   { id: 'mamurr-scavi', near: { place: 'mamurra', dx: -1, dy: 3 } },

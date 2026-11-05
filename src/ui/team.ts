@@ -1,5 +1,5 @@
 import { st, save } from '../save/story-progress';
-import type { TypeName } from '../data/types';
+import { beatersOf, isPersonType, type TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
 import { ROSTER } from '../data/characters';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
@@ -61,23 +61,30 @@ export function chooseStarter(done: (uid: string) => void) {
 
 /* ---------- who goes into battle ---------- */
 /** one of a few of Antonio's team, from their pictures (with a mark on the ones that have the advantage) */
-function pickFrom(title: string, hint: string, keys: string[], go: (key: string) => void, best?: string | null) {
+function pickFrom(title: string, hint: string, keys: string[], go: (key: string) => void, best?: string[] | null) {
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
     '<p class="hint">' + esc(hint) + '</p><div class="pickgrid">' +
     keys.map(function (key) {
       var c = fighter(idOf(key));
       return '<button class="pick" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + level(key).lv + '</small></span>' +
-        (best && c.type === best ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
+        (best && (best.indexOf(c.type) >= 0 || (c.type2 && best.indexOf(c.type2) >= 0)) ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
     }).join('') + '</div></div>');
   $('pf-x').addEventListener('click', closeSheet);
   each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-key')!); }); });
   setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
 }
 /** one of these to send into battle (the only one goes straight in) */
-export function pickFighter(title: string, foeType: TypeName, keys: string[], go: (key: string) => void) {
-  var best = beaterOf(foeType);
+export function pickFighter(title: string, foeType: TypeName, keys: string[], go: (key: string) => void, foeType2?: TypeName) {
   if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
-  pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best);
+  if (isPersonType(foeType) && !foeType2 && !keys.some(function (k) { return isSpecies(idOf(k)); })) {
+    var best = beaterOf(foeType);
+    pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best ? [best] : null);
+    return;
+  }
+  /* against a creature: the magic that beats each of its types */
+  var foes = foeType2 ? [foeType, foeType2] : [foeType], good: TypeName[] = [];
+  foes.forEach(function (t) { beatersOf(t).forEach(function (b) { if (good.indexOf(b) < 0 && foes.indexOf(b) < 0) good.push(b); }); });
+  pickFrom(title, 'È di tipo ' + foes.join(' e ') + ': ha il vantaggio la magia ' + good.join(', ') + '.', keys, go, good);
 }
 /* ---------- a coffee at the counter of the bar: drunk there and then, by whoever Antonio picks ---------- */
 function coffee() {

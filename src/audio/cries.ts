@@ -22,6 +22,21 @@ const BODY: Record<Body, { mid: number; say: Say }> = {
   urchin: { mid: 3000, say(c, out, t, p, l) { for (let k = 0; k < 4; k++) hiss(c, out, t + k * 0.06 * l, 0.03 * l, { freq: (5000 - k * 600) * p, q: 3, gain: 0.25 }); } },
   crab: { mid: 900, say(c, out, t, p, l) { [0, 0.13].forEach(function (d) { hiss(c, out, t + d * l, 0.04 * l, { freq: 1800 * p, q: 2, gain: 0.45 }); tone(c, out, 700 * p, t + d * l, 0.04 * l, { type: 'square', gain: 0.06, cutoff: 2500 }); }); } },
   owl: { mid: 400, say(c, out, t, p, l) { [0, 0.32].forEach(function (d) { tone(c, out, 420 * p, t + d * l, 0.24 * l, { type: 'sine', to: 380 * p, gain: 0.22, attack: 0.04, sustain: 0.7, release: 0.1 }); }); } },
+  /* the creatures found later */
+  jelly: { mid: 700, say(c, out, t, p, l) { tone(c, out, 620 * p, t, 0.3 * l, { type: 'sine', to: 900 * p, gain: 0.18, attack: 0.03, sustain: 0.6, release: 0.12, vibrato: 18 }); } },
+  star: { mid: 1600, say(c, out, t, p, l) { [0, 0.09, 0.18].forEach(function (d, i) { tone(c, out, (1500 + i * 220) * p, t + d * l, 0.05 * l, { type: 'triangle', gain: 0.16, decay: 0.03, sustain: 0.4 }); }); } },
+  eel: { mid: 300, say(c, out, t, p, l) { hiss(c, out, t, 0.28 * l, { freq: 2600 * p, to: 1200 * p, q: 1.2, gain: 0.4 }); tone(c, out, 220 * p, t + 0.2 * l, 0.12 * l, { type: 'sawtooth', to: 140 * p, gain: 0.08, cutoff: 1200, sustain: 0.5 }); } },
+  dolphin: { mid: 2200, say(c, out, t, p, l) { [0, 0.12, 0.2].forEach(function (d) { tone(c, out, 1800 * p, t + d * l, 0.08 * l, { type: 'sine', to: 2800 * p, gain: 0.16, decay: 0.03, sustain: 0.6 }); }); } },
+  fish: { mid: 300, say(c, out, t, p, l) { tone(c, out, 340 * p, t, 0.09 * l, { type: 'sine', to: 200 * p, gain: 0.3, decay: 0.05, sustain: 0.3 }); } },
+  firefly: { mid: 2600, say(c, out, t, p, l) { [0, 0.1].forEach(function (d) { tone(c, out, 2600 * p, t + d * l, 0.05 * l, { type: 'sine', gain: 0.14, decay: 0.03, sustain: 0.5, release: 0.08 }); }); } },
+  bat: { mid: 3200, say(c, out, t, p, l) { for (let k = 0; k < 3; k++) tone(c, out, 3400 * p, t + k * 0.06 * l, 0.03 * l, { type: 'square', to: 2400 * p, gain: 0.05, cutoff: 6000, decay: 0.01, sustain: 0.5 }); } },
+  boar: { mid: 200, say(c, out, t, p, l) { [0, 0.16].forEach(function (d) { tone(c, out, 190 * p, t + d * l, 0.12 * l, { type: 'sawtooth', to: 150 * p, gain: 0.12, cutoff: 900, decay: 0.05, sustain: 0.5, vibrato: 40 }); }); } },
+  falcon: { mid: 1500, say(c, out, t, p, l) { for (let k = 0; k < 3; k++) tone(c, out, 1700 * p, t + k * 0.1 * l, 0.07 * l, { type: 'square', to: 1300 * p, gain: 0.07, cutoff: 3500, decay: 0.03, sustain: 0.5 }); } },
+  flower: { mid: 1200, say(c, out, t, p, l) { tone(c, out, 1100 * p, t, 0.22 * l, { type: 'sine', to: 1500 * p, gain: 0.14, attack: 0.02, sustain: 0.5, release: 0.1 }); hiss(c, out, t, 0.2 * l, { freq: 4000, q: 0.8, gain: 0.12 }); } },
+  snail: { mid: 250, say(c, out, t, p, l) { hiss(c, out, t, 0.3 * l, { type: 'lowpass', freq: 900 * p, to: 400, gain: 0.35 }); tone(c, out, 260 * p, t, 0.3 * l, { type: 'sine', to: 220 * p, gain: 0.1, sustain: 0.6 }); } },
+  cat: { mid: 700, say(c, out, t, p, l) { tone(c, out, 560 * p, t, 0.3 * l, { type: 'sawtooth', to: 760 * p, gain: 0.08, cutoff: 2200, attack: 0.03, decay: 0.1, sustain: 0.6, release: 0.1, vibrato: 12 }); } },
+  janus: { mid: 160, say(c, out, t, p, l) { tone(c, out, 165 * p, t, 0.6 * l, { type: 'triangle', gain: 0.18, attack: 0.05, sustain: 0.7, release: 0.2 }); tone(c, out, 247 * p, t + 0.05 * l, 0.6 * l, { type: 'triangle', gain: 0.12, attack: 0.05, sustain: 0.7, release: 0.2 }); } },
+  flame: { mid: 400, say(c, out, t, p, l) { hiss(c, out, t, 0.45 * l, { freq: 1200 * p, to: 3200 * p, q: 0.7, gain: 0.35 }); for (let k = 0; k < 4; k++) hiss(c, out, t + 0.1 * l + k * 0.07 * l, 0.02 * l, { freq: 5000, q: 3, gain: 0.3 }); } },
   /* the king of the giants: a low roar, a rumble underneath, and the breath */
   giant: { mid: 90, say(c, out, t, p, l) {
     tone(c, out, 95 * p, t, 0.55 * l, { type: 'sawtooth', to: 55 * p, gain: 0.2, cutoff: 700, decay: 0.15, sustain: 0.6, release: 0.15, vibrato: 30 });
@@ -68,7 +83,23 @@ const TYPE_LAYER: Record<TypeName, Layer> = {
     for (let i = 0; i < v.syllables; i++) syllable(c, out, t + 0.02 + i * 0.085 * v.length, 0.07 * v.length, 170 * v.pitch * (1 + i * 0.04), (v.vowel + i) % VOWEL.length, 0.5 * k);
   },
   /* the heart: a warm sigh, two notes a fifth apart */
-  Cuore(c, out, t, v, k) { ['C5', 'G5'].forEach(function (n, i) { tone(c, out, hz(n) * v.pitch, t + 0.02 + i * 0.12 * v.length, 0.25 * v.length, { type: 'sine', gain: 0.08 * k, attack: 0.05, sustain: 0.7, release: 0.15, vibrato: 8 }); }); }
+  Cuore(c, out, t, v, k) { ['C5', 'G5'].forEach(function (n, i) { tone(c, out, hz(n) * v.pitch, t + 0.02 + i * 0.12 * v.length, 0.25 * v.length, { type: 'sine', gain: 0.08 * k, attack: 0.05, sustain: 0.7, release: 0.15, vibrato: 8 }); }); },
+  /* the sea: a wave that rises and breaks, and a bubble */
+  Corrente(c, out, t, v, k) {
+    hiss(c, out, t, 0.32 * v.length, { type: 'lowpass', freq: 500 * v.pitch, to: 1800 * v.pitch, gain: 0.22 * k, attack: 0.1 });
+    tone(c, out, 380 * v.pitch, t + 0.2 * v.length, 0.06 * v.length, { type: 'sine', to: 760 * v.pitch, gain: 0.09 * k, decay: 0.03, sustain: 0.4 });
+  },
+  /* the fire: a roar of flame and its crackle */
+  Calore(c, out, t, v, k) {
+    hiss(c, out, t, 0.22 * v.length, { freq: 900 * v.pitch, to: 2400 * v.pitch, q: 0.6, gain: 0.18 * k });
+    for (let i = 0; i < 3; i++) hiss(c, out, t + 0.04 + i * 0.05 * v.length, 0.015, { freq: 4800, q: 4, gain: 0.22 * k });
+  },
+  /* the wind: a whistle that climbs */
+  Cielo(c, out, t, v, k) { tone(c, out, 900 * v.pitch, t, 0.3 * v.length, { type: 'sine', to: 1500 * v.pitch, gain: 0.06 * k, attack: 0.08, sustain: 0.7, release: 0.12, vibrato: 14 }); },
+  /* the stone: two knocks, low and hard */
+  Corazza(c, out, t, v, k) { [0, 0.11].forEach(function (d) { tone(c, out, 120 * v.pitch, t + d * v.length, 0.06, { type: 'triangle', to: 70 * v.pitch, gain: 0.22 * k, decay: 0.03, sustain: 0.2 }); hiss(c, out, t + d * v.length, 0.03, { type: 'lowpass', freq: 700, gain: 0.25 * k }); }); },
+  /* the dusk: a falling minor third, wavering, like a call in the half-dark */
+  Crepuscolo(c, out, t, v, k) { ['E5', 'C#5'].forEach(function (n, i) { tone(c, out, hz(n) * v.pitch * 0.5, t + 0.04 + i * 0.16 * v.length, 0.22 * v.length, { type: 'triangle', gain: 0.08 * k, attack: 0.04, sustain: 0.7, release: 0.18, vibrato: 22 }); }); }
 };
 
 /** how one species sounds: the numbers that bend its body's cry */

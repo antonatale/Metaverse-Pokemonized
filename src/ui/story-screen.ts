@@ -514,7 +514,7 @@ function fightOn(key?: string) {
   };
   if (key) { go(key); return; }
   var left = creaturesLeft(f);
-  if (left.length) pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, left, go);
+  if (left.length) pickFighter('Chi mandi contro ' + sp.name + '?', sp.type, left, go, sp.type2);
   else go('antonio');
 }
 /** a fight is over, or goes on: a caught creature, the next of a trainer's, another of Antonio's, or Antonio himself */
@@ -1025,6 +1025,8 @@ export const WORLD = {
     who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir } : null; },
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
+    /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */
+    wild: function (sp: SpeciesId, lv: number) { var m = [{ sp: sp, lv: [lv, lv] as [number, number], w: 1 }]; meet({ id: 'gianola', name: 'Gianola', on: 'scogli', day: m, night: m }); },
     overview: overview,
     pos: function () { return { map: st.map, x: st.x, y: st.y, dir: st.dir, running: running, moving: !!mover, busy: busy, dialog: !!dialog, opts: !!(dialog && dialog.showingOpts), text: dialog ? dlgTxt.textContent : '', swim: moveMode.swim, climb: moveMode.climb, sky: !!skyFrom }; }
   }

@@ -1,4 +1,6 @@
 import { SPR } from '../render/svg';
+import { SHAPE } from '../render/svg/type-shapes';
+import type { TypeName } from '../data/types';
 import { reduced, esc, $ } from './dom';
 import { sleep } from './common';
 import { arena, shown, uiHp, setHp } from './battle-screen';
@@ -98,16 +100,10 @@ export function banner(text: string, style?: string) {
    touch Math.random (a little sequence of their own), so a battle replayed with the same seed is the same battle. */
 let seq = 17;
 export function wob(): number { seq = (seq * 1664525 + 1013904223) >>> 0; return seq / 4294967296; }
-/** the little shapes each type's magic is made of (24×24): moons, bolts, stars, notes, hearts */
-export const SHAPE: Record<string, string> = {
-  Calma: 'M15 3a9 9 0 1 0 6 15A10 10 0 0 1 15 3Z',
-  Caos: 'M13 2L5 14h6l-2 8 9-13h-6l3-7Z',
-  Cervello: 'M12 2l2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6Z',
-  Chiacchiera: 'M10 18V5l10-2v12M10 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM20 15a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z',
-  Cuore: 'M12 21C5 16 2 12 2 8a5 5 0 0 1 10-1 5 5 0 0 1 10 1c0 4-3 8-10 13Z'
-};
+/** the little shapes each type's magic is made of (24×24): render/svg/type-shapes.ts */
+export { SHAPE };
 export function shape(type: string, col: string, size: number): string {
-  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true"><path d="' + (SHAPE[type] || SHAPE.Cervello) + '" fill="' + col + '" stroke="#1c2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true"><path d="' + (SHAPE[type as TypeName] || SHAPE.Cervello) + '" fill="' + col + '" stroke="#1c2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 }
 /** pieces flying out from a point, each on its own path, fading */
 export function sparks(x: number, y: number, n: number, html: (k: number) => string, spread: number, dur: number, cls?: string) {

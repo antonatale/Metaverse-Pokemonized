@@ -22,11 +22,11 @@ export const NETS: Record<NetId, Net> = {
   retino2: { id: 'retino2', name: 'Retino da pesca', into: 'nel retino', a: 'un retino da pesca', mult: 1.6, text: 'Il retino dei pescatori di Mola: cattura molto più facilmente.' },
   argento: { id: 'argento', name: 'Retino d\'argento', into: 'nel retino d\'argento', a: 'un retino d\'argento', mult: 2.2, text: 'Maglie fitte e cerchio d\'argento: più del doppio di un retino.' },
   oro: { id: 'oro', name: 'Retino d\'oro', into: 'nel retino d\'oro', a: 'il retino d\'oro', mult: 3.2, text: 'Il più prezioso di tutti: quasi nessuna creatura gli sfugge.' },
-  nassa: { id: 'nassa', name: 'Nassa', into: 'nella nassa', a: 'una nassa', mult: 1, sea: 3, text: 'La trappola dei pescatori: con le creature di mare (polpi, ricci, granchi) vale tre retini.' },
+  nassa: { id: 'nassa', name: 'Nassa', into: 'nella nassa', a: 'una nassa', mult: 1, sea: 3, text: 'La trappola dei pescatori: con le creature di mare (polpi, ricci, granchi, meduse, pesci…) vale tre retini.' },
   lampara: { id: 'lampara', name: 'Rete della lampara', into: 'nella rete', a: 'la rete della lampara', mult: 1, night: 3, text: 'La rete della pesca di notte, con la lampada che attira i pesci: quando è buio vale tre retini.' }
 };
 /** in the order of the bag: from the plainest to the finest, then the special ones */
 export const NET_IDS: NetId[] = ['retino', 'retino2', 'argento', 'oro', 'nassa', 'lampara'];
 export function isNet(id: string): id is NetId { return Object.prototype.hasOwnProperty.call(NETS, id); }
 /** the creatures of the sea, by the shape of their body */
-export const SEA_BODIES = ['octo', 'urchin', 'crab'];
+export const SEA_BODIES = ['octo', 'urchin', 'crab', 'jelly', 'star', 'eel', 'dolphin', 'fish'];

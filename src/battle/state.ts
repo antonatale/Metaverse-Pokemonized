@@ -1,18 +1,20 @@
 import type { Character, FighterId, Move, Stats } from '../data/characters';
 import { NETS, NET_IDS } from '../data/nets';
 import { fighter } from '../data/fighters';
-import { TYPES, type TypeName } from '../data/types';
+import { TYPES, isPersonType, type PersonType, type TypeName } from '../data/types';
 import { TUNE } from '../data/tuning';
 import type { BattleState, NewBattle, Side, SideOpts } from './types';
 
 /* ---------- types ---------- */
 export function eff(a: TypeName | null, d: TypeName | null): number {
   if (!a || !d || a === d) return 1;
+  /* the people's cycle: a creature's own types (Antonio against a creature of the sea) count for nothing */
+  if (!isPersonType(a) || !isPersonType(d)) return 1;
   if (TYPES[a].beats === d) return TUNE.se;
   if (TYPES[d].beats === a) return TUNE.nve;
   return 1;
 }
-export function beaterOf(t: string): TypeName | null { for (const k in TYPES) if (TYPES[k as TypeName].beats === t) return k as TypeName; return null; }
+export function beaterOf(t: string): PersonType | null { for (const k in TYPES) if (TYPES[k as PersonType].beats === t) return k as PersonType; return null; }
 
 /* ---------- lookups ---------- */
 export function ch(side: Side): Character { return side.nick ? nicked(fighter(side.id), side.nick) : fighter(side.id); }

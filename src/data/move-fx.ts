@@ -14,5 +14,13 @@ export const MOVE_FX: Record<string, Gesture> = {
   /* a ray: the sea, the wind, the heat, the oration */
   mareggiata: 'beam', libeccio: 'beam', canicola: 'beam', catilinaria: 'beam', picchiata: 'beam',
   /* thrown things */
-  spruzzo: 'lob', nocciolo: 'lob', aculei: 'lob', marmo: 'lob', masso: 'lob'
+  spruzzo: 'lob', nocciolo: 'lob', aculei: 'lob', marmo: 'lob', masso: 'lob',
+  /* the creatures found later */
+  morsomurena: 'slash', zanne: 'slash', banco: 'slash', graffio: 'slash',
+  mappaceleste: 'rain', lucciole: 'rain', maregiallo: 'rain', fuocoelmo: 'rain',
+  aurora: 'orbit', risacca: 'orbit', ira: 'orbit', duevolti: 'orbit',
+  fascio: 'beam', malocchio: 'beam', pellegrina: 'beam', alberomaestro: 'beam',
+  torre: 'lob', stellata: 'lob', polline: 'lob',
+  /* the legends' other moves (their own have a show of their own, EPIC in ui/spells.ts) */
+  primaluce: 'beam', vele: 'orbit', passogigante: 'rain'
 };

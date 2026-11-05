@@ -93,7 +93,7 @@ export interface Npc {
   /** has creatures and challenges Antonio (data/trainers.ts) */
   trainer?: string;
   /** the legend of Formia: there only at night, once the seal of Telepilo is safe, until he has caught it */
-  legend?: boolean;
+  legend?: boolean | 'giano' | 'elmo';
   /** part of the plot (story/plot.ts): there only after a thing has happened, and until another has (a flag: a key
       of st.seen, or of st.beaten such as 'tr-mamurra') */
   when?: { after?: string; until?: string };
