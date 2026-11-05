@@ -1392,3 +1392,24 @@ test('the creatures\' powers', async ({ browser }) => {
   expect(get(fly, 'still')).toMatchObject({ x: 88, y: 41 });
   expect(get(fly, 'down')).toMatchObject({ sky: false });
 });
+
+/* a game saved in the sea (or on the walls) and opened again: whoever is played has no swimmer now, or one. Never stuck */
+test('opened again in the sea', async ({ browser }) => {
+  type P = { x: number; y: number; swim: boolean };
+  const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
+  const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
+  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet };
+  const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 148, y: 61, dir: 'down', mons, seen }) }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    r.keep('pos', await pos(p));
+    await r.shot('opened');
+  })).data.find((x) => x.name === 'pos')!.value as P;
+  /* a sea creature in the team: it carries him on, where he was */
+  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 148, y: 61, swim: true });
+  /* none: back to the shore, next to where he was */
+  const ashore = await open('sea-none', [{ uid: 'c1', sp: 'ramarrino' }]);
+  expect(ashore.swim).toBe(false);
+  expect(Math.abs(ashore.x - 148) + Math.abs(ashore.y - 61)).toBeGreaterThan(0);
+  expect(Math.abs(ashore.x - 148) + Math.abs(ashore.y - 61)).toBeLessThan(6);
+});

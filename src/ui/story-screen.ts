@@ -7,7 +7,7 @@ import { GATES } from '../data/gates';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, type Person } from '../story/maps';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
@@ -450,6 +450,32 @@ onEdge(function (kind, d) {
   ]);
   return true;
 });
+/** standing in the sea or on the walls with no creature carrying him: after the page was opened again there (how he
+    got there is not saved), or with someone else played, or with the swimmer sent home. A creature of the team that
+    can do it carries him on; with none, he goes back to the nearest place he can stand, instead of staying stuck */
+function standOn() {
+  if (mover || busy || st.x < 0 || st.y < 0 || st.x >= M.w || st.y >= M.h || M.solid[st.y * M.w + st.x] !== 1) return;
+  var sea = isShallow(M, st.x, st.y), wall = isWall(M, st.x, st.y);
+  if ((sea && moveMode.swim) || (wall && moveMode.climb)) return;
+  if (sea && powerOf('nuoto')) { moveMode.swim = true; return; }
+  if (wall && powerOf('scalata')) { moveMode.climb = true; return; }
+  moveMode.swim = false; moveMode.climb = false;
+  var q: [number, number][] = [[st.x, st.y]], seen: Record<string, number> = {};
+  seen[key(st.x, st.y)] = 1;
+  while (q.length) {
+    var p = q.shift()!;
+    if (!blocked(M, p[0], p[1])) {
+      st.x = p[0]; st.y = p[1]; save();
+      notify(sea ? 'Senza una creatura che nuota non si resta in mare: torni a riva.' : wall ? 'Senza una creatura che si arrampica non si resta sulle mura: torni giù.' : 'Torni dove si può camminare.');
+      return;
+    }
+    for (var d = 0; d < 4; d++) {
+      var v = [[1, 0], [-1, 0], [0, 1], [0, -1]][d], nx = p[0] + v[0], ny = p[1] + v[1], k = key(nx, ny);
+      if (nx < 0 || ny < 0 || nx >= M.w || ny >= M.h || seen[k]) continue;
+      seen[k] = 1; q.push([nx, ny]);
+    }
+  }
+}
 /** swimming over one of the Roman tanks of Gianola: an amphora at the bottom, once */
 function treasure(): boolean {
   var t = moveMode.swim ? treasureAt(M) : null;
@@ -954,7 +980,7 @@ function frame(now: number) {
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; renderBars(); tellRewards(); chapterTip(); tune();
+    barAt = now; standOn(); renderBars(); tellRewards(); chapterTip(); tune();
     /* the first time a creature can do something on the map, Cicero says what */
     if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }
