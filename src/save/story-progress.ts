@@ -37,6 +37,8 @@ export interface StoryProgress {
       and home: true for one that waits at home instead of travelling with him (a team is six at most) */
   /** what has been done in the places with a puzzle: by map, what is switched on, the steps taken, the last rest */
   places?: Record<string, { flags: Record<string, boolean>; tick: number; rest: [number, number] | null }>;
+  /** the moves each person knows, once it has started learning (data/people.ts): missing in an old save */
+  people?: Record<string, { moves?: string[] }>;
   mons?: { uid: string; sp: SpeciesId; nick?: string; gold?: boolean; moves?: string[]; bond?: number; nat?: string; home?: boolean; item?: string }[];
   /** the creature diary: 1 for a species seen, 2 for one he has had */
   dex?: Record<string, number>;

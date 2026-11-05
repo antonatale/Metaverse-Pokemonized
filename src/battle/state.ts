@@ -1,6 +1,7 @@
-import type { Character, FighterId, Move, Stats } from '../data/characters';
+import type { Character, FighterId, FriendId, Move, Stats } from '../data/characters';
 import { NETS, NET_IDS } from '../data/nets';
 import { fighter } from '../data/fighters';
+import { grownChar } from '../data/people';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { STATUS } from '../data/passives';
 import { TYPES, isPersonType, type PersonType, type TypeName } from '../data/types';
@@ -19,7 +20,7 @@ export function eff(a: TypeName | null, d: TypeName | null): number {
 export function beaterOf(t: string): PersonType | null { for (const k in TYPES) if (TYPES[k as PersonType].beats === t) return k as PersonType; return null; }
 
 /* ---------- lookups ---------- */
-export function ch(side: Side): Character { return side.nick ? nicked(fighter(side.id), side.nick) : fighter(side.id); }
+export function ch(side: Side): Character { return side.nick ? nicked(fighter(side.id), side.nick) : side.grown ? grownChar(side.id as FriendId) : fighter(side.id); }
 /* a creature with the name Antonio gave it: the same character, under another name */
 const named: Record<string, Character> = {};
 function nicked(c: Character, nick: string): Character { const k = c.id + '|' + nick; return named[k] || (named[k] = Object.assign({}, c, { name: nick })); }
@@ -58,6 +59,8 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.last) side.last = true;
   if (o && o.item) side.item = o.item;
   if (o && o.resonate) side.resonate = true;
+  if (o && o.grown) side.grown = true;
+  if (o && o.form) side.form = o.form;
   if (o && o.stages) { side.stages = o.stages; side.stage = 0; side.known = o.stages[0].moves.slice(); if (o.stages[0].types) side.types = o.stages[0].types.slice(); }
   /* a creature's ability comes with its kind */
   if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();

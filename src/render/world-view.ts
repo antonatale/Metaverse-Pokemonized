@@ -1,9 +1,9 @@
 import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
-import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, LOOKS, townsperson, HEIGHT, type Palette, type Sprite, type PersonLook } from './canvas';
+import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, type PreparedMap } from '../story/maps';
-import { leadCreature, idOf, creatureOf } from '../story/growth';
+import { leadCreature, idOf, creatureOf, formNow } from '../story/growth';
 import { mover, parity, STEP } from '../story/movement';
 import { run } from '../story/run';
 import { placeNow } from '../story/place-run';
@@ -84,8 +84,9 @@ function chunk(cx: number, cy: number): HTMLCanvasElement {
   return c0;
 }
 function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker {
-  var id = (n.person || n.look || ('npc' + n.seed)) + '@' + s;
-  return walkers[id] || (walkers[id] = walker(n.person ? (PEOPLE as Record<string, PersonLook>)[n.person] : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
+  /* a friend wears what the story has brought it to */
+  var form = n.person ? formNow(n.person) : 0, id = (n.person || n.look || ('npc' + n.seed)) + (form ? 'f' + form : '') + '@' + s;
+  return walkers[id] || (walkers[id] = walker(n.person ? Object.assign({}, PEOPLE[n.person], form ? PEOPLE_FORMS[n.person][form - 1] : null) : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
 }
 /* the wild creatures on the map: their battle picture, as an image (it loads once, and until then they are not drawn) */
 var monImg: Partial<Record<SpeciesId, { img: HTMLImageElement; ok: boolean }>> = {};

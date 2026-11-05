@@ -1,11 +1,12 @@
 import { st, save } from '../save/story-progress';
 import { beatersOf, isPersonType, type TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
-import { ROSTER } from '../data/characters';
+import { ROSTER, type FriendId } from '../data/characters';
+import { PATHS, formAt, isFriend, withForm } from '../data/people';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
 import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
 import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -26,7 +27,7 @@ export function tcOf(key: string) { return 'var(--t-' + fighter(idOf(key)).type.
 export function portrait(key: string): string {
   var id = idOf(key);
   var mon = creatureOf(key);
-  return isSpecies(id) ? creature(id, 'smirk', '', '10 26 180 170', undefined, !!(mon && mon.gold)) : SPR.person(id, 'smirk', '', SPR.thumb(id));
+  return isSpecies(id) ? creature(id, 'smirk', '', '10 26 180 170', undefined, !!(mon && mon.gold)) : SPR.personIn(id, formNow(key), 'smirk', '', SPR.thumb(id));
 }
 function xpBar(key: string): string {
   var l = level(key), need = toNext(l.lv), pct = l.lv >= MAX_LEVEL ? 100 : Math.round(100 * l.xp / need);
@@ -102,34 +103,36 @@ function coffee() {
 /* ---------- what a battle brings ---------- */
 /** a fighter's numbers at a level (a creature with its character) */
 function statsAt(key: string, id: string, lv: number) {
-  var mon = creatureOf(key);
-  return mon ? withNature(atLevel(SPECIES[id as SpeciesId].stats, lv), mon.nat) : atLevel(fighter(idOf(key)).stats, lv);
+  var mon = creatureOf(key), base = idOf(key);
+  if (mon) return withNature(atLevel(SPECIES[id as SpeciesId].stats, lv), mon.nat);
+  return isFriend(base) ? withForm(atLevel(fighter(base).stats, lv), formAt(base, lv)) : atLevel(fighter(base).stats, lv);
 }
 /** says what a fighter got: levels (and what they bring), new moves, ability points; then its new form, if it
     evolves, and the moves it wants to learn in place of one it knows */
 export function growthSay(g: Growth, first: string[], then?: () => void) {
   var id = g.evolved ? g.evolved.from : idOf(g.key), who = nameOf(g.key), lines = first.slice();
   if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '! ' + statGain(statsAt(g.key, id, g.from), statsAt(g.key, id, g.to)) + '.');
-  g.learned.forEach(function (m) { lines.push(who + ' impara ' + CMOVES[m].name + '!'); });
+  g.learned.forEach(function (m) { lines.push(who + ' impara ' + anyMove(m).name + '!'); });
   if (g.key === 'antonio' && g.to > g.from) lines.push('Antonio ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
   if (g.waiting && g.to > g.from) lines.push(who + ' potrebbe diventare ' + SPECIES[g.waiting].name + ', ma deve fidarsi ancora di più di te: lotta insieme a lui, portalo a spasso, offrigli un caffè.');
   if (g.to > g.from) sfx('badge');
   say(lines, null, null, function () {
     var learn = function () { askLearn(g.key, g.pending, function () { if (then) then(); }); };
-    if (g.evolved) evolve(g.evolved.from, g.evolved.to, learn); else learn();
+    if (g.evolved) evolve(g.evolved.from, g.evolved.to, learn); else if (g.grew) grow(g.grew.id, g.grew.from, g.grew.to, learn); else learn();
   });
 }
 /** a move to learn when four are known already: which one to forget, or none */
 function askLearn(key: string, list: string[], then: () => void) {
   if (!list.length) { then(); return; }
   var m = list[0], rest = list.slice(1), who = nameOf(key), next = function () { askLearn(key, rest, then); };
-  say([who + ' vuole imparare ' + CMOVES[m].name + '. ' + CMOVES[m].text, 'Ma conosce già quattro mosse. Ne dimentica una?'], null,
+  var nw = anyMove(m);
+  say([who + ' vuole imparare ' + nw.name + '. ' + nw.text, 'Ma conosce già quattro mosse. Ne dimentica una?'], null,
     movesOf(key).map(function (old) {
-      return { label: 'Dimentica ' + CMOVES[old].name, fn: function () {
+      return { label: 'Dimentica ' + anyMove(old).name, fn: function () {
         swapMove(key, old, m); save();
-        say(['Uno, due e… puf! ' + who + ' ha dimenticato ' + CMOVES[old].name + ' e ha imparato ' + CMOVES[m].name + '!'], null, null, next);
+        say(['Uno, due e… puf! ' + who + ' ha dimenticato ' + anyMove(old).name + ' e ha imparato ' + nw.name + '!'], null, null, next);
       } };
-    }).concat([{ label: 'Non imparare ' + CMOVES[m].name, fn: function () { say([who + ' non ha imparato ' + CMOVES[m].name + '.'], null, null, next); } }]));
+    }).concat([{ label: 'Non imparare ' + nw.name, fn: function () { say([who + ' non ha imparato ' + nw.name + '.'], null, null, next); } }]));
 }
 /** after a story battle: experience for who fought (a third when lost), money for a win (not in the middle of a
     trainer's battle: the trainer pays at the end) */
@@ -161,6 +164,21 @@ function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
     '<p>La magia di Formia l\'ha cambiato: ' + esc(a.name) + ' è diventato <b>' + esc(b.name) + '</b>. ' + esc(b.text) + '</p>' +
     '<button class="btn primary" type="button" id="ev-ok">Continua</button></div>', 'result');
   $('ev-ok').addEventListener('click', function () { closeSheet(); mentorTip('evolve'); if (then) then(); });
+  setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);
+}
+
+/** a person down to the chest: what changes with a form are the clothes, and the small picture stops at the face */
+const BUST = '0 6 260 294';
+/** a person changes form: the same light as a creature, and other clothes */
+function grow(id: FriendId, from: number, to: number, then?: () => void) {
+  sfx('badge');
+  var c = fighter(id), f = PATHS[id].forms[to - 1];
+  sheet('<div class="award evolve" role="dialog" aria-modal="true" aria-labelledby="ev-t" style="--tc:var(--t-' + c.type.toLowerCase() + ')">' +
+    '<h2 id="ev-t">Cosa? Una luce avvolge ' + esc(c.name) + '!</h2>' +
+    '<div class="evo"><span>' + SPR.personIn(id, from, 'worried', '', BUST) + '</span><b aria-hidden="true">→</b><span>' + SPR.personIn(id, to, 'grin', '', BUST) + '</span></div>' +
+    '<p>' + esc(c.name) + ' è diventato <b>' + esc(f.title) + '</b>. ' + esc(f.text) + '</p>' +
+    '<button class="btn primary" type="button" id="ev-ok">Continua</button></div>', 'result');
+  $('ev-ok').addEventListener('click', function () { closeSheet(); if (then) then(); });
   setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);
 }
 
@@ -198,13 +216,13 @@ export function openShop(id: string) {
 function memberRow(key: string): string {
   var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
   if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
-  else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : 'Amico';
+  else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : personNote(key);
   var human = !mon, first = human && firstHuman() === key;
   return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
     '<small>' + esc((sp ? typesOf(sp) : c.type) + ' · ' + note) + '</small></span>' +
     (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="In alto sulla mappa, e il primo a scendere in campo nei covi">Fallo Primo</button>' : '') +
     (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
-    (mon ? '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button>' : '') + '</li>';
+    '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button></li>';
 }
 function typesOf(sp: { type: string; type2?: string }): string { return sp.type + (sp.type2 ? '/' + sp.type2 : ''); }
 /** a team's six places, as in the games: a little face on each one taken, the free ones dashed */
@@ -348,9 +366,30 @@ function heldRow(mon: Mon): string {
     bag.map(function (it) { return '<li><span><b>' + esc(HELD[it].name) + '</b><small>' + esc(HELD[it].text) + ' Ne hai ' + has(it) + '.</small></span><button class="btn" type="button" data-held="' + it + '">' + (cur ? 'Scambia' : 'Dai') + '</button></li>'; }).join('') +
     '</ul>' + (cur || bag.length ? '' : '<p class="hint">Non porta niente. Le cose che può portare si comprano al forno di Castellone, al bar e dal pescatore di Mola; a volte le trova per terra la creatura che ti segue.</p>') + '</div>';
 }
+/** a friend, in a word: what it has become, or when it will change */
+function personNote(key: string): string {
+  if (!isFriend(key)) return 'Amico';
+  var f = formNow(key), next = PATHS[key].forms[f];
+  return (f ? PATHS[key].forms[f - 1].title : 'Amico') + (next ? ' · cambia al livello ' + next.at : ' · forma finale');
+}
+/** the card of a person: what it knows, what it will learn, how it will change */
+function openPerson(key: string, back: () => void) {
+  if (!isFriend(key)) return;
+  var c = fighter(key), l = level(key), f = formNow(key), s = statsAt(key, key, l.lv), known = movesOf(key), path = PATHS[key];
+  var next = path.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0], form = path.forms[f];
+  sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + c.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(c.name) + (f ? ', ' + esc(path.forms[f - 1].title) : '') + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
+    '<div class="cr-top"><span class="cr-art">' + SPR.personIn(key, f, 'grin', '', BUST) + '</span><div class="cr-info">' +
+    '<p><span class="type t-' + c.type.toLowerCase() + '">' + c.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
+    '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
+    '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { var x = anyMove(m); return '<li><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span></li>'; }).join('') + '</ul>' +
+    (next ? '<p class="hint">Al livello ' + next[0] + ' vorrà imparare ' + esc(anyMove(next[1]).name) + (known.length >= 4 ? ': sceglierai tu quale mossa dimenticare' : '') + '.</p>' : '') +
+    (form ? '<p class="hint">Al livello ' + form.at + ' cambia forma.</p>' : '<p class="hint">È arrivato alla sua forma finale.</p>') + '</div></div>');
+  $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
+  setTimeout(function () { var b = $('cr-x'); if (b) b.focus(); }, 30);
+}
 export function openCreature(key: string, back: () => void) {
   var mon = creatureOf(key);
-  if (!mon) return;
+  if (!mon) { openPerson(key, back); return; }
   var sp = SPECIES[mon.sp], l = level(key), s = withNature(atLevel(sp.stats, l.lv), mon.nat), known = movesOf(key), h = hearts(key);
   var next = sp.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0];
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +

@@ -256,6 +256,15 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
   forchetta: { skin: '#e4bca1', hair: { style: 'longcurls', color: '#4f3423', hi: '#c29670' }, top: '#5d5a3e', top2: '#20263a', style: 'stripes', stripes: ['#283046', '#d6c9a8', '#6e6c43', '#8b8f93'], pants: '#22252d', shoes: '#efefef' },
   zendavid: { skin: '#deb294', hair: { style: 'buzz', color: '#2a201b' }, top: '#837c74', top2: '#19191d', style: 'knit', pants: '#56627a', shoes: '#e9e9e9', glasses: 'round', beard: '#2a1f1a', phones: true }
 };
+/* what they wear in the story as they grow (data/people.ts): over the look of the first form */
+export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<PersonLook>]> = {
+  antonio: [{ top: '#e9ebee', top2: '#414c72', style: 'jacket' }, { top: '#2a3252', top2: '#f4f1ea', style: 'jacket', pants: '#1a2040' }],
+  costanzo: [{ top: '#2f3a56', top2: '#f4f1ea', style: 'jacket' }, { top: '#1d1f26', top2: '#c0392b', style: 'jacket' }],
+  andrea: [{ top: '#d0702c', top2: '#9a4f1c' }, { top: '#d0702c', top2: '#25262c', style: 'jacket' }],
+  valentin: [{ top: '#c9a25a', top2: '#1c1c21' }, { top: '#2f8f4e', top2: '#f4f1ea' }],
+  forchetta: [{ top: '#f2f0ea', top2: '#2f8f4e', style: 'tee', stripes: undefined }, { top: '#1f5fa8', top2: '#1f5fa8', stripes: ['#1f5fa8', '#f4f1ea', '#1f5fa8', '#f4f1ea'] }],
+  zendavid: [{ top: '#1f2027', top2: '#e8a33d', style: 'jacket' }, { top: '#efe9db', top2: '#b08a3e', style: 'tee' }]
+};
 /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
 export const LOOKS: Record<string, PersonLook> = {

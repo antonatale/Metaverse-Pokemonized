@@ -32,6 +32,8 @@ export interface Move {
   twoTurn?: boolean;
   /** the creatures' moves: what the battle says as it gets ready for a blow that lands the next turn; {n} is who */
   windup?: string;
+  /** the moves of the people who have grown: how it is shown, instead of a spell (an animation of ui/battle-screen.ts) */
+  show?: { a: string; text?: string; style?: string };
   /** share of the damage healed back */
   drain?: number;
   /** chance that the move works at all (Battuta) */

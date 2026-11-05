@@ -5,7 +5,7 @@ import { TYPES, TYPE_ORDER, type TypeName } from '../data/types';
 import { ITEMS } from '../data/items';
 import { TUNE } from '../data/tuning';
 import type { BattleState } from './types';
-import { eff, beaterOf, move, mv, newBattle, available, sideType as typeOf, switches, isSwitch, BAG, BAG_IDS } from './state';
+import { eff, beaterOf, ch, move, mv, newBattle, available, sideType as typeOf, switches, isSwitch, BAG, BAG_IDS } from './state';
 import { expected, typesOf, effLevel } from './damage';
 import { snap, moveLabel, benchLabels, changeText, resonanceText } from './labels';
 import { ai } from './ai';
@@ -19,6 +19,8 @@ export { eff, beaterOf, move, newBattle, available, switches, expected, effLevel
 export function clock(s: BattleState): string { const m = (s.maxTurns - s.turn + 1) * 10; return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }
 /** the name of the move the computer has chosen for this turn */
 export function planName(s: BattleState, i: number): string | null { const p = s.plan[i]; return p && !isSwitch(p) ? mv(s.sides[i], p)!.name : null; }
+/** who is on a side: the character, with the moves it has come to know */
+export function charOf(s: BattleState, i: number) { return ch(s.sides[i]); }
 /** a side's type right now (Costanzo's Personaggismo changes it) */
 export function sideType(s: BattleState, i: number): TypeName { return typeOf(s, s.sides[i], s.sides[1 - i]); }
 /** all of a side's types: two for some creatures */
@@ -30,5 +32,5 @@ export const ENGINE = {
   move, newBattle, intro, beginTurn, needs, playTurn, sendNeeds, sendIn,
   available, switches, moveLabel, benchLabels, changeText, snap, ai, expected, BAG, BAG_IDS, canResonate, withResonance, resonanceText,
   ANTONIO: CHARS.antonio, ESAME: CHARS.esame,
-  clock, planName, sideType, sideTypes, effLevel
+  clock, planName, sideType, sideTypes, effLevel, charOf
 };

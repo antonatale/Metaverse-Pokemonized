@@ -96,9 +96,12 @@ export interface Side {
   types?: TypeName[];
   /** it can do Risonanza: its bond with Antonio is strong enough */
   resonate?: boolean;
+  /** a person of the story: it has the moves it has come to know, and a form (data/people.ts) */
+  grown?: boolean;
+  form?: number;
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[]; resonate?: boolean }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[]; resonate?: boolean; grown?: boolean; form?: number }
 /** someone on the bench when a team battle starts */
 export interface Member extends SideOpts { id: FighterId }
 /** one foe of a team battle: who fought it, and who brought it down. The story pays out from these */
@@ -180,7 +183,7 @@ export type BattleEvent =
   | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string; move?: string; shakes?: number }
   | { k: 'hp'; who: number; hp: number; dmg?: number; crit?: boolean; eff?: number; heal?: number; quiet?: boolean }
   /** another fighter on the field: the UI redraws that side with what it says */
-  | { k: 'swap'; who: number; id: FighterId; key?: string; gold?: boolean; hp: number }
+  | { k: 'swap'; who: number; id: FighterId; key?: string; gold?: boolean; form?: number; hp: number }
   | Snap
   | { k: 'end'; result: Result; winner: number | null; grade: Grade | null };
 

@@ -35,9 +35,9 @@ import { endFlag, legendOf, legendOver, pactOpen, stagesNow, stonesKept } from '
 import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
-import { idOf, sideOf, foeSide, fightPay, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
+import { idOf, sideOf, formNow, gainXp, foeSide, fightPay, battleBag, keepBag, joinAt, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
-import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf } from './team';
+import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
 import { onReward } from '../story/activities';
 import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
@@ -784,7 +784,7 @@ export function sheet(html: string, cls?: string) {
   return o;
 }
 export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTML = ''; o.className = 'overlay'; }
-function face(id: string) { return SPR.person(id, 'smirk', '', SPR.thumb(id)); }
+function face(id: string) { return SPR.personIn(id, formNow(id), 'smirk', '', SPR.thumb(id)); }
 /** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
 export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; bouts?: Bout[] }) {
   open(true);
@@ -1064,6 +1064,8 @@ export const WORLD = {
     /* the way through a place, from its entry, as the validator found it; and straight to another map (playtests) */
     way: function () { return M.place ? placeProof(M).way : []; },
     travel: travel,
+    /* experience for someone, as after a battle: what it learns and the form it takes (playtests) */
+    xp: function (key: string, n: number) { var g = gainXp(key, n); save(); renderHud(); growthSay(g, [nameOf(key) + ' guadagna ' + n + ' punti esperienza.']); },
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */

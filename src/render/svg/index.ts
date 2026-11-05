@@ -2,6 +2,7 @@ import type { FriendId } from '../../data/characters';
 import type { ExprName } from './types';
 import { SHARED, GRADIENTS } from './palette';
 import { CH } from './looks';
+import { lookOf } from './forms';
 import { hairCurls, hairWavy, hairQuiff, hairBuzz } from './hair';
 import { outfit } from './outfit';
 import { ears, face, faceD, mouths, exprGroup } from './face';
@@ -25,6 +26,7 @@ function buildChar(c: Look): string {
   var st = c.hair.style;
   s += st === 'wavy' ? hairWavy(c) : st === 'quiff' ? hairQuiff(c) : st === 'buzz' ? hairBuzz(c) : hairCurls(c);
   s += outfit(c) + ears(c) + face(c) + glasses(c) + props(c) + hood(c);
+  if (c.head) s += '<g id="' + P + 'Head">' + c.head + '</g>';
   var M = mouths(c);
   EXPRS.forEach(function (x) { s += exprGroup(c, x, M); });
   return s;
@@ -56,7 +58,20 @@ export function person(id: string, expr?: string, cls?: string, vb?: string, loo
   }
   if (hoodKo) s += '<use class="hood" href="#' + P + 'HoodFront"/>';
   if (c.props && c.props.phones) s += '<use class="ph-on" href="#' + P + 'PhOn"/>';
+  if (c.head) s += '<use href="#' + P + 'Head"/>';
   return s + '</svg>';
+}
+
+/** a friend in a form of the story (render/svg/forms.ts): the parts of a form go in the page the first time it is drawn,
+    so that whoever never gets there does not carry them */
+export function personIn(id: string, form: number | undefined, expr?: string, cls?: string, vb?: string): string {
+  var look = lookOf(id, form);
+  if (look && !document.getElementById(look.P + 'Body')) {
+    var holder = document.createElement('div');
+    holder.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false"><defs>' + defsOf(look) + '</defs></svg>';
+    document.body.insertBefore(holder.firstChild!, document.body.firstChild);
+  }
+  return person(id, expr, cls, vb, look);
 }
 
 /** the minimal document install() needs (a fake one in the golden test) */
@@ -98,6 +113,6 @@ export function thumb(id: string): string { return CH[id as FriendId] ? CH[id as
 
 /** the whole module as one object, with the same names the old window.SPR had */
 export const SPR = {
-  install, person, esame, robot, CSS, EXPRS, CHARS, thumb,
+  install, person, personIn, esame, robot, CSS, EXPRS, CHARS, thumb,
   antonio: function (expr?: string, cls?: string, vb?: string) { return person('antonio', expr, cls, vb); }
 };

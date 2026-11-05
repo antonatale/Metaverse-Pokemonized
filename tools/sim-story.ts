@@ -10,9 +10,14 @@ import { MAPS } from '../src/data/maps';
 import { PLACE_MAGIC, sceneFor } from '../src/data/scenes';
 import { CHARS, type FighterId } from '../src/data/characters';
 import { atLevel } from '../src/data/growth';
+import { formAt as personForm, isFriend, personKnows, withForm } from '../src/data/people';
 
 function side(id: string, lv: number) {
-  return isSpecies(id) ? { stats: atLevel(SPECIES[id].stats, lv), lvl: lv, known: knownAt(id, lv) } : { stats: atLevel(CHARS[id as keyof typeof CHARS].stats, lv), lvl: lv };
+  if (isSpecies(id)) return { stats: atLevel(SPECIES[id].stats, lv), lvl: lv, known: knownAt(id, lv) };
+  const base = atLevel(CHARS[id as keyof typeof CHARS].stats, lv);
+  if (!isFriend(id)) return { stats: base, lvl: lv };
+  const form = personForm(id, lv);
+  return { stats: withForm(base, form), lvl: lv, known: personKnows(id, lv), grown: true, form };
 }
 export function winRate(a: string, la: number, b: string, lb: number, n = 400): number {
   let won = 0;

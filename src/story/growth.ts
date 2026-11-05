@@ -1,7 +1,8 @@
 import { st } from '../save/story-progress';
-import type { FighterId } from '../data/characters';
+import type { FighterId, FriendId, Move } from '../data/characters';
 import { fighter } from '../data/fighters';
-import { SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
+import { formAt, isFriend, personKnows, personLearns, personMove, withForm } from '../data/people';
+import { CMOVES, SPECIES, knownAt, learnedAt, isSpecies, type SpeciesId } from '../data/creatures';
 import { START_LEVEL, MAX_LEVEL, toNext, atLevel, perksFor, bond, netHand, withNature, NATURES, SKILLS, priceOf, DEX_PRIZES, WARES, coins, type DexPrize, type ItemId, type SkillId, xpFor } from '../data/growth';
 import type { Bout, SideOpts } from '../battle';
 import { NET_IDS } from '../data/nets';
@@ -92,7 +93,8 @@ export function sideOf(key: string): SideOpts {
     /* three hearts, or the stones of Telepilo in Antonio's bag: it can answer to the magic of a place */
     if (hearts(key) >= RESONANCE_HEARTS || stonesKept()) o.resonate = true;
   } else {
-    o = { stats: atLevel(fighter(idOf(key)).stats, lv), lvl: lv };
+    o = personSide(idOf(key), lv);
+    if (isFriend(key)) o.known = movesOf(key);
     if (key === 'antonio') o.perk = perksFor(sk);
   }
   /* whoever is in, the nets are Antonio's */
@@ -102,7 +104,14 @@ export function sideOf(key: string): SideOpts {
 /** a foe at a level: a covo leader, or a wild creature */
 export function foeSide(id: FighterId, lv: number): SideOpts {
   if (isSpecies(id)) return { stats: atLevel(SPECIES[id].stats, lv), lvl: lv, known: knownAt(id, lv) };
-  return { stats: atLevel(fighter(id).stats, lv), lvl: lv };
+  return personSide(id, lv);
+}
+/** a person of the story at a level: its numbers, the form it has reached, the moves it knows by then (data/people.ts) */
+function personSide(id: FighterId, lv: number): SideOpts {
+  var base = atLevel(fighter(id).stats, lv);
+  if (!isFriend(id)) return { stats: base, lvl: lv };
+  var form = formAt(id, lv);
+  return { stats: withForm(base, form), lvl: lv, known: personKnows(id, lv), grown: true, form: form };
 }
 
 /** what each fighter earned in a team battle: all the experience of a foe to who brought it down, a third to whoever
@@ -127,26 +136,40 @@ export interface Growth {
   evolved: { from: SpeciesId; to: SpeciesId } | null;
   /** a form it could take, but its bond with Antonio is not strong enough yet */
   waiting: SpeciesId | null;
+  /** a person who has changed form: from which to which */
+  grew?: { id: FriendId; from: number; to: number };
 }
-/* ---------- a creature's moves: the four it knows ---------- */
+/* ---------- the moves of a fighter: the four it knows ---------- */
+/** where the moves of a fighter are written down: a creature's on it, a person's in st.people */
+function moveBook(key: string): { moves?: string[] } | null {
+  var mon = creatureOf(key);
+  if (mon) return mon;
+  if (!isFriend(key)) return null;
+  st.people = st.people || {};
+  return st.people[key] || (st.people[key] = {});
+}
 export function movesOf(key: string): string[] {
   var mon = creatureOf(key);
-  if (!mon) return [];
-  return mon.moves ? mon.moves.slice() : knownAt(mon.sp, level(key).lv);
+  if (mon) return mon.moves ? mon.moves.slice() : knownAt(mon.sp, level(key).lv);
+  if (!isFriend(key)) return [];
+  var had = st.people && st.people[key] && st.people[key].moves;
+  return had ? had.slice() : personKnows(key, level(key).lv);
 }
+/** a move of anyone, by its id */
+export function anyMove(id: string): Move { return CMOVES[id] || personMove(id)!; }
 /** one known move for a new one */
 export function swapMove(key: string, old: string, m: string) {
-  var mon = creatureOf(key);
-  if (!mon) return;
+  var book = moveBook(key);
+  if (!book) return;
   var ms = movesOf(key), k = ms.indexOf(old);
   if (k >= 0) ms[k] = m; else if (ms.length < 4) ms.push(m);
-  mon.moves = ms;
+  book.moves = ms;
 }
 /** a new move: learned if there is room, otherwise one to ask about (true) */
-function learn(mon: Mon, key: string, m: string, out: Growth) {
+function learn(book: { moves?: string[] }, key: string, m: string, out: Growth) {
   var ms = movesOf(key);
   if (ms.indexOf(m) >= 0) return;
-  if (ms.length < 4) { ms.push(m); mon.moves = ms; out.learned.push(m); }
+  if (ms.length < 4) { ms.push(m); book.moves = ms; out.learned.push(m); }
   else out.pending.push(m);
 }
 /* ---------- the bond between Antonio and a creature: 0 to 100, five hearts ---------- */
@@ -162,10 +185,16 @@ export function gainXp(key: string, xp: number): Growth {
   while (lv < MAX_LEVEL && have >= toNext(lv)) { have -= toNext(lv); lv++; }
   if (lv >= MAX_LEVEL) have = 0;
   var out: Growth = { key: key, xp: xp, from: from, to: lv, learned: [], pending: [], evolved: null, waiting: null };
-  var mon = creatureOf(key);
+  var mon = creatureOf(key), friend = !mon && isFriend(key) ? key as FriendId : null, book = moveBook(key);
   /* the moves it knew are the ones of its old level (an old save has none written down) */
   if (mon && !mon.moves) mon.moves = knownAt(mon.sp, from);
+  if (friend && book && !book.moves) book.moves = personKnows(friend, from);
   st.lv[key] = { lv: lv, xp: have };
+  if (friend) {
+    for (var fl = from + 1; fl <= lv; fl++) personLearns(friend, fl).forEach(function (m) { learn(book!, key, m, out); });
+    var was = formAt(friend, from), now = formAt(friend, lv);
+    if (now > was) out.grew = { id: friend, from: was, to: now };
+  }
   if (mon) {
     for (var l = from + 1; l <= lv; l++) learnedAt(mon.sp, l).forEach(function (m) { learn(mon!, key, m, out); });
     var sp = mon.sp, first = mon.sp, ev = SPECIES[sp].evolve;
@@ -183,6 +212,8 @@ export function gainXp(key: string, xp: number): Growth {
   }
   return out;
 }
+/** the form a person has reached: 0 until it changes, and for anyone who is not one of the friends */
+export function formNow(key: string): number { return isFriend(key) ? formAt(key, level(key).lv) : 0; }
 /** a friend who joins: he fights at the level he was beaten at */
 export function joinAt(key: string, lv: number) { st.lv = st.lv || {}; if (!st.lv[key]) st.lv[key] = { lv: lv, xp: 0 }; }
 

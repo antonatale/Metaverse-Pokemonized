@@ -55,6 +55,7 @@ src/
       telepilo.ts          La Porta di Telepilo: la strada per Lamo, sotto le mura di Castellone
     passives.ts            stati, abilità e oggetti che le creature portano: solo dati, «quando, se, fa»
     legends.ts             le leggende: quando escono, cosa apre la strada, la lotta in parti, come finiscono
+    people.ts              le persone che crescono: mosse per livello, le mosse nuove, le forme
     choices.ts             le scelte della storia: chi chiede, le risposte
     day.ts                 «Un giorno a Formia»: i piani della giornata e i numeri
     covi.ts, gates.ts      i covi (palestre) con spille e frasi; le uscite dalle città
@@ -89,7 +90,7 @@ src/
     day-progress.ts        la corsa in corso, i giorni giocati e il record (chiave lotte-tra-amici:giorno:v1)
   render/
     svg/                   ritratti generati da parametri (looks.ts), espressioni, capelli, vestiti, Esame, robot;
-                           badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna; type-shapes.ts: la forma
+                           forms.ts: quello che gli amici indossano nelle forme della storia; badges.ts: spille e icone degli oggetti; creatures.ts: le creature, un SVG intero ciascuna; type-shapes.ts: la forma
                            di ogni tipo (luna, fulmine… onda, fiamma, piuma, pietra, tramonto);
                            nets.ts: i retini (in mano, nella borsa, chiusi per terra)
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
@@ -372,6 +373,11 @@ I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere
   - **Diario delle creature** (`st.dex`: 1 vista in lotta, 2 avuta): nel menu, tutte le specie. Quelle mai viste sono in ombra, quelle viste in grigio, quelle avute a colori.
   - **I premi del diario** (`DEX_PRIZES` in `data/growth.ts`, `dexPrizesDue` in `story/growth.ts`): il guardaparco di Gianola premia chi riempie il diario, una volta per traguardo (`seen['premio-diario-N']`): a 3 creature avute 3 retini da pesca, a 6 due retini d'argento, a 10 un retino d'oro e 100 sesterzi, a 15 due retini d'oro, a 25 due retini d'oro e 150 sesterzi, a 35 tre retini d'oro e 200 sesterzi, a tutte (le leggende comprese) tre retini d'oro e 300 sesterzi. Dopo una cattura, se c'è un premio da ritirare, compare un avviso; il diario nel menu dice il prossimo.
   - **Chi ti segue:** la creatura principale (`st.lead`, altrimenti la prima) cammina un passo dietro Antonio su tutte le mappe, anche dentro, e prende la casella che lui ha appena lasciato (`follower` in `render/world-view.ts`). Dopo una porta, un warp o il motorino si rimette dietro di lui. È solo disegno e non blocca il passo; se Antonio si gira verso di lei e preme Invio, dice il suo verso e come sta (`followerTalk`). Nel menu, Squadra → «Dietro di me», si sceglie chi segue.
+- **Le persone crescono** (`data/people.ts`, `render/svg/forms.ts`), solo nella storia: nelle lotte libere gli amici restano interi dal primo turno e i golden non cambiano, perché le mosse nuove stanno fuori da `CHARS`.
+  - **Mosse:** si parte con due (`PATHS[id].learn`), le quattro di sempre arrivano entro il livello 10, poi tre mosse tutte loro ai livelli 14, 20 e 26. Come le creature: quattro alla volta, con la scelta di quale dimenticare (`st.people[key].moves`; un salvataggio vecchio parte da quello che dice il livello). Sono numeri, le esegue `genericMove`; nel motore un lato con `grown` vede anche le mosse nuove (`grownChar`) e `known` dice quali conosce. Una persona non lancia magie: come appare una mossa lo dice `show` (una fascia, i coriandoli…).
+  - **Due mosse e un bug da non rifare:** Antonio può perdere un oggetto, che blocca una mossa. Con Diagnosi e Certificati poteva restare senza niente da fare, e la lotta si rompeva: le sue prime due sono tutte e due colpi senza limite di usi, e non può perdere l'oggetto di una mossa che non conosce. `tests/unit/people.test.ts` lo controlla per ogni persona e ogni livello.
+  - **Forme:** ai livelli 14 e 26 cambiano forma (`formAt`): un titolo (Il Ricercatore, L'Onorevole, Il King del Verde…), numeri più alti dell'8 e del 16% (`withForm`), vestiti e qualcosa sulla testa. Il ritratto è lo stesso volto con un altro `Look` (`lookOf`), i cui pezzi entrano nella pagina la prima volta che serve (`personIn`): `install()` non cambia, e i golden dei ritratti nemmeno. Quello che si vede di più sta sulla testa (`head`): il busto è una striscia in fondo al ritratto, e le miniature si fermano al viso. Sulla mappa `PEOPLE_FORMS` in `render/canvas/walkers.ts`.
+  - **Avversari:** un capo di covo o un amico del torneo ha la forma e le mosse del suo livello (`foeSide`).
 - **Chi lotta con chi:** le creature lottano con le creature, le persone con le persone.
   - **Selvatiche e allenatori** (`fightOn`, `fightAfter` in `ui/story-screen.ts`): una lotta sola, con le due squadre dentro (vedi «Le lotte di squadra»). Antonio sceglie chi manda per primo, gli altri aspettano in panchina. Quando sono tutte KO, Antonio può scendere in campo lui («Lotto io!») o scappare.
   - **Covi:** lottano le persone, cioè Antonio e gli amici che si sono uniti (`st.squad`), uno contro uno.

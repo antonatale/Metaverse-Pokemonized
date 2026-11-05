@@ -81,6 +81,8 @@ export interface Outfit {
   collar?: string;
   stripes?: string[];
   strap?: string;
+  /** what is worn on the chest, over the clothes: a tie, a sash, a medal (render/svg/forms.ts) */
+  over?: string;
 }
 export interface Glasses {
   style: 'round' | 'shadesGreen' | 'politico';
@@ -113,6 +115,8 @@ export interface Look {
   chain?: boolean;
   beard?: { color: string };
   props?: { phones?: boolean };
+  /** what is worn on the head, over the hair: the part of a form that shows even in a small picture (render/svg/forms.ts) */
+  head?: string;
   earDx?: number;
   nose?: 'strong';
   underEye?: number;

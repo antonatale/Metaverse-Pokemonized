@@ -265,25 +265,27 @@ function genericMove(s: BattleState, i: number, m: Move, ev: BattleEvent[]): boo
   if (m.windup && me.charge !== m.id) {
     me.charge = m.id;
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magicUp', { style: m.mtype || type, move: m.id }));
+    ev.push(isSpecies(me.id) ? anim(i, 'magicUp', { style: m.mtype || type, move: m.id }) : anim(i, 'pump'));
     ev.push(say(m.windup.replace('{n}', ch(me).name)));
     return false;
   }
   if (m.windup) me.charge = null;
   if (m.kind === 'atk') {
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
-    const dmg = applyHit(s, i, m.id, ev, { noLunge: true }); attacked = true;
+    /* a person has no magic to cast: it has its own way of doing it */
+    if (isSpecies(me.id)) ev.push(anim(i, 'magic', { style: m.plain ? type : m.mtype || type, move: m.id }));
+    else if (m.show) ev.push(anim(i, m.show.a, { text: m.show.text, style: m.show.style }));
+    const dmg = applyHit(s, i, m.id, ev, { noLunge: isSpecies(me.id) }); attacked = true;
     if (dmg > 0) me.boost = false;
     if (dmg > 0 && m.drain && me.hp > 0 && me.hp < me.max) heal(s, i, dmg * m.drain, ev, ch(me).name + ' si riprende ' + (m.drain >= 0.5 ? 'metà' : 'il ' + Math.round(m.drain * 100) + '%') + ' del danno.');
     if (dmg <= 0 || foe.hp <= 0 || me.hp <= 0) return attacked;
   } else if (m.kind === 'heal' && fx.heal) {
     ev.push(expr(i, 'grin'));
-    ev.push(anim(i, 'magicUp', { style: type, move: m.id }));
+    if (isSpecies(me.id)) ev.push(anim(i, 'magicUp', { style: type, move: m.id }));
     heal(s, i, me.max * fx.heal, ev);
   } else {
     ev.push(expr(i, 'smirk'));
-    ev.push(anim(i, fx.self ? 'magicUp' : 'magic', { style: m.mtype || type, move: m.id }));
+    ev.push(isSpecies(me.id) ? anim(i, fx.self ? 'magicUp' : 'magic', { style: m.mtype || type, move: m.id }) : anim(i, fx.self ? 'pump' : 'glint'));
     /* a spell on the foe can miss, if it says so */
     if (m.acc && !fx.self && rand(s) > m.acc) { ev.push(anim(j, 'dodge')); ev.push(say('Ma ' + ch(foe).name + ' la scampa!')); return attacked; }
   }

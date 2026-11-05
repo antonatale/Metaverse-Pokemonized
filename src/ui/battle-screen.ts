@@ -65,8 +65,8 @@ function renderShell() {
     '<div class="clock" id="clock">' + (S.boss ? ico('clock') + '<span id="clock-t">2:00</span>' : '') + '<span class="turn" id="turn-t">Turno 1</span></div>' +
     '<div class="tb-right">' + soundButton() + '<button class="tb-btn" type="button" id="info">Scheda</button></div></div>' +
     '<div class="arena" id="arena">' + boxHtml(1) +
-    '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk', '', undefined, S.sides[1].gold) + '</div></div></div>' +
-    '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold) + '</div></div></div>' + boxHtml(0) + '</div>' +
+    '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk', '', undefined, S.sides[1].gold, S.sides[1].form) + '</div></div></div>' +
+    '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold, S.sides[0].form) + '</div></div></div>' + boxHtml(0) + '</div>' +
     '<div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="turnbar" id="turnbar" hidden></div>' +
     '<div class="pad off" id="pad">' + [0, 1, 2, 3].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled></button>'; }).join('') + '<div class="bagrow" id="bagrow" hidden></div></div>';
@@ -148,7 +148,7 @@ function renderSync(sn: Snap) {
 }
 /** the moves on a side's pad: the four it knows */
 function padMoves(i: number): Move[] {
-  var side = S.sides[i], c = fighter(side.id);
+  var side = S.sides[i], c = E.charOf(S, i);
   return c.moves.filter(function (m) { return !side.known || side.known.indexOf(m.id) >= 0; }).slice(0, 4);
 }
 /** what is in the bag in a story battle: the nets Antonio has (only against a wild creature) and the tiella */
@@ -277,7 +277,7 @@ function hpEvent(ev: Extract<BattleEvent, { k: 'hp' }>) {
 /** a move of the side's own, by id */
 function moveOf(i: number, id?: string): Move | null {
   if (!id) return null;
-  var ms = fighter(S.sides[i].id).moves;
+  var ms = E.charOf(S, i).moves;
   for (var k = 0; k < ms.length; k++) if (ms[k].id === id) return ms[k];
   return null;
 }
@@ -385,7 +385,7 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
 function swapEvent(ev: Extract<BattleEvent, { k: 'swap' }>) {
   var i = ev.who, m = $('m-' + i);
   m.className = 'mover';
-  m.innerHTML = '<div class="bob">' + bust(ev.id, 'smirk', '', undefined, ev.gold) + '</div>';
+  m.innerHTML = '<div class="bob">' + bust(ev.id, 'smirk', '', undefined, ev.gold, ev.form) + '</div>';
   if (counting[i]) { clearTimeout(counting[i]!); counting[i] = null; }
   $('box-' + i).outerHTML = boxHtml(i);
   onField[i] = ev.key || ev.id;
@@ -575,7 +575,7 @@ function showResult() {
   var gradeHtml = S.boss && S.grade ? '<div class="grade"><span>Voto</span><strong>' + (S.grade.lode ? '30 e lode' : S.grade.g + '/30') + '</strong></div>' : (sub ? '<div class="grade"><span>' + esc(sub) + '</span></div>' : '');
   var me = S.winner != null ? S.sides[S.winner].st : A.st;
   var h = '<div class="res" role="dialog" aria-modal="true" aria-labelledby="res-t" style="--tc:' + tc(star) + '">' +
-    '<div class="res-art">' + bust(star, expr, '', '0 0 260 270', (star === A.id && A.gold) || (star === B.id && B.gold)) + '<div class="stamp" id="res-t">' + esc(stamp) + '</div>' + gradeHtml + '</div><div class="res-body">';
+    '<div class="res-art">' + bust(star, expr, '', '0 0 260 270', (star === A.id && A.gold) || (star === B.id && B.gold), star === A.id ? A.form : B.form) + '<div class="stamp" id="res-t">' + esc(stamp) + '</div>' + gradeHtml + '</div><div class="res-body">';
   [first, second].forEach(function (q) { if (q) h += '<p class="say"><small>' + esc(sideName(q[0])) + '</small>«' + esc(q[1]) + '»</p>'; });
   h += '<div class="res-stats"><div><span>Turni</span><strong>' + S.turn + '</strong></div><div><span>Danni</span><strong>' + me.dmg + '</strong></div><div><span>Critici</span><strong>' + me.crits + '</strong></div><div><span>Cure</span><strong>' + me.heals + '</strong></div></div>' +
     '<div class="res-actions">' + (story
@@ -606,7 +606,7 @@ function openSheet() {
   if (!S) return;
   var h = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><div class="sheet-h"><h2 id="sh-t">Scheda della lotta</h2><button class="tb-btn" type="button" id="sh-x">Chiudi</button></div>';
   [0, 1].forEach(function (i) {
-    var c = fighter(S.sides[i].id), lvl = S.sides[i].lvl;
+    var c = E.charOf(S, i), lvl = S.sides[i].lvl;
     h += '<div class="card" style="--tc:' + TC[c.type] + '"><div class="block"><h3>' + esc(sideLabel(i) + ' · ' + c.name + (lvl ? ' · Lv ' + lvl : '')) + '</h3>';
     if (c.id === 'esame' && !S.sides[i].revealed) h += '<p class="unknown">Statistiche e mosse ancora sconosciute. Antonio può analizzarlo con Diagnosi Energetica; con gli altri lo scopri giocando.</p></div>';
     else {

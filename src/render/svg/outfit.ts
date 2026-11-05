@@ -27,6 +27,7 @@ export function outfit(c: Look): string {
   if (st === 'knit') body += '<g clip-path="url(#' + P + 'TorsoClip)"><rect x="-10" y="230" width="280" height="80" fill="#000" filter="url(#fKnit)" opacity=".22"/></g>';
   body += '<path d="M22 278C38 268 56 262 76 260M238 278C222 268 204 262 184 260M40 302C46 290 52 284 60 280M220 302C214 290 208 284 200 280" fill="none" stroke="' + (O.fold || O.dark) + '" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>';
   if (st === 'jacket') body += '<path d="M104 238C112 254 148 254 156 238L170 304L90 304Z" fill="' + O.tee + '"/>';
+  if (O.over) body += '<g clip-path="url(#' + P + 'TorsoClip)">' + O.over + '</g>';
   s += '<g id="' + P + 'Body">' + body + '</g>';
 
   /* neck */

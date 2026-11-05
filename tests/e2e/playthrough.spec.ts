@@ -7,7 +7,7 @@ import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 declare global {
   interface Window {
     WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null;
-        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
+        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; xp(key: string, n: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -1119,6 +1119,49 @@ test('a question left unanswered', async ({ browser }) => {
   expect((get('after') as { dialog: boolean }).dialog, 'asked once').toBe(false);
   expect(get('dots'), 'the stones make up for the bond').toBe(3);
   expect((get('state') as { seen: Record<string, boolean> }).seen['sc-pietre-tenute']).toBe(true);
+});
+
+/* the people grow: Antonio starts with little, changes clothes at level 14, and has to choose what to forget */
+test('the people grow', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio', 'costanzo'], beaten: {}, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 }, antonio: { lv: 13, xp: 0 }, costanzo: { lv: 25, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'people', { seed: 16, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story');
+    await p.clock.runFor(1500);
+    await talkThrough(p);
+    await r.shot('before');
+    await p.evaluate(() => window.WORLD._debug.xp('antonio', 200)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await r.shot('evolve');
+    r.keep('evolve', await p.locator('.award.evolve').innerText());
+    await p.click('#ev-ok'); await p.clock.runFor(300);
+    await talkThrough(p);
+    r.keep('forget', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Dimentica Diagnosi Energetica');
+    await talkThrough(p);
+    await p.evaluate(() => window.WORLD._debug.xp('costanzo', 400)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await r.shot('evolve-2');
+    await p.click('#ev-ok'); await p.clock.runFor(300);
+    await talkThrough(p);
+    for (let k = 0; k < 4 && (await p.evaluate(() => window.WORLD._debug.pos().opts)); k++) { await p.locator('#wopts button').last().click(); await p.clock.runFor(300); await talkThrough(p); }
+    await r.shot('after');
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    r.keep('menu', await p.locator('#overlay, .world-menu, .menu').first().innerText().catch(() => ''));
+    await p.locator('[data-cr="antonio"]').click({ timeout: 5000 }); await p.clock.runFor(300);
+    await r.shot('card');
+    r.keep('card', await p.locator('.sheet').first().innerText());
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('evolve'))).toContain('Il Ricercatore');
+  expect(get('forget')).toContain('Dimentica Diagnosi Energetica');
+  expect(String(get('card'))).toContain('Paper su arXiv');
+  expect(String(get('card'))).toContain('Il Ricercatore');
+  const st = get('state') as { people: Record<string, { moves: string[] }> };
+  expect(st.people.antonio.moves).toContain('paper');
+  expect(st.people.antonio.moves).not.toContain('diagnosi');
 });
 
 /* the end of the story so far: at the train, the game told back */

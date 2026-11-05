@@ -81,7 +81,7 @@ function chips(s: BattleState, i: number): Chip[] {
   if (x.fresh) add('up', 'shield', 'In guardia', 'Appena entrato: per questo turno subisce metà del danno');
   if (x.status) { const st = STATUS[x.status.id]; add('bad', st.icon, st.name, st.text); }
   if (x.away) add('info', 'plane', 'A Copenhagen');
-  if (x.charge) { if (isSpecies(x.id)) add('bad', 'flame', 'Sta per colpire', 'Al prossimo turno: ' + mv(x, x.charge)!.name); else add('info', 'plane', 'Di ritorno'); }
+  if (x.charge) { const held = mv(x, x.charge); if (held && held.windup) add('bad', 'flame', 'Sta per colpire', 'Al prossimo turno: ' + held.name); else add('info', 'plane', 'Di ritorno'); }
   if (i === 1 && s.shield) add(s.shield.left ? 'info' : 'bad', 'shield', s.shield.left ? s.shield.name + ' ' + s.shield.left + '/' + s.shield.max : s.shield.name + ' rotta', s.shield.left ? 'Ogni colpo superefficace la incrina' : 'Scudo rotto');
   if (hasMod(s, x, 'broken')) add('bad', 'down', 'Esposto', 'Senza difese: subisce più danni');
   if (x.boost && isSpecies(x.id)) add('up', 'spark', 'Risonanza', 'Il prossimo colpo fa il 50% in più');
@@ -138,13 +138,15 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     }
     case 'tiella': out.icon = 'heart'; out.count = s.bag!.tiella || 0; out.sub = out.locked ? 'PS al massimo' : 'Cura 40 PS'; break;
     default: {
-      /* the creatures' moves: what they do, from their numbers (the Esame's keep no label, as they always had) */
-      if (!isSpecies(me.id)) break;
+      /* the moves made of numbers, the creatures' and those of the people who have grown: what they do, from their numbers
+         (the Esame's keep no label, as they always had) */
+      const magic = isSpecies(me.id);
+      if (!magic && !me.grown) break;
       const fx = m.fx || {}, bits: string[] = [];
-      out.mtype = moveType(me, m);
+      if (magic) out.mtype = moveType(me, m);
       if (m.kind === 'atk') {
         out.power = m.power; out.acc = m.acc || 1;
-        out.eff = magicEff(out.mtype, typesOf(s, s.sides[1 - i], me));
+        if (magic) out.eff = magicEff(out.mtype!, typesOf(s, s.sides[1 - i], me));
         bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
       }
       if (m.windup) bits.push('Un turno per caricare');

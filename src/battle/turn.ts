@@ -49,7 +49,7 @@ export function beginTurn(s: BattleState): BattleEvent[] {
         x.lock = null;
         ev.push(snap(s));
       }
-      const losable = ['diagnosi', 'certificati', 'simtoreal', 'america'].filter(function (m) { return i !== 0 || !s.safe || s.safe.indexOf(m) < 0; });
+      const losable = ['diagnosi', 'certificati', 'simtoreal', 'america'].filter(function (m) { return (i !== 0 || !s.safe || s.safe.indexOf(m) < 0) && (!x.known || x.known.indexOf(m) >= 0); });
       if (!x.lock && !x.charge && losable.length && rand(s) < (x.perk ? x.perk.lose : 0.15)) {
         const id = pick(s, losable), item = ITEMS[id];
         x.lock = { move: id, until: s.turn + 1 };
@@ -286,7 +286,7 @@ function enter(s: BattleState, i: number, slot: number, ev: BattleEvent[]) {
   s.bench![i][slot] = out;
   s.sides[i] = inn;
   s.plan[i] = null; s.forced[i] = null;
-  ev.push({ k: 'swap', who: i, id: inn.id, key: inn.key, gold: inn.gold, hp: inn.hp });
+  ev.push({ k: 'swap', who: i, id: inn.id, key: inn.key, gold: inn.gold, form: inn.form, hp: inn.hp });
   ev.push(snap(s));
   ev.push(anim(i, 'enter'));
   ev.push(line(i, ch(inn).lines.entry));

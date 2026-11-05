@@ -17,7 +17,7 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 
 | # | Cosa | Modello | Effort | Stato |
 |---|---|---|---|---|
-| O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | da fare |
+| O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | fatto |
 | O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | da fare |
 | O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | da fare |
 | S1 | Togliere «Un giorno a Formia» | Sonnet 5.5 | high | da fare |
@@ -34,11 +34,11 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 
 ## Opus 5.5, max
 
-Non toccare queste tre finché la tabella non dice «fatto»: ci sta lavorando Opus.
+Non toccare quelle che non dicono «fatto»: ci sta lavorando Opus.
 
 ### O1. Le persone crescono
 
-Antonio: «è noioso che i personaggi umani partano nella fase finale e non aggiungono mosse, non cambiano aspetto e non si evolvono».
+Fatto: vedi «Le persone crescono» in `CLAUDE.md`.
 
 ### O2. Tutti protagonisti
 
@@ -74,7 +74,7 @@ Antonio: «quando una creatura vuole imparare una nuova mossa, mi dice solo i no
 
 - **Dove:** `askLearn` in `ui/team.ts`.
 - **Come:** un foglio con la mossa nuova in alto e sotto le quattro che conosce, disegnate con gli stessi bottoni della lotta di S2 (tipo, potenza, precisione, effetto). Un tocco sceglie quale dimenticare, più «Non imparare». Estrai il disegno della mossa in una funzione sola, usata da lotta e foglio: non due copie.
-- **Fatto quando:** la partita che sale di livello con quattro mosse passa dalla schermata nuova. Vale anche per le persone (vedi O1, se è già fatta).
+- **Fatto quando:** la partita che sale di livello con quattro mosse passa dalla schermata nuova. Vale anche per le persone: `askLearn` è la stessa, e `anyMove` trova la mossa di chiunque.
 
 ### S4. Comprare più cose e usarle dal menu (high)
 
