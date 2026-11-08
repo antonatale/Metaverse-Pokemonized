@@ -920,8 +920,8 @@ function openMenu(tab?: string) {
       '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
         return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
       }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
-      '<p class="hint">I progressi della storia restano su questo dispositivo.</p>' +
-      '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna alla schermata iniziale</button>' +
+      '<p class="hint">La storia si salva da sola, su questo dispositivo. Dal titolo puoi giocarne un\'altra: ce ne sono tre.</p>' +
+      '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna al titolo</button>' +
       '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div>'
   };
   sheet('<div class="sheet menu" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +

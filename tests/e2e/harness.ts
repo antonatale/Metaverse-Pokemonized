@@ -26,6 +26,8 @@ export interface TwinOpts {
   hot?: boolean;
   /** trainers who see Antonio walk up and challenge him: off unless a test asks, as most walk past some on their way */
   spot?: boolean;
+  /** what goes after the address, as ?intro=1 */
+  url?: string;
 }
 
 async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
@@ -98,7 +100,7 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
 }
 
 export async function play(browser: Browser, title: string, o: TwinOpts, scenario: (r: Run) => Promise<void>) {
-  const r = await open(browser, URL, o);
+  const r = await open(browser, URL + (o.url || ''), o);
   await scenario(r);
   const errors = (r as Run & { errors: string[] }).errors;
   await r.page.context().close();

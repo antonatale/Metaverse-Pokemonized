@@ -1,8 +1,7 @@
-import { type CharId, type FriendId, type Character, type Move } from '../data/characters';
+import { type Character, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { isSpecies } from '../data/creatures';
 import { creature } from '../render/svg/creatures';
-import type { Mode } from '../battle';
 import { SPR } from '../render/svg';
 import { reduced, $ } from './dom';
 
@@ -20,9 +19,9 @@ export function face(id: string, expr?: string, cls?: string): string { return i
 export function bust(id: string, expr?: string, cls?: string, vb?: string, gold?: boolean, form?: number): string { return id === 'esame' ? SPR.esame(expr || 'idle', cls) : isSpecies(id) ? creature(id, expr || 'smirk', cls, undefined, undefined, gold) : SPR.personIn(id, form, expr || 'smirk', cls, vb); }
 
 export const home = $('home'), battle = $('battle'), overlay = $('overlay');
-/** the screen on show, and what the player has picked on the home page and in the setup sheet */
-export interface View { screen: string; sel: FriendId; hero: string; mode: Mode; p1: FriendId; p2: CharId }
-export const view: View = { screen: 'home', sel: 'antonio', hero: 'smirk', mode: 'cpu', p1: 'antonio', p2: 'costanzo' };
+/** the screen on show: the title ('home'), the world or a battle */
+export interface View { screen: string }
+export const view: View = { screen: 'home' };
 export function setScreen(s: string) { view.screen = s; }
 
 export function closeOverlay() { overlay.hidden = true; overlay.innerHTML = ''; overlay.className = 'overlay'; }

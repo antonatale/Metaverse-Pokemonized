@@ -1,11 +1,11 @@
 /* Boot. */
-import { ROSTER } from './data/characters';
 import type { BattleState } from './battle';
 import { SPR } from './render/svg';
 import { WORLD, installStoryKeys } from './ui/story-screen';
 import { UI, S, resumeBattle, installBattleKeys } from './ui/battle-screen';
 import { view, type View } from './ui/common';
 import { renderHome } from './ui/home';
+import { gameTitle } from './data/growth';
 import { installAudio, music } from './audio';
 import { installSoundButtons } from './ui/sound';
 
@@ -33,11 +33,7 @@ if (hot && hot.snapshot) {
 }
 function start(data?: HotData) {
   data = data || {};
-  if (data.v === 2 && data.view) {
-    const saved = data.view as Record<string, string>, into = view as unknown as Record<string, string>;
-    ['sel', 'hero', 'mode', 'p1', 'p2'].forEach(function (k) { if (saved[k]) into[k] = saved[k]; });
-    if (ROSTER.indexOf(view.sel) < 0) view.sel = 'antonio';
-  }
+  document.title = gameTitle();
   SPR.install();
   renderHome();
   music('home');

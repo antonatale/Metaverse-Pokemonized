@@ -1,4 +1,4 @@
-import { CHARS as C, type CharId, type FighterId, type FriendId, type Move } from '../data/characters';
+import { CHARS as C, type Character, type FighterId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { cry, cryEventOf } from '../audio';
@@ -6,19 +6,18 @@ import { scene, sceneInfo } from '../render/svg/scenes';
 import { darkness } from '../story/daytime';
 import { MAGIC_CHART, MAGIC_ORDER, type TypeName } from '../data/types';
 import { COVI } from '../data/covi';
+import { MAPS } from '../data/maps';
 import { STATUS, type StatusId } from '../data/passives';
 import { ENGINE as E, type BattleEvent, type BattleState, type Bout, type BenchLabel, type Member, type Mode, type Snap, type SideOpts, type StoryTag } from '../battle';
 import { SPR } from '../render/svg';
-import { record, saveRecord } from '../save/libretto';
 import { reduced, esc, each, $ } from './dom';
 import { ico } from './icons';
-import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
-import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
+import { TC, tc, typeTag, kindTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
+import { renderTitle } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
-import { dayAfter, dayDecided } from './day-screen';
 import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
-import { runeIcon } from '../render/svg/creatures';
+import { cardClass, paintCard, EFF_WORD, type MoveCard } from './move-card';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
 
@@ -26,7 +25,7 @@ import { music, cueBattle, typeBlip } from '../audio';
 
 const CANCEL = { cancelled: true };
 /** what a battle is started with */
-export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; seed?: number; night?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number; hero?: string }
+export interface BattleConfig { a: FighterId; b: FighterId; mode: Mode; story?: StoryTag | null; safe?: string[]; sideA?: SideOpts; sideB?: SideOpts; wild?: boolean; bag?: Record<string, number>; trainer?: string; benchA?: Member[]; benchB?: Member[]; smart?: [number, number]; dark?: boolean; field?: { type: TypeName; name: string }; shield?: { left: number; name: string }; surgeStart?: number; hero?: string }
 /** the battle on show; null between battles, and everything that reads it runs during one */
 export let S = null as unknown as BattleState;
 
@@ -523,22 +522,8 @@ function showPass(i: number) {
 }
 
 /* =================== RESULT =================== */
-/* the libretto counts the friends' battles; the creatures of the story are not in it */
-function bump(id: string, key: 'w' | 'l') { if (!(id in C)) return; var r = record.chars[id] || (record.chars[id] = { w: 0, l: 0 }); r[key]++; }
 function showResult() {
   var r = S.result, A = S.sides[0], B = S.sides[1];
-  if (!S.recorded) {
-    S.recorded = true;
-    if (S.boss) {
-      var x = record.exam[A.id] || (record.exam[A.id] = { p: 0, f: 0, best: null, lode: false });
-      if (r === 'win' && S.winner === 0) {
-        x.p++; bump(A.id, 'w');
-        var g = S.grade!, val = g.lode ? 31 : g.g, bestVal = x.best == null ? -1 : (x.lode ? 31 : x.best);
-        if (val > bestVal) { x.best = g.g; x.lode = g.lode; }
-      } else { x.f++; bump(A.id, 'l'); }
-    } else if (r === 'win') { bump(S.sides[S.winner!].id, 'w'); bump(S.sides[1 - S.winner!].id, 'l'); }
-    saveRecord(); renderLibretto();
-  }
   music(r === 'win' && (S.winner === 0 || S.mode === 'pvp') ? 'victory' : 'defeat');
   var star: string, stamp: string, sub = '', first: [number, string | undefined] | null, second: [number, string | undefined] | null;
   if (S.boss) {
@@ -572,7 +557,7 @@ function showResult() {
       /* a lost battle with creatures goes on on the map (another creature, or Antonio himself): no retry here */
       ? (storyWon || !story.covo ? '<button class="btn primary wide" type="button" id="st-go">Continua</button>'
         : '<button class="btn primary" type="button" id="st-retry">Riprova</button><button class="btn" type="button" id="st-go">Torna a ' + esc(storyCity(story)) + '</button>')
-      : '<button class="btn primary" type="button" id="again">Rivincita</button><button class="btn" type="button" id="change">Cambia sfida</button><button class="btn wide" type="button" id="back">Torna ai personaggi</button>') +
+      : '<button class="btn primary wide" type="button" id="back">Torna al titolo</button>') +
     '</div></div></div>';
   overlay.className = 'overlay result';
   overlay.innerHTML = h;
@@ -585,10 +570,26 @@ function showResult() {
     setTimeout(function () { var b = $('st-retry') || $('st-go'); if (b) b.focus(); }, 50);
     return;
   }
-  $('again').addEventListener('click', function () { closeOverlay(); startBattle(cfg); });
-  $('change').addEventListener('click', function () { goHome(); view.p1 = cfg.a as FriendId; view.p2 = cfg.b as CharId; view.mode = cfg.mode; renderSetup(); });
   $('back').addEventListener('click', function () { closeOverlay(); goHome(); });
-  setTimeout(function () { var b = $('again'); if (b) b.focus(); }, 50);
+  setTimeout(function () { var b = $('back'); if (b) b.focus(); }, 50);
+}
+
+/** the place a covo belongs to, for «Torna a …» */
+function storyCity(story: { covo?: string }): string {
+  var cv = COVI && story.covo ? COVI[story.covo] : null;
+  return cv && MAPS[cv.city] ? MAPS[cv.city].name : 'Formia';
+}
+/** a person's passive, weakness and moves, for the sheet of the battle */
+function charBlocks(c: Character): string {
+  var h = '<div class="block"><div class="trait"><span class="lbl">Passiva</span><b>' + esc(c.passive.name) + '</b><p>' + esc(c.passive.text) + '</p></div>';
+  if (c.weakness) h += '<div class="trait"><span class="lbl">Difetto</span><b>' + esc(c.weakness.name) + '</b><p>' + esc(c.weakness.text) + '</p></div>';
+  h += '</div><div class="block"><h3>Mosse</h3><ul class="moves-list">';
+  c.moves.forEach(function (m) {
+    h += '<li><div class="mh"><b>' + esc(m.name) + '</b>' + kindTag(m) + (m.uses ? '<span class="type">' + m.uses + (m.uses === 1 ? ' uso' : ' usi') + '</span>' : '') + '</div><p>' + esc(m.text) + '</p>';
+    if (c.id === 'antonio') { var it = E.ITEMS[m.id]; h += '<span class="item">' + ico(it.icon) + 'Si blocca se perde ' + esc(it.name) + '</span>'; }
+    h += '</li>';
+  });
+  return h + '</ul></div>';
 }
 
 /* =================== IN-BATTLE SHEET =================== */
@@ -669,8 +670,7 @@ export function goHome() {
   home.hidden = false;
   document.body.classList.remove('in-battle');
   closeOverlay();
-  renderLibretto();
-  renderStory();
+  renderTitle();
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {

@@ -6,6 +6,12 @@ import type { SpeciesId } from '../data/creatures';
 /* Saved progress of the story, on this device only. Same key and same format as the old single-file game,
    so old saves keep working; localStorage can be missing or throw (private windows, sandboxed frames). */
 export const KEY = 'lotte-tra-amici:storia:v1';
+/* More than one story on the same device: three slots. The first is the old key, so an old save is the first story;
+   the others have keys of their own (KEY + ':2', KEY + ':3'), and SLOT_KEY says which one was played last. Only one is
+   loaded at a time, in `st`: the title screen switches with useSlot(). */
+export const SLOTS = 3;
+const SLOT_KEY = 'lotte-tra-amici:slot:v1';
+export function keyOf(n: number): string { return n <= 1 ? KEY : KEY + ':' + n; }
 export interface StoryProgress {
   v: 1;
   map: string;
@@ -56,27 +62,46 @@ export function blank(): StoryProgress {
   var m = MAPS.formia;
   return { v: 1, map: 'formia', x: m.start[0], y: m.start[1], dir: m.start[2], badges: [], squad: ['antonio'], beaten: {}, seen: {}, found: {}, lv: {}, skills: {}, money: 0, bag: {}, mons: [] };
 }
-function load(): StoryProgress {
-  try {
-    var v = JSON.parse(window.localStorage.getItem(KEY) || 'null');
-    if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
-      v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
-      v.lv = v.lv || {}; v.skills = v.skills || {}; v.money = v.money || 0; v.bag = v.bag || {}; v.mons = v.mons || [];
-      /* Formia was redrawn (formia2), as the real town (formia3), with joined-up streets (formia4), as a game map
-         with a hand-drawn network of streets (formia5), with the east of town and the street lamps redrawn (formia6):
-         start again from home, keep pins, squad and found things */
-      if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5 || !v.seen.formia6)) {
-        var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
-      }
-      /* the first of the company used to be only who went first in a covo: now it is who is played, and that is chosen anew */
-      if (v.first && !v.seen.protagonisti) delete v.first;
-      v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true; v.seen.formia6 = true;
-      return v;
-    }
-  } catch (e) { /* storage unavailable */ }
-  return blank();
+/** a story as saved in a slot, brought up to date; null for an empty slot (or one that cannot be read) */
+export function peekSlot(n: number): StoryProgress | null {
+  try { return fix(JSON.parse(window.localStorage.getItem(keyOf(n)) || 'null')); } catch (e) { return null; }
 }
-export function save() { try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* ignore */ } }
-export let st = load();
+function load(n: number): StoryProgress { return peekSlot(n) || blank(); }
+function fix(v: StoryProgress | null): StoryProgress | null {
+  if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
+    v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
+    v.lv = v.lv || {}; v.skills = v.skills || {}; v.money = v.money || 0; v.bag = v.bag || {}; v.mons = v.mons || [];
+    /* Formia was redrawn (formia2), as the real town (formia3), with joined-up streets (formia4), as a game map
+       with a hand-drawn network of streets (formia5), with the east of town and the street lamps redrawn (formia6):
+       start again from home, keep pins, squad and found things */
+    if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5 || !v.seen.formia6)) {
+      var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
+    }
+    /* the first of the company used to be only who went first in a covo: now it is who is played, and that is chosen anew */
+    if (v.first && !v.seen.protagonisti) delete v.first;
+    v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true; v.seen.formia6 = true;
+    return v;
+  }
+  return null;
+}
+/** the slot played last (the first one when none has been chosen yet) */
+function lastSlot(): number {
+  try { var n = Number(window.localStorage.getItem(SLOT_KEY) || 1); return n >= 1 && n <= SLOTS ? Math.floor(n) : 1; } catch (e) { return 1; }
+}
+let slot = lastSlot();
+export function slotNow(): number { return slot; }
+export function save() { try { st.at = Date.now(); window.localStorage.setItem(keyOf(slot), JSON.stringify(st)); } catch (e) { /* ignore */ } }
+export let st = load(slot);
+/** plays another story from now on: everything reads `st`, so the map, the team and the bag are that slot's */
+export function useSlot(n: number) {
+  slot = Math.max(1, Math.min(SLOTS, Math.floor(n)));
+  st = load(slot);
+  try { window.localStorage.setItem(SLOT_KEY, String(slot)); } catch (e) { /* ignore */ }
+}
+/** empties a slot for good; the one being played starts again from nothing */
+export function eraseSlot(n: number) {
+  try { window.localStorage.removeItem(keyOf(n)); } catch (e) { /* ignore */ }
+  if (n === slot) st = blank();
+}
 /** starts the story again from scratch (the caller saves) */
 export function resetProgress() { st = blank(); }

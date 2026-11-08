@@ -8,11 +8,7 @@
   .spr-wrap.opp { width: min(43%, 190px); top: 22px; }
 }
 @media (min-width: 520px) {
-  .roster { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .pickgrid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-}
-@media (min-width: 600px) {
-  .masthead h1 { font-size: 56px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

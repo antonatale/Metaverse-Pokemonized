@@ -522,15 +522,20 @@ function drawFrame(now: number, sk: number) {
 }
 
 /* a still picture of Formia for the home page, around Antonio: wherever he is in town, or at home */
-export function preview(el: HTMLElement | null) {
+/** a still of Formia in an element: around Antonio, or around a point (`at`, in tiles), seeing at least `span` px of
+    the map across (the title, on a big screen: the town fills it instead of showing half the gulf). The canvas stays
+    within a few million pixels: Safari leaves a bigger one blank */
+export function preview(el: HTMLElement | null, o?: { at?: [number, number]; span?: number }) {
   if (!el) return;
-  previewEl = el;
-  var m = prepare('formia'), s = dpr(), P0 = palette(), mw = m.w * T, mh = m.h * T;
+  if (!o) previewEl = el;
+  var m = prepare('formia'), P0 = palette(), mw = m.w * T, mh = m.h * T;
   var W = Math.max(200, el.clientWidth || 320), H = Math.max(100, el.clientHeight || 160), k = W < 420 ? 0.62 : 0.74;
+  if (o && o.span) k = Math.max(k, W / o.span);
+  var s = Math.min(dpr(), Math.sqrt(4.5e6 / (W * H)));
   var c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
   c0.width = Math.round(W * s); c0.height = Math.round(H * s);
   c0.setAttribute('aria-hidden', 'true');
-  var me0 = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1] };
+  var me0 = o && o.at ? { x: o.at[0], y: o.at[1] } : st.map === 'formia' ? st : { x: m.start[0], y: m.start[1] };
   var sw = W / k, sh = H / k, fx = (me0.x + 0.5) * T, fy = (me0.y + 1.5) * T;
   var sx = Math.max(0, Math.min(mw - sw, fx - sw / 2)), sy = Math.max(0, Math.min(mh - sh, fy - sh / 2));
   var rx = Math.floor(sx / T), ry = Math.floor(sy / T), rect = { x: rx, y: ry, w: Math.min(m.w, Math.ceil((sx + sw) / T)) - rx, h: Math.min(m.h, Math.ceil((sy + sh) / T)) - ry };
