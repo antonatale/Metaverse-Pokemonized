@@ -19,6 +19,12 @@ export function xpFor(foeLv: number, won: boolean, covo: boolean): number {
   const x = (14 + 6 * foeLv) * (covo ? 1.5 : 1);
   return Math.round(won ? x : x / 3);
 }
+/* ---------- the game's name, in one place: the page's title, the home, the README ---------- */
+/** Telepilo, the city of the Laestrygonians (Odyssey X; Cicero calls Formiae «the Telepylos of the Laestrygonians»).
+    The old name stays only in the save keys (lotte-tra-amici:*), which never change */
+export const GAME_NAME = { name: 'Telepilo', sub: 'Creature di Formia' };
+/** the page's title */
+export function gameTitle(): string { return GAME_NAME.name + ' · ' + GAME_NAME.sub; }
 /* ---------- the money of the story: the sesterzi of Roman Formiae, Cicero's and Mamurra's ---------- */
 /** its name, in one place: change it here to rename it everywhere */
 export const COIN = { one: 'sesterzio', many: 'sesterzi' };
