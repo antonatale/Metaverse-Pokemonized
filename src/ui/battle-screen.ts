@@ -359,7 +359,7 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], 
     }
     case 'magicUp': {
       var mu = moveOf(i, ev.move), su = S.sides[i].id;
-      return castSelf(i, ev.style as TypeName, mu ? mu.name : '', !!mu && isSpecies(su) && SPECIES[su].sig === mu.id);
+      return castSelf(i, ev.style as TypeName, mu ? mu.name : '', !!mu && isSpecies(su) && SPECIES[su].sig === mu.id, mu ? mu.id : undefined);
     }
     case 'stat': return statShow(i, ev.style || 'atkUp');
     case 'caught': if (m.classList.contains('innet')) return sleep(reduced ? 60 : 500); m.classList.add('caught'); return sleep(800);
@@ -712,7 +712,7 @@ export const UI = {
     cast: function (type: TypeName | null, outcome?: 'hit' | 'miss' | 'none', from?: number, o?: { sig?: boolean; crit?: boolean; lvl?: number; power?: number; name?: string; id?: string; self?: boolean; drain?: boolean; quick?: boolean }) {
       if (!S) return null;
       var i = from || 0, x = o || {};
-      if (x.self && type) return castSelf(i, type, x.name || 'Prova', !!x.sig);
+      if (x.self && type) return castSelf(i, type, x.name || 'Prova', !!x.sig, x.id);
       return castSpell(i, 1 - i, { type: type, id: x.id, name: x.name || 'Prova', power: x.power || 60, sig: !!x.sig, outcome: outcome || 'hit', crit: !!x.crit, lvl: x.lvl || 0, drain: !!x.drain, quick: !!x.quick });
     }
   }

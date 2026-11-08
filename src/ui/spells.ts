@@ -1,5 +1,6 @@
 import type { TypeName } from '../data/types';
-import { MOVE_FX } from '../data/move-fx';
+import { MOVE_FX, SELF_FX } from '../data/move-fx';
+import { SELF } from './self-scenes';
 import { runeIcon } from '../render/svg/creatures';
 import { reduced, esc, $ } from './dom';
 import { sleep, battle } from './common';
@@ -9,7 +10,7 @@ import { netSVG, netBall } from '../render/svg/nets';
 import { sfx } from '../audio';
 import { HELD } from '../data/passives';
 import { ico } from './icons';
-import { INK, type Cast, type P, colOf, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, layer, beam, trace, fade, glyph, flash, drop, veilOn, takes } from './spell-kit';
+import { INK, type Cast, type P, colOf, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, layer, beam, trace, fade, glyph, flash, drop, veilOn, takes, boltPath, stormCloud, tornado } from './spell-kit';
 import { STAGES } from './move-stages';
 
 /* The creatures' moves, as shows: every type of magic has its own, big and clear.
@@ -133,20 +134,6 @@ function moonHit(b: P, to: number, c: Cast, mc: string, k: number) {
 }
 
 /* ---------- Caos: lightning ---------- */
-function boltPath(x1: number, y1: number, x2: number, y2: number, n: number, jag: number): string {
-  let d = 'M' + x1.toFixed(1) + ' ' + y1.toFixed(1);
-  for (let s = 1; s < n; s++) {
-    const t = s / n, off = (wob() - 0.5) * jag * (1 - Math.abs(0.5 - t));
-    d += ' L' + (lerp(x1, x2, t) + off).toFixed(1) + ' ' + lerp(y1, y2, t).toFixed(1);
-  }
-  return d + ' L' + x2.toFixed(1) + ' ' + y2.toFixed(1);
-}
-function stormCloud(): string {
-  return '<svg viewBox="0 0 220 110" aria-hidden="true"><g fill="#4a4f7a" stroke="' + INK + '" stroke-width="5">' +
-    '<circle cx="62" cy="62" r="34"/><circle cx="108" cy="44" r="40"/><circle cx="156" cy="60" r="34"/><rect x="40" y="58" width="140" height="38" rx="19"/></g>' +
-    '<g fill="#5d6394"><circle cx="62" cy="62" r="30"/><circle cx="108" cy="44" r="36"/><circle cx="156" cy="60" r="30"/><rect x="44" y="60" width="132" height="32" rx="16"/></g>' +
-    '<path d="M70 40Q86 22 108 26" fill="none" stroke="#8d93c4" stroke-width="6" stroke-linecap="round"/></svg>';
-}
 function zig(mc: string): string {
   return '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M13 2L5 14h6l-2 8 9-13h-6l3-7Z" fill="' + mc + '" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 }
@@ -469,15 +456,6 @@ function fireHit(b: P, to: number, c: Cast, mc: string, k: number) {
 }
 
 /* ---------- Cielo: the wind ---------- */
-function tornado(mc: string): string {
-  let s = '<svg viewBox="0 0 120 200" aria-hidden="true" fill="none" stroke-linecap="round">';
-  for (let q = 0; q < 7; q++) {
-    const y = 20 + q * 26, rx = lerp(54, 10, q / 6), ry = lerp(12, 4, q / 6), dx = Math.sin(q * 1.3) * 6;
-    s += '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + INK + '" stroke-width="7"/>' +
-      '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + (q % 2 ? '#ffffff' : mc) + '" stroke-width="4"/>';
-  }
-  return s + '</svg>';
-}
 function windFly(from: number, end: P, c: Cast, mc: string, k: number): Promise<void> {
   const g = anchor(from, 0.5, 0.92), f = body(from, 0.5, 0.45), w = 120 * k;
   /* the caster beats its wings: feathers and gusts around it */
@@ -775,42 +753,50 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
     const q = body(from, 0.5, 0.5);
     streaks(from); flashAt(q[0], q[1], '#ffffff', 240, 240); sfx('whoosh');
   }
-  if (!t) return plainHit(from, to, c, k);
   /* the move's scene (data/move-fx.ts, ui/move-stages.ts); a legend's own move has a show of its own */
-  const epic = c.sig && c.id ? EPIC[c.id] : undefined, scene = !epic && c.id ? MOVE_FX[c.id] : undefined, stage = scene ? STAGES[scene.stage] : undefined;
-  const quick = scene ? (scene.charge ? scene.charge === 'none' : !!stage!.quick) : false;
+  const epic = t && c.sig && c.id ? EPIC[c.id] : undefined, scene = !epic && c.id ? MOVE_FX[c.id] : undefined, stage = scene ? STAGES[scene.stage] : undefined;
+  if (!t && !stage) return plainHit(from, to, c, k);
+  const quick = scene ? (scene.charge ? scene.charge === 'none' : !!stage!.quick) : false, sc = (scene && scene.col) || mc;
   /* a quick blow has no dark and no magic circle: only its name */
-  const dark = quick ? { off: function () { return Promise.resolve(); } } : darken(from, mc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
-  band(from, c.name, t, c.sig, mc);
-  if (!quick) { glow(from, mc, 900); magicCircle(from, t, mc, 200 * k, 1200); }
+  const dark = quick ? { off: function () { return Promise.resolve(); } } : darken(from, sc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
+  band(from, c.name, t, c.sig, sc);
+  if (!quick) { glow(from, sc, 900); magicCircle(from, t, sc, 200 * k, 1200); }
   const end = c.outcome === 'miss' ? beyond(body(from, 0.5, 0.45), b) : b;
   const show = epic ? epic(from, end, c, mc, k)
-    : stage ? stage.run({ from: from, to: to, end: end, b: b, c: c, t: t, mc: mc, k: k, n: (scene && scene.n) || stage.n || 1, miss: c.outcome === 'miss' })
-      : FLY[t](from, end, c, mc, k);
+    : stage ? stage.run({ from: from, to: to, end: end, b: b, c: c, t: t, mc: sc, k: k, n: (scene && scene.n) || stage.n || 1, miss: c.outcome === 'miss', prop: scene!.prop, words: scene!.words, rev: scene!.rev })
+      : FLY[t!](from, end, c, mc, k);
   return show.then(function () {
     if (c.outcome === 'hit') {
       /* a scene of its own has drawn its impact; the one hit takes the blow its own way */
-      if (!stage || !stage.impact) HIT[t](b, to, c, mc, k);
+      if (t && (!stage || !stage.impact)) HIT[t](b, to, c, mc, k);
       if (stage) takes(to, (scene && scene.foe) || stage.foe, k);
-      if (c.drain) lifeBack(from, to, mc);
+      if (c.drain) lifeBack(from, to, sc);
       /* the grand hits: a second shockwave, the whole arena lit */
-      if (c.crit || c.lvl > 0 || c.sig) { ring(b[0], b[1], '#ffffff', 420 * k, 700); if (t !== 'Caos') flash(c.lvl > 0 ? mc : '#ffffff', 420, c.lvl > 1 || c.crit ? 0.5 : 0.35); }
+      if (c.crit || c.lvl > 0 || c.sig) { ring(b[0], b[1], '#ffffff', 420 * k, 700); if (t !== 'Caos') flash(c.lvl > 0 ? sc : '#ffffff', 420, c.lvl > 1 || c.crit ? 0.5 : 0.35); }
       if (c.crit || c.lvl > 1) pulse(arena, 'quake', 420);
       dark.off(560);
       /* a moment of stillness on the hit */
       return sleep(80);
     }
-    if (c.outcome === 'none') hex(to, t, mc, k);
+    if (c.outcome === 'none' && t && !(stage && stage.self)) hex(to, t, sc, k);
     dark.off(c.outcome === 'none' ? 700 : 380);
     return undefined;
   });
 }
 
 /** a spell on itself (it raises a number, it heals): a pillar of light out of the circle at its feet */
-export function castSelf(i: number, t: TypeName, name: string, sig: boolean): Promise<void> {
+export function castSelf(i: number, t: TypeName, name: string, sig: boolean, id?: string): Promise<void> {
   if (reduced || !arena) return Promise.resolve();
   const mc = colOf(t), k = sig ? 1.3 : 1.1, dark = darken(i, mc, 0.6), f = anchor(i, 0.5, 0.9), c = anchor(i, 0.5, 0.45), top = anchor(i, 0.5, 0)[1];
   band(i, name, t, sig, mc);
+  /* a move with a scene of its own (data/move-fx.ts SELF_FX, ui/self-scenes.ts): its circle, then the scene */
+  const own = id ? SELF_FX[id] : undefined;
+  if (own) {
+    magicCircle(i, t, mc, 220 * k, 1300);
+    /* its pieces are as big as the caster: the one near the player is drawn bigger than the one far away */
+    const tall = body(i, 0.5, 1)[1] - body(i, 0.5, 0)[1], kk = k * Math.max(0.7, Math.min(1.5, tall / 150));
+    return SELF[own]({ i: i, t: t, mc: mc, k: kk }).then(function () { dark.off(480); });
+  }
   glow(i, mc, 1000);
   sfx('shimmer');
   magicCircle(i, t, mc, 240 * k, 1400);

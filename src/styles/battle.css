@@ -261,6 +261,45 @@
 .fx.sp-shadow { z-index: 1; border-radius: 50%; background: radial-gradient(closest-side, rgba(28, 35, 64, .7), rgba(28, 35, 64, 0)); }
 .fx.sp-column { z-index: 7; transform-origin: 50% 0; border-radius: 30% 30% 45% 45% / 4% 4% 10% 10%; box-shadow: 0 0 26px var(--mc);
   background: linear-gradient(90deg, color-mix(in srgb, var(--mc) 30%, transparent), var(--mc) 12%, #ffffff 42%, var(--mc) 58%, color-mix(in srgb, var(--mc) 80%, #1c2340) 88%, color-mix(in srgb, var(--mc) 30%, transparent)); outline: 3px solid rgba(28, 35, 64, .5); outline-offset: -3px; }
+/* the other scenes (ui/move-scenes.ts): a full moon, a shadow, a lighthouse, heat, a whirlwind, rock, words, the aurora, a tower, a photograph */
+.fx.sp-big { z-index: 7; }
+.sp-big > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.sp-glow svg { filter: drop-shadow(0 0 10px var(--mc, #ffffff)); }
+.fx.sp-fullmoon { z-index: 1; }
+.sp-fullmoon > svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 0 26px #e6f4ff); }
+.sp-shade > svg { filter: drop-shadow(0 0 14px rgba(26, 21, 48, .8)); }
+.fx.sp-lighthouse { z-index: 1; }
+.sp-lighthouse > svg { filter: drop-shadow(0 0 12px #fff6c8); }
+.fx.sp-heat { mix-blend-mode: screen; }
+.sp-twister > svg { filter: drop-shadow(0 0 10px #ffffff); }
+.sp-pyre > svg { filter: drop-shadow(0 0 16px #ffffff); }
+.sp-crumb { display: block; width: 7px; height: 7px; border-radius: 2px; background: #f0bd6e; box-shadow: 0 0 0 1.5px #1c2340; }
+.sp-crumb.b { background: #7ccf5a; }
+.fx.sp-wordp { z-index: 8; }
+.sp-word { display: block; font: 34px/1 var(--font-display); font-weight: normal; letter-spacing: .03em; white-space: nowrap; color: #ffffff;
+  -webkit-text-stroke: 2px #1c2340; paint-order: stroke fill; text-shadow: 0 0 16px var(--mc), 0 3px 0 #1c2340; }
+.fx.sp-ribbon { z-index: 6; border-radius: 40% 40% 50% 50% / 6% 6% 18% 18%; mix-blend-mode: screen; filter: blur(2px);
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--mc) 70%, transparent) 22%, color-mix(in srgb, var(--mc) 85%, #ffffff) 62%, transparent); }
+.sp-tower > svg { filter: drop-shadow(0 4px 0 rgba(28, 35, 64, .35)); }
+.sp-photo > svg { filter: drop-shadow(0 8px 12px rgba(28, 35, 64, .5)); }
+.sp-scrap { display: block; width: 18px; height: 13px; border-radius: 2px; background: #f3e6c8; box-shadow: 0 0 0 2px #1c2340; }
+.sp-scrap.b { background: #d8b98a; }
+.sp-beak > svg { filter: drop-shadow(0 0 6px #ffffff); }
+.mover.sepia .spr { animation: sepia 1.1s ease-in-out; }
+@keyframes sepia { 15%, 80% { filter: sepia(1) saturate(.65) brightness(1.05) contrast(.92); } }
+/* the scenes of the moves on oneself (ui/self-scenes.ts): a shell, a veil, a bulb, a book, an hourglass, a door, gates, oil */
+.sp-valve > svg { filter: drop-shadow(0 0 12px #f6eefc); }
+.fx.sp-cloth { z-index: 7; border-radius: 46% 46% 30% 30% / 14% 14% 8% 8%; mix-blend-mode: hard-light;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--mc) 40%, #8a8070), color-mix(in srgb, var(--mc) 20%, #b8ab94) 50%, transparent); }
+.sp-bulb > svg { filter: drop-shadow(0 0 14px #fff7c2); }
+.sp-tome > svg { filter: drop-shadow(0 4px 0 rgba(28, 35, 64, .35)); }
+.sp-glyph { display: block; font: 26px/1 Georgia, serif; font-weight: bold; color: #ffffff; -webkit-text-stroke: 1.5px #1c2340; paint-order: stroke fill; text-shadow: 0 0 10px var(--mc); }
+.sp-glass > svg, .sp-door > svg, .sp-gate > svg { filter: drop-shadow(0 4px 0 rgba(28, 35, 64, .3)); }
+.fx.sp-door, .fx.sp-gate { z-index: 7; }
+.sp-goldbit { display: block; width: 9px; height: 9px; border-radius: 50%; background: #e8d44a; box-shadow: 0 0 8px #fff3a0, 0 0 0 1.5px #1c2340; }
+.sp-goldbit.b { background: #fff3a0; }
+.mover.gilded .spr { animation: gilded 1s ease-out; }
+@keyframes gilded { 25%, 65% { filter: sepia(.6) saturate(2.4) brightness(1.2) drop-shadow(0 0 16px #e8d44a); } }
 /* the move's name, on a band across the arena */
 .fx.sp-band { left: 0; right: 0; top: 50%; z-index: 8; display: flex; justify-content: center; padding-block: 10px 12px; transform-origin: 50% 50%;
   background: linear-gradient(90deg, transparent, rgba(12, 14, 40, .9) 14%, rgba(12, 14, 40, .9) 86%, transparent); border-block: 3px solid var(--mc);

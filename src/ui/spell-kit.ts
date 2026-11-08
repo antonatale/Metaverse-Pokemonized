@@ -1,10 +1,11 @@
 import type { TypeName } from '../data/types';
-import type { Take } from '../data/move-fx';
+import type { Take, Prop } from '../data/move-fx';
+import { PROPS } from './move-props';
 import { MAGIC } from '../render/svg/creatures';
 import { $ } from './dom';
 import { battle } from './common';
 import { arena } from './battle-screen';
-import { fx, animate, anchor, shape, SHAPE } from './effects';
+import { fx, animate, anchor, shape, SHAPE, pulse, sparks, wob } from './effects';
 
 /* What every move's show is drawn with (ui/spells.ts the shows of the types, ui/move-stages.ts the scenes of the moves):
    points on the arena and on the fighters' bodies, curves, pieces placed by their transform, lines drawn in one
@@ -162,4 +163,82 @@ export function takes(to: number, come: Take, k: number): Promise<unknown> {
   };
   const f = F[come];
   return animate(m, f[0], { duration: f[1], easing: 'ease-out' });
+}
+
+/* ---------- what every scene is given (ui/move-stages.ts, ui/move-scenes.ts) ---------- */
+export interface Ctx {
+  from: number; to: number;
+  /** where it lands: the body of the one hit, or past it for a miss */
+  end: P;
+  /** the body of the one hit */
+  b: P;
+  /** the move's type; null for a plain move */
+  c: Cast; t: TypeName | null; mc: string;
+  /** how grand: 1 for a small move, up to about 1.8 */
+  k: number;
+  /** how many (bites, dolphins, quills, tentacles, bolts) */
+  n: number;
+  miss: boolean;
+  /** what it is made of, if not the type's shapes; the words it throws; the wave the other way round */
+  prop?: Prop; words?: string[]; rev?: boolean;
+}
+export interface StageDef {
+  run(x: Ctx): Promise<void>;
+  /** how the one hit takes it */
+  foe: Take;
+  /** a quick blow: no dark and no magic circle before it, only the name */
+  quick?: boolean;
+  n?: number;
+  /** the scene draws its own impact: no type's hit after it */
+  impact?: boolean;
+  /** it stays on the caster (Saltello): nothing lands on the foe, not even a hex */
+  self?: boolean;
+}
+export const mv = (i: number) => $('m-' + i);
+/** which way the move goes on the screen: 1 to the right */
+export const way = (x: Ctx) => (x.b[0] >= body(x.from, 0.5, 0.5)[0] ? 1 : -1);
+/** the one hit takes the colour of the magic for a moment, as after every type's hit (a plain move: a white flash) */
+const TINT: Record<TypeName, string> = { Calma: 'chill', Caos: 'zapped', Cervello: 'dazed', Chiacchiera: 'dazed', Cuore: 'smitten', Corrente: 'soaked', Calore: 'scorched', Cielo: 'gusted', Corazza: 'stoned', Crepuscolo: 'shadowed' };
+export function tint(x: Ctx) { const m = mv(x.to); if (m && !x.miss) pulse(m, x.t ? TINT[x.t] : 'flash', 760); }
+/** a piece of what the move is made of: its own (a rune, a fish, a feather), or its type's */
+export function pc(x: Ctx, col: string, s: number): string {
+  return x.prop ? PROPS[x.prop](col, s) : x.t ? bit(x.t, col, s) : PROPS.spark(col, s);
+}
+/** bits of the move flung out from a point */
+export function burst(x: Ctx, p: P, n: number, spread: number, ms: number) {
+  sparks(p[0], p[1], n, function (q) { return pc(x, q % 3 ? x.mc : '#ffffff', 16 + (q % 3) * 6); }, spread * x.k, ms);
+}
+
+/* ---------- drawings shared by the types' shows and the scenes ---------- */
+/** a jagged line from one point to another, for lightning */
+export function boltPath(x1: number, y1: number, x2: number, y2: number, n: number, jag: number): string {
+  let d = 'M' + x1.toFixed(1) + ' ' + y1.toFixed(1);
+  for (let s = 1; s < n; s++) {
+    const t = s / n, off = (wob() - 0.5) * jag * (1 - Math.abs(0.5 - t));
+    d += ' L' + (lerp(x1, x2, t) + off).toFixed(1) + ' ' + lerp(y1, y2, t).toFixed(1);
+  }
+  return d + ' L' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+}
+/** a dark cloud of a storm */
+export function stormCloud(): string {
+  return '<svg viewBox="0 0 220 110" aria-hidden="true"><g fill="#4a4f7a" stroke="' + INK + '" stroke-width="5">' +
+    '<circle cx="62" cy="62" r="34"/><circle cx="108" cy="44" r="40"/><circle cx="156" cy="60" r="34"/><rect x="40" y="58" width="140" height="38" rx="19"/></g>' +
+    '<g fill="#5d6394"><circle cx="62" cy="62" r="30"/><circle cx="108" cy="44" r="36"/><circle cx="156" cy="60" r="30"/><rect x="44" y="60" width="132" height="32" rx="16"/></g>' +
+    '<path d="M70 40Q86 22 108 26" fill="none" stroke="#8d93c4" stroke-width="6" stroke-linecap="round"/></svg>';
+}
+/** a whirlwind of rings, wide at the top */
+export function tornado(mc: string): string {
+  let s = '<svg viewBox="0 0 120 200" aria-hidden="true" fill="none" stroke-linecap="round">';
+  for (let q = 0; q < 7; q++) {
+    const y = 20 + q * 26, rx = lerp(54, 10, q / 6), ry = lerp(12, 4, q / 6), dx = Math.sin(q * 1.3) * 6;
+    s += '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + INK + '" stroke-width="7"/>' +
+      '<ellipse cx="' + (60 + dx).toFixed(1) + '" cy="' + y + '" rx="' + rx.toFixed(1) + '" ry="' + ry.toFixed(1) + '" stroke="' + (q % 2 ? '#ffffff' : mc) + '" stroke-width="4"/>';
+  }
+  return s + '</svg>';
+}
+/** a starburst, for a blow that lands */
+export function boom(mc: string): string {
+  let d0 = '';
+  for (let q = 0; q < 14; q++) { const a = q / 14 * Math.PI * 2, r = q % 2 ? 40 : 96; d0 += (q ? ' L' : 'M') + (100 + Math.cos(a) * r).toFixed(1) + ' ' + (100 + Math.sin(a) * r).toFixed(1); }
+  return '<svg viewBox="0 0 200 200" aria-hidden="true"><path d="' + d0 + 'Z" fill="#ffffff" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/><path d="' + d0 + 'Z" fill="' + mc + '" transform="translate(100 100) scale(.55) translate(-100 -100)"/></svg>';
 }

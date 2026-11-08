@@ -1,50 +1,15 @@
-import type { TypeName } from '../data/types';
-import type { Stage, Take } from '../data/move-fx';
-import { $ } from './dom';
+import type { Stage } from '../data/move-fx';
 import { sleep } from './common';
-import { animate, anchor, ring, sparks, flashAt, shape, pulse, streaks } from './effects';
+import { animate, anchor, ring, sparks, flashAt, streaks } from './effects';
 import { sfx } from '../audio';
-import { INK, type Cast, type P, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, pieceIn, layer, beam, trace, fade, wide, bit } from './spell-kit';
+import { SCENES } from './move-scenes';
+import { INK, type Ctx, type StageDef, type P, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, pieceIn, layer, beam, trace, fade, wide, mv, way, tint, pc, burst, boom } from './spell-kit';
 
 /* The scenes of the moves (data/move-fx.ts): what happens, whatever the move is made of. A scene takes its colour and its
    pieces from the type (water is drops, the others their shapes), and resolves on the impact, so the damage number and
    the HP bar land on it; it can go on after that (a wave runs off the arena, quills burst). A scene of its own draws its
    impact too (`impact`); the five gestures every type can make end with their type's hit (HIT in ui/spells.ts).
    Only drawing, and never Math.random. */
-
-export interface Ctx {
-  from: number; to: number;
-  /** where it lands: the body of the one hit, or past it for a miss */
-  end: P;
-  /** the body of the one hit */
-  b: P;
-  c: Cast; t: TypeName; mc: string;
-  /** how grand: 1 for a small move, up to about 1.8 */
-  k: number;
-  /** how many (bites, dolphins, quills, tentacles) */
-  n: number;
-  miss: boolean;
-}
-export interface StageDef {
-  run(x: Ctx): Promise<void>;
-  /** how the one hit takes it */
-  foe: Take;
-  /** a quick blow: no dark and no magic circle before it, only the name */
-  quick?: boolean;
-  n?: number;
-  /** the scene draws its own impact: no type's hit after it */
-  impact?: boolean;
-}
-const mv = (i: number) => $('m-' + i);
-/** which way the move goes on the screen: 1 to the right */
-const way = (x: Ctx) => (x.b[0] >= body(x.from, 0.5, 0.5)[0] ? 1 : -1);
-/** the one hit takes the colour of the magic for a moment, as after every type's hit */
-const TINT: Record<TypeName, string> = { Calma: 'chill', Caos: 'zapped', Cervello: 'dazed', Chiacchiera: 'dazed', Cuore: 'smitten', Corrente: 'soaked', Calore: 'scorched', Cielo: 'gusted', Corazza: 'stoned', Crepuscolo: 'shadowed' };
-function tint(x: Ctx) { const m = mv(x.to); if (m && !x.miss) pulse(m, TINT[x.t], 760); }
-/** bits of the move flung out from a point */
-function burst(x: Ctx, p: P, n: number, spread: number, ms: number) {
-  sparks(p[0], p[1], n, function (q) { return bit(x.t, q % 3 ? x.mc : '#ffffff', 16 + (q % 3) * 6); }, spread * x.k, ms);
-}
 
 /* ---------- the gestures every type can make ---------- */
 /** a cut across the foe: the caster dashes in, two strokes of the move's colour cross, the type's shape bursts at the middle */
@@ -57,7 +22,7 @@ function slash(x: Ctx): Promise<void> {
     const r = 62 * k, px = end[0], py = end[1];
     const L = layer(beam('M' + (px + r).toFixed(1) + ' ' + (py - r).toFixed(1) + ' L' + (px - r).toFixed(1) + ' ' + (py + r).toFixed(1), x.mc, 9 * k) + beam('M' + (px - r).toFixed(1) + ' ' + (py - r * 0.8).toFixed(1) + ' L' + (px + r).toFixed(1) + ' ' + (py + r * 0.8).toFixed(1), x.mc, 9 * k));
     trace(L, 150).then(function () { fade(L, 280, 60); });
-    const s = piece(shape(x.t, '#ffffff', Math.round(44 * k)), 'sp-star');
+    const s = piece(pc(x, '#ffffff', Math.round(44 * k)), 'sp-star');
     animate(s, [{ transform: tr(end) + ' scale(.3) rotate(-25deg)', opacity: 1 }, { transform: tr(end) + ' scale(1.5) rotate(25deg)', opacity: 0 }], { duration: 380, delay: 90, easing: 'ease-out', fill: 'both' }).then(gone(s));
   });
 }
@@ -66,7 +31,7 @@ function rain(x: Ctx): Promise<void> {
   const n = 7, end = x.end, k = x.k;
   sfx('whoosh');
   for (let q = 0; q < n; q++) {
-    const x0 = end[0] + (q - 3) * 40 * k + 120 * k, x1 = end[0] + (q - 3) * 24 * k, el = piece(shape(x.t, q % 2 ? '#ffffff' : x.mc, Math.round(28 * k)), 'sp-star');
+    const x0 = end[0] + (q - 3) * 40 * k + 120 * k, x1 = end[0] + (q - 3) * 24 * k, el = piece(pc(x, q % 2 ? '#ffffff' : x.mc, Math.round(28 * k)), 'sp-star');
     animate(el, [{ transform: tr([x0, -30]) + ' scale(.6) rotate(0deg)', opacity: 0 }, { transform: tr([lerp(x0, x1, 0.3), lerp(-30, end[1], 0.3)]) + ' scale(1) rotate(120deg)', opacity: 1, offset: 0.3 },
       { transform: tr([x1, end[1]]) + ' scale(1.1) rotate(300deg)', opacity: 1 }], { duration: 340, delay: q * 55, easing: 'ease-in', fill: 'both' }).then(function () {
       el.remove(); if (!x.miss) flashAt(x1, end[1], x.mc, 110 * k, 200);
@@ -79,7 +44,7 @@ function orbit(x: Ctx): Promise<void> {
   const f = body(x.from, 0.5, 0.4), n = 7, els: HTMLElement[] = [], k = x.k;
   const pos = (s: number, q: number): P => { const a = s / n * Math.PI * 2 + q * Math.PI * 2 * 1.4; return [f[0] + Math.cos(a) * 70 * k, f[1] + Math.sin(a) * 34 * k]; };
   for (let s = 0; s < n; s++) {
-    const el = piece(shape(x.t, s % 2 ? '#ffffff' : x.mc, Math.round(26 * k)), 'sp-star'), fr: Keyframe[] = [];
+    const el = piece(pc(x, s % 2 ? '#ffffff' : x.mc, Math.round(26 * k)), 'sp-star'), fr: Keyframe[] = [];
     for (let q = 0; q <= 10; q++) fr.push({ transform: tr(pos(s, q / 10)) + ' scale(' + lerp(0.4, 1, q / 10).toFixed(2) + ')', opacity: Math.min(1, q / 3) });
     animate(el, fr, { duration: 480, easing: 'linear', fill: 'both' });
     els.push(el);
@@ -99,7 +64,7 @@ function ray(x: Ctx): Promise<void> {
   sfx('magic');
   return trace(L, 260).then(function () {
     if (!x.miss) {
-      const s = piece(shape(x.t, '#ffffff', Math.round(54 * x.k)), 'sp-star');
+      const s = piece(pc(x, '#ffffff', Math.round(54 * x.k)), 'sp-star');
       animate(s, [{ transform: tr(x.end) + ' scale(.4)', opacity: 1 }, { transform: tr(x.end) + ' scale(1.6)', opacity: 0 }], { duration: 320, easing: 'ease-out', fill: 'both' }).then(gone(s));
     }
     fade(L, 300, 60);
@@ -107,7 +72,7 @@ function ray(x: Ctx): Promise<void> {
 }
 /** a lob: one big shape thrown high over the arena, turning as it goes */
 function lob(x: Ctx): Promise<void> {
-  const f = body(x.from, 0.5, 0.4), cv = curve(f, x.end, 150 * x.k), el = piece(shape(x.t, x.mc, Math.round(46 * x.k)), 'sp-star');
+  const f = body(x.from, 0.5, 0.4), cv = curve(f, x.end, 150 * x.k), el = piece(pc(x, x.mc, Math.round(46 * x.k)), 'sp-star');
   sfx('whoosh');
   return animate(el, along(cv.at, 12, function (s) { return 'scale(' + lerp(0.7, 1.25, Math.sin(s * Math.PI)).toFixed(2) + ') rotate(' + (s * 540).toFixed(0) + 'deg)'; }, function (s) { return x.miss && s > 0.94 ? 0 : 1; }),
     { duration: 560, easing: 'ease-in', fill: 'both' }).then(gone(el)) as Promise<void>;
@@ -125,14 +90,15 @@ function wallSvg(mc: string): string {
     '<path d="M60 42C72 30 88 28 96 40" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"' + ns + '/></svg>';
 }
 function tide(x: Ctx): Promise<void> {
-  const z = size(), room = wide(), d = way(x), k = x.k, H = z.h * 1.08, W = Math.min(z.w * 0.5, H * 0.8);
+  /* the other way round (Risacca): the wave comes back from behind the one hit, and nobody rides it */
+  const z = size(), room = wide(), d = way(x) * (x.rev ? -1 : 1), k = x.k, H = z.h * 1.08, W = Math.min(z.w * 0.5, H * 0.8);
   const a = body(x.from, 0.5, 0.5), g = anchor(x.from, 0.5, 0.92), y = z.h + 4 - H / 2;
   const x0 = d > 0 ? -W * 0.55 : z.w + W * 0.55, x1 = d > 0 ? z.w + W * 0.75 : -W * 0.75, D = 1200;
   /* the time the crest (a little behind the front) reaches a point */
   const when = function (px: number) { return Math.max(0, Math.min(1, (px - d * W * 0.2 - x0) / (x1 - x0))) * D; };
   /* the sea rises at the caster's feet first */
   for (let q = 0; q < 3; q++) sleep(q * 110).then(function () { ring(g[0], g[1], q % 2 ? '#ffffff' : x.mc, 220 * k, 640, true); });
-  sparks(g[0], g[1] - 10, 8, function (q) { return bit(x.t, q % 3 ? x.mc : '#ffffff', 14 + (q % 3) * 4); }, 90 * k, 600);
+  sparks(g[0], g[1] - 10, 8, function (q) { return pc(x, q % 3 ? x.mc : '#ffffff', 14 + (q % 3) * 4); }, 90 * k, 600);
   const flip = d < 0 ? ' scaleX(-1)' : '', fr: Keyframe[] = [];
   for (let q = 0; q <= 12; q++) { const t = q / 12; fr.push({ transform: tr([lerp(x0, x1, t), y + Math.sin(t * Math.PI * 3) * 6]) + flip, opacity: t < 0.06 ? t / 0.06 : t > 0.92 ? (1 - t) / 0.08 : 1 }); }
   sleep(260).then(function () {
@@ -144,7 +110,7 @@ function tide(x: Ctx): Promise<void> {
     for (let q = 1; q <= 10; q++) sleep(q * D / 11).then(function () { const px = lerp(x0, x1, q / 11) + d * W * 0.45; if (px > -20 && px < z.w + 20) burst(x, [px, z.h * 0.42 + (q % 3) * 40], 3, 60, 520); });
     /* the caster is lifted by it and rides the crest for a while */
     const m = mv(x.from), t0 = when(a[0]) / D, t1 = Math.min(0.95, when(x.b[0]) / D);
-    if (m) animate(m, [{ transform: 'none', offset: 0 }, { transform: 'none', offset: Math.max(0.01, t0 - 0.06) }, { transform: 'translate(0,' + (-0.32 * H).toFixed(0) + 'px) rotate(' + d * 6 + 'deg)', offset: Math.min(t1 - 0.02, t0 + 0.12) },
+    if (m && !x.rev) animate(m, [{ transform: 'none', offset: 0 }, { transform: 'none', offset: Math.max(0.01, t0 - 0.06) }, { transform: 'translate(0,' + (-0.32 * H).toFixed(0) + 'px) rotate(' + d * 6 + 'deg)', offset: Math.min(t1 - 0.02, t0 + 0.12) },
       { transform: 'translate(' + (d * Math.abs(x.b[0] - a[0]) * 0.35).toFixed(0) + 'px,' + (-0.36 * H).toFixed(0) + 'px) rotate(' + d * 10 + 'deg)', offset: t1 }, { transform: 'none' }], { duration: D, easing: 'ease-in-out' });
   });
   return sleep(260 + when(x.end[0])).then(function () {
@@ -188,7 +154,7 @@ function jaws(x: Ctx): Promise<void> {
   });
   return sleep(lead + (x.n - 1) * step + 130).then(function () {
     if (x.miss) return;
-    sparks(p[0], p[1], 8, function (q) { return shape(x.t, q % 2 ? '#ffffff' : x.mc, 20); }, 130 * k, 640);
+    sparks(p[0], p[1], 8, function (q) { return pc(x, q % 2 ? '#ffffff' : x.mc, 20); }, 130 * k, 640);
     tint(x);
   });
 }
@@ -339,7 +305,7 @@ function sting(x: Ctx): Promise<void> {
       for (let q = 0; q < 3; q++) sleep(q * 110).then(function () {
         const s: P = [x.b[0] + (q - 1) * 26 * k, x.b[1] + (q % 2 ? -18 : 14) * k];
         flashAt(s[0], s[1], x.mc, 110 * k, 200);
-        sparks(s[0], s[1], 4, function (r) { return shape(x.t, r % 2 ? '#ffffff' : x.mc, 14); }, 50 * k, 360);
+        sparks(s[0], s[1], 4, function (r) { return pc(x, r % 2 ? '#ffffff' : x.mc, 14); }, 50 * k, 360);
       });
       sfx('shake');
       tint(x);
@@ -353,7 +319,7 @@ function jet(x: Ctx): Promise<void> {
   const L = layer('<path d="' + dd + '" pathLength="1" stroke="' + x.mc + '" stroke-width="' + (34 * k).toFixed(1) + '" opacity=".25"/>' + beam(dd, x.mc, 17 * k));
   /* what it is made of runs along it */
   for (let q = 0; q < 9; q++) sleep(q * 60).then(function () {
-    const el = piece(bit(x.t, q % 2 ? '#ffffff' : x.mc, Math.round(18 * k)), 'sp-star');
+    const el = piece(pc(x, q % 2 ? '#ffffff' : x.mc, Math.round(18 * k)), 'sp-star');
     animate(el, [{ transform: tr(f) + ' scale(.6)', opacity: 0.9 }, { transform: tr(e) + ' scale(1.1)', opacity: x.miss ? 0 : 1 }], { duration: 200, easing: 'linear', fill: 'both' }).then(gone(el));
   });
   return trace(L, 150).then(function () {
@@ -365,12 +331,6 @@ function jet(x: Ctx): Promise<void> {
     ring(e[0], e[1], x.mc, 200 * k, 480);
     tint(x);
   });
-}
-/** a starburst, for a blow that lands */
-function boom(mc: string): string {
-  let d0 = '';
-  for (let q = 0; q < 14; q++) { const a = q / 14 * Math.PI * 2, r = q % 2 ? 40 : 96; d0 += (q ? ' L' : 'M') + (100 + Math.cos(a) * r).toFixed(1) + ' ' + (100 + Math.sin(a) * r).toFixed(1); }
-  return '<svg viewBox="0 0 200 200" aria-hidden="true"><path d="' + d0 + 'Z" fill="#ffffff" stroke="' + INK + '" stroke-width="6" stroke-linejoin="round"/><path d="' + d0 + 'Z" fill="' + mc + '" transform="translate(100 100) scale(.55) translate(-100 -100)"/></svg>';
 }
 /** the caster runs at the one hit itself and bounces off (a charge: no circle, it just goes) */
 function ram(x: Ctx): Promise<void> {
@@ -426,7 +386,7 @@ function fall(x: Ctx): Promise<void> {
     { duration: grow + hold + 300, delay: 160, easing: 'ease-in', fill: 'both' }).then(gone(col));
   /* what it is made of pours down inside it */
   for (let q = 0; q < 10; q++) sleep(160 + q * 55).then(function () {
-    const px = p[0] + ((q * 37) % 7 - 3) * w * 0.1, el = piece(bit(x.t, q % 2 ? '#ffffff' : x.mc, Math.round(20 * k)), 'sp-star');
+    const px = p[0] + ((q * 37) % 7 - 3) * w * 0.1, el = piece(pc(x, q % 2 ? '#ffffff' : x.mc, Math.round(20 * k)), 'sp-star');
     animate(el, [{ transform: tr([px, top]) + ' scale(.8)', opacity: 1 }, { transform: tr([px, bottom - 10]) + ' scale(1.1)', opacity: 0.2 }], { duration: 260, easing: 'ease-in', fill: 'both' }).then(gone(el));
   });
   return sleep(160 + grow).then(function () {
@@ -451,5 +411,7 @@ export const STAGES: Record<Stage, StageDef> = {
   jet: { run: jet, foe: 'recoil', impact: true },
   ram: { run: ram, foe: 'recoil', quick: true, impact: true },
   dive: { run: dive, foe: 'squash', quick: true, impact: true },
-  fall: { run: fall, foe: 'sink', impact: true }
+  fall: { run: fall, foe: 'sink', impact: true },
+  /* the others, in ui/move-scenes.ts */
+  ...SCENES
 };
