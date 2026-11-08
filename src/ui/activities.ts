@@ -20,6 +20,7 @@ function play(id: string, n: Npc) {
   else if (id === 'volley') playRally(n, VOLLEY);
   else if (id === 'padel') playRally(n, PADEL);
   else if (id === 'windsurf') windsurf(n);
+  else if (id === 'canoa') canoe(n);
   else if (id === 'lettino') lettino(n);
   else if (id === 'gelato') gelato(n);
   else if (id === 'quiz') quiz(n);
@@ -229,6 +230,118 @@ function windsurf(n: Npc) {
     say(m >= 200 ? ['Questo è livello campionato!', 'Domani ti porto al largo, fino a Gianola.']
       : m >= 60 ? ['Bella planata! Con la termica di Vindicio si vola.', 'La prossima volta lavoriamo sulla strambata.']
         : ['In acqua! Succede a tutti, anche a me le prime volte.', 'Risali sulla tavola: più tieni la vela, più vai veloce.'], n.name);
+  });
+  draw();
+  raf = requestAnimationFrame(frame);
+}
+
+/* ---------- a canoe at the Lido Oriente: out to the red buoy and back to the shore. A stroke on the left, one on the
+   right: in turn, the canoe runs straight; twice on the same side, it turns and slows down. The rhythm counts more than
+   the speed, and a light current pushes the bow aside now and then (a fixed wave, not chance). ---------- */
+function canoe(n: Npc) {
+  const best0 = bestOf('canoa'), k0 = timesDone('canoa'), fmt = (s: number) => s.toFixed(1).replace('.', ',') + ' s';
+  sheet('<div class="award mg" role="dialog" aria-modal="true" aria-labelledby="mg-t">' +
+    '<h2 id="mg-t">In canoa al Lido Oriente</h2>' +
+    '<p>Pagaia una volta a sinistra e una a destra: ← e → (o A e D), o tocca la metà sinistra e la metà destra del mare. Due colpi dalla stessa parte e la canoa gira. Fino alla boa rossa, e di nuovo a riva.</p>' +
+    '<canvas class="mg-court" id="mg-c" width="320" height="120" aria-label="Il mare davanti al Lido Oriente, con la canoa e la boa"></canvas>' +
+    '<p class="mg-score" id="mg-s" aria-live="polite">Tempo: 0,0 s' + (best0 ? ' · record ' + fmt(best0) : '') + '</p>' +
+    '<button class="btn" type="button" id="mg-x">Basta così</button></div>', 'result');
+  const cv = $('mg-c') as HTMLCanvasElement, c = cv.getContext('2d')!, scoreEl = $('mg-s');
+  const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 320, Hc = 120;
+  cv.width = Wc * dpr; cv.height = Hc * dpr; cv.style.width = '100%'; cv.style.maxWidth = Wc + 'px';
+  const col = { sea: css('--m-sea', '#a7d8f2'), sea2: css('--m-sea2', '#79bde6'), foam: css('--m-foam', '#ffffff'), ink: css('--m-ink', '#1f2c6e'),
+    sand: css('--m-sand', '#f3dfae'), warn: css('--red', '#c8372d'), sky: css('--m-paper', '#f7f6f0'), far: css('--m-far2', '#b0bed9') };
+  /* pos: 0 at the shore, 1 at the buoy, 2 back at the shore; yaw: how far the bow points off the line */
+  let pos = 0, v = 0, yaw = 0, side = 0, t = 0, over = false, raf = 0, last = performance.now(), blade = 0, msg = '', shown = '';
+  const LIMIT = 90;
+  function draw() {
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.fillStyle = col.sky; c.fillRect(0, 0, Wc, 26);
+    /* Monte di Scauri and the hills of the Garigliano on the horizon */
+    c.fillStyle = col.far; c.beginPath(); c.moveTo(150, 26); c.quadraticCurveTo(210, 8, 260, 18); c.quadraticCurveTo(290, 12, 320, 22); c.lineTo(320, 26); c.closePath(); c.fill();
+    c.fillStyle = col.sea; c.fillRect(0, 26, Wc, Hc - 26);
+    /* the beach of the lido on the left, with its umbrellas */
+    c.fillStyle = col.sand; c.beginPath(); c.moveTo(0, 26); c.lineTo(34, 26); c.quadraticCurveTo(44, 70, 30, Hc); c.lineTo(0, Hc); c.closePath(); c.fill();
+    for (let k = 0; k < 3; k++) { const ux = 12, uy = 40 + k * 28; c.strokeStyle = col.ink; c.lineWidth = 1.5; c.beginPath(); c.moveTo(ux, uy); c.lineTo(ux, uy + 12); c.stroke();
+      c.fillStyle = k % 2 ? '#8fd0f6' : '#ff8a6a'; c.beginPath(); c.moveTo(ux - 9, uy + 2); c.quadraticCurveTo(ux, uy - 10, ux + 9, uy + 2); c.closePath(); c.fill(); c.stroke(); }
+    c.strokeStyle = col.sea2; c.lineWidth = 2;
+    const off = (t * 12) % 40;
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) { const wx = 40 + k * 36 - off + (r % 2) * 18, wy = 38 + r * 20; c.beginPath(); c.moveTo(wx, wy); c.quadraticCurveTo(wx + 7, wy - 4, wx + 14, wy); c.stroke(); }
+    /* the red buoy */
+    const bxy = [292, 70];
+    c.fillStyle = col.warn; c.beginPath(); c.arc(bxy[0], bxy[1], 7, 0, Math.PI * 2); c.fill(); c.strokeStyle = col.ink; c.lineWidth = 1.6; c.stroke();
+    c.fillStyle = '#ffffff'; c.fillRect(bxy[0] - 7, bxy[1] - 1.5, 14, 3);
+    /* the canoe: out to the right, back to the left; it leans with the yaw */
+    const back = pos > 1, x = 50 + (back ? 2 - pos : pos) * 228, y = 74 + Math.sin(t * 2) * 1.5 + yaw * 10, dir = back ? -1 : 1;
+    c.save(); c.translate(x, y); c.rotate(yaw * 0.5 * dir); c.scale(dir, 1);
+    if (v > 0.15) { c.strokeStyle = col.foam; c.lineWidth = 2; c.beginPath(); c.moveTo(-30, 2); c.lineTo(-48 - v * 10, 6); c.moveTo(-30, -2); c.lineTo(-48 - v * 10, -6); c.stroke(); }
+    c.beginPath(); c.moveTo(-28, 0); c.quadraticCurveTo(0, -9, 28, 0); c.quadraticCurveTo(0, 9, -28, 0); c.closePath(); c.fillStyle = '#ff6a4a'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2); c.fillStyle = '#20263a'; c.fill();
+    /* the paddler and the paddle, its blade in the water on the side of the last stroke */
+    c.beginPath(); c.arc(0, -9, 5, 0, Math.PI * 2); c.fillStyle = '#c48f6c'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 1.5; c.stroke();
+    const sw = blade > 0 ? side * dir : 0, a = sw * 0.6;
+    c.strokeStyle = col.ink; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-Math.cos(a) * 18, -4 - Math.sin(a) * 14); c.lineTo(Math.cos(a) * 18, -4 + Math.sin(a) * 14); c.stroke();
+    c.restore();
+    if (blade > 0) { c.fillStyle = col.foam; c.globalAlpha = blade; c.beginPath(); c.arc(x + side * 6, y + side * 14, 4 + (1 - blade) * 6, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
+    if (msg) {
+      c.font = '15px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+      const tw = c.measureText(msg).width + 16;
+      c.fillStyle = col.sky; c.beginPath(); c.roundRect(Wc / 2 - tw / 2, 30, tw, 22, 6); c.fill(); c.strokeStyle = col.ink; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = col.ink; c.fillText(msg, Wc / 2 - tw / 2 + 8, 41.5);
+    }
+  }
+  function frame(now: number) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!over) {
+      t += dt;
+      /* the water slows the canoe; the current pushes the bow aside, a little more each time out */
+      v *= Math.exp(-dt * 0.8);
+      yaw += Math.sin(t * 0.9 + k0) * 0.12 * dt;
+      yaw = Math.max(-1, Math.min(1, yaw));
+      const was = pos;
+      pos += v * dt * 0.075 * Math.cos(yaw * 1.1);
+      if (was < 1 && pos >= 1) { msg = 'Giro di boa!'; sfx('pickup'); setTimeout(function () { if (msg === 'Giro di boa!') msg = ''; }, 900); }
+      blade = Math.max(0, blade - dt * 3);
+      if (pos >= 2) finish(true);
+      else if (t >= LIMIT) finish(false);
+      const s = fmt(t);
+      if (!over && s !== shown) { shown = s; scoreEl.textContent = 'Tempo: ' + s + (best0 ? ' · record ' + fmt(best0) : ''); }
+    }
+    draw();
+    if (!over) raf = requestAnimationFrame(frame);
+  }
+  /* a stroke: on the other side from the last one it pushes and straightens the bow; on the same side it turns it */
+  function stroke(s: number) {
+    if (over) return;
+    if (s === side) { yaw += s * 0.32; v *= 0.7; sfx('dodge'); }
+    else { v = Math.min(9, v + 1.6 * (1 - Math.abs(yaw) * 0.5)); yaw *= 0.55; sfx('whoosh'); }
+    side = s; blade = 1;
+  }
+  function finish(done: boolean) {
+    over = true; cancelAnimationFrame(raf);
+    const secs = Math.round(t * 10) / 10, better = done && record('canoa', secs);
+    if (!done) record('canoa');
+    msg = done ? 'A riva!' : 'Tempo scaduto';
+    draw();
+    if (better) sfx('badge');
+    scoreEl.textContent = done ? 'Fine: ' + fmt(secs) + (better ? ' · nuovo record!' : best0 ? ' · record ' + fmt(best0) : '') : 'Tempo scaduto: la boa era lì.';
+    const x0 = $('mg-x'); x0.textContent = 'Continua'; x0.focus();
+  }
+  const key = function (e: KeyboardEvent) {
+    const k = e.key.toLowerCase(), s = k === 'arrowleft' || k === 'a' ? -1 : k === 'arrowright' || k === 'd' ? 1 : 0;
+    if (!s) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) stroke(s);
+  };
+  document.addEventListener('keydown', key, true);
+  cv.addEventListener('pointerdown', function (e) { e.preventDefault(); const r = cv.getBoundingClientRect(); stroke(e.clientX - r.left < r.width / 2 ? -1 : 1); });
+  $('mg-x').addEventListener('click', function () {
+    const quit = !over;
+    if (quit) { over = true; cancelAnimationFrame(raf); }
+    document.removeEventListener('keydown', key, true);
+    closeSheet();
+    const secs = Math.round(t * 10) / 10;
+    say(quit ? ['Già a riva? La canoa è qui, quando vuoi.'] : pos < 2 ? ['La boa scappa, eh? Una a destra, una a sinistra: è tutto lì.', 'Riprova quando vuoi.']
+      : secs < 30 ? ['Che ritmo! Così si va fino a Gianola e ritorno.', 'Al Lido Oriente un tempo così non l\'avevo mai visto.'] : ['Bravo! Fino alla boa e ritorno.', 'Più tieni il ritmo, meno la canoa gira.'], n.name);
   });
   draw();
   raf = requestAnimationFrame(frame);

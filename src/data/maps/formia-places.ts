@@ -71,7 +71,7 @@ export const PLACES: PlaceSpec[] = [
   { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 7, at: [41.2551, 13.6062], tile: [67, 41] },
   { id: 'comune', kind: 'palazzo', w: 8, h: 3, at: [41.2562, 13.6050], door: true, tile: [68, 38] },
   { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 3, h: 5, at: [41.2560, 13.6084], tile: [77, 43] },
-  { id: 'forno', kind: 'shop', w: 4, h: 3, at: [41.2567, 13.6070], door: true, tile: [60, 33] },
+  { id: 'forno', kind: 'bakery', w: 4, h: 3, at: [41.2567, 13.6070], door: true, tile: [60, 33] },
   /* ---------- Castellone ---------- */
   { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true, tile: [57, 42] },
   { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], tile: [62, 42] },
@@ -107,6 +107,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'folla3', near: { place: 'piazza', dx: 7, dy: 3 } }, { id: 'folla4', near: { place: 'piazza', dx: 1, dy: 2 } },
   /* Nicola Spadea, windsurf champion, by his boards on the shore; the bar of the lido gives out the sunbeds */
   { id: 'nicola', near: { place: 'eclipse-spiaggia', dx: 2, dy: 5 }, on: 'sand' },
+  /* the bagnino of the Lido Oriente, on the sand in front of it, by the canoes */
+  { id: 'bagnino-oriente', near: { place: 'oriente', dx: 0, dy: -1 }, on: 'sand' },
   { id: 'barista', near: { place: 'eclipse', dx: 7, dy: 1 }, on: 'any' },
   { id: 'valentin', near: { place: 'eclipse-spiaggia', dx: 9, dy: 4 }, on: 'sand' },
   { id: 'zendavid', near: { place: 'pineta', dx: 10, dy: 4 } },

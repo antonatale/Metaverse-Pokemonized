@@ -25,6 +25,8 @@ export const LEGEND: Record<string, Ground> = {
   /* the lidi of Vindicio: sunbeds, gazebos, the windsurf boards on the sand, windsurfers and the line of buoys out at sea */
   'h': { g: 'sand', deco: 'lounger', solid: true }, 'g': { g: 'sand', obj: 'gazebo', solid: true }, 'S': { g: 'sand', obj: 'board', solid: true },
   'V': { g: 'sea', obj: 'windsurf', solid: true }, 'y': { g: 'sea', deco: 'buoy', solid: true },
+  /* the Lido Oriente: its canoes pulled up on the sand, its pedalò on the water */
+  'U': { g: 'sand', obj: 'canoe', solid: true }, 'X': { g: 'sea', obj: 'pedalo', solid: true },
   /* inside Morgana: a wooden table with its chairs */
   't': { g: 'floor', deco: 'table', solid: true },
   /* a table outside the Gelateria Lavezzi */

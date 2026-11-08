@@ -1124,6 +1124,8 @@ export const WORLD = {
     xp: function (key: string, n: number) { var g = gainXp(key, n); save(); renderHud(); growthSay(g, [nameOf(key) + ' guadagna ' + n + ' punti esperienza.']); },
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
+    /* a shop, as from its counter */
+    shop: function (id: string) { if (SHOPS[id]) openShop(id); },
     /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */
     wild: function (sp: SpeciesId, lv: number) { var m = [{ sp: sp, lv: [lv, lv] as [number, number], w: 1 }]; meet({ id: 'gianola', name: 'Gianola', on: 'scogli', day: m, night: m }); },
     overview: overview,

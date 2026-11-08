@@ -81,13 +81,21 @@ export function bond(sk: Grades): number { return 0.15 * (sk.legame || 0); }
 export function friendsPay(n: number, sk: Grades): number { return Math.round(n * (1 + 0.25 * (sk.amici || 0))); }
 
 /* ---------- things to buy around Formia, and what they do ---------- */
-export type ItemId = NetId | 'tiella' | 'caffe' | HeldId;
+export type ItemId = NetId | 'tiella' | 'caffe' | 'balsamo' | 'alici' | 'manuale' | 'giornale' | HeldId;
 export interface Ware { id: ItemId; name: string; price: number; text: string }
 /** the nets, from data/nets.ts, with their prices: the better the net, the dearer */
 const NET_PRICE: Record<NetId, number> = { retino: 8, retino2: 20, argento: 45, oro: 120, nassa: 25, lampara: 25 };
 export const WARES = {
   tiella: { id: 'tiella', name: 'Tiella', price: 6, text: 'In lotta: una fetta di tiella fa recuperare 40 PS (e si usa il turno).' },
-  caffe: { id: 'caffe', name: 'Caffè al bancone', price: 3, text: 'Si beve subito, al bancone: 60 punti esperienza a chi scegli tu.' }
+  caffe: { id: 'caffe', name: 'Caffè', price: 3, text: 'Va nella borsa: dal menu, «Usa» lo dà a chi scegli tu, 60 punti esperienza ognuno.' },
+  /* the pharmacy: in a battle it takes away a state, the confusion and what has been lowered */
+  balsamo: { id: 'balsamo', name: 'Balsamo', price: 8, text: 'In lotta toglie lo stato (sonno, colpo di sole…), la confusione e i cali di Attacco e Difesa. Si usa il turno.' },
+  /* the fishmonger: a creature loves fish, and grows fond of whoever gives it */
+  alici: { id: 'alici', name: 'Cartoccio di alici', price: 5, text: 'Dal menu, «Usa» lo dà a una creatura: le piace tanto, e le si affeziona (un cuore si riempie prima).' },
+  /* the bookshop: a manual teaches Antonio something, a point for his abilities; there are three */
+  manuale: { id: 'manuale', name: 'Manuale', price: 60, text: 'Dal menu, «Usa»: Antonio lo legge e guadagna un punto abilità. In libreria ce ne sono tre.' },
+  /* the newsstand: read there and then, it says where something rare has been seen today */
+  giornale: { id: 'giornale', name: 'Il giornale di oggi', price: 1, text: 'Si legge subito: dice dove, oggi, qualcuno ha visto una creatura che si vede di rado.' }
 } as Record<ItemId, Ware>;
 (Object.keys(NET_PRICE) as NetId[]).forEach(function (id) { WARES[id] = { id: id, name: NETS[id].name, price: NET_PRICE[id], text: NETS[id].text }; });
 /* what a creature can carry: it keeps it from battle to battle, so these cost more than what gets used up */
@@ -100,10 +108,21 @@ export interface Shop { name: string; hello: string; sells: ItemId[] }
 export const SHOPS: Record<string, Shop> = {
   /* the net maker of Gianola, by the guardaparco: every net there is */
   reti: { name: 'La bottega del retaio', hello: 'Reti e retini fatti a mano, uno per ogni creatura: più è buono il retino, meno scappano.', sells: ['retino', 'retino2', 'argento', 'oro', 'nassa', 'lampara'] },
-  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara', 'cozza', 'corno'] },
+  pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara'] },
   forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella', 'fetta', 'ciambella'] },
-  bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe', 'oliva'] }
+  bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe', 'oliva'] },
+  /* the places of the town (data/maps/formia.ts, SHOP_AT): each one gives the game something of its own */
+  pescheria: { name: 'La pescheria di Mola', hello: 'Pesce di stamattina, dalle barche di Mola. Alle creature piace da matti.', sells: ['alici', 'cozza', 'corno'] },
+  farmacia: { name: 'La farmacia', hello: 'Un balsamo per le creature? In lotta toglie stati, confusione e cali.', sells: ['balsamo'] },
+  libreria: { name: 'La libreria', hello: 'Manuali, guide, storia di Formia. Chi legge impara.', sells: ['manuale'] },
+  edicola: { name: 'L\'edicola', hello: 'Il giornale di oggi? Parla anche delle creature.', sells: ['giornale'] },
+  /* the market of Saturday, in Largo Paone on via Vitruvio: on Saturday every stall is there; the other days a few */
+  mercato: { name: 'Il mercato di Largo Paone', hello: 'Il sabato ci sono tutte le bancarelle; gli altri giorni solo qualcuna.', sells: ['fetta', 'cozza', 'ciambella', 'oliva', 'corno'] }
 };
+/** what the market has today: everything on Saturday, two stalls the other days (by the day of the week) */
+export function marketToday(day: number, all: ItemId[]): ItemId[] { return day === 6 ? all : [all[day % all.length], all[(day + 2) % all.length]]; }
+/** how many manuals the bookshop has, in all */
+export const MANUALS = 3;
 /** the guardaparco's prizes for the creature diary: when so many species have been Antonio's (n, or all of them),
     he gives these, once each (story/growth.ts dexPrizesDue) */
 export interface DexPrize { n: number; all?: boolean; give: Partial<Record<ItemId, number>>; coins?: number }

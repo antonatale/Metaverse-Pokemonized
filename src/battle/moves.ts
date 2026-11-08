@@ -245,6 +245,16 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       heal(s, i, 40, ev, nm + ' mangia una fetta di tiella: si sente meglio.');
       cureStatus(s, i, ev);
       break;
+    case 'balsamo': {
+      s.bag!.balsamo = (s.bag!.balsamo || 0) - 1;
+      ev.push(expr(i, 'grin'));
+      ev.push(say(nm + ' si spalma il balsamo della farmacia.'));
+      const me = s.sides[i], low = me.mods.some(function (x) { return x.mult < 1 && x.until >= s.turn; }), dazed = me.conf > 0;
+      cureStatus(s, i, ev);
+      me.conf = 0; me.mods = me.mods.filter(function (x) { return x.mult >= 1; });
+      if (dazed || low) ev.push(say(dazed && low ? 'La testa torna a posto, e le forze pure.' : dazed ? 'Non è più confuso.' : 'Le forze tornano quelle di prima.'));
+      break;
+    }
     /* --- the creatures of Formia: their moves are numbers, done here --- */
     default:
       if (genericMove(s, i, m!, ev)) attacked = true;

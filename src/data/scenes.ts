@@ -11,7 +11,7 @@ const BY_AREA: Record<string, string> = {
   'Monti Aurunci': 'maranola', 'Rio Fresco': 'maranola', 'Campagna': 'maranola', 'Tomba di Cicerone': 'maranola',
   'Via Amendola': 'castellonorato', 'Acqualonga': 'castellonorato', 'Santo Janni': 'castellonorato', 'Parco la Fontana': 'castellonorato',
   'Bruno Zauli': 'castellonorato', 'Parco Gramsci': 'castellonorato', 'Villaggio Don Bosco': 'castellonorato',
-  'Gianola': 'gianola'
+  'Gianola': 'gianola', 'Lido Oriente': 'gianola'
 };
 const BY_MAP: Record<string, string> = { casa: 'castellonorato', circolo: 'campo', morgana: 'birreria', cisterna: 'cisterna', telepilo: 'castellone' };
 /** the magic of a place: a part of town has a type of its own, stronger there (data/tuning.ts FIELD_TUNE) and what a creature

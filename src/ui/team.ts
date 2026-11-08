@@ -91,16 +91,80 @@ export function pickFighter(title: string, foeType: TypeName, keys: string[], go
   foes.forEach(function (t) { beatersOf(t).forEach(function (b) { if (good.indexOf(b) < 0 && foes.indexOf(b) < 0) good.push(b); }); });
   pickFrom(title, 'È di tipo ' + foes.join(' e ') + ': ha il vantaggio la magia ' + good.join(', ') + '.', keys, go, good);
 }
-/* ---------- a coffee at the counter of the bar: drunk there and then, by whoever Antonio picks ---------- */
-function coffee() {
-  var drink = function (key: string) {
-    var g = drinkCoffee(key);
-    save(); closeSheet(); renderHud();
-    if (g) growthSay(g, [nameOf(key) + ' beve un caffè al bancone: +' + g.xp + ' punti esperienza.']);
+/* ---------- the things used from the bag, outside a battle: the coffee ---------- */
+/** a cup of coffee, for the bag and the shop */
+const CUP = '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round" stroke-linecap="round"><path d="M22 10C18 14 26 16 22 20M32 8C28 12 36 14 32 18" fill="none" stroke="#9aa3b8" stroke-width="3"/>' +
+  '<path d="M44 32H49A7 7 0 0 1 49 46H43" fill="none" stroke="#1c2340" stroke-width="4"/><path d="M12 26H46V40A14 14 0 0 1 32 54H26A14 14 0 0 1 12 40Z" fill="#ffffff" stroke="#1c2340" stroke-width="3.5"/>' +
+  '<path d="M15 29H43" stroke="#7a4a2a" stroke-width="5"/><path d="M8 56H50" stroke="#1c2340" stroke-width="3.5"/></svg>';
+/** the things of the shops of the town, drawn for the bag and the shelves */
+const ICONS: Record<string, string> = {
+  caffe: CUP,
+  /* a jar of balm with a green cross */
+  balsamo: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><rect x="16" y="14" width="32" height="10" rx="3" fill="#57c968" stroke="#1c2340" stroke-width="3.5"/>' +
+    '<rect x="13" y="22" width="38" height="32" rx="8" fill="#ffffff" stroke="#1c2340" stroke-width="3.5"/><path d="M29 30H35V35H40V41H35V46H29V41H24V35H29Z" fill="#2ecc71" stroke="#1c2340" stroke-width="2"/></svg>',
+  /* a paper cone of alici */
+  alici: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><path d="M14 18L50 18L32 58Z" fill="#f3e3c3" stroke="#1c2340" stroke-width="3.5"/>' +
+    '<path d="M20 18C20 8 30 6 30 14M30 18C31 6 42 6 40 16M38 18C42 9 50 12 46 19" fill="#b8c6d6" stroke="#1c2340" stroke-width="3"/><circle cx="26" cy="11" r="1.6" fill="#1c2340"/><circle cx="36" cy="10" r="1.6" fill="#1c2340"/></svg>',
+  /* a manual, with a bookmark */
+  manuale: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><rect x="14" y="10" width="36" height="46" rx="3" fill="#3b8fd9" stroke="#1c2340" stroke-width="3.5"/>' +
+    '<path d="M20 10V56" stroke="#1c2340" stroke-width="3"/><rect x="26" y="20" width="18" height="8" rx="1.5" fill="#ffffff" stroke="#1c2340" stroke-width="2"/><path d="M40 52V62L44 58L48 62V52" fill="#d94f4f" stroke="#1c2340" stroke-width="2.5"/></svg>',
+  /* today's paper, folded */
+  giornale: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round" stroke-linecap="round"><rect x="10" y="12" width="44" height="40" rx="2" fill="#fdfaf0" stroke="#1c2340" stroke-width="3.5"/>' +
+    '<path d="M16 20H48" stroke="#1c2340" stroke-width="4"/><rect x="16" y="26" width="14" height="12" fill="#9aa3b8"/><path d="M34 27H48M34 32H48M34 37H48M16 43H48M16 47H40" stroke="#1c2340" stroke-width="2"/></svg>'
+};
+/** the picture of a thing in the bag or on a shelf */
+function itemIcon(it: string): string { return ICONS[it] || bagIcon(it); }
+/** a little − n + to choose how many */
+function stepper(id: string, n: number, max: number): string {
+  return '<span class="qty" data-qty="' + id + '"><button class="qty-b" type="button" data-dn aria-label="Uno in meno"' + (n <= 1 ? ' disabled' : '') + '>−</button>' +
+    '<b aria-live="polite">' + n + '</b><button class="qty-b" type="button" data-up aria-label="Uno in più"' + (n >= max ? ' disabled' : '') + '>+</button></span>';
+}
+/** «Usa» on a thing in the bag: a manual is read there and then; a coffee or the alici ask whom, once, and how many in
+    a row */
+export function useItem(it: ItemId, back?: () => void) {
+  if (!has(it)) return;
+  if (it === 'manuale') {
+    if (!readManual()) return;
+    save(); renderHud(); sfx('badge');
+    say(['Antonio legge il manuale da cima a fondo.', 'Un punto abilità in più: si spende nella sua scheda, in «Abilità».'], null, null, back);
+    return;
+  }
+  var coffee = it === 'caffe', icon = ICONS[it], keys = coffee ? team() : team().filter(function (k) { return !!creatureOf(k); });
+  if (!keys.length) { say(['Le alici sono per le creature, e con te non ce n\'è nessuna.'], null, null, back); return; }
+  var give = function (key: string) {
+    var n = 1, draw = function () {
+      var max = has(it), what = coffee ? (n === 1 ? 'un caffè' : n + ' caffè') : (n === 1 ? 'un cartoccio di alici' : n + ' cartocci di alici');
+      var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="us-t"><div class="sheet-h"><h2 id="us-t">' + (coffee ? 'Caffè' : 'Alici') + ' a ' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="us-x">Annulla</button></div>' +
+        '<div class="use-row"><span class="ware-ico">' + icon + '</span><span><b>Quanti?</b><small>Ne hai ' + max + '. ' + (coffee ? 'Ognuno dà ' + COFFEE_XP + ' punti esperienza.' : 'Ognuno la avvicina a te: un cuore si riempie prima.') + '</small></span>' + stepper(it, n, max) + '</div>' +
+        '<button class="btn primary" type="button" id="us-go">Dai ' + what + (coffee ? ' · +' + n * COFFEE_XP + ' punti' : '') + '</button></div>');
+      $('us-x').addEventListener('click', function () { closeSheet(); if (back) back(); });
+      var q = o.querySelector('[data-qty]')!;
+      q.querySelector('[data-dn]')!.addEventListener('click', function () { if (n > 1) { n--; draw(); } });
+      q.querySelector('[data-up]')!.addEventListener('click', function () { if (n < max) { n++; draw(); } });
+      $('us-go').addEventListener('click', function () {
+        closeSheet(); sfx('pickup');
+        if (coffee) {
+          var g = drinkCoffee(key, n);
+          save(); renderHud();
+          if (g) growthSay(g, [nameOf(key) + (n === 1 ? ' beve un caffè' : ' beve ' + n + ' caffè, uno dopo l\'altro') + ': +' + g.xp + ' punti esperienza.'], back);
+          return;
+        }
+        feedAlici(key, n); save(); renderHud();
+        say([nameOf(key) + (n === 1 ? ' divora le alici' : ' divora ' + n + ' cartocci di alici') + ' e ti guarda con affetto.', 'Il legame: ' + hearts(key) + '.'], null, null, back);
+      });
+      setTimeout(function () { var b = $('us-go'); if (b) b.focus(); }, 30);
+    };
+    draw();
   };
-  var keys = team();
-  if (keys.length <= 1) { drink(keys[0] || 'antonio'); return; }
-  pickFrom('Chi beve il caffè?', 'Un caffè al bancone dà subito 60 punti esperienza a chi lo beve.', keys, drink);
+  if (keys.length <= 1) give(keys[0] || 'antonio');
+  else if (coffee) pickFrom('A chi dai il caffè?', 'Ognuno dà ' + COFFEE_XP + ' punti esperienza a chi lo beve; a una creatura piace, e le si affeziona.', keys, give);
+  else pickFrom('A chi dai le alici?', 'Alle creature il pesce piace tanto: chi le mangia si affeziona a te.', keys, give);
+}
+/** the newspaper of the edicola, read there and then: where something seldom met has been seen today */
+function readNews(back?: () => void) {
+  var nw = newsOf(Math.floor(Date.now() / 86400000)), sp = SPECIES[nw.sp], seen = dexOf(nw.sp) > 0;
+  say(['Avvistamenti. ' + nw.place + ', ' + (nw.night ? 'stanotte' : 'oggi') + ': qualcuno giura di aver visto ' + (seen ? (/^[AEIOU]/.test(sp.name) ? 'un\'' : 'un ') + sp.name : 'una creatura mai vista prima, che si vede di rado') + '.',
+    nw.night ? 'Di notte, dice il giornale: di giorno non si fa vedere.' : 'Di giorno, dice il giornale.'], 'Il giornale di oggi', null, back);
 }
 
 /* ---------- what a battle brings ---------- */
@@ -202,30 +266,44 @@ function grow(id: FriendId, from: number, to: number, then?: () => void) {
 
 /* ---------- the shops of Formia ---------- */
 export function openShop(id: string) {
-  var sh = SHOPS[id];
+  var sh = SHOPS[id], want: Record<string, number> = {}, today = new Date().getDay();
+  /* the market has every stall on Saturday, a couple the other days */
+  var sells = id === 'mercato' ? marketToday(today, sh.sells) : sh.sells;
+  var hello = id === 'mercato' ? (today === 6 ? 'Oggi è sabato: ci sono tutte le bancarelle.' : 'Oggi ci sono solo due bancarelle: il mercato vero è il sabato.') : sh.hello;
+  /* how many can be had: the money, the three manuals of the bookshop, one newspaper at a time */
+  var cap = function (it: ItemId) { return it === 'manuale' ? manualsLeft(MANUALS) : it === 'giornale' ? 1 : 99; };
   var render = function (bought?: string) {
     var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><div class="sheet-h"><h2 id="sh-t">' + esc(sh.name) + '</h2><button class="tb-btn" type="button" id="shop-x">Chiudi</button></div>' +
-      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : sh.hello) + '</p><p class="wallet">In tasca: <b>' + coin() + coins(money()) + '</b></p><ul class="wares">' +
-      sh.sells.map(function (it) {
-        var w = WARES[it], p = priceFor(it);
-        /* the coffee is drunk at the counter (one already paid for, from an old save, first) */
-        if (it === 'caffe') return '<li><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + '</small></span>' +
-          '<button class="btn" type="button" data-it="caffe"' + (money() < p && !has('caffe') ? ' disabled' : '') + '>' + (has('caffe') ? 'Bevi (già pagato)' : 'Bevi · ' + coin(16) + p) + '</button></li>';
-        return '<li><span class="ware-ico">' + bagIcon(it) + '</span><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + ' Ne hai ' + has(it) + '.</small></span>' +
-          '<button class="btn" type="button" data-it="' + it + '"' + (money() < p ? ' disabled' : '') + ' aria-label="Compra ' + esc(w.name) + ' per ' + coins(p) + '">' + coin(16) + p + '</button></li>';
-      }).join('') + '</ul>' + (money() < Math.min.apply(null, sh.sells.map(priceFor)) && !has('caffe') ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
+      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : hello) + '</p><p class="wallet">In tasca: <b>' + coin() + coins(money()) + '</b></p><ul class="wares">' +
+      sells.map(function (it) {
+        /* how many: at least one, and no more than the money pays for (or the shelf holds) */
+        var w = WARES[it], p = priceFor(it), left = cap(it), max = Math.max(1, Math.min(left, affordable(it))), n = Math.min(want[it] || 1, max), ok = left > 0 && affordable(it) >= n;
+        want[it] = n;
+        return '<li><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + (it === 'giornale' ? '' : ' Ne hai ' + has(it) + '.') + '</small></span>' +
+          (left > 0 ? (left > 1 ? stepper(it, n, max) : '') + '<button class="btn" type="button" data-it="' + it + '"' + (ok ? '' : ' disabled') + ' aria-label="Compra ' + (n === 1 ? '' : n + ' ') + esc(w.name) + ' per ' + coins(p * n) + '">' + coin(16) + p * n + '</button>'
+            : '<span class="sold">Finiti</span>') + '</li>';
+      }).join('') + '</ul>' + (money() < Math.min.apply(null, sells.map(priceFor)) ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
     $('shop-x').addEventListener('click', closeSheet);
+    each(o.querySelectorAll<HTMLElement>('[data-qty]'), function (q) {
+      var it = q.getAttribute('data-qty')!;
+      q.querySelector('[data-dn]')!.addEventListener('click', function () { want[it] = Math.max(1, (want[it] || 1) - 1); render(); focusQty(it, 'dn'); });
+      q.querySelector('[data-up]')!.addEventListener('click', function () { want[it] = (want[it] || 1) + 1; render(); focusQty(it, 'up'); });
+    });
     each(o.querySelectorAll('[data-it]'), function (b) {
       b.addEventListener('click', function () {
-        var it = b.getAttribute('data-it') as ItemId;
-        if (it === 'caffe') { if (!has('caffe') && !buy(it)) return; sfx('pickup'); save(); renderHud(); coffee(); return; }
-        if (!buy(it)) return;
+        var it = b.getAttribute('data-it') as ItemId, n = want[it] || 1;
+        if (n > cap(it) || !buy(it, n)) return;
         sfx('pickup'); save(); renderHud();
-        render(WARES[it].name.toLowerCase());
+        want[it] = 1;
+        /* the newspaper is read at the newsstand */
+        if (it === 'giornale') { st.bag!.giornale = 0; save(); closeSheet(); readNews(function () { openShop(id); }); return; }
+        render((n === 1 ? '' : n + ' × ') + WARES[it].name.toLowerCase() + (it === 'caffe' ? ': sono nella borsa, li dai dal menu' : ''));
       });
     });
-    setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-it]:not([disabled])') || $('shop-x'); if (b) b.focus(); }, 30);
+    if (!bought) setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-it]:not([disabled])') || $('shop-x'); if (b) b.focus(); }, 30);
   };
+  /* after a − or a +, the focus stays where it was */
+  var focusQty = function (it: string, which: string) { var b = document.querySelector<HTMLButtonElement>('[data-qty="' + it + '"] [data-' + which + ']'); if (b && !b.disabled) b.focus(); else { var c = document.querySelector<HTMLElement>('[data-it="' + it + '"]'); if (c) c.focus(); } };
   render();
 }
 
@@ -263,11 +341,17 @@ export function teamHtml(): string {
     (home || M.id === 'casa' ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
       (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
-    '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + BAG_ITEMS.map(function (it) {
-      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + bagIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span></li>';
-    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto al guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone. Al bar di Mola un caffè al bancone fa crescere subito chi lo beve.</p></div>';
+    '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + bagList().map(function (it) {
+      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span>' +
+        (USE_ITEMS.indexOf(it) >= 0 && has(it) ? '<button class="btn small" type="button" data-use="' + it + '">Usa</button>' : '') + '</li>';
+    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto al guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone, il caffè il bar di Mola; il balsamo lo vende la farmacia, le alici la pescheria di Mola, i manuali la libreria, e il sabato a Largo Paone c\'è il mercato. Nei negozi scegli quanti prenderne.</p></div>';
+}
+/** what the bag shows: what goes into a battle, the coffee, and what a creature can carry, when there is some */
+function bagList(): ItemId[] {
+  return (BAG_ITEMS as ItemId[]).concat(USE_ITEMS).concat((heldInBag() as ItemId[]));
 }
 export function wireTeam(reopen: () => void) {
+  each(document.querySelectorAll('[data-use]'), function (b) { b.addEventListener('click', function () { closeSheet(); useItem(b.getAttribute('data-use') as ItemId, reopen); }); });
   each(document.querySelectorAll('[data-cr]'), function (b) { b.addEventListener('click', function () { openCreature(b.getAttribute('data-cr')!, reopen); }); });
   each(document.querySelectorAll('[data-dex]'), function (b) { b.addEventListener('click', function () { openSpecies(b.getAttribute('data-dex') as SpeciesId, reopen); }); });
   each(document.querySelectorAll('[data-lead]'), function (b) {

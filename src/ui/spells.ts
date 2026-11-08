@@ -865,6 +865,9 @@ export function arrive(i: number, t: TypeName, t2?: TypeName) {
 export function bagIcon(id: string): string {
   if (id === 'tiella') return '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><path d="M8 48L56 48L32 12Z" fill="#e8b86a" stroke="' + INK + '" stroke-width="3.5"/>' +
     '<path d="M14 46L50 46L32 19Z" fill="#7a9a3a"/><circle cx="27" cy="38" r="3" fill="#d96a4a"/><circle cx="37" cy="40" r="2.6" fill="#d96a4a"/><circle cx="32" cy="30" r="2.4" fill="#f4efe6"/></svg>';
+  /* the balm of the pharmacy: a jar with a green cross */
+  if (id === 'balsamo') return '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><rect x="16" y="14" width="32" height="10" rx="3" fill="#57c968" stroke="' + INK + '" stroke-width="3.5"/>' +
+    '<rect x="13" y="22" width="38" height="32" rx="8" fill="#ffffff" stroke="' + INK + '" stroke-width="3.5"/><path d="M29 30H35V35H40V41H35V46H29V41H24V35H29Z" fill="#2ecc71" stroke="' + INK + '" stroke-width="2"/></svg>';
   if (id in HELD) return ico(id === 'cozza' ? 'shield' : id === 'corno' ? 'music' : id === 'oliva' ? 'drop' : id === 'ciambella' ? 'wing' : 'heart');
   return netSVG(id, 34);
 }

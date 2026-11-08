@@ -31,6 +31,7 @@ export function ai(s: BattleState, i: number): string {
       if (m.fx && m.fx.conf && !foe.conf) sc += 6 * m.fx.conf;
       if (m.fx && m.fx.status && !foe.status) sc += statusWorth(s, i, m.fx.status) * (m.fx.odds == null ? 1 : m.fx.odds);
     } else if (id === 'tiella') sc = Math.min(40, me.max - me.hp) * (hpF < 0.45 ? 1.25 : 0.3) + (me.status ? 14 : 0);
+    else if (id === 'balsamo') sc = (me.status ? 16 : 0) + (me.conf ? 10 : 0) + (me.mods.some(function (x) { return x.mult < 1 && x.until >= s.turn; }) ? 8 : 0);
     else if (isNet(id)) sc = 0;
     else if (m.fx) {
       /* a creature: heal when low, raise or drop once, confuse when it is not */

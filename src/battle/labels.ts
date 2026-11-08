@@ -161,6 +161,7 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
       break;
     }
     case 'tiella': out.icon = 'heart'; out.count = s.bag!.tiella || 0; out.sub = out.locked ? 'PS al massimo' : 'Cura 40 PS'; break;
+    case 'balsamo': out.icon = 'drop'; out.count = s.bag!.balsamo || 0; out.sub = out.locked ? 'Niente da curare' : 'Toglie stati e cali'; break;
     default: {
       /* the moves made of numbers, the creatures' and those of the people who have grown: what they do, from their numbers
          (the Esame's keep no label, as they always had) */

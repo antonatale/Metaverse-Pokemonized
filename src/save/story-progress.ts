@@ -56,6 +56,10 @@ export interface StoryProgress {
   first?: FriendId;
   /** the creature his rival Tullio picked after him (story/rival.ts; worked out from Antonio's when missing) */
   rival?: SpeciesId;
+  /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
+  books?: number;
+  /** when it was last saved (ms since 1970), for the title screen: missing in an old save */
+  at?: number;
 }
 
 export function blank(): StoryProgress {

@@ -24,6 +24,7 @@ export const ACTIVITIES: Activity[] = [
   { id: 'volley', name: 'Beach volley con Valentin', where: 'Eclipse beach, Vindicio', verb: 'Gioca a beach volley', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
   { id: 'windsurf', name: 'Lezione di windsurf con Nicola', where: 'Eclipse beach, Vindicio', verb: 'Prendi una lezione', score: (n) => n + ' m di planata' },
   { id: 'lettino', name: 'Un pomeriggio all\'Eclipse', where: 'Eclipse beach, Vindicio', verb: 'Prendi un lettino' },
+  { id: 'canoa', name: 'In canoa al Lido Oriente', where: 'Lido Oriente, lungomare Città di Ferrara', verb: 'Prendi una canoa', score: secs, lower: true },
   { id: 'corsa', name: 'Corsetta in pineta con Zendavid', where: 'Pineta di Vindicio', verb: 'Corri tra i pini', score: secs, lower: true },
   { id: 'padel', name: 'Padel con Andrea', where: 'Centro Bruno Zauli', verb: 'Gioca a padel', score: (n) => n + (n === 1 ? ' scambio' : ' scambi') },
   { id: 'quiz', name: 'Quiz su Formia da Morgana', where: 'Birreria Morgana, Mola', verb: 'Siediti al tavolo', score: (n) => n + ' risposte giuste su 5' },
@@ -37,6 +38,8 @@ export function bestOf(id: string): number | undefined { return st.best ? st.bes
 /** what each thing to do brings: experience for Antonio, and a few sesterzi for a good score */
 const XP = 20;
 const PAY: Record<string, (score: number) => number> = {
+  /* the canoe: the quicker out to the buoy and back, the more (about 10 under half a minute) */
+  canoa: (s) => Math.max(2, Math.min(10, Math.round(240 / Math.max(20, s)))),
   volley: (n) => Math.min(10, n), padel: (n) => Math.min(10, n), quiz: (n) => 2 * n, windsurf: (n) => Math.min(12, Math.floor(n / 20)), corsa: () => 4,
   /* the fisherman buys the catch: a sesterzio every 300 g */
   pesca: (g) => Math.min(12, Math.floor(g / 300))

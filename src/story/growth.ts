@@ -251,7 +251,7 @@ export function joinAt(key: string, lv: number) { st.lv = st.lv || {}; if (!st.l
 export function grade(id: SkillId): number { return (st.skills || {})[id] || 0; }
 export function pointsLeft(): number {
   var used = SKILLS.reduce(function (n, s) { return n + grade(s.id); }, 0);
-  return Math.max(0, level('antonio').lv - START_LEVEL - used);
+  return Math.max(0, level('antonio').lv - START_LEVEL + (st.books || 0) - used);
 }
 /** an ability opens with a point in the one before it on its branch */
 export function skillOpen(id: SkillId): boolean {
@@ -280,22 +280,48 @@ export function giveHeld(key: string, it: HeldId | null) {
   if (it && has(it) > 0) { st.bag[it] = has(it) - 1; mon.item = it; }
 }
 export function priceFor(it: ItemId): number { return priceOf(it, st.skills || {}); }
-export function buy(it: ItemId): boolean {
-  var p = priceFor(it);
+/** buys n of a thing, all or none: false when the money is not enough */
+export function buy(it: ItemId, n?: number): boolean {
+  var k = Math.max(1, Math.floor(n || 1)), p = priceFor(it) * k;
   if (money() < p) return false;
-  st.money = money() - p; st.bag = st.bag || {}; st.bag[it] = has(it) + 1;
+  st.money = money() - p; st.bag = st.bag || {}; st.bag[it] = has(it) + k;
   return true;
 }
-/** a coffee for one of the team: experience (and a creature likes it) */
-export function drinkCoffee(key: string): Growth | null {
-  if (!has('caffe')) return null;
-  st.bag!.caffe = has('caffe') - 1;
-  addBond(key, 3);
-  return gainXp(key, 60);
+/** how many of a thing the money in his pocket pays for */
+export function affordable(it: ItemId): number { return Math.floor(money() / priceFor(it)); }
+/** the things in the bag that are used outside a battle, from the menu: the coffee */
+export const USE_ITEMS: ItemId[] = ['caffe', 'alici', 'manuale'];
+/** what a coffee gives whoever drinks it */
+export const COFFEE_XP = 60;
+/** a cartoccio of alici for a creature: its bond with Antonio grows (a heart is 20) */
+export const ALICI_BOND = 8;
+export function feedAlici(key: string, n?: number): number {
+  var k = Math.min(Math.max(1, Math.floor(n || 1)), has('alici'));
+  if (k < 1 || !creatureOf(key)) return 0;
+  st.bag!.alici = has('alici') - k;
+  addBond(key, ALICI_BOND * k);
+  return k;
+}
+/** Antonio reads a manual: a point for his abilities */
+export function readManual(): boolean {
+  if (!has('manuale')) return false;
+  st.bag!.manuale = has('manuale') - 1;
+  st.books = (st.books || 0) + 1;
+  return true;
+}
+/** how many manuals are still on the shelf of the bookshop */
+export function manualsLeft(total: number): number { return Math.max(0, total - (st.books || 0) - has('manuale')); }
+/** n coffees (all those in the bag at most) for one of the team: experience, and a creature likes it */
+export function drinkCoffee(key: string, n?: number): Growth | null {
+  var k = Math.min(Math.max(1, Math.floor(n || 1)), has('caffe'));
+  if (k < 1) return null;
+  st.bag!.caffe = has('caffe') - k;
+  addBond(key, 3 * k);
+  return gainXp(key, COFFEE_XP * k);
 }
 /** what goes into a battle, and what is left of it after */
 /** what can go into a battle: the nets (data/nets.ts) and the tiella */
-export const BAG_ITEMS: ItemId[] = (NET_IDS as ItemId[]).concat(['tiella']);
+export const BAG_ITEMS: ItemId[] = (NET_IDS as ItemId[]).concat(['tiella', 'balsamo']);
 export function battleBag(): Record<string, number> { var b: Record<string, number> = {}; BAG_ITEMS.forEach(function (k) { b[k] = has(k); }); return b; }
 export function keepBag(b: Record<string, number> | undefined) {
   if (!b) return;

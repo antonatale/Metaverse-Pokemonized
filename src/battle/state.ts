@@ -32,7 +32,11 @@ export function mv(side: Side, id: string): Move | null { return move(ch(side), 
 export const BAG: Record<string, Move> = {};
 NET_IDS.forEach(function (id) { BAG[id] = { id: id, name: NETS[id].name, kind: 'status', priority: 6, text: NETS[id].text }; });
 BAG.tiella = { id: 'tiella', name: 'Tiella', kind: 'heal', priority: 6, text: 'Una fetta di tiella: recupera 40 PS.' };
-export const BAG_IDS: string[] = (NET_IDS as string[]).concat(['tiella']);
+/* the balm of the pharmacy: it takes away a state, the confusion and what has been lowered */
+BAG.balsamo = { id: 'balsamo', name: 'Balsamo', kind: 'heal', priority: 6, text: 'Un balsamo della farmacia: toglie lo stato, la confusione e i cali.' };
+export const BAG_IDS: string[] = (NET_IDS as string[]).concat(['tiella', 'balsamo']);
+/** something the balm can take away: a state, the confusion, a number lowered */
+export function ailing(s: BattleState, side: Side): boolean { return !!side.status || side.conf > 0 || side.mods.some(function (x) { return x.mult < 1 && x.until >= s.turn; }); }
 
 /* ---------- a new battle ---------- */
 function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
@@ -157,7 +161,7 @@ export function available(s: BattleState, i: number): string[] {
   });
   if (side.encore && side.encore.until >= s.turn && all.indexOf(side.encore.move) >= 0) return [side.encore.move];
   /* the player's bag, in story battles: the nets only against a wild creature */
-  if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' ? side.hp < side.max || !!side.status : s.wild && !netShut(s))) all.push(b); });
+  if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' ? side.hp < side.max || !!side.status : b === 'balsamo' ? ailing(s, side) : s.wild && !netShut(s))) all.push(b); });
   return all;
 }
 

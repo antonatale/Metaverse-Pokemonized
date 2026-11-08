@@ -364,6 +364,20 @@ for (const p of PLACES) {
     for (const [dx, dy] of [[3, 9], [10, 12], [-3, 12], [16, 9]]) if (get(b.x + dx, b.y + dy) === '~') set(b.x + dx, b.y + dy, 'V');
   }
 }
+/* the Lido Oriente, on the lungomare Città di Ferrara: its beach is the strip of sand north of it, with the sea to the
+   west. Umbrellas and sunbeds, the beach-volley net, two canoes pulled up on the shore, two pedalò on the water and the
+   buoys a little way out (what the lido offers: spiagge.it, mondobalneare.com) */
+{
+  const l = placed.oriente;
+  if (l) {
+    const sand = (x: number, y: number) => get(x, y) === ':' && free(x, y), wet = (x: number, y: number) => get(x, y) === '~';
+    for (const [dx, dy] of [[-4, -6], [-4, -4], [-1, -8], [-1, -6]]) if (sand(l.x + dx, l.y + dy) && sand(l.x + dx + 1, l.y + dy)) { set(l.x + dx, l.y + dy, 'u'); set(l.x + dx + 1, l.y + dy, 'h'); }
+    if ([0, 1, 2].every((k) => sand(l.x - 3 + k, l.y - 2))) for (let k = 0; k < 3; k++) set(l.x - 3 + k, l.y - 2, 'N');
+    for (const [dx, dy] of [[-4, -3], [-3, -1]]) if (sand(l.x + dx, l.y + dy)) set(l.x + dx, l.y + dy, 'U');
+    for (const [dx, dy] of [[-6, -3], [-5, 0]]) if (wet(l.x + dx, l.y + dy)) set(l.x + dx, l.y + dy, 'X');
+    for (const dy of [-7, -3, 1]) if (wet(l.x - 9, l.y + dy)) set(l.x - 9, l.y + dy, 'y');
+  }
+}
 /* the other lidi: a row of umbrellas and sunbeds on the sand in front */
 for (const id of ['scogliera', 'oriente']) {
   const l = placed[id];
