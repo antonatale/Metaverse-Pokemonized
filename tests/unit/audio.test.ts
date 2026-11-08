@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TRACKS, NIGHT_OF } from '../../src/audio/tracks';
-import { worldMusic } from '../../src/audio/zones';
+import { worldMusic, settle, TUNE_WAIT, type TuneWait } from '../../src/audio/zones';
 import { parse } from '../../src/audio/music';
 import { hz } from '../../src/audio/synth';
 import { SFX_NAMES } from '../../src/audio/sfx';
@@ -96,3 +96,28 @@ describe('the music of the places', () => {
   });
 });
 
+
+describe('the music between two neighbourhoods', () => {
+  const walk = (asked: [number, string][]) => {
+    const w: TuneWait = { now: '', next: '', since: 0 };
+    return asked.map(([t, a]) => settle(w, a, t));
+  };
+  it('does not change while Antonio walks along the edge, back and forth', () => {
+    /* asked every 300 ms, as the map does, one side and then the other */
+    const steps: [number, string][] = [];
+    for (let k = 0; k < 30; k++) steps.push([k * 300, k % 4 < 2 ? 'mola' : 'castellone']);
+    expect(new Set(walk(steps))).toEqual(new Set(['mola']));
+  });
+  it('changes once he has stayed in the new one for a moment, and only then', () => {
+    const steps: [number, string][] = [[0, 'mola']];
+    for (let t = 300; t <= 3000; t += 300) steps.push([t, 'castellone']);
+    const got = walk(steps), when = steps[got.indexOf('castellone')][0];
+    expect(when - 300).toBeGreaterThanOrEqual(TUNE_WAIT);
+    expect(when - 300).toBeLessThan(TUNE_WAIT + 300);
+    expect(got[got.length - 1]).toBe('castellone');
+  });
+  it('waits for the night the same way, and the first tune comes at once', () => {
+    expect(walk([[0, 'world'], [300, 'world:night']])).toEqual(['world', 'world']);
+    expect(walk([[0, 'world'], [300, 'world:night'], [300 + TUNE_WAIT, 'world:night']])).toEqual(['world', 'world', 'world:night']);
+  });
+});

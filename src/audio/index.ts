@@ -3,7 +3,7 @@
    require, and can be switched off (remembered on this device under its own key). */
 export { installUnlock as installAudio, isOn, setOn, onReady } from './context';
 export { music } from './music';
-export { worldMusic } from './zones';
+export { worldMusic, settle, TUNE_WAIT, type TuneWait } from './zones';
 export { sfx } from './sfx';
 export { cry, cryEventOf } from './cries';
 export { cueBattle, typeBlip } from './cues';

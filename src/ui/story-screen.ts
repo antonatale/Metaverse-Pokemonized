@@ -44,7 +44,7 @@ import type { Growth } from '../story/growth';
 import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
 import { soundButton } from './sound';
-import { music, worldMusic, sfx, typeBlip } from '../audio';
+import { music, worldMusic, settle, sfx, typeBlip, type TuneWait } from '../audio';
 import { startBattle, goHome } from './battle-screen';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
@@ -963,10 +963,13 @@ function openMenu(tab?: string) {
 /* ---------- loop ---------- */
 /** the tune of the place Antonio is in, by day or night: asked often, it changes only when the place or the light does
     (audio/zones.ts); open() forgets the last one, because a battle has played its own in between */
-let lastTune = '';
+let lastTune = '', tuneWait: TuneWait = { now: '', next: '', since: 0 };
 function tune() {
-  const t = worldMusic(M.id, areaName(), darkness(new Date()) > 0.5);
-  if (t !== lastTune) { lastTune = t; music(t); }
+  const asked = worldMusic(M.id, areaName(), darkness(new Date()) > 0.5);
+  /* the first tune after open() comes in at once; then a change waits a moment (settle), and crosses over */
+  if (!lastTune) { tuneWait = { now: asked, next: '', since: 0 }; lastTune = asked; music(asked); return; }
+  const t = settle(tuneWait, asked, performance.now());
+  if (t !== lastTune) { lastTune = t; music(t, { fade: 2.6 }); }
 }
 export let running = false;
 let raf = 0;
