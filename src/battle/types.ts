@@ -101,13 +101,13 @@ export interface Side {
   form?: number;
 }
 /** how a side of a story battle comes on */
-export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; abil?: string[]; resonate?: boolean; grown?: boolean; form?: number }
+export interface SideOpts { stats?: Stats; lvl?: number; known?: string[]; nick?: string; gold?: boolean; perk?: { lose: number; idea: number }; hp?: number; endure?: number; net?: number; key?: string; last?: boolean; item?: string; stages?: LegendStage[]; resonate?: boolean; grown?: boolean; form?: number }
 /** someone on the bench when a team battle starts */
 export interface Member extends SideOpts { id: FighterId }
 /** one foe of a team battle: who fought it, and who brought it down. The story pays out from these */
 export interface Bout { key: string; foe: FighterId; lv: number; who: string[]; ko: boolean; by: string | null }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
-export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string; day?: boolean }
+export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }

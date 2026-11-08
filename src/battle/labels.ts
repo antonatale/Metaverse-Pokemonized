@@ -62,7 +62,7 @@ export function changeText(s: BattleState, i: number): { button: string; hint: s
 export function resonanceText(s: BattleState): { button: string; armed: string; sheet: string } {
   const f = s.field, pct = f ? Math.round((FIELD_TUNE.boost - 1) * 100) : 0;
   return { button: 'Una volta sola: la prossima mossa fa il 50% in più', armed: 'Adesso scegli la mossa',
-    sheet: f ? 'La magia ' + f.name + ': qui le mosse di tipo ' + f.type + ' fanno il ' + pct + '% in più. Lo Slancio sale quando un colpo è critico o superefficace, dato o preso. Con ' + FIELD_TUNE.max + ' punti, una volta a lotta, la Risonanza dà a una creatura il tipo del luogo, il ' + Math.round(FIELD_TUNE.heal * 100) + '% dei PS e un colpo fortissimo.' + (s.story && s.story.day ? '' : ' Serve un legame di tre cuori.') : '' };
+    sheet: f ? 'La magia ' + f.name + ': qui le mosse di tipo ' + f.type + ' fanno il ' + pct + '% in più. Lo Slancio sale quando un colpo è critico o superefficace, dato o preso. Con ' + FIELD_TUNE.max + ' punti, una volta a lotta, la Risonanza dà a una creatura il tipo del luogo, il ' + Math.round(FIELD_TUNE.heal * 100) + '% dei PS e un colpo fortissimo.' + ' Serve un legame di tre cuori.' : '' };
 }
 function chips(s: BattleState, i: number): Chip[] {
   const x = s.sides[i], out: Chip[] = [];

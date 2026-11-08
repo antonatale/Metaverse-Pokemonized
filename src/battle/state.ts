@@ -64,8 +64,6 @@ function newSide(id: FighterId, human: boolean, o?: SideOpts): Side {
   if (o && o.stages) { side.stages = o.stages; side.stage = 0; side.known = o.stages[0].moves.slice(); if (o.stages[0].types) side.types = o.stages[0].types.slice(); }
   /* a creature's ability comes with its kind */
   if (isSpecies(id) && SPECIES[id].abil) side.abil = SPECIES[id].abil!.slice();
-  /* and one more, if the day has given it one (src/day/plan.ts) */
-  if (o && o.abil) side.abil = (side.abil || []).concat(o.abil).filter(function (a, k, all) { return all.indexOf(a) === k; });
   return side;
 }
 export function newBattle(o: NewBattle): BattleState {

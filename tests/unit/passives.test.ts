@@ -383,7 +383,9 @@ describe('what the review of the legends found', () => {
     if (s.sides[0].hp <= 0 && says(ev).indexOf('si punge') >= 0) expect(s.sides[1].mods.filter((m) => m.tag === 'atkDown')).toEqual([]);
   });
   it('a first-hit effect is not used up on a blow that knocks the foe out', () => {
-    const s = E.newBattle({ a: 'polpino', b: 'cicalina', seed: 8, sideA: mon('polpino', 40, { abil: ['maggio'] }), sideB: mon('cicalina', 5), benchB: [mon('cicalina', 40)], bag: {} });
+    const s = E.newBattle({ a: 'polpino', b: 'cicalina', seed: 8, sideA: mon('polpino', 40), sideB: mon('cicalina', 5), benchB: [mon('cicalina', 40)], bag: {} });
+    /* the Ginestrella's ability, given by hand to a Polpino */
+    s.sides[0].abil = ['ventose', 'maggio'];
     E.intro(s); E.beginTurn(s);
     s.sides[0].stats = { ...s.sides[0].stats!, spe: 9999, atk: 9999 };
     s.sides[1].hp = 1;

@@ -52,8 +52,7 @@ function sceneHtml(): string {
   var id = S.story && S.story.scene;
   battle.classList.toggle('has-scene', !!id);
   if (!id) { battle.style.removeProperty('--plat'); return ''; }
-  /* a battle of «Un giorno a Formia» has its own hour */
-  var info = sceneInfo(id), dark = S.story!.day ? !!S.night : darkness(new Date()) > 0.5;
+  var info = sceneInfo(id), dark = darkness(new Date()) > 0.5;
   battle.style.setProperty('--plat', info.ground);
   battle.classList.toggle('night', dark);
   return '<div class="scene" role="img" aria-label="' + esc(info.title) + '">' + scene(id, dark) + '</div>';
@@ -409,17 +408,8 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
 }
 /** the player has won: the creature is beaten, or in the net */
 function wonNow(): boolean { return (S.result === 'win' && S.winner === 0) || S.result === 'catch'; }
-/** what is left of each creature of a team, as a share of its health */
-function leftNow(): Record<string, number> {
-  var left: Record<string, number> = {};
-  if (S.bench) [S.sides[0]].concat(S.bench[0]).forEach(function (x) { if (x.key) left[x.key] = x.hp / x.max; });
-  return left;
-}
 function play(evs: BattleEvent[], my: number): Promise<unknown> {
   var n = 0;
-  /* a battle of the day counts the moment the engine has decided it, not after the last blow and the result: closing the
-     page there must not lose a day already won */
-  if (S.phase === 'over' && S.story && S.story.day) dayDecided(wonNow(), leftNow(), S.turn);
   function next(): Promise<unknown> {
     if (my !== flow) return Promise.reject(CANCEL);
     if (n >= evs.length) return Promise.resolve();
@@ -646,8 +636,8 @@ function curtain(trainer: boolean) {
 }
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
-    var seed = cfg!.seed != null ? cfg!.seed : (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
-    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: cfg!.night != null ? cfg!.night : (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart, hero: cfg!.hero });
+    var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
+    S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart, hero: cfg!.hero });
     S.story = cfg!.story || null;
   }
   flow++;
@@ -684,17 +674,15 @@ export function goHome() {
 }
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
-  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [], left = S ? leftNow() : {}, turns = S ? S.turn : 0;
+  var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [];
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
   battle.hidden = true; battle.innerHTML = '';
   document.body.classList.remove('in-battle');
   closeOverlay();
-  renderLibretto();
   S = null as unknown as BattleState;
-  if (story.day) dayAfter(won, left, turns);
-  else if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
+  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
   else goHome();
 }
 /** the battle screen as one object, with the same names the old window.UI had */

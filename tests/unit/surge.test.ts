@@ -212,8 +212,6 @@ describe('what the review of Slancio found', () => {
     expect(t.sheet).toContain('la magia del porto'.replace('la', 'La'));
     expect(t.sheet).toContain(Math.round(FIELD_TUNE.heal * 100) + '% dei PS');
     expect(t.sheet).toContain('tre cuori');
-    s.story = { day: true };
-    expect(E.resonanceText(s).sheet, 'a day has no bond').not.toContain('tre cuori');
     expect(E.withResonance('coda')).toBe('res:coda');
   });
 });
