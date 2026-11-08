@@ -20,21 +20,22 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 | O1 | Le persone crescono: nuove mosse, nuovo aspetto, forme | Opus 5.5 | max | fatto |
 | O2 | Tutti protagonisti: ogni amico con la sua squadra e le sue missioni | Opus 5.5 | max | fatto |
 | O3 | Animazioni davvero diverse: il sistema e le prime scene | Opus 5.5 | max | fatto |
-| S1 | Togliere «Un giorno a Formia» | Sonnet 5.5 | high | da fare |
-| S2 | Mosse in quadrato, con un design più bello | Sonnet 5.5 | high | da fare |
-| S3 | Schermata per imparare una mossa | Sonnet 5.5 | high | da fare |
-| S4 | Comprare più cose e usarle dal menu | Sonnet 5.5 | high | da fare |
-| S5 | La musica tra un quartiere e l'altro | Sonnet 5.5 | xhigh | da fare |
-| S6 | Negozi veri, ognuno diverso | Sonnet 5.5 | xhigh | da fare |
-| S7 | Il Lido Oriente | Sonnet 5.5 | high | da fare |
-| S8 | Animazioni: tutte le altre mosse | Sonnet 5.5 | xhigh | da fare |
-| H1 | Il nome nuovo del gioco | Haiku 5.5 | high | da fare |
+| S1 | Togliere «Un giorno a Formia» | Opus 5.5 | high | fatto |
+| S2 | Mosse in quadrato, con un design più bello | Opus 5.5 | high | fatto |
+| S3 | Schermata per imparare una mossa | Opus 5.5 | high | fatto |
+| S4 | Comprare più cose e usarle dal menu | Opus 5.5 | high | fatto |
+| S5 | La musica tra un quartiere e l'altro | Opus 5.5 | xhigh | fatto, da ascoltare |
+| S6 | Negozi veri, ognuno diverso | Opus 5.5 | xhigh | fatto |
+| S7 | Il Lido Oriente | Opus 5.5 | high | fatto |
+| S8 | Animazioni: tutte le altre mosse | Opus 5.5 | xhigh | fatto |
+| H1 | Il nome nuovo del gioco | Opus 5.5 | high | fatto |
+| O4 | Il titolo a schermo intero, l'intro, tre salvataggi; via le lotte libere | Opus 5.5 | max | fatto |
 
 **Perché così.** Opus dove un errore è silenzioso o tocca il motore, i salvataggi e il bilanciamento. Sonnet dove il compito è definito e il giudizio finale è di Antonio, a vista o a orecchio. Haiku solo per lavoro meccanico verificato dai test.
 
 ## Opus 5.5, max
 
-O2 e O3 sono finite il 5 novembre: Opus non ha altre task. S8 può partire.
+O2 e O3 sono finite il 5 novembre. Anche S8 l'ha fatta Opus, su richiesta di Antonio, lo stesso giorno.
 
 ### O1. Le persone crescono
 
@@ -112,38 +113,13 @@ Antonio: «il lido oriente è fatto male, se ci vai vicino dice città di Ferrar
 - **Come:** vai a guardarlo nel gioco, verifica l'indirizzo e cosa c'è davvero al lido (fonti), e rendilo un posto: come l'Eclipse, con il suo disegno, una persona, qualcosa da fare. Il testo deve dire che è un lungomare di Formia. Se cambi la mappa, si rigenera con `tools/formia/build.ts`.
 - **Fatto quando:** arrivandoci si capisce dove si è, e c'è un motivo per andarci.
 
-### S8. Animazioni: tutte le altre mosse (xhigh)
+### S8. Animazioni: tutte le altre mosse (xhigh) — fatto
 
-Antonio: «le animazioni di ogni mossa sono comunque ognuna molto simile all'altra, penso a idropompa, surf e cascata in pokemon che avevano ognuno un'animazione molto diversa nonostante fossero mosse dello stesso tipo».
+Antonio: «le animazioni di ogni mossa sono comunque ognuna molto simile all'altra, penso a idropompa, surf e cascata in pokemon che avevano ognuno un'animazione molto diversa nonostante fossero mosse dello stesso tipo», e poi: «tutte le mosse di tutte le creature devono essere particolari le animazioni come le hai fatte qui».
 
-**Il modello è Corrente.** Leggi «La scena di ogni mossa» in `CLAUDE.md`, poi guarda i fogli di `mareggiata morsomurena morsa tentacolata fischio aculei urtica` (`npx tsx tools/move-sheet.ts …`, con `npm run dev` acceso): sono sette attacchi dello stesso tipo e non se ne confondono due. Ogni tipo va fatto così.
+**Fatto il 5 novembre, da Opus.** Ogni mossa di ogni creatura ha la sua scena, nei dieci tipi: gli attacchi, le due senza tipo (Beccata, Scintilla), le magie che abbassano un numero o confondono, e le mosse su se stessi. Nello stesso tipo non ce ne sono due uguali, e `tests/unit/move-fx.test.ts` lo controlla. Sono venute venti scene nuove per gli attacchi (`ui/move-scenes.ts`: temporale, ombra, segni, faro, canicola, lucciole, fuoco dal suolo, tromba d'aria, furto, terremoto, stella scritta, canto, orazione, graffi, aurora, torre che cade, agguato, vecchia foto, becco, scintilla, più il Saltello), sedici per le mosse su se stessi (`ui/self-scenes.ts`), e di cosa è fatta una mossa quando non sono le forme del tipo (`ui/move-props.ts`). Come sono fatte è in `CLAUDE.md`, «La scena di ogni mossa».
 
-**Come si lavora, un tipo alla volta:**
-1. Dai a ogni attacco del tipo la sua scena in `MOVE_FX`, secondo la tabella qui sotto. Una scena nuova è una funzione in `ui/move-stages.ts` e una voce in `STAGES` (con `foe`, ed eventualmente `quick`, `n`, `impact`), più il nome in `Stage` in `data/move-fx.ts`.
-2. Una scena prende colore e pezzi dal tipo (`x.mc`, `bit`), si risolve sull'impatto (il numero e la barra atterrano lì) e può continuare dopo. Se disegna il suo impatto, chiama `tint(x)` e dichiara `impact: true`. Copia la struttura di quelle che ci sono.
-3. Un pezzo che parte più tardi va creato quando parte, dentro la `sleep`: creato prima, resta un attimo fermo in alto a sinistra (è successo con l'onda, i delfini e i tentacoli).
-4. Guarda il foglio di ogni mossa, anche con `--foe` e `--miss`. Il giudizio finale è di Antonio: digli quali guardare.
-5. Aggiungi il tipo a `DONE` in `tests/unit/move-fx.test.ts`: da lì il test controlla che ogni attacco abbia una scena e che nessuna sia uguale a un'altra dello stesso tipo.
-
-**Le regole delle animazioni** valgono anche qui: niente `Math.random` (`wob()` di `effects.ts` se serve il caso), niente animazione con il movimento ridotto (`castSpell` già lo fa), lo schermo intero lampeggia al massimo un paio di volte al secondo, le scie (`filter`) solo sui pezzi grandi.
-
-**La scena di ogni altra mossa.** Tra parentesi la scena di oggi; *nuova* vuol dire una scena da scrivere. Le mosse delle leggende con uno spettacolo loro (`EPIC`: portatempo, tempestelmo, masso) lo tengono come mossa speciale: la voce serve quando non lo sono.
-
-| Tipo | Mossa → scena |
-|---|---|
-| Calma (10) | coda `slash` · morso `jaws` · marmo `lob` · spinata `rain` · risacca `tide` (l'onda che torna indietro) · fascio `beam` (il faro) · tempesta `fall` (una colonna di luna) · lunargento `orbit` (lune d'argento intorno) · ombra *nuova* `shade` (l'ombra di chi lancia si allunga per terra fino al bersaglio e si alza alle sue spalle) · profezia *nuova* `omen` (rune e occhi si aprono in cerchio intorno al bersaglio e colpiscono insieme) |
-| Calore (5) | canicola *nuova* `haze` (l'aria trema, onde di calore attraversano il bersaglio) · fuocoelmo `rain` · lucciole `orbit` (lucciole che girano e si chiudono) · primaluce `beam` · tempestelmo `fall` |
-| Caos (11) | carica `ram` · chela `slash` · pinza `clamp` · presa `grasp` (lo scoglio afferra) · burrasca `orbit` · ira `tide` · pellegrina `dive` · alberomaestro `fall` (l'albero della nave cade) · banco `volley` (pesci lanciati) · furto *nuova* `snatch` (scatta, arraffa, torna indietro di corsa) · furia *nuova* `quake` (la terra si solleva a onda da chi lancia fino al bersaglio) |
-| Cervello (6) | spruzzo `jet` · abbraccio `grasp` (le braccia degli abissi) · malocchio `beam` · notturno `dive` · pennino `slash` · stellata `lob` |
-| Chiacchiera (3) | catilinaria `beam` · concerto `rain` · graffio `slash` |
-| Cielo (7) | picchiata `dive` · planata `ram` · aurora `orbit` · libeccio `tide` (un muro di vento) · raffica `volley` (piume a ventaglio) · polline `lob` · vele `beam` |
-| Corazza (6) | frana `fall` · masso `lob` · naufragio `rain` · passogigante `quake` · torre `ram` · zanne `jaws` |
-| Crepuscolo (5) | agguato `ram` · ala `slash` · duevolti `orbit` · lucina `beam` · portatempo `fall` |
-| Cuore (6) | cuorepietra `fall` · desiderio `orbit` · mappaceleste `rain` · maregiallo `tide` (un mare giallo di ginestre) · nocciolo `lob` · nostalgia `beam` |
-
-Le scene nuove sono cinque: `shade`, `omen`, `haze`, `snatch` e `quake`, che serve a Caos e a Corazza. Se a vista una scelta della tabella non funziona, cambiala, purché nel tipo restino tutte diverse, e dillo ad Antonio.
-
-**Fatto quando:** `DONE` ha tutti e dieci i tipi e i test passano, e Antonio ha guardato i fogli.
+**Da guardare:** il giudizio finale è di Antonio. Le scene si vedono una per una con `npx tsx tools/move-sheet.ts <mossa>` (con `npm run dev` acceso).
 
 ## Haiku 5.5
 

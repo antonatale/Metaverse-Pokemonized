@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
 
-/* Whole games played to the end: home, battles against the computer, the exam, two players, the story, saves.
+/* Whole games played to the end: the title and its stories, the story, its battles, saves.
    Each must finish without errors; the saves they leave are checked where it matters. */
 
 declare global {
@@ -14,8 +14,7 @@ declare global {
 
 async function saves(r: Run, name: string) {
   r.keep(name, await r.page.evaluate(() => ({
-    storia: localStorage.getItem('lotte-tra-amici:storia:v1'),
-    libretto: localStorage.getItem('lotte-tra-amici:libretto:v2')
+    storia: localStorage.getItem('lotte-tra-amici:storia:v1')
   })));
 }
 /** plays a battle to the end, choosing what the computer would choose, with a screenshot of the first turns */
@@ -74,66 +73,61 @@ async function talkThrough(p: Page, max = 12) {
   }
 }
 
+/* the title: the intro (asked for with ?intro=1: the playtests skip it), the name, the way in and the three stories */
+const SAVED = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+  mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { antonio: { lv: 9, xp: 0 } }, money: 40, bag: {} };
 for (const dark of [false, true]) {
-  test('home ' + (dark ? 'dark' : 'light'), async ({ browser }) => {
-    await play(browser, 'home-' + (dark ? 'dark' : 'light'), { dark }, async (r) => {
-      await r.shot('full', { fullPage: true });
-      await r.page.click('.slot[data-id="valentin"]');
-      await r.page.click('#card .expr[data-x="cool"]');
-      await r.shot('card-valentin', { selector: '#card' });
-      await r.page.click('.slot[data-id="zendavid"]');
-      await r.page.click('#card .expr[data-x="sleepy"]');
-      await r.shot('card-zendavid', { selector: '#card' });
-      await r.page.click('#go');
-      await r.shot('setup-cpu');
-      await r.page.click('.seg button[data-m="pvp"]');
-      await r.shot('setup-pvp');
-    });
-  });
-}
-test('home desktop', async ({ browser }) => {
-  await play(browser, 'home-desktop', { viewport: { width: 1280, height: 900 } }, async (r) => { await r.shot('full', { fullPage: true }); });
-});
-
-const MATCHES: [string, string, number][] = [['antonio', 'costanzo', 11], ['andrea', 'valentin', 23], ['forchetta', 'zendavid', 5], ['valentin', 'antonio', 99], ['costanzo', 'forchetta', 3]];
-for (const [a, b, seed] of MATCHES) {
-  test('battle ' + a + ' vs ' + b, async ({ browser }) => {
-    await play(browser, 'battle-' + a + '-' + b, { seed }, async (r) => {
+  test('title ' + (dark ? 'dark' : 'light'), async ({ browser }) => {
+    await play(browser, 'title-' + (dark ? 'dark' : 'light'), { dark, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) } }, async (r) => {
       const p = r.page;
-      await p.click('.slot[data-id="' + a + '"]');
-      await p.click('#go');
-      await p.click('.pick[data-k="p2"][data-id="' + b + '"]');
-      await p.click('#su-go');
-      await fight(r, 'cpu');
-      await p.click('#back');
-      await r.shot('home-after', { selector: '#libretto' });
-      await saves(r, 'saves');
+      await r.shot('title');
+      r.keep('go', await p.locator('#go-story').innerText());
+      await p.click('#go-slots'); await p.clock.runFor(300);
+      await r.shot('slots');
+      r.keep('slots', await p.locator('.ti-slot').allInnerTexts());
     });
   });
 }
-test('boss', async ({ browser }) => {
-  await play(browser, 'boss', { seed: 42, dark: true }, async (r) => {
-    await r.page.click('.slot[data-id="antonio"]');
-    await r.page.click('#go');
-    await r.page.click('.pick[data-k="p2"][data-id="esame"]');
-    await r.page.click('#su-go');
-    await toPrompt(r.page);
-    await r.page.click('#info');
-    await r.shot('sheet');
-    await r.page.keyboard.press('Escape');
-    await fight(r, 'exam', 3);
-    await r.page.click('#back');
-    await saves(r, 'saves');
+test('the intro, and three stories at once', async ({ browser }) => {
+  const r = await play(browser, 'stories', { viewport: { width: 1280, height: 800 }, reduced: false, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) }, url: '?intro=1' }, async (r) => {
+    const p = r.page;
+    /* the intro: lines one after the other, then the name; any key skips it */
+    await p.clock.runFor(1500);
+    await r.shot('intro');
+    r.keep('intro', await p.locator('#ti-intro').isVisible());
+    await p.keyboard.press('Space'); await p.clock.runFor(1600);
+    await r.shot('after-intro');
+    r.keep('title', await p.locator('#ti-main').isVisible());
+    /* a new story in the second slot: it starts from the beginning, with Cicero */
+    await p.click('#go-slots'); await p.clock.runFor(300);
+    await p.click('[data-play="2"]'); await p.clock.runFor(1500);
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    r.keep('second', await p.evaluate(() => { const s = window.WORLD.state() as { badges: string[]; mons: unknown[]; money: number }; return { badges: s.badges.length, mons: s.mons.length, money: s.money }; }));
+    await talkThrough(p, 20);
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.click('[data-tab="mappa"]'); await p.click('#wm-home'); await p.clock.runFor(500);
+    /* back on the title: the way in goes on with the second; the first is still there as it was */
+    r.keep('go', await p.locator('#go-story').innerText());
+    await p.click('#go-slots'); await p.clock.runFor(300);
+    await r.shot('two-stories');
+    await p.click('[data-play="1"]'); await p.clock.runFor(1500);
+    r.keep('first', await p.evaluate(() => { const s = window.WORLD.state() as { badges: string[]; x: number; y: number; money: number }; return { badges: s.badges.length, x: s.x, y: s.y, money: s.money }; }));
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.click('[data-tab="mappa"]'); await p.click('#wm-home'); await p.clock.runFor(500);
+    /* the second one goes, with a touch to be sure */
+    await p.click('#go-slots'); await p.clock.runFor(300);
+    await p.click('[data-del="2"]'); await p.click('[data-del="2"]'); await p.clock.runFor(300);
+    r.keep('after-delete', await p.locator('.ti-slot.empty').count());
+    r.keep('keys', await p.evaluate(() => [localStorage.getItem('lotte-tra-amici:storia:v1') !== null, localStorage.getItem('lotte-tra-amici:storia:v1:2'), localStorage.getItem('lotte-tra-amici:slot:v1')]));
   });
-});
-test('two players', async ({ browser }) => {
-  await play(browser, 'pvp', { seed: 8 }, async (r) => {
-    await r.page.click('#go');
-    await r.page.click('.seg button[data-m="pvp"]');
-    await r.page.click('.pick[data-k="p2"][data-id="andrea"]');
-    await r.page.click('#su-go');
-    await fight(r, 'pvp', 4);
-  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('intro')).toBe(true);
+  expect(get('title')).toBe(true);
+  expect(get('second'), 'a new story, from nothing').toEqual({ badges: 0, mons: 0, money: 0 });
+  expect(String(get('go'))).toContain('Storia 2');
+  expect(get('first')).toMatchObject({ badges: 1, x: 137, y: 20, money: 40 });
+  expect(get('after-delete')).toBe(2);
+  expect(get('keys')).toEqual([true, null, '1']);
 });
 
 test('story', async ({ browser }) => {
@@ -206,12 +200,15 @@ for (const dark of [false, true]) {
 
 /* the claude.ai artifact's hot reload: an open battle survives an update of the page */
 test('hot reload keeps an open battle', async ({ browser }) => {
-  await play(browser, 'hot', { seed: 21, hot: true }, async (r) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cic-wild': true },
+    mons: [{ uid: 'c1', sp: 'polpastro', moves: ['spruzzo', 'catilinaria'] }], lv: { c1: { lv: 30, xp: 0 } }, money: 0, bag: {} };
+  await play(browser, 'hot', { seed: 21, hot: true, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('.slot[data-id="forchetta"]');
-    await p.click('#go');
-    await p.click('#su-go');
-    for (let k = 0; k < 2; k++) {
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await p.evaluate(() => window.WORLD._debug.meet('gianola')); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!'); await p.clock.runFor(800);
+    for (let k = 0; k < 1; k++) {
       await toPrompt(p);
       const id = await p.evaluate(() => window.UI._debug.suggest());
       await p.click('#pad .mv[data-id="' + id + '"]');
@@ -230,6 +227,7 @@ test('hot reload keeps an open battle', async ({ browser }) => {
 /* saves in the format of the old single-file game still load */
 const OLD_SAVE = {
   'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 30, y: 25, dir: 'left', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: { piazza: true }, seen: { intro: true, formia2: true }, found: { appunti: true, caricabatterie: true } }),
+  /* the record of the friends' battles, which are no more: it stays in the browser, unread */
   'lotte-tra-amici:libretto:v2': JSON.stringify({ v: 2, chars: { antonio: { w: 3, l: 1 }, valentin: { w: 0, l: 2 } }, exam: { antonio: { p: 1, f: 2, best: 27, lode: false } } })
 };
 const PRE_FORMIA2 = { 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 3, y: 3, dir: 'up', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true }, found: {} }) };
@@ -247,6 +245,117 @@ test('old saves', async ({ browser }) => {
     await r.shot('world');
     await saves(r, 'saves');
   });
+});
+
+/* the Lido Oriente is a place: its name on arriving, its beach, its bagnino, and a canoe out to the buoy and back */
+test('a canoe at the Lido Oriente', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+    mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'oriente', { seed: 6, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await talkTo(p, 'bagnino-oriente');
+    r.keep('area', await p.evaluate(() => window.WORLD._debug.area()));
+    await r.shot('lido');
+    await choose(p, 'Prendi una canoa');
+    /* left, right, left, right…: a stroke every 0.35 s, in turn */
+    for (let k = 0; k < 160 && !(await p.locator('#mg-s', { hasText: /Fine|scaduto/ }).count()); k++) {
+      await p.keyboard.press(k % 2 ? 'ArrowRight' : 'ArrowLeft'); await p.clock.runFor(350);
+      if (k === 12) await r.shot('canoe');
+    }
+    r.keep('canoe', await p.textContent('#mg-s'));
+    await r.shot('canoe-end');
+    await p.click('#mg-x'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await afterwards(p);
+    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('area')).toBe('Lido Oriente');
+  expect(String(get('canoe'))).toMatch(/Fine: \d+,\d s/);
+  const st = get('state') as { done: Record<string, number>; best: Record<string, number> };
+  expect(st.done.canoa).toBe(1);
+  expect(st.best.canoa).toBeGreaterThan(5);
+});
+
+/* the shops of the town, each its own: the pharmacy's balm, the fishmonger's alici, a manual of the bookshop, the
+   newspaper read at the newsstand, the market of Largo Paone; then from the menu the alici to a creature and the manual */
+test('the shops of the town', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+    mons: [{ uid: 'c1', sp: 'cicalina', bond: 10 }], lv: { c1: { lv: 5, xp: 0 } }, money: 300, bag: {} };
+  type St = { bag: Record<string, number>; money: number; books?: number; mons: { bond?: number }[] };
+  const r = await play(browser, 'shops', { seed: 3, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    const shop = async (id: string) => { await p.evaluate((i) => (window.WORLD._debug as unknown as { shop(id: string): void }).shop(i), id); await p.clock.runFor(300); };
+    const buy = async (it: string, n = 1) => { for (let k = 1; k < n; k++) await p.click('[data-qty="' + it + '"] [data-up]'); await p.click('[data-it="' + it + '"]'); await p.clock.runFor(200); };
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    /* the shops on the map */
+    for (const [name, x, y] of [['pharmacy', 72, 28], ['market', 66, 37], ['fish', 95, 29], ['news', 83, 42], ['bakery', 62, 37]] as [string, number, number][]) {
+      await p.evaluate(([x0, y0]) => window.WORLD._debug.travel('formia', x0, y0), [x, y]); await p.clock.runFor(600);
+      await r.shot('map-' + name);
+    }
+    await shop('farmacia'); await buy('balsamo'); await r.shot('farmacia'); await p.click('#shop-x');
+    await shop('pescheria'); await buy('alici', 2); await r.shot('pescheria'); await p.click('#shop-x');
+    await shop('libreria'); await buy('manuale'); await r.shot('libreria'); await p.click('#shop-x');
+    await shop('mercato'); r.keep('market', await p.locator('.wares li').count()); await r.shot('mercato'); await p.click('#shop-x');
+    await shop('edicola'); await buy('giornale'); await p.clock.runFor(1500);
+    r.keep('news', await p.evaluate(() => window.WORLD._debug.pos().text));
+    await r.shot('giornale');
+    await talkThrough(p); await p.clock.runFor(300);
+    if (await p.locator('#shop-x').count()) await p.click('#shop-x');
+    r.keep('bought', await p.evaluate(() => window.WORLD.state()));
+    /* from the menu: the alici to the Cicalina, then the manual */
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.click('[data-use="alici"]'); await p.clock.runFor(300);
+    await p.click('[data-qty="alici"] [data-up]'); await p.click('#us-go'); await p.clock.runFor(300);
+    await talkThrough(p);
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.click('[data-use="manuale"]'); await p.clock.runFor(300);
+    await talkThrough(p);
+    r.keep('after', await p.evaluate(() => window.WORLD.state()));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect([2, 5]).toContain(get('market'));
+  expect(String(get('news'))).toContain('Avvistamenti');
+  const bought = get('bought') as St, after = get('after') as St;
+  expect(bought.bag).toMatchObject({ balsamo: 1, alici: 2, manuale: 1 });
+  expect(bought.money).toBe(300 - 8 - 10 - 60 - 1);
+  expect(after.bag.alici).toBe(0);
+  expect(after.bag.manuale).toBe(0);
+  expect(after.books).toBe(1);
+  expect(after.mons[0].bond).toBeGreaterThan(10);
+});
+
+/* the bar of Mola: three coffees in one go, into the bag; from the menu, «Usa» asks whom once, and how many */
+test('three coffees, given from the bag', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+    mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 20, bag: {} };
+  const r = await play(browser, 'coffee', { seed: 4, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-story'); await p.clock.runFor(1500);
+    await p.evaluate(() => (window.WORLD._debug as unknown as { shop(id: string): void }).shop('bar')); await p.clock.runFor(300);
+    for (let k = 0; k < 2; k++) await p.click('[data-qty="caffe"] [data-up]');
+    await r.shot('shop');
+    r.keep('price', await p.locator('[data-it="caffe"]').innerText());
+    await p.click('[data-it="caffe"]'); await p.clock.runFor(200);
+    r.keep('bought', await p.evaluate(() => (window.WORLD.state() as { bag: Record<string, number>; money: number })));
+    await p.click('#shop-x'); await p.clock.runFor(200);
+    await p.keyboard.press('m'); await p.clock.runFor(300);
+    await p.locator('[data-use="caffe"]').scrollIntoViewIfNeeded();
+    await r.shot('bag');
+    await p.click('[data-use="caffe"]'); await p.clock.runFor(300);
+    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(300);
+    for (let k = 0; k < 2; k++) await p.click('[data-qty="caffe"] [data-up]');
+    await r.shot('give');
+    await p.click('#us-go'); await p.clock.runFor(300);
+    await talkThrough(p, 20);
+    r.keep('after', await p.evaluate(() => (window.WORLD.state() as { bag: Record<string, number>; lv: Record<string, { lv: number }> })));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value as { bag: Record<string, number>; money: number; lv: Record<string, { lv: number }> };
+  expect(String(get('price'))).toContain('9');
+  expect(get('bought')).toMatchObject({ bag: { caffe: 3 }, money: 11 });
+  expect(get('after').bag.caffe).toBe(0);
+  expect(get('after').lv.c1.lv).toBeGreaterThan(5);
 });
 
 /* the things to do around Formia, each in its real place */
@@ -885,60 +994,6 @@ test('Lamo, in three parts', async ({ browser }) => {
   expect(st.mons.map((m) => m.sp)).toContain('lamo');
 });
 
-/* «Un giorno a Formia»: from the home page to the line for the friends, and a second player who gets the same day */
-test('a day in Formia', async ({ browser }) => {
-  const sheet = (p: Page) => p.evaluate(() => { const o = document.getElementById('overlay')!; return o.hidden ? '' : (o.querySelector('h2') || { textContent: '' }).textContent; });
-  const r = await play(browser, 'day', { seed: 5 }, async (r) => {
-    const p = r.page;
-    await r.shot('card', { selector: '#day-card' });
-    await p.click('#dy-today'); await p.clock.runFor(200);
-    await r.shot('floor');
-    r.keep('team', await p.locator('.bench-pick').allInnerTexts());
-    /* who goes first can be chosen */
-    const second = await p.locator('.bench-pick').nth(1).getAttribute('data-key');
-    await p.locator('.bench-pick').nth(1).click(); await p.clock.runFor(100);
-    r.keep('lead', [second, await p.locator('.bench-pick[aria-pressed="true"]').getAttribute('data-key')]);
-    const rewards: string[] = [];
-    for (let floor = 0; floor < 8; floor++) {
-      await p.click('#dy-go');
-      for (let k = 0; k < 6 && !await battleOver(p); k++) await fight(r, 'day-' + floor, floor === 0 ? 2 : 0);
-      if (!await battleOver(p)) break;
-      await p.click('#st-go'); await p.clock.runFor(300);
-      if (await p.locator('#dy-line').count()) break;
-      if (floor === 0) await r.shot('reward');
-      rewards.push(await p.locator('.day-offer').first().innerText());
-      const offer = p.locator('.day-offer:not([disabled])').first();
-      if (await offer.count()) await offer.click(); else await p.click('#dy-skip');
-      await p.clock.runFor(200);
-      if (await sheet(p) === 'A chi va?') { await p.locator('.bench-pick').first().click(); await p.clock.runFor(200); }
-    }
-    await r.shot('end');
-    r.keep('rewards', rewards.length);
-    r.keep('line', await p.locator('#dy-line').inputValue());
-    await p.click('#dy-close'); await p.clock.runFor(100);
-    r.keep('story', await p.evaluate(() => localStorage.getItem('lotte-tra-amici:storia:v1')));
-    r.keep('save', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!)));
-    r.keep('again', await p.locator('#dy-today').count());
-    r.keep('copy', await p.locator('#dy-copy').count());
-  });
-  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
-  expect((get('team') as string[]).length).toBe(3);
-  expect((get('lead') as string[])[0]).toBe((get('lead') as string[])[1]);
-  expect(String(get('line'))).toMatch(/^Un giorno a Formia, 14 marzo: \d su 8, \d+ punti [🟩🟨🟥⬜]{8} /u);
-  expect(get('story'), 'a run does not touch the story').toBeNull();
-  const save = get('save') as { run: unknown; days: Record<string, { line: string }>; best: number };
-  expect(save.run).toBeNull();
-  expect(save.days['2026-03-14'].line).toBe(get('line'));
-  expect(get('again'), 'the day\'s challenge is played once').toBe(0);
-  expect(get('copy')).toBe(1);
-  /* someone else, on the same day, with different dice: the same three creatures */
-  const other = await play(browser, 'day-other', { seed: 99 }, async (o) => {
-    await o.page.click('#dy-today'); await o.page.clock.runFor(200);
-    o.keep('team', await o.page.locator('.bench-pick').allInnerTexts());
-  });
-  expect(other.data[0].value).toEqual(get('team'));
-});
-
 /* the magic of a place, and what a creature with a bond can do with it: the dots, the button, the choice taken back, the
    show, and a creature that has taken the type of the place */
 test('the magic of a place, and Risonanza', async ({ browser }) => {
@@ -982,46 +1037,6 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
   expect(get('back')).toBe('false');
   expect((get('types') as string[]).length, 'it has taken the type of the place').toBe(2);
   expect(get('gone'), 'once in a battle').toBe(0);
-});
-
-/* a day's challenge cannot be tried again by closing the page in the middle of a battle */
-test('a battle of the day left in the middle', async ({ browser }) => {
-  const r = await play(browser, 'day-left', { seed: 6 }, async (r) => {
-    const p = r.page;
-    await p.click('#dy-today'); await p.clock.runFor(200);
-    await p.click('#dy-go'); await p.clock.runFor(300);
-    r.keep('fighting', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!).run.fighting));
-    await p.reload(); await p.clock.runFor(1500);
-    r.keep('card', await p.locator('#day-card').innerText());
-    await p.click('#dy-on'); await p.clock.runFor(300);
-    r.keep('title', await p.locator('#dy-t').innerText());
-    await p.click('#dy-close'); await p.clock.runFor(100);
-    r.keep('save', await p.evaluate(() => JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!)));
-  });
-  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
-  expect(get('fighting')).toBe(true);
-  expect(String(get('card'))).toContain('rimasta a metà');
-  expect(get('title')).toBe('La giornata finisce qui');
-  const save = get('save') as { run: unknown; days: Record<string, { floors: number }> };
-  expect(save.run).toBeNull();
-  expect(save.days['2026-03-14'].floors).toBe(0);
-});
-
-/* a battle already decided counts, even if the page is closed on the result */
-test('a battle of the day won, and the page closed on the result', async ({ browser }) => {
-  const r = await play(browser, 'day-won', { seed: 6 }, async (r) => {
-    const p = r.page;
-    await p.click('#dy-free'); await p.clock.runFor(200);
-    await p.click('#dy-go');
-    for (let k = 0; k < 8 && !await battleOver(p); k++) await fight(r, 'day-won', 0);
-    r.keep('won', await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('lotte-tra-amici:giorno:v1')!).run; return s && [s.floor, s.fighting, s.picking, s.over]; }));
-    await p.reload(); await p.clock.runFor(1500);
-    await p.click('#dy-on'); await p.clock.runFor(300);
-    r.keep('title', await p.locator('#dy-t').innerText());
-  });
-  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
-  expect(get('won')).toEqual([1, false, true, '']);
-  expect(get('title')).toBe('Scegli una ricompensa');
 });
 
 /* the choices of the story, in the game: the stones after Mamurra, and what they do from there on */
@@ -1167,15 +1182,24 @@ test('the people grow', async ({ browser }) => {
     r.keep('evolve', await p.locator('.award.evolve').innerText());
     await p.click('#ev-ok'); await p.clock.runFor(300);
     await talkThrough(p);
-    r.keep('forget', await p.locator('#wopts button').allInnerTexts());
-    await choose(p, 'Dimentica Diagnosi Energetica');
+    /* the sheet for learning a move: the new one, and the four known drawn as in a battle */
+    await r.shot('learn');
+    r.keep('learn', await p.locator('.sheet.learn .ln-new').innerText());
+    r.keep('forget', await p.locator('.sheet.learn [data-old]').evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label'))));
+    await p.click('.sheet.learn [data-old="diagnosi"]'); await p.clock.runFor(300);
     await talkThrough(p);
     await p.evaluate(() => window.WORLD._debug.xp('costanzo', 400)); await p.clock.runFor(300);
     await talkThrough(p);
     await r.shot('evolve-2');
     await p.click('#ev-ok'); await p.clock.runFor(300);
     await talkThrough(p);
-    for (let k = 0; k < 4 && (await p.evaluate(() => window.WORLD._debug.pos().opts)); k++) { await p.locator('#wopts button').last().click(); await p.clock.runFor(300); await talkThrough(p); }
+    /* what Costanzo wants to learn: not this time */
+    for (let k = 0; k < 4; k++) {
+      if (await p.locator('.sheet.learn').count()) await p.click('#ln-no');
+      else if (await p.evaluate(() => window.WORLD._debug.pos().opts)) await p.locator('#wopts button').last().click();
+      else break;
+      await p.clock.runFor(300); await talkThrough(p);
+    }
     await r.shot('after');
     await p.keyboard.press('m'); await p.clock.runFor(300);
     r.keep('menu', await p.locator('#overlay, .world-menu, .menu').first().innerText().catch(() => ''));
@@ -1187,6 +1211,7 @@ test('the people grow', async ({ browser }) => {
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
   expect(String(get('evolve'))).toContain('Il Ricercatore');
   expect(get('forget')).toContain('Dimentica Diagnosi Energetica');
+  expect(String(get('learn'))).toContain('Paper su arXiv');
   expect(String(get('card'))).toContain('Paper su arXiv');
   expect(String(get('card'))).toContain('Il Ricercatore');
   const st = get('state') as { people: Record<string, { moves: string[] }> };
