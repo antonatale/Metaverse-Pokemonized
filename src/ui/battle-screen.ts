@@ -65,9 +65,11 @@ function renderShell() {
     '<div class="arena" id="arena">' + boxHtml(1) +
     '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk', '', undefined, S.sides[1].gold, S.sides[1].form) + '</div></div></div>' +
     '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold, S.sides[0].form) + '</div></div></div>' + boxHtml(0) + '</div>' +
-    '<div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +
+    /* the console under the arena: the words on one side, the four moves in a square on the other (on a narrow screen,
+       one under the other) */
+    '<div class="console"><div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="turnbar" id="turnbar" hidden></div>' +
-    '<div class="pad off" id="pad">' + [0, 1, 2, 3].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled></button>'; }).join('') + '<div class="bagrow" id="bagrow" hidden></div></div>';
+    '<div class="pad off" id="pad">' + [0, 1, 2, 3].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled></button>'; }).join('') + '<div class="bagrow" id="bagrow" hidden></div></div></div>';
   arena = $('arena'); dialog = $('dialog'); whoEl = $('who'); txtEl = $('txt'); pad = $('pad'); turnbar = $('turnbar');
   dialog.addEventListener('click', advance);
   arena.addEventListener('click', advance);
@@ -152,27 +154,27 @@ function padMoves(i: number): Move[] {
 /** what is in the bag in a story battle: the nets Antonio has (only against a wild creature) and the tiella */
 function bagMoves(i: number): Move[] {
   if (i !== 0 || !S.bag) return [];
-  return E.BAG_IDS.filter(function (id) { return (S.bag![id] || 0) > 0 && (id === 'tiella' || S.wild); }).map(function (id) { return E.BAG[id]; });
+  return E.BAG_IDS.filter(function (id) { return (S.bag![id] || 0) > 0 && (id === 'tiella' || id === 'balsamo' || S.wild); }).map(function (id) { return E.BAG[id]; });
 }
 /* the words for how well a creature's spell works on the one in front (the engine's effLevel) */
-const EFF_WORD: Record<string, string> = { '2': 'Doppio vantaggio', '1': 'Superefficace', '-1': 'Poco efficace', '-2': 'Per niente efficace' };
 function moveButton(b: HTMLButtonElement, i: number, m: Move) {
-  var L = E.moveLabel(S, i, m.id), sub = '', creatureSide = isSpecies(S.sides[i].id), bag = !!E.BAG[m.id];
-  if (L.dots) sub = '<span class="stage">' + L.dots.map(function (on) { return '<i class="' + (on ? 'on' : '') + '"></i>'; }).join('') + '</span>' + esc(L.sub);
-  else sub = (L.icon && !(creatureSide && !bag) ? ico(L.icon) : '') + esc(L.sub);
-  if (L.left != null && !L.locked) sub += '<span class="left">' + L.left + (L.left === 1 ? ' uso' : ' usi') + '</span>';
-  /* a creature's move wears the colour and the rune of its magic, and says how it does against the one in front */
-  var lvl = L.eff != null ? E.effLevel(L.eff) : 0, tag = lvl ? '<i class="eff ' + (lvl > 0 ? 'up' : 'down') + '">' + EFF_WORD[lvl] + '</i>' : '';
-  var rune = creatureSide && !bag ? '<span class="mv-rune">' + (L.mtype ? runeIcon(L.mtype, 34) : ico('spark')) + '</span>' : bag ? '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">' + L.count + '</i>' : '') + '</span>' : '';
-  if (bag) sub = esc(L.sub);
+  var L = E.moveLabel(S, i, m.id), creatureSide = isSpecies(S.sides[i].id), bag = !!E.BAG[m.id];
+  var lvl = L.eff != null ? E.effLevel(L.eff) : 0;
   b.setAttribute('data-id', m.id);
-  b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (bag ? ' bag' : '') + (rune ? ' cr' : '') + (creatureSide && !bag && !L.mtype ? ' plain' : '') +
-    /* a net likely to hold now glows: the moment to throw it */
-    (bag && L.chance != null && L.chance >= 0.5 ? ' ready' : '');
-  b.style.setProperty('--tc', creatureSide && !bag ? (L.mtype ? TC[L.mtype] : 'var(--t-none)') : TC[E.sideType(S, i)]);
-  b.innerHTML = rune + '<b>' + esc(m.name) + tag + '</b><small>' + sub + '</small>';
   b.disabled = !padOn || L.locked;
   b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + (lvl ? EFF_WORD[lvl] + '. ' : '') + L.sub);
+  if (bag) {
+    /* a thing in the bag: its picture, how many are left, how likely a net is to hold now */
+    b.className = 'mv bag cr' + (L.locked ? ' locked' : '') + (L.chance != null && L.chance >= 0.5 ? ' ready' : '');
+    b.style.setProperty('--tc', TC[E.sideType(S, i)]);
+    b.innerHTML = '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">' + L.count + '</i>' : '') + '</span><b>' + esc(m.name) + '</b><small>' + esc(L.sub) + '</small>';
+    return;
+  }
+  /* a move: a card in the colour of its magic (ui/move-card.ts, the same as on the sheet for learning a move) */
+  var d: MoveCard = { name: m.name, type: creatureSide ? L.mtype || null : undefined, creature: creatureSide, tc: TC[E.sideType(S, i)], icon: L.icon, kind: m.kind,
+    power: L.power, acc: L.acc, more: L.more != null ? L.more : L.sub, left: L.left, uses: m.uses, eff: lvl, dots: L.dots };
+  b.className = 'mv ' + cardClass(d) + (L.locked ? ' locked' : '');
+  paintCard(b, d);
 }
 function renderPad(i: number) {
   padSide = i;

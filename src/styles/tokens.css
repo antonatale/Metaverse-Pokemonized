@@ -35,6 +35,8 @@
   --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-hand: "Patrick Hand", "Chalkboard SE", "Comic Sans MS", cursive;
+  /* the words of the battles, written on parchment */
+  --font-book: "Alegreya", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   /* the city maps: ballpoint on squared paper, coloured with highlighters */
   --m-paper: #f7f6f0; --m-grid: #d5dfee; --m-ink: #1f2c6e; --m-label: #1b1f2e; --m-shadow: rgba(31, 44, 110, .16);
   --m-grass: #cdeab4; --m-grass2: #9fcf86; --m-path: #f1e6cc; --m-path2: #d8c6a0; --m-road: #dde0e8; --m-road2: #b9bfcc;

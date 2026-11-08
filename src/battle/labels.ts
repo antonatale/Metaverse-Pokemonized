@@ -1,6 +1,7 @@
 import { TUNE } from '../data/tuning';
 import { ITEMS } from '../data/items';
 import type { BattleState, BenchLabel, Chip, MoveLabel, Side, Snap } from './types';
+import type { Move } from '../data/characters';
 import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn, switches, senders, switchSlot } from './state';
 import { SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
 import { movePower, moveType, magicEff, typesOf, effLevel } from './damage';
@@ -95,9 +96,32 @@ function chips(s: BattleState, i: number): Chip[] {
 }
 
 /* ---------- labels for the move buttons ---------- */
+/** what a move made of numbers does besides its power, in words (the battle's buttons and the sheet for learning a
+    move say the same); `here` is the bonus of the place's magic, when there is one */
+export function moveBits(m: Move, here?: string): string[] {
+  const fx = m.fx || {}, bits: string[] = [];
+  if (m.windup) bits.push('Un turno per caricare');
+  if (here) bits.push(here);
+  if (m.priority) bits.push('Attacca per primo');
+  if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura il ' + Math.round(m.drain * 100) + '%');
+  if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');
+  if (fx.heal) bits.push('Cura il ' + Math.round(fx.heal * 100) + '%');
+  if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');
+  if (fx.foe) bits.push(fx.foe === 'atkDown' ? 'Attacco avv. −25%' : 'Difesa avv. −20%');
+  if (fx.conf) bits.push(fx.conf >= 1 ? 'Confonde' : 'può confondere');
+  if (fx.status) bits.push(STATUS[fx.status].name + (fx.odds ? ' ' + Math.round(fx.odds * 100) + '%' : '') + (m.kind !== 'atk' && m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
+  return bits;
+}
+/** the icon of a move made of numbers */
+export function moveIcon(m: Move): string {
+  const fx = m.fx || {};
+  return m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : fx.status ? STATUS[fx.status].icon : 'down';
+}
 export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
   const me = s.sides[i], m = mv(me, id)!, lock = me.lock && me.lock.move === id;
   const av = available(s, i), out: MoveLabel = { id: id, name: m.name, kind: m.kind, locked: av.indexOf(id) < 0, sub: '', icon: null, dots: null };
+  /* a creature's move always says its magic, even when it cannot be used now */
+  if (isSpecies(me.id) && !ITEMS[id]) out.mtype = moveType(me, m);
   if (lock) { const it = ITEMS[id], left = me.lock!.until - s.turn + 1; out.icon = it.icon; out.sub = it.short + ' · ' + (left <= 1 ? '1 turno' : left + ' turni'); return out; }
   if (out.locked && me.encore && me.encore.until >= s.turn) { out.sub = 'Manipolato: non può'; out.icon = 'loop'; return out; }
   if (m.uses && (me.uses[id] || 0) >= m.uses) { out.icon = 'x'; out.sub = 'Usi finiti'; return out; }
@@ -142,25 +166,17 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
          (the Esame's keep no label, as they always had) */
       const magic = isSpecies(me.id);
       if (!magic && !me.grown) break;
-      const fx = m.fx || {}, bits: string[] = [];
+      const bits: string[] = [];
       if (magic) out.mtype = moveType(me, m);
       if (m.kind === 'atk') {
         out.power = m.power; out.acc = m.acc || 1;
         if (magic) out.eff = magicEff(out.mtype!, typesOf(s, s.sides[1 - i], me));
         bits.push('Potenza ' + m.power + (m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
       }
-      if (m.windup) bits.push('Un turno per caricare');
-      if (m.kind === 'atk' && s.field && out.mtype === s.field.type) bits.push('+' + Math.round((FIELD_TUNE.boost - 1) * 100) + '% qui');
-      if (m.priority) bits.push('Attacca per primo');
-      if (m.drain) bits.push(m.drain >= 0.5 ? 'si cura metà' : 'si cura il ' + Math.round(m.drain * 100) + '%');
-      if (m.crit) bits.push('critico ' + Math.round(m.crit * 100) + '%');
-      if (fx.heal) bits.push('Cura il ' + Math.round(fx.heal * 100) + '%');
-      if (fx.self) bits.push(fx.self === 'atkUp' ? 'Attacco +30%' : 'Difesa +25%');
-      if (fx.foe) bits.push(fx.foe === 'atkDown' ? 'Attacco avv. −25%' : 'Difesa avv. −20%');
-      if (fx.conf) bits.push(fx.conf >= 1 ? 'Confonde' : 'può confondere');
-      if (fx.status) bits.push(STATUS[fx.status].name + (fx.odds ? ' ' + Math.round(fx.odds * 100) + '%' : '') + (m.kind !== 'atk' && m.acc ? ' · ' + Math.round(m.acc * 100) + '%' : ''));
-      out.icon = m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : fx.status ? STATUS[fx.status].icon : 'down';
-      out.sub = bits.join(', ');
+      const more = moveBits(m, m.kind === 'atk' && s.field && out.mtype === s.field.type ? '+' + Math.round((FIELD_TUNE.boost - 1) * 100) + '% qui' : '');
+      out.icon = moveIcon(m);
+      out.more = more.join(', ');
+      out.sub = bits.concat(more).join(', ');
     }
   }
   if (m.uses) out.left = m.uses - (me.uses[id] || 0);

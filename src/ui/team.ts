@@ -4,9 +4,12 @@ import { fighter } from '../data/fighters';
 import { ROSTER, type FriendId } from '../data/characters';
 import { PATHS, formAt, isFriend, withForm } from '../data/people';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
-import { beaterOf } from '../battle';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, drinkCoffee, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
+import { SKILLS, WARES, SHOPS, MANUALS, marketToday, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
+import { beaterOf, moveBits, moveIcon } from '../battle';
+import { newsOf } from '../story/newspaper';
+import { cardHtml, cardClass, cardColour, type MoveCard } from './move-card';
+import { TC } from './common';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
 import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -122,17 +125,32 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
   });
 }
 /** a move to learn when four are known already: which one to forget, or none */
+/** a move of someone of the team, as a card (ui/move-card.ts): the same drawing as the four buttons of the battle */
+export function cardFor(key: string, id: string): MoveCard {
+  var m = anyMove(id), mon = creatureOf(key), bits = moveBits(m).join(', ');
+  return { name: m.name, creature: !!mon, type: mon ? (m.plain ? null : m.mtype || SPECIES[mon.sp].type) : undefined, tc: mon ? undefined : TC[fighter(idOf(key)).type],
+    icon: moveIcon(m), kind: m.kind, power: m.power, acc: m.acc || 1, more: bits || (mon ? '' : m.text), uses: m.uses };
+}
+/** a new move and four already known: the sheet shows them as in a battle, and a touch says which one to forget */
 function askLearn(key: string, list: string[], then: () => void) {
   if (!list.length) { then(); return; }
   var m = list[0], rest = list.slice(1), who = nameOf(key), next = function () { askLearn(key, rest, then); };
-  var nw = anyMove(m);
-  say([who + ' vuole imparare ' + nw.name + '. ' + nw.text, 'Ma conosce già quattro mosse. Ne dimentica una?'], null,
-    movesOf(key).map(function (old) {
-      return { label: 'Dimentica ' + anyMove(old).name, fn: function () {
-        swapMove(key, old, m); save();
-        say(['Uno, due e… puf! ' + who + ' ha dimenticato ' + anyMove(old).name + ' e ha imparato ' + nw.name + '!'], null, null, next);
-      } };
-    }).concat([{ label: 'Non imparare ' + nw.name, fn: function () { say([who + ' non ha imparato ' + nw.name + '.'], null, null, next); } }]));
+  var nw = anyMove(m), known = movesOf(key), card = function (id: string, attrs: string) { var d = cardFor(key, id); return '<button class="mv ' + cardClass(d) + '" type="button" ' + attrs + ' style="--tc:' + cardColour(d) + '">' + cardHtml(d) + '</button>'; };
+  sfx('blip');
+  var o = sheet('<div class="sheet learn" role="dialog" aria-modal="true" aria-labelledby="ln-t"><div class="sheet-h"><h2 id="ln-t">' + esc(who) + ' vuole imparare ' + esc(nw.name) + '</h2></div>' +
+    '<div class="ln-new"><span class="ln-tag">Nuova</span>' + card(m, 'disabled aria-disabled="true"') + '<p>' + esc(nw.text) + '</p></div>' +
+    '<p class="ln-ask">Ma conosce già quattro mosse. Tocca quella da dimenticare:</p>' +
+    '<div class="ln-old">' + known.map(function (old) { return card(old, 'data-old="' + esc(old) + '" aria-label="Dimentica ' + esc(anyMove(old).name) + '"'); }).join('') + '</div>' +
+    '<div class="ln-foot"><button class="btn" type="button" id="ln-no">Non imparare ' + esc(nw.name) + '</button></div></div>', 'learn');
+  each(o.querySelectorAll<HTMLButtonElement>('[data-old]'), function (b) {
+    b.addEventListener('click', function () {
+      var old = b.getAttribute('data-old')!;
+      closeSheet(); swapMove(key, old, m); save(); sfx('badge');
+      say(['Uno, due e… puf! ' + who + ' ha dimenticato ' + anyMove(old).name + ' e ha imparato ' + nw.name + '!'], null, null, next);
+    });
+  });
+  $('ln-no').addEventListener('click', function () { closeSheet(); say([who + ' non ha imparato ' + nw.name + '.'], null, null, next); });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-old]'); if (b) b.focus(); }, 30);
 }
 /** after a story battle: experience for who fought (a third when lost), money for a win (not in the middle of a
     trainer's battle: the trainer pays at the end) */

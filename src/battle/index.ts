@@ -7,13 +7,13 @@ import { TUNE } from '../data/tuning';
 import type { BattleState } from './types';
 import { eff, beaterOf, ch, move, mv, newBattle, available, sideType as typeOf, switches, isSwitch, BAG, BAG_IDS } from './state';
 import { expected, typesOf, effLevel } from './damage';
-import { snap, moveLabel, benchLabels, changeText, resonanceText } from './labels';
+import { snap, moveLabel, moveBits, moveIcon, benchLabels, changeText, resonanceText } from './labels';
 import { ai } from './ai';
 import { intro, beginTurn, needs, playTurn, sendNeeds, sendIn } from './turn';
 import { canResonate, withResonance } from './surge';
 
 export * from './types';
-export { eff, beaterOf, move, newBattle, available, switches, expected, effLevel, snap, moveLabel, benchLabels, ai, intro, beginTurn, needs, playTurn, sendNeeds, sendIn };
+export { eff, beaterOf, move, newBattle, available, switches, expected, effLevel, snap, moveLabel, moveBits, moveIcon, benchLabels, ai, intro, beginTurn, needs, playTurn, sendNeeds, sendIn };
 
 /** time left in the exam, as h:mm (10 minutes a turn) */
 export function clock(s: BattleState): string { const m = (s.maxTurns - s.turn + 1) * 10; return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }

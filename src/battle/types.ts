@@ -205,6 +205,8 @@ export interface MoveLabel {
   chance?: number;
   /** a thing in the bag: how many are left */
   count?: number;
+  /** a move made of numbers: what it does besides its power, in words */
+  more?: string;
   /** the creatures' moves: the type of the spell, how well it works on the foe in front (1 even), power and aim */
   mtype?: TypeName | null;
   eff?: number;

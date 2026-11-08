@@ -8,7 +8,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 const GOOGLE_FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lilita+One&family=Patrick+Hand&display=swap">\n';
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lilita+One&family=Patrick+Hand&family=Alegreya:wght@500;700&display=swap">\n';
 
 function fontsFromGoogle(): Plugin {
   return {

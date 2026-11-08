@@ -114,10 +114,18 @@
 .banner.stage { background: linear-gradient(90deg, #5e5546, #9a8f7c 50%, #5e5546); font-size: 34px; }
 @keyframes banner { 0% { transform: translate(-50%, -50%) rotate(-10deg) scale(2.2); opacity: 0; } 16% { transform: translate(-50%, -50%) rotate(-5deg) scale(1); opacity: 1; } 82% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.04); opacity: 0; } }
 
-.dialog { position: relative; margin-inline: max(10px, env(safe-area-inset-left, 0px)) max(10px, env(safe-area-inset-right, 0px)); margin-top: 8px; min-height: 84px; padding: 9px 14px 9px 40px; border: 2px solid var(--line); border-radius: 8px; cursor: pointer;
-  background-color: var(--card); background-image: linear-gradient(90deg, transparent 28px, var(--margin) 28px, var(--margin) 30px, transparent 30px), linear-gradient(transparent 27px, var(--grid) 27px, var(--grid) 28px, transparent 28px); background-size: 100% 100%, 100% 28px; background-position: 0 0, 0 6px; }
+/* the words of the battle, on a scroll of parchment rolled at both ends */
+.dialog { position: relative; margin-inline: max(18px, env(safe-area-inset-left, 0px)) max(18px, env(safe-area-inset-right, 0px)); margin-top: 8px; min-height: 76px; padding: 9px 22px 10px; cursor: pointer;
+  border: 2px solid #7a5a32; border-radius: 5px 9px 6px 10px / 9px 5px 10px 6px; color: #3b2a14; background-color: #efdfb6;
+  background-image: radial-gradient(ellipse at 50% 45%, rgba(255, 250, 232, .7) 0, rgba(255, 250, 232, 0) 65%), radial-gradient(circle at 14% 26%, rgba(150, 104, 48, .13) 0 14px, transparent 34px),
+    radial-gradient(circle at 84% 74%, rgba(150, 104, 48, .11) 0 18px, transparent 42px), linear-gradient(180deg, #f5e7c4, #e6cf9c);
+  box-shadow: inset 0 0 22px rgba(122, 84, 40, .42), inset 0 0 3px rgba(122, 84, 40, .5), 3px 3px 0 var(--line); }
+.dialog::before, .dialog::after { content: ""; position: absolute; top: -6px; bottom: -6px; width: 13px; border: 2px solid #7a5a32; border-radius: 7px;
+  background: linear-gradient(90deg, #b48d52, #f3e3bc 45%, #c9a96b 70%, #9c7740); box-shadow: 2px 2px 0 var(--line); }
+.dialog::before { left: -9px; }
+.dialog::after { right: -9px; }
 .dialog .who { display: inline-block; margin-bottom: 1px; padding: 0 7px; border-radius: 3px; font: 12px/1.5 var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--on-hl); background: var(--tc, var(--t-none)); }
-.dialog .txt { display: block; font: 20px/28px var(--font-hand); color: var(--ink); min-height: 56px; }
+.dialog .txt { display: block; font: 600 24px/30px var(--font-book); color: #3b2a14; min-height: 60px; }
 .dialog .caret { position: absolute; right: 12px; bottom: 8px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--red); opacity: 0; }
 .dialog.wait .caret { opacity: 1; animation: caret .8s ease-in-out infinite; }
 @keyframes caret { 50% { transform: translateY(3px); } }
@@ -153,8 +161,46 @@
   font: 11px/1.3 var(--font-body); font-style: normal; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
 .mv b .eff.up { background: #57c968; color: #10231a; }
 .mv b .eff.down { background: #c9d2e3; color: #1c2340; }
-/* the bag of a story battle: a row of its own, the nets first */
-.bagrow { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+/* the four moves (ui/move-card.ts): a card in the colour of its magic, the name big, the type, the power, the aim and
+   the uses at the foot; the same card is on the sheet for learning a move */
+.mv.card { min-height: 86px; gap: 5px; justify-content: center; padding: 9px 12px 9px 64px; border: 3px solid var(--line); border-radius: 14px;
+  background: linear-gradient(172deg, color-mix(in srgb, var(--tc) 50%, #ffffff) 0%, var(--tc) 46%, color-mix(in srgb, var(--tc) 80%, #1c2340) 100%);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, .5), inset 0 -5px 0 rgba(28, 35, 64, .16), 3px 4px 0 var(--line); transition: opacity .2s, transform .1s, box-shadow .1s, filter .2s; }
+.mv.card::before { display: none; }
+.mv.card.plain { --tc: #e9e4d8; }
+.mv.card .mv-rune { left: 11px; width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid var(--line); background: rgba(255, 255, 255, .62); box-shadow: inset 0 -3px 0 rgba(28, 35, 64, .14); }
+.mv.card .mv-rune .ico { width: 24px; height: 24px; color: #1c2340; }
+.mv-top { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
+.mv.card b { font: 21px/1.05 var(--font-display); color: #1c2340; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 0 rgba(255, 255, 255, .55); }
+.mv.card .eff { margin-left: auto; flex: none; }
+.mv.card .mv-more { display: flex; align-items: center; gap: 6px; font: 600 12.5px/1.2 var(--font-body); color: #1c2340; opacity: .88; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mv-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; width: 100%; }
+.mv-foot i { padding: 3px 8px; border-radius: 999px; background: rgba(28, 35, 64, .84); color: #ffffff; font: 700 10.5px/1.15 var(--font-body); font-style: normal; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.mv-foot .mv-type { background: #ffffff; color: #1c2340; box-shadow: inset 0 0 0 1.5px #1c2340; }
+.mv-foot .mv-uses { margin-left: auto; background: #ffffff; color: #1c2340; box-shadow: inset 0 0 0 1.5px #1c2340; }
+.pad:not(.off) .mv.card:not([disabled]):hover, .mv.card:not([disabled]):focus-visible { transform: translateY(-2px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .5), inset 0 -5px 0 rgba(28, 35, 64, .16), 4px 6px 0 var(--line); }
+.mv.card:active:not([disabled]) { transform: translate(2px, 3px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .5), inset 0 -3px 0 rgba(28, 35, 64, .16), 1px 1px 0 var(--line); }
+.pad.off .mv.card { opacity: .62; filter: saturate(.55); }
+.mv.card.locked { opacity: .55; filter: grayscale(.7); border-style: dashed; box-shadow: none; }
+.mv.card.locked .mv-more { color: var(--red); opacity: 1; }
+/* a long name or what it does goes on two lines rather than being cut; on a narrow pad the card is smaller */
+.mv.card b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.mv.card .mv-more { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
+.mv.card .mv-more .stage { display: inline-flex; vertical-align: -1px; margin-right: 6px; }
+.pad { container-type: inline-size; }
+@container (max-width: 600px) {
+  .mv.card { min-height: 78px; padding: 8px 9px 8px 50px; gap: 4px; border-radius: 12px; }
+  .mv.card .mv-rune { left: 8px; width: 34px; height: 34px; }
+  .mv.card .mv-rune svg { width: 26px; height: 26px; }
+  .mv.card .mv-rune .ico { width: 20px; height: 20px; }
+  .mv.card b { font-size: 17px; }
+  .mv.card .mv-more { font-size: 11.5px; }
+  .mv-foot i { padding: 2px 6px; font-size: 9.5px; }
+}
+/* the console: on a narrow screen the words and then the moves, one under the other */
+.console { display: flex; flex-direction: column; }
+/* the bag of a story battle: a row of its own, the nets first, right under the words (order: first in the pad) */
+.bagrow { grid-column: 1 / -1; order: -1; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
 .bagrow[hidden] { display: none; }
 .bag-h { display: flex; align-items: center; gap: 6px; padding-inline: 4px 2px; font: 15px/1 var(--font-display); color: var(--ink); }
 .bag-h .ico { width: 18px; height: 18px; }
