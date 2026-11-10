@@ -1,7 +1,8 @@
 import { MAPS } from '../data/maps';
 import { GAME_NAME } from '../data/growth';
 import { fighter } from '../data/fighters';
-import { SLOTS, slotNow, useSlot, peekSlot, eraseSlot, startAs, type StoryProgress } from '../save/story-progress';
+import { SLOTS, slotNow, useSlot, peekSlot, eraseSlot, startAs, putSlot, st, trouble, backupOf, type StoryProgress } from '../save/story-progress';
+import { toCode, fromCode } from '../save/transfer';
 import { ROSTER, CHARS, type FriendId } from '../data/characters';
 import { HOMES } from '../data/people';
 import { COVI } from '../data/covi';
@@ -147,16 +148,25 @@ function slots() {
         '<ul class="ti-slot-facts"><li><span>Dove</span><b>' + esc(placeOf(s)) + '</b></li><li><span>Spille</span><b>' + s.badges.length + '</b></li>' +
         '<li><span>Creature</span><b>' + mons + '</b></li><li><span>Compagnia</span><b>' + s.squad.length + '</b></li></ul>' +
         '<small class="ti-when">' + esc(when(s.at)) + '</small>' +
-        '<div class="ti-slot-act"><button class="ti-cta small" type="button" data-play="' + n + '"><b>Gioca</b></button><button class="ti-del" type="button" data-del="' + n + '">Elimina</button></div>';
+        '<div class="ti-slot-act"><button class="ti-cta small" type="button" data-play="' + n + '"><b>Gioca</b></button><button class="ti-del" type="button" data-del="' + n + '">Elimina</button></div>' +
+        '<div class="ti-slot-act ti-slot-x"><button class="ti-x" type="button" data-out="' + n + '">Esporta</button><button class="ti-x" type="button" data-in="' + n + '">Importa</button></div>';
     } else {
-      h += '<div class="ti-slot-new"><span aria-hidden="true">+</span><p>Una storia nuova, da casa a Parco la Fontana.</p></div>' +
-        '<div class="ti-slot-act"><button class="ti-cta small" type="button" data-play="' + n + '"><b>Nuova storia</b></button></div>';
+      h += '<div class="ti-slot-new"><span aria-hidden="true">+</span><p>Una storia nuova: scegli chi sei, e parti da casa tua.</p></div>' +
+        '<div class="ti-slot-act"><button class="ti-cta small" type="button" data-play="' + n + '"><b>Nuova storia</b></button></div>' +
+        '<div class="ti-slot-act ti-slot-x"><button class="ti-x" type="button" data-in="' + n + '">Importa</button></div>';
     }
     h += '</article>';
   }
-  el.innerHTML = h + '</div>';
+  h += '</div>';
+  /* a story the game could not read: its text is kept, not lost */
+  if (trouble.unreadable.length) h += '<p class="ti-warn" role="status">' + trouble.unreadable.map(function (n) {
+    return 'La storia ' + n + ' non si leggeva più: la sua copia è al sicuro in <code>' + esc(backupOf(n)) + '</code>.';
+  }).join(' ') + '</p>';
+  el.innerHTML = h + '<div class="ti-xfer" id="ti-xfer" hidden></div>';
   el.hidden = false;
   $('ti-back').addEventListener('click', function () { sfx('click'); menu(); });
+  each(el.querySelectorAll<HTMLElement>('[data-out]'), function (b) { b.addEventListener('click', function () { exportSlot(Number(b.getAttribute('data-out'))); }); });
+  each(el.querySelectorAll<HTMLElement>('[data-in]'), function (b) { b.addEventListener('click', function () { importSlot(Number(b.getAttribute('data-in'))); }); });
   each(el.querySelectorAll<HTMLElement>('[data-play]'), function (b) { b.addEventListener('click', function () { enter(Number(b.getAttribute('data-play'))); }); });
   each(el.querySelectorAll<HTMLButtonElement>('[data-del]'), function (b) {
     let armed = false;
@@ -168,6 +178,65 @@ function slots() {
     });
   });
   setTimeout(function () { var b = el.querySelector<HTMLElement>('.ti-slot.last [data-play]') || el.querySelector<HTMLElement>('[data-play]'); if (b) b.focus(); }, 30);
+}
+/* ---------- a story to take away, or to bring in ---------- */
+/* Esporta: a code to copy, or a file. Importa: a code pasted (or a file opened), checked and cleaned field by field
+   (save/transfer.ts); what was in the slot goes to its backup first. The code of the story being played is the one
+   in memory, so it is right even when this device could not save it. */
+function xfer(html: string) {
+  var box = $('ti-xfer');
+  box.innerHTML = html; box.hidden = false;
+  box.scrollIntoView({ block: 'nearest' });
+  var x = box.querySelector<HTMLElement>('[data-x-close]');
+  if (x) x.addEventListener('click', function () { box.hidden = true; box.innerHTML = ''; });
+}
+function exportSlot(n: number) {
+  sfx('click');
+  var s = n === slotNow() ? st : peekSlot(n);
+  if (!s) return;
+  var code = toCode(s);
+  xfer('<h3>Storia ' + n + ': il codice</h3><p>Copialo e tienilo: con «Importa», su questo o un altro dispositivo, la storia torna com\'è adesso.</p>' +
+    '<textarea class="ti-code" id="ti-code" readonly rows="4" aria-label="Il codice della storia ' + n + '">' + esc(code) + '</textarea>' +
+    '<div class="ti-slot-act"><button class="ti-cta small" type="button" id="ti-copy"><b>Copia</b></button><button class="ti-x" type="button" id="ti-file">Scarica il file</button><button class="ti-x" type="button" data-x-close>Chiudi</button></div><p class="ti-xmsg" id="ti-xmsg" role="status"></p>');
+  var ta = $('ti-code') as HTMLTextAreaElement;
+  ta.addEventListener('focus', function () { ta.select(); });
+  $('ti-copy').addEventListener('click', function () {
+    var msg = $('ti-xmsg');
+    ta.select();
+    var done = function () { msg.textContent = 'Copiato.'; }, fail = function () { msg.textContent = 'Non riesco a copiarlo da solo: selezionalo e copialo a mano.'; };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, fail); else if (document.execCommand('copy')) done(); else fail(); } catch (e) { fail(); }
+  });
+  $('ti-file').addEventListener('click', function () {
+    try {
+      var a = document.createElement('a'), url = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+      a.href = url; a.download = 'telepilo-storia-' + n + '.txt'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    } catch (e) { $('ti-xmsg').textContent = 'Qui non si può scaricare: copia il codice.'; }
+  });
+}
+function importSlot(n: number) {
+  sfx('click');
+  var full = !!peekSlot(n);
+  xfer('<h3>Importa nella storia ' + n + '</h3><p>Incolla qui un codice di Telepilo, o apri un file.' + (full ? ' La storia ' + n + ' di adesso non si perde: va nella sua copia di riserva.' : '') + '</p>' +
+    '<textarea class="ti-code" id="ti-code" rows="4" aria-label="Il codice da importare" placeholder="TELEPILO1:…"></textarea>' +
+    '<div class="ti-slot-act"><button class="ti-cta small" type="button" id="ti-load"><b>Importa</b></button><label class="ti-x">Apri un file<input type="file" id="ti-pick" accept=".txt,text/plain" hidden></label><button class="ti-x" type="button" data-x-close>Chiudi</button></div><p class="ti-xmsg" id="ti-xmsg" role="status"></p>');
+  var ta = $('ti-code') as HTMLTextAreaElement, msg = $('ti-xmsg');
+  ta.focus();
+  ($('ti-pick') as HTMLInputElement).addEventListener('change', function () {
+    var f = (this as HTMLInputElement).files && (this as HTMLInputElement).files![0];
+    if (!f) return;
+    if (f.size > 2000000) { msg.textContent = 'Il file è troppo grande per essere una storia.'; return; }
+    f.text().then(function (t) { ta.value = t.trim(); }, function () { msg.textContent = 'Non riesco a leggere il file.'; });
+  });
+  $('ti-load').addEventListener('click', function () {
+    var r = fromCode(ta.value);
+    if ('why' in r) { msg.textContent = r.why; return; }
+    if (!putSlot(n, r.story)) { msg.textContent = 'Non riesco a scriverla su questo dispositivo.'; return; }
+    sfx('click');
+    slots();
+    var b = document.querySelector<HTMLElement>('.ti-slot[data-slot="' + n + '"] [data-play]');
+    if (b) b.focus();
+  });
 }
 /** into the world with a story: the one of that slot from now on; an empty slot first asks who is played */
 function enter(n: number) {

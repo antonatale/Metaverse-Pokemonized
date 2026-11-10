@@ -7,7 +7,7 @@ import { tile, W, H } from './formia-projection';
    real ones (tools/formia), every place is near where it really is (formia-places.ts). Antonio lives here, in Parco la
    Fontana in via Giovanni Amendola: the map is his town, with his friends' hangouts (the Eclipse at Vindicio, the pineta,
    Morgana in Mola) and the town around. Every neighbourhood says what it is, and the signs, the plates and the people
-   tell true things about it (sources in CLAUDE.md). */
+   tell true things about it (sources in docs/fonti-formia.md). */
 
 const at = (id: string) => { const p = FORMIA_AT[id]; if (!p) throw new Error('Formia: ' + id + ' was not placed'); return p; };
 const spot = (id: string): [number, number] => { const s = FORMIA_SPOT[id]; if (!s) throw new Error('Formia: spot ' + id + ' was not placed'); return s; };

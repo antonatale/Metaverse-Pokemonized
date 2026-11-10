@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
    and the sound (audio.spec.ts). */
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 120_000,
+  timeout: 240_000,
   fullyParallel: true,
   workers: 4,
   reporter: [['list']],

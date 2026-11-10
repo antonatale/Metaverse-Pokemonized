@@ -74,7 +74,22 @@ export function blank(first?: FriendId): StoryProgress {
 export function peekSlot(n: number): StoryProgress | null {
   try { return fix(JSON.parse(window.localStorage.getItem(keyOf(n)) || 'null')); } catch (e) { return null; }
 }
-function load(n: number): StoryProgress { return peekSlot(n) || blank(); }
+/** a slot that has something in it the game cannot read: before anything is written over it, the old text goes to
+    the slot's `:backup` key (once: an older backup is not lost), and the title says so */
+export function backupOf(n: number): string { return keyOf(n) + ':backup'; }
+export const trouble: { unreadable: number[]; saveFailed: boolean } = { unreadable: [], saveFailed: false };
+function load(n: number): StoryProgress {
+  var s = peekSlot(n);
+  if (s) return s;
+  try {
+    var raw = window.localStorage.getItem(keyOf(n));
+    if (raw && raw !== 'null') {
+      if (!window.localStorage.getItem(backupOf(n))) window.localStorage.setItem(backupOf(n), raw);
+      if (trouble.unreadable.indexOf(n) < 0) trouble.unreadable.push(n);
+    }
+  } catch (e) { /* no storage: nothing to keep */ }
+  return blank();
+}
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
     v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
@@ -98,7 +113,31 @@ function lastSlot(): number {
 }
 let slot = lastSlot();
 export function slotNow(): number { return slot; }
-export function save() { try { st.at = Date.now(); window.localStorage.setItem(keyOf(slot), JSON.stringify(st)); } catch (e) { /* ignore */ } }
+/** whoever wants to know when saving fails (the story shows it once): the game goes on, but the player must know */
+const failed: (() => void)[] = [];
+export function onSaveFail(f: () => void) { failed.push(f); }
+export function save(): boolean {
+  try { st.at = Date.now(); window.localStorage.setItem(keyOf(slot), JSON.stringify(st)); trouble.saveFailed = false; return true; }
+  catch (e) {
+    var first = !trouble.saveFailed;
+    trouble.saveFailed = true;
+    if (first) failed.forEach(function (f) { f(); });
+    return false;
+  }
+}
+/** a story from outside (save/transfer.ts, already cleaned) into a slot: what was there goes to the slot's backup
+    first; if it is the slot being played, it is played from now on */
+export function putSlot(n: number, s: StoryProgress): boolean {
+  var v = fix(s);
+  if (!v) return false;
+  try {
+    var old = window.localStorage.getItem(keyOf(n));
+    if (old) window.localStorage.setItem(backupOf(n), old);
+    window.localStorage.setItem(keyOf(n), JSON.stringify(v));
+  } catch (e) { return false; }
+  if (n === slot) st = v;
+  return true;
+}
 export let st = load(slot);
 /** plays another story from now on: everything reads `st`, so the map, the team and the bag are that slot's */
 export function useSlot(n: number) {

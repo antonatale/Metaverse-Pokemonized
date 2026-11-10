@@ -76,6 +76,30 @@ async function talkThrough(p: Page, max = 12) {
 /* the title: the intro (asked for with ?intro=1: the playtests skip it), the name, the way in and the three stories */
 const SAVED = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: {}, found: {}, seen: { intro: true, starter: true },
   mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { antonio: { lv: 9, xp: 0 } }, money: 40, bag: {} };
+/* a story taken away as a code and brought back into another slot (save/transfer.ts); a bad code says why */
+test('a story exported and imported', async ({ browser }) => {
+  const r = await play(browser, 'transfer', { storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) } }, async (r) => {
+    const p = r.page;
+    await p.click('#go-slots'); await p.clock.runFor(300);
+    await p.click('[data-out="1"]'); await p.clock.runFor(300);
+    await r.shot('export');
+    const code = await p.locator('#ti-code').inputValue();
+    r.keep('code', code.slice(0, 10));
+    await p.click('[data-in="3"]'); await p.clock.runFor(300);
+    await p.fill('#ti-code', 'non è un codice'); await p.click('#ti-load'); await p.clock.runFor(100);
+    r.keep('bad', await p.locator('#ti-xmsg').innerText());
+    await p.fill('#ti-code', code); await p.click('#ti-load'); await p.clock.runFor(300);
+    await r.shot('imported');
+    r.keep('slot3', await p.locator('.ti-slot[data-slot="3"]').innerText());
+    r.keep('stored', await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('lotte-tra-amici:storia:v1:3') || 'null'); return s && { badges: s.badges, money: s.money, x: s.x }; }));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('code')).toBe('TELEPILO1:');
+  expect(String(get('bad'))).toMatch(/Non è un codice di Telepilo/);
+  expect(String(get('slot3'))).toMatch(/Gioca/);
+  expect(get('stored')).toEqual({ badges: ['gialosai'], money: 40, x: 137 });
+});
+
 for (const dark of [false, true]) {
   test('title ' + (dark ? 'dark' : 'light'), async ({ browser }) => {
     await play(browser, 'title-' + (dark ? 'dark' : 'light'), { dark, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) } }, async (r) => {
@@ -892,6 +916,46 @@ test('a trainer too strong to challenge on sight', async ({ browser }) => {
   expect(v('sheet')).toBe(v('pad'));
   expect(v('pad') as number).toBeLessThanOrEqual(4);
 });
+
+/* the speed of a battle (ui/speed.ts): in Veloce a turn, from the move to the next choice, stays under 2.5 seconds of
+   the game's clock, with the animations on; the same turn at Normale takes longer */
+for (const vel of ['normale', 'veloce'] as const) {
+  test('a turn at speed ' + vel, async ({ browser }) => {
+    const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
+      const p = r.page;
+      await goStory(p); await p.clock.runFor(1500);
+      await p.evaluate(() => window.WORLD._debug.wild('cicalina', 9)); await p.clock.runFor(300);
+      await talkThrough(p);
+      await choose(p, 'Lotta!');
+      await p.clock.runFor(300);
+      if (await p.locator('.pick[data-key="c1"]').count()) await p.locator('.pick[data-key="c1"]').click();
+      await toPrompt(p);
+      r.keep('button', await p.locator('.spd').innerText());
+      const turns: number[] = [];
+      for (let t = 0; t < 2; t++) {
+        const id = await p.evaluate(() => window.UI._debug.suggest());
+        await p.locator('#pad .mv[data-id="' + id + '"]').click();
+        let ms = 0;
+        const seen: string[] = [];
+        for (; ms < 20000; ms += 50) {
+          await p.clock.runFor(50);
+          const tx = await p.evaluate(() => (document.querySelector('#battle .dialog') as HTMLElement | null)?.innerText || '');
+          if (process.env.SPEEDLOG && seen[seen.length - 1] !== tx) { seen.push(tx); console.log(vel, t, ms, tx.slice(0, 70).replace(/\n/g, ' ')); }
+          if (await p.evaluate(() => { const ov = document.getElementById('overlay')!; return !ov.hidden || !document.getElementById('pad')!.classList.contains('off'); })) break;
+        }
+        turns.push(ms);
+        if (await battleOver(p)) break;
+      }
+      r.keep('turns', turns);
+    });
+    const turns = r.data.find((x) => x.name === 'turns')!.value as number[];
+    expect(r.data.find((x) => x.name === 'button')!.value).toBe(vel === 'veloce' ? 'Veloce' : 'Normale');
+    /* the first turn is two moves and a line: under 2.5 s in Veloce, more than twice that at Normale */
+    if (vel === 'veloce') expect(turns[0]).toBeLessThan(2500);
+    else expect(turns[0]).toBeGreaterThan(5000);
+  });
+}
 
 /* the menu: two teams of six, the people and the creatures; Antonio's abilities, a tree of three branches where each
    ability opens with a point in the one before it */

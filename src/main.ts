@@ -8,6 +8,7 @@ import { renderHome } from './ui/home';
 import { gameTitle } from './data/growth';
 import { installAudio, music } from './audio';
 import { installSoundButtons } from './ui/sound';
+import { installSpeedButtons } from './ui/speed';
 
 /* the story's keys first: they stop the keys that belong to the map before the battle screen sees them */
 installStoryKeys();
@@ -15,6 +16,7 @@ installBattleKeys();
 /* sound starts with the first tap or key press; every button clicks */
 installAudio();
 installSoundButtons();
+installSpeedButtons();
 
 /* the automated playtests drive the game through these, as they did with the old single file */
 const G = window as unknown as Record<string, unknown>;

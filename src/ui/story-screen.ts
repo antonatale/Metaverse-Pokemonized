@@ -1,3 +1,4 @@
+import { speedChoice } from './speed';
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
@@ -7,7 +8,7 @@ import { gateFor } from '../data/gates';
 import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
-import { st, save, resetProgress } from '../save/story-progress';
+import { st, save, resetProgress, onSaveFail } from '../save/story-progress';
 import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
 import { placeProof } from '../story/place-run';
@@ -138,6 +139,10 @@ function neighbourhood(name: string, note: string) {
 /* what an activity brought Antonio, in the same corner, for a few seconds */
 /** the guardaparco has something for whoever has filled the diary some more */
 export function dexNotice() { if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
+/* saving can fail (a private window, a full memory): the player is told once, and how not to lose the story */
+onSaveFail(function () {
+  if (root && !root.hidden) notify('<b>La storia non si salva</b> su questo dispositivo (finestra privata o memoria piena). Dal titolo, in Salvataggi, puoi copiarla con «Esporta».');
+});
 function notify(html: string) {
   var el = $('wtoast');
   el.innerHTML = html;
@@ -964,6 +969,7 @@ function openMenu(tab?: string) {
       '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
         return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
       }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
+      '<div class="pickrow"><h3>Velocità delle lotte</h3>' + speedChoice() + '<p class="hint">Quanto corrono le parole in lotta. Tenendo premuto Invio vanno avanti da sole.</p></div>' +
       '<p class="hint">La storia si salva da sola, su questo dispositivo. Dal titolo puoi giocarne un\'altra: ce ne sono tre.</p>' +
       '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna al titolo</button>' +
       '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div>'

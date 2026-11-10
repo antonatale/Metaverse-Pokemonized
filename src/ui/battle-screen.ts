@@ -12,6 +12,8 @@ import { ENGINE as E, type BattleEvent, type BattleState, type Bout, type BenchL
 import { SPR } from '../render/svg';
 import { reduced, esc, each, $ } from './dom';
 import { ico } from './icons';
+import { linePace, newShows, speedButton, tempo } from './speed';
+import { safeShow } from './safe-show';
 import { TC, tc, typeTag, kindTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
 import { renderTitle } from './home';
 import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, ring, dust, healing } from './effects';
@@ -62,7 +64,7 @@ function renderShell() {
   battle.innerHTML = sceneHtml() +
     '<div class="topbar"><button class="tb-btn" type="button" id="quit">Esci</button>' +
     '<div class="clock" id="clock">' + (S.boss ? ico('clock') + '<span id="clock-t">2:00</span>' : '') + '<span class="turn" id="turn-t">Turno 1</span></div>' +
-    '<div class="tb-right">' + soundButton() + '<button class="tb-btn" type="button" id="info">Scheda</button></div></div>' +
+    '<div class="tb-right">' + speedButton() + soundButton() + '<button class="tb-btn" type="button" id="info">Scheda</button></div></div>' +
     '<div class="arena" id="arena">' + boxHtml(1) +
     '<div class="spr-wrap opp" id="w-1"><div class="mover" id="m-1"><div class="bob">' + bust(b, b === 'esame' ? 'idle' : 'smirk', '', undefined, S.sides[1].gold, S.sides[1].form) + '</div></div></div>' +
     '<div class="spr-wrap me" id="w-0"><div class="mover" id="m-0"><div class="bob">' + bust(a, 'smirk', '', undefined, S.sides[0].gold, S.sides[0].form) + '</div></div></div>' + boxHtml(0) + '</div>' +
@@ -115,7 +117,7 @@ function countHp(i: number, from: number, to: number) {
   if (counting[i]) clearTimeout(counting[i]!);
   counting[i] = null;
   if (reduced || from === to) { hpText(i, to); return; }
-  var t0 = Date.now(), ms = 700;
+  var t0 = Date.now(), ms = 700 * tempo();
   function tick() {
     var u = Math.min(1, (Date.now() - t0) / ms);
     hpText(i, Math.round(from + (to - from) * (1 - (1 - u) * (1 - u))));
@@ -210,23 +212,23 @@ function say(text: string, who?: number | null, quick?: boolean): Promise<void> 
     var wEl = whoEl, tEl = txtEl, dEl = dialog;
     if (who != null) { wEl.hidden = false; wEl.textContent = sideName(who); wEl.style.setProperty('--tc', TC[fighter(S.sides[who].id).type]); }
     else wEl.hidden = true;
-    var full = who != null ? '«' + text + '»' : text, n = 0, typing = true, tt: ReturnType<typeof setTimeout> | undefined, hold: ReturnType<typeof setTimeout> | undefined, mine: () => void;
+    var full = who != null ? '«' + text + '»' : text, pace = linePace(full.length, !!quick), n = 0, typing = true, tt: ReturnType<typeof setTimeout> | undefined, hold: ReturnType<typeof setTimeout> | undefined, mine: () => void;
     dEl.classList.remove('wait');
     tEl.textContent = '';
     function stop() { clearTimeout(tt); clearTimeout(hold); if (tapHandler === mine) tapHandler = null; }
     function done() { stop(); dEl.classList.remove('wait'); resolve(); }
     function finish() {
       typing = false; tEl.textContent = full; dEl.classList.add('wait');
-      hold = setTimeout(done, reduced ? 1400 : quick ? 320 : Math.min(2400, 750 + full.length * 18));
+      hold = setTimeout(done, reduced ? 1400 : pace.hold);
     }
     function step() {
       if (!typing) return;
-      n += 2; tEl.textContent = full.slice(0, n); typeBlip(who != null);
+      n += pace.chars; tEl.textContent = full.slice(0, n); typeBlip(who != null);
       if (n >= full.length) finish(); else tt = setTimeout(step, 22);
     }
     mine = function () { if (typing) { clearTimeout(tt); finish(); } else done(); };
     tapHandler = mine; stopSay = stop;
-    if (reduced) finish(); else step();
+    if (reduced || !pace.chars) finish(); else step();
   });
 }
 function showPrompt(i: number) {
@@ -413,7 +415,7 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
     case 'say': return say(ev.text, null, spellNext(evs, next));
     case 'line': return say(ev.text, ev.who);
     case 'expr': setExpr(ev.who, ev.v); return Promise.resolve();
-    case 'anim': return animEvent(ev, evs, next);
+    case 'anim': return safeShow(function () { return animEvent(ev, evs, next); }, ev.a);
     case 'hp': return hpEvent(ev);
     case 'sync': renderSync(ev); return Promise.resolve();
     case 'swap': swapEvent(ev); return Promise.resolve();
@@ -653,6 +655,7 @@ function curtain(trainer: boolean) {
 }
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
+    newShows();
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
     S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart, hero: cfg!.hero });
     S.story = cfg!.story || null;

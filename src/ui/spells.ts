@@ -1,3 +1,4 @@
+import { fullCharge } from './speed';
 import type { TypeName } from '../data/types';
 import { MOVE_FX, SELF_FX } from '../data/move-fx';
 import { SELF } from './self-scenes';
@@ -756,7 +757,8 @@ export function castSpell(from: number, to: number, c: Cast): Promise<void> {
   /* the move's scene (data/move-fx.ts, ui/move-stages.ts); a legend's own move has a show of its own */
   const epic = t && c.sig && c.id ? EPIC[c.id] : undefined, scene = !epic && c.id ? MOVE_FX[c.id] : undefined, stage = scene ? STAGES[scene.stage] : undefined;
   if (!t && !stage) return plainHit(from, to, c, k);
-  const quick = scene ? (scene.charge ? scene.charge === 'none' : !!stage!.quick) : false, sc = (scene && scene.col) || mc;
+  /* in Veloce and Lampo a move already seen in this battle skips its charge (ui/speed.ts) */
+  const quick = (scene ? (scene.charge ? scene.charge === 'none' : !!stage!.quick) : false) || !fullCharge(c.id), sc = (scene && scene.col) || mc;
   /* a quick blow has no dark and no magic circle: only its name */
   const dark = quick ? { off: function () { return Promise.resolve(); } } : darken(from, sc, c.sig ? 0.88 : 0.74), b = body(to, 0.5, 0.5);
   band(from, c.name, t, c.sig, sc);

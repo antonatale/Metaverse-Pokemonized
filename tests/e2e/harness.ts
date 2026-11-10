@@ -32,7 +32,8 @@ export interface TwinOpts {
 
 async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
   const ctx = await browser.newContext({
-    viewport: o.viewport || { width: 390, height: 844 },
+    /* a PC screen, as the game is played: the phone only where a test asks for it (the touch pad) */
+    viewport: o.viewport || (o.touch ? { width: 390, height: 844 } : { width: 1366, height: 768 }),
     deviceScaleFactor: 2,
     colorScheme: o.dark ? 'dark' : 'light',
     reducedMotion: o.reduced === false ? 'no-preference' : 'reduce',

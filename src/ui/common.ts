@@ -1,3 +1,4 @@
+import { tempo } from './speed';
 import { type Character, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { isSpecies } from '../data/creatures';
@@ -13,7 +14,8 @@ export const TC: Record<string, string> = { Calma: 'var(--t-calma)', Caos: 'var(
 export function tc(id: string): string { return TC[fighter(id).type]; }
 export function typeTag(t: string): string { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }
 export function kindTag(m: Move): string { return m.kind === 'atk' ? '<span class="type">Attacco</span>' : '<span class="type">Supporto</span>'; }
-export function sleep(ms: number): Promise<void> { return new Promise<void>(function (r) { setTimeout(r, reduced ? Math.min(ms, 60) : ms); }); }
+/** a wait; in a battle it follows the battle's speed (ui/speed.ts) */
+export function sleep(ms: number): Promise<void> { return new Promise<void>(function (r) { setTimeout(r, reduced ? Math.min(ms, 60) : ms * (view.screen === 'battle' ? tempo() : 1)); }); }
 export function face(id: string, expr?: string, cls?: string): string { return id === 'esame' ? SPR.esame('idle', cls) : isSpecies(id) ? creature(id, expr || 'smirk', cls, '10 26 180 170') : SPR.person(id, expr || 'smirk', cls, SPR.thumb(id)); }
 /** a fighter's portrait in battle and on the result: a friend, the Esame, or a creature of Formia */
 export function bust(id: string, expr?: string, cls?: string, vb?: string, gold?: boolean, form?: number): string { return id === 'esame' ? SPR.esame(expr || 'idle', cls) : isSpecies(id) ? creature(id, expr || 'smirk', cls, undefined, undefined, gold) : SPR.personIn(id, form, expr || 'smirk', cls, vb); }

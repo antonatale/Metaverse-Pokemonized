@@ -2,12 +2,19 @@ import { SPR } from '../render/svg';
 import { SHAPE } from '../render/svg/type-shapes';
 import type { TypeName } from '../data/types';
 import { reduced, esc, $ } from './dom';
-import { sleep } from './common';
+import { sleep, view } from './common';
+import { tempo } from './speed';
 import { arena, shown, uiHp, setHp } from './battle-screen';
 
 /* The battle's little shows: lunges and shakes are CSS classes, the rest are elements thrown over the arena. */
 
-export function pulse(el: HTMLElement, c: string, ms: number) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); return sleep(ms).then(function () { el.classList.remove(c); }); }
+export function pulse(el: HTMLElement, c: string, ms: number) {
+  el.classList.remove(c); void el.offsetWidth; el.classList.add(c);
+  /* the class's CSS animation runs as fast as the wait that removes it (ui/speed.ts) */
+  var k = view.screen === 'battle' ? tempo() : 1;
+  if (k !== 1 && el.getAnimations) el.getAnimations({ subtree: true }).forEach(function (a) { a.playbackRate = 1 / k; });
+  return sleep(ms).then(function () { el.classList.remove(c); });
+}
 export function rel(el: HTMLElement) { var a = arena.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }; }
 export function fx(html: string, cls: string, x: number, y: number, life: number): HTMLElement {
   var el = document.createElement('div');
@@ -19,6 +26,9 @@ export function fx(html: string, cls: string, x: number, y: number, life: number
 }
 export function animate(el: Element, frames: Keyframe[], opts: KeyframeAnimationOptions & { duration: number }): Promise<unknown> {
   if (!el.animate || reduced) return Promise.resolve();
+  /* in a battle, shorter at Veloce and Lampo, like the waits (ui/speed.ts) */
+  var k = view.screen === 'battle' ? tempo() : 1;
+  if (k !== 1) opts = Object.assign({}, opts, { duration: opts.duration * k, delay: (opts.delay || 0) * k, endDelay: (opts.endDelay || 0) * k });
   try { var an = el.animate(frames, opts); return an.finished ? an.finished.catch(function () {}) : sleep(opts.duration); } catch (e) { return Promise.resolve(); }
 }
 export function anchor(i: number, fx0: number, fy0: number): number[] { var r = rel($('w-' + i)); return [r.x + r.w * fx0, r.y + r.h * fy0]; }
