@@ -6,6 +6,8 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
+**Stato al 10 novembre, sera:** fatte A0, R1, R2, R3, R4, R13, R15; in parte R18 e R19. Tutto sul ramo `sei-protagonisti` di GitHub, non ancora in `main`. Le altre aspettano D1–D5 o sono le prossime (R5, R6, R14, R16, R17, R20…).
+
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task già fatte restano in `TASK-MODELLI.md`.
 
 ---
@@ -175,18 +177,28 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **A0. Committare il lavoro fermo (Antonio).** In Claude Code: «committa tutto su un ramo `sei-protagonisti` e fai push». Poi decidi se unirlo a `main`.
 
+**Fatto (10 novembre, sera):** il lavoro del Mac è il commit `b4aebdc` sul ramo `sei-protagonisti`; lo stash del 4 novembre è sul ramo `archivio/stash-4-novembre` (da non unire); i due bundle di `promo/` erano già in `main`. `main` non è stato toccato.
+
 **R1. `CLAUDE.md` corto (Sonnet, medium).**
 - *Perché:* 143 KB in ogni sessione.
 - *Cosa:* `CLAUDE.md` tiene solo: cos'è il gioco in dieci righe, i comandi, le convenzioni, le regole che non si rompono, e un indice «se tocchi X leggi `docs/X.md`». Ogni sezione di oggi va in un file di `docs/` (mappa, trama, creature-e-lotte, protagonisti, audio, trailer, test, fonti-formia…), spostata intera. Poi, in un secondo passaggio, si correggono le parti superate elencate al punto G, controllando ogni frase sul codice con una ricerca.
 - *Fatto quando:* `CLAUDE.md` sotto i 10 KB; ogni titolo di oggi si ritrova in `docs/`; nessuna frase dice che gli amici si uniscono o parla di euro.
 
+**Fatto:** `CLAUDE.md` 6 KB; le sezioni spostate intere in 14 file di `docs/`, con note **Oggi:** sulle frasi superate (euro, compagnia, livelli dei covi, apertura, misura del file, Phaser). Non fatto: il controllo frase per frase di tutto `docs/creature-e-lotte.md` (61 KB).
+
 **R2. Archiviare le task fatte (Haiku, medium).** Le task segnate «fatto» di `TASK-MODELLI.md` e i punti ✅ di `PROSSIMI-PASSI.md` vanno in `docs/storia-task.md`, tagliati e incollati senza riscriverli. Nei due file resta solo quello che è da fare. *Fatto quando:* nessun testo perso (stesso numero di righe in tutto) e i due file sotto i 5 KB l'uno.
+
+**Fatto:** `docs/storia-task.md`; nei due file resta solo P5 e le idee da fare (nessuna riga persa, controllato). `TASK-MODELLI.md` 2,4 KB, `PROSSIMI-PASSI.md` 5,3 KB: il secondo è sopra i 5 KB perché è tutto da fare.
 
 **R3. Golden uguali ovunque, e controlli su GitHub (Sonnet, high).**
 - *Cosa:* in `tests/golden/canvas.mjs` arrotondare i numeri (tre decimali) prima dell'impronta, poi `npm run golden`. Un file `.github/workflows/ci.yml` che a ogni push fa typecheck, `npm test` e build su Linux con Node 22.
 - *Fatto quando:* `npm test` verde su Mac e su Linux; il segno verde compare su GitHub.
 
+**Fatto:** arrotondamento a tre decimali in `tests/golden/canvas.mjs`, golden della mappa rigenerati (motore e ritratti identici), `.github/workflows/ci.yml` verde su GitHub. Da verificare: `npm test` sul Mac dopo il pull.
+
 **R4. I difetti visti giocando (Sonnet, medium).** Quelli del punto F: la minuscola in «Tu abiti in…» (scrivere in `HOMES` la frase intera per ognuno, senza cambiare le maiuscole a mano); la Scheda in lotta mostra solo le mosse conosciute; `lang="it"`; il signore di Castellone non sfida a vista chi ha la creatura più forte più di tre livelli sotto la sua più debole (dice una frase e basta, la sfida resta parlando con lui). Un test per ognuno.
+
+**Fatto:** `LIVES` in `data/people.ts`; la Scheda usa le mosse dei bottoni (`padMoves`); `lang="it"` e un'icona nella pagina (senza, Chrome prende un 404 su `/favicon.ico` e le partite falliscono); regola generale per tutti gli allenatori (`tooStrong` in `ui/story-screen.ts`, scarto 3), Cicerone dice che ti ha squadrato e lasciato perdere. Test: unitari e la partita «a trainer too strong to challenge on sight».
 
 ### Fase 1: il metro
 
@@ -228,9 +240,13 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **R13. L'apertura in tre battute (Sonnet, high).** Cicerone dice chi è, che a Formia succede qualcosa, e dove andare. Il resto (comandi, tipi, livelli, soldi, covi) arriva con i `TIPS` nel momento in cui serve. *Fatto quando:* dal «chi sei?» al primo passo ci sono al massimo quattro schermate, e ogni cosa tolta ha il suo consiglio al momento giusto.
 
+**Fatto:** quattro schermate (tre righe di `OPENING` più quella su casa e covi); `TIPS.covo` nuovo per il ciclo dei tipi delle persone, `level` e `money` dicono livelli e sesterzi. Test in `creatures.test.ts`.
+
 **R14. Via i resti di «tutti in compagnia» (Sonnet, high).** Dipende da D1. Dal menu spariscono «Le persone, 1 su 6», il testo «vengono con te» e «Gioca con lui»; dal codice `joinFriend` e quello che lo serve, se niente lo chiama più. I salvataggi vecchi con una compagnia devono aprirsi lo stesso.
 
 **R15. La velocità della lotta (Sonnet, high).** Un'opzione nel menu e in lotta: Normale, Veloce, Lampo. In Veloce un turno sta sotto i 2,5 secondi: attese tra le righe dimezzate, la carica della mossa mostrata intera solo la prima volta in ogni lotta. Tenere premuto Invio manda avanti. La scelta si ricorda (`lotte-tra-amici:velocita:v1`). Un test in tempo reale misura il turno.
+
+**Fatto:** `ui/speed.ts` (vedi `docs/lotta-a-schermo.md`). Veloce: testo ×2, attese a metà, tutte le animazioni della lotta a 0,4; Lampo: testo intero, attese a un quarto, animazioni a 0,3. Invio tenuto premuto andava già avanti. Misura con l'orologio del gioco (partite «a turn at speed …»): primo turno sotto i 2,5 s in Veloce, sopra i 5 a Normale. Da guardare a occhio da Antonio: se Lampo è troppo.
 
 **R16. L'interfaccia da PC (Sonnet, xhigh).** Dipende da D3. Sopra i 900 pixel di larghezza: menu e schede al centro o di lato, alti quanto lo schermo, mai tagliati; la pianta di Formia a schermo intero con M; le carte delle mosse opache. Sotto, tutto resta com'è. Antonio guarda le schermate a 1366×768 e 1920×1080 prima di chiudere.
 
@@ -242,7 +258,11 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - *Avviso:* se salvare fallisce, il giocatore lo vede.
 - *Versioni:* una lista ordinata di passaggi da una versione alla successiva, al posto dei `formia2…6`.
 
+**Fatto in parte:** esporta e importa (codice e file), copia di riserva, avviso se salvare fallisce; test unitari e la partita «a story exported and imported» (vedi `docs/titolo-e-salvataggi.md`). Non fatto: la lista ordinata delle versioni al posto dei `formia2…6`.
+
 **R19. La lotta non si blocca mai; partite da PC (Sonnet, high).** Ogni scena animata gira dentro una rete: se lancia un errore o supera gli otto secondi, la lotta la salta, scrive l'errore in console e continua. Le partite di prova passano a 1366×768 di base (restano a misura di telefono solo quelle che provano la croce), e almeno dieci girano con le animazioni accese.
+
+**Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Non fatto: portare a dieci le partite con le animazioni accese (oggi sono otto). Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
 
 **R20. Misurare la mappa sul Mac (Sonnet, medium).** Con il profiler di Chrome: tempo per fotogramma camminando, di giorno e di notte, a schermo pieno. Se supera gli 8 ms: limitare la risoluzione del canvas a 2× di 1440×900 e disegnare la notte meno spesso. Si scrive il prima e il dopo.
 
