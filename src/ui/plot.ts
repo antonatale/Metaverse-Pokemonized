@@ -9,9 +9,9 @@ import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
 import { addCreature, creatureOf, has, nameOf, own, prizeText } from '../story/growth';
-import { MISSIONS, type Mission } from '../data/missions';
+import type { Mission } from '../data/missions';
 import { CHARS } from '../data/characters';
-import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly } from '../story/missions';
+import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly, myMissions } from '../story/missions';
 import { esc, $ } from './dom';
 import { say, sheet, closeSheet, renderHud, dexNotice, trainerFight, foesLine, type DialogOpt } from './story-screen';
 import { sfx } from '../audio';
@@ -62,8 +62,8 @@ function missionDoneNow(m: Mission, who: string) {
 }
 /** the missions in the menu: who can do each one, and where */
 export function missionsHtml(): string {
-  var left = MISSIONS.filter(function (m) { return !missionDone(m); }).length;
-  return '<div class="pickrow"><h3>Missioni · ' + (MISSIONS.length - left) + ' su ' + MISSIONS.length + '</h3><ul class="wbadge-list">' + MISSIONS.map(function (m) {
+  var mine = myMissions(), left = mine.filter(function (m) { return !missionDone(m); }).length;
+  return '<div class="pickrow"><h3>Missioni · ' + (mine.length - left) + ' su ' + mine.length + '</h3><ul class="wbadge-list">' + mine.map(function (m) {
     var did = missionDone(m), c = CHARS[m.who];
     return '<li class="' + (did ? 'got' : '') + '"><span><b>' + esc(m.name) + '</b><small>' + esc(did ? 'Fatta' : 'Solo ' + c.name + ' · ' + m.where) + '</small></span></li>';
   }).join('') + '</ul></div>';

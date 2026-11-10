@@ -10,7 +10,7 @@ export type XY = [number, number];
 export interface Line { name: string; w: 1 | 2; pts: XY[]; ch?: string }
 
 /** the railway Roma–Napoli: out of the hill west of town, past the station, up behind Mola and away east */
-export const RAIL: XY[] = [[10, 32], [100, 32], [100, 13], [164, 13]];
+export const RAIL: XY[] = [[10, 32], [100, 32], [100, 13], [184, 13], [184, 39], [199, 39]];
 /** where the railway goes into a hill: a tunnel mouth is drawn on the tile above */
 export const TUNNEL_ENDS: XY[] = [[10, 32]];
 /** hills painted by hand, as rectangles of tiles (the one the railway goes into, west of town) */
@@ -24,7 +24,7 @@ export const STREETS: Line[] = [
   { name: 'Via Abate Tosti', w: 2, pts: [[97, 36], [97, 22]] },
   { name: 'Via Remigio Paone', w: 2, pts: [[40, 48], [40, 22]] },
   /* past Mola the Appia climbs a little away from the bay: between it and the sea, the Villaggio Don Bosco */
-  { name: 'Via Appia Lato Napoli', w: 2, pts: [[97, 27], [112, 27], [112, 23], [164, 23]] },
+  { name: 'Via Appia Lato Napoli', w: 2, pts: [[97, 27], [112, 27], [112, 23], [188, 23], [188, 44], [199, 44]] },
   { name: 'Via Gianola', w: 2, pts: [[160, 23], [160, 53]] },
   /* north of the railway: Rio Fresco, Penitro, the road up to Maranola */
   { name: 'Via Rubino', w: 1, pts: [[40, 22], [97, 22]] },
@@ -43,7 +43,7 @@ export const STREETS: Line[] = [
   { name: 'Via Vindicio', w: 1, pts: [[18, 72], [23, 72]] },
   /* east: behind the Appia under the railway, Acqualonga; down to it Via Gramsci, Via Amendola (Antonio's) and Via Santo Janni;
      across the Appia from Antonio's garden, Via San Giovanni Bosco down to the Villaggio Don Bosco */
-  { name: 'Via Acqualonga', w: 1, pts: [[97, 15], [164, 15]] },
+  { name: 'Via Acqualonga', w: 1, pts: [[97, 15], [188, 15], [188, 23]] },
   { name: 'Via Gramsci', w: 1, pts: [[113, 15], [113, 23]] },
   { name: 'Via Giovanni Amendola', w: 1, pts: [[134, 15], [134, 23]] },
   { name: 'Via Santo Janni', w: 1, pts: [[150, 15], [150, 23]] },

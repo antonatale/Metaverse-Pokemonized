@@ -1,13 +1,14 @@
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
-import type { Building, Dir, LostItem } from '../data/maps/types';
+import type { Building, Dir, LostItem, Npc } from '../data/maps/types';
 import { COVI, type Covo } from '../data/covi';
-import { GATES } from '../data/gates';
+import { gateFor } from '../data/gates';
+import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
@@ -18,9 +19,9 @@ import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity, startActivity } from './activities';
 import { checkRun, cancelRun } from './run';
-import { ACTIVITIES, timesDone, bestOf, record } from '../story/activities';
+import { ACTIVITIES, activity, timesDone, bestOf, record } from '../story/activities';
 import { TOURNEY, roundsOf } from '../data/tourney';
-import { STOPS, nextStop, stopsDone, heading } from '../story/goals';
+import { myStops, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
 import { SPECIES, type SpeciesId } from '../data/creatures';
@@ -31,12 +32,12 @@ import { sceneFor, PLACE_MAGIC } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, plotBefore, stonesHtml, missionsHtml, legendWay, legendEnd, legendPact, askPending } from './plot';
-import { JOIN } from '../data/people';
+import { JOIN, HOMES } from '../data/people';
 import { endFlag, legendOf, legendOver, pactOpen, stagesNow, stonesKept } from '../story/choices';
 import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
-import { idOf, sideOf, formNow, gainXp, joinFriend, heroText, foeSide, fightPay, battleBag, keepBag, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
+import { idOf, sideOf, formNow, gainXp, heroText, foeSide, fightPay, battleBag, keepBag, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
 import { onReward } from '../story/activities';
@@ -159,7 +160,7 @@ function tellRewards() {
   var r = told.shift()!, joined = r.joined;
   var join = function () { if (joined) friendJoins(joined, JOIN[joined as keyof typeof JOIN].say || []); };
   if (r.g.to <= r.g.from) { join(); return; }
-  if (r.g.key === 'antonio') mentorTip('level');
+  if (r.g.key === firstHuman()) mentorTip('level');
   growthSay(r.g, [], join);
 }
 /** a friend comes along: from now on it can be played, with its own creatures */
@@ -387,11 +388,12 @@ function talkTo(p: Person, past?: boolean) {
   var n = p.n;
   if (n.pet != null) { openHome(); return; }
   if (!past && plotTalk(n, function () { talkTo(p, true); })) return;
-  if (n.covo) leaderTalk(n.covo);
+  if (n.covo) leaderTalk(n.covo, n);
   else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
-  else if (n.starter && !hasStarter()) { if (firstHuman() === 'antonio') starterTalk(n.name || ''); else say(['Il cucciolo l\'ho promesso ad Antonio. Digli di passare da me.'], n.name); }
+  /* whoever is played gets his first creature here: each of the six begins his own story (title, «chi sei?») */
+  else if (n.starter && !hasStarter()) starterTalk(n.name || '');
   else if (n.starter && !st.seen['dono-retini']) netsGift(n.name || '');
   else if (n.starter && dexPrizesDue().length) dexPrizeTalk(n.name || '');
   else if (n.shop) {
@@ -412,9 +414,21 @@ export function useDoor(b: Building) {
   else if (b.msg) say(b.msg);
 }
 function gateTalk(g: string, who?: string) {
-  var G0 = GATES[g], need = cityCovi(G0.city), have = need.filter(hasBadge).length, city = MAPS[G0.city].name;
-  if (have < need.length) say([G0.label + ' parte quando hai tutte le spille di ' + city + '.', 'Ne hai ' + have + ' su ' + need.length + '.'], who);
-  else say(['Hai tutte le spille di ' + city + '!', G0.label + ' arriva con il prossimo aggiornamento del gioco.'], who, flag('tr-mamurra') ? [{ label: 'Guarda indietro', fn: lookBack }, { label: 'Aspetto', fn: null }] : null);
+  var G0 = gateFor(g, firstHuman() as FriendId), need = cityCovi(G0.city), have = need.filter(hasBadge).length, city = MAPS[G0.city].name;
+  if (have < need.length) { say([G0.label + ' parte quando hai tutte le spille di ' + city + '.', 'Ne hai ' + have + ' su ' + need.length + '.'], who); return; }
+  /* the train across Italy (ui/train.ts), and the arrival: the station hall of the city, or Formia's station */
+  var go = function () {
+    hide();
+    trainTrip(G0, function () {
+      open(true);
+      if (G0.to === 'formia') { var c0 = (MAPS.formia.npcs || []).filter(function (q) { return q.gate === 'torino'; })[0]; travel('formia', c0.x, c0.y + 1, 'down'); }
+      else { var m0 = MAPS[G0.to]; travel(G0.to, m0.start[0], m0.start[1], m0.start[2]); }
+    });
+  };
+  if (G0.city !== 'formia') { say([G0.label + ' è sul binario.'], who, [{ label: 'Torna a Formia', fn: go }, { label: 'Resto qui', fn: null }]); return; }
+  var opts: { label: string; fn: (() => void) | null }[] = [{ label: 'Sali sul treno', fn: go }];
+  if (flag('tr-mamurra')) opts.push({ label: 'Guarda indietro', fn: lookBack });
+  say(['Hai tutte le spille di ' + city + '!', G0.label + ' è sul binario: si parte per ' + G0.station + '.'], who, opts.concat([{ label: 'Aspetto', fn: null }]));
 }
 /** before leaving: the story of this game, told back */
 function lookBack() {
@@ -425,10 +439,15 @@ function lookBack() {
 }
 
 /* ---------- covi ---------- */
-function leaderTalk(id: string) {
-  var cv0 = COVI[id];
-  if (st.beaten[id]) { say(cv0.after, cv0.leader); return; }
-  say(cv0.intro, cv0.leader, [{ label: 'Sfida!', fn: function () { challenge(id); } }, { label: 'Più tardi', fn: null }]);
+/** a friend in his covo: the challenge, and what he always does besides (Valentin's beach volley, Andrea's padel…) */
+function leaderTalk(id: string, n?: Npc) {
+  var cv0 = COVI[id], act = n && n.activity ? activity(n.activity) : null;
+  var doIt: { label: string; fn: (() => void) | null }[] = act ? [{ label: act.verb, fn: function () { startActivity(act!.id, n!); } }] : [];
+  if (st.beaten[id]) { say(cv0.after, cv0.leader, doIt.length ? doIt.concat([{ label: 'Più tardi', fn: null }]) : null); return; }
+  var opts: { label: string; fn: (() => void) | null }[] = [{ label: 'Sfida!', fn: function () { challenge(id); } }];
+  /* the catchphrase, then what he has to say to this one in particular (or the plain intro) */
+  var mine = cv0.vs[firstHuman() as FriendId];
+  say(mine ? [cv0.intro[0]].concat(mine) : cv0.intro, cv0.leader, opts.concat(doIt).concat([{ label: 'Più tardi', fn: null }]));
 }
 /* ---------- the creatures' powers: swimming, climbing the walls, the view from above ---------- */
 const MEET_LINE: Record<string, string> = { grotta: 'Qualcosa si muove nel buio…', erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
@@ -548,8 +567,9 @@ function challenge(id: string) {
   var first = firstHuman(), keys = (st.squad as string[]).slice().sort(function (a, b) { return a === first ? -1 : b === first ? 1 : 0; });
   pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, keys, function (key) {
     hide();
-    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: cv0.level, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
-      sideA: sideOf(key), sideB: foeSide(cv0.leader, cv0.level), bag: battleBag() });
+    var lv = covoLevel(id);
+    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: lv, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
+      sideA: sideOf(key), sideB: foeSide(cv0.leader, lv), bag: battleBag() });
   });
 }
 /** Antonio's moves whose thing he has found around town: in story battles he can't lose it any more */
@@ -813,7 +833,7 @@ function dexPrizeTalk(who: string) {
   say(lines, who);
 }
 function starterTalk(who: string) {
-  say(['Ciao Antonio! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
+  say(['Ciao {hero}! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
     'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
     'Al parco ne sono nate tre. Una la affiderei a te: cresce con te, lotta con te, e un giorno cambia forma.'], who, [
     { label: 'Fammeli vedere', fn: function () {
@@ -850,14 +870,26 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
   if (!cv0) return;
+  var lv = tag.foeLv || cv0.level;
   if (res.won && !st.beaten[tag.covo!]) {
     st.beaten[tag.covo!] = true;
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
-    var joined = joinFriend(cv0.leader, cv0.level);
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, cv0!.level, true, true, joined ? function () { friendJoins(cv0!.leader, []); } : undefined); }); });
-  } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, cv0!.level, true, false); });
-  else say(cv0.lose, cv0.leader, null, function () { rewards(key, cv0!.level, false, true); });
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, lv, true, true, trainNews); }); });
+  } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, lv, true, false); });
+  else say(cv0.lose, cv0.leader, null, function () { rewards(key, lv, false, true); });
+}
+/** after a pin: how many are left before the train, or that the train is waiting */
+function pinsLeft(city: string, who: string): string {
+  var need = cityCovi(city), left = need.filter(function (c) { return !hasBadge(c); }).length, G0 = gateFor('torino', firstHuman() as FriendId);
+  return 'Hai battuto ' + who + '. ' + (left ? (left === 1 ? 'Ti manca una spilla' : 'Ti mancano ' + left + ' spille') + ' per ' + G0.label.charAt(0).toLowerCase() + G0.label.slice(1) + '.' : 'Hai tutte le spille: ' + G0.label.charAt(0).toLowerCase() + G0.label.slice(1) + ' ti aspetta in stazione.');
+}
+/** the last pin of Formia: the train is waiting (said once) */
+function trainNews() {
+  if (!cityCovi('formia').every(hasBadge) || st.seen['treno-pronto']) return;
+  st.seen['treno-pronto'] = true; save();
+  var G0 = gateFor('torino', firstHuman() as FriendId);
+  say(['Hai tutte le spille di Formia!', 'In stazione, ' + G0.label.charAt(0).toLowerCase() + G0.label.slice(1) + ' ti aspetta: chiedi al capotreno.']);
 }
 function award(cv0: Covo, then?: () => void) {
   sfx('badge');
@@ -866,13 +898,11 @@ function award(cv0: Covo, then?: () => void) {
     '<div class="award-badge">' + badgeSVG({ color: b.color, mark: b.mark }, 104) + '</div>' +
     '<h2 id="aw-t">Hai conquistato la ' + esc(b.name) + '</h2>' +
     '<div class="award-face">' + face(cv0.leader) + '</div>' +
-    '<p>' + esc(L.name) + ' entra nella compagnia: da ora puoi mandarlo in campo nelle sfide.</p>' +
+    '<p>' + esc(pinsLeft(cv0.city, L.name)) + '</p>' +
     '<button class="btn primary" type="button" id="aw-ok">Continua</button></div>', 'result');
   $('aw-ok').addEventListener('click', function () {
     closeSheet();
-    var all = cityCovi(cv0.city).every(hasBadge);
-    if (then) then();
-    else if (all) say(['Hai tutte le spille di ' + MAPS[cv0.city].name + '!', 'Il treno per Torino arriva con il prossimo aggiornamento del gioco.']);
+    if (then) then(); else trainNews();
   });
   setTimeout(function () { var bt = $('aw-ok'); if (bt) bt.focus(); }, 30);
 }
@@ -899,7 +929,7 @@ function openMenu(tab?: string) {
   }).join('');
   var panes: Record<string, string> = {
     squadra: teamHtml(),
-    viaggio: '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (STOPS.length - 1) + '</h3><ul class="wbadge-list diary tour">' + STOPS.map(function (s0) {
+    viaggio: '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (myStops().length - 1) + '</h3><ul class="wbadge-list diary tour">' + myStops().map(function (s0) {
       /* the stops still ahead stay a mystery: only the ones done and the next one are told */
       var done = s0.done(), next = s0 === nextStop();
       return '<li class="' + (done ? 'got' : next ? 'next' : 'secret') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '?') + '</span><span><b>' + esc(done || next ? s0.text : '???') + '</b><small>' +
@@ -997,7 +1027,10 @@ function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); 
 /* the story starts: the ghost of Cicero appears and explains the journey, how to play, and the first step */
 function intro() {
   st.seen.intro = true; st.seen['cap-starter'] = true; save();
-  say(OPENING, CICERO);
+  /* the story of whoever is played: where he lives, the five covi of the others, and where his train goes */
+  var me = firstHuman() as FriendId, G0 = gateFor('torino', me), lines = OPENING.slice();
+  lines.splice(5, 0, 'Tu abiti in ' + HOMES[me].charAt(0).toLowerCase() + HOMES[me].slice(1) + '. A Formia ci sono sei covi, uno per ognuno di voi amici: batti gli altri cinque, prendi le loro spille, e ' + G0.label.charAt(0).toLowerCase() + G0.label.slice(1) + ' ti porterà a ' + G0.station + '.');
+  say(lines, CICERO);
 }
 /* ---------- Cicero, when he is needed ---------- */
 /* He is not always there: he appears (on the map, beside Antonio, and in the corner) when he has something to say,

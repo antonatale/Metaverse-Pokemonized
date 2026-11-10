@@ -1,6 +1,6 @@
 import { MAPS, LEGEND } from '../data/maps';
 import type { Area, Building, Dir, Ground, LostItem, MapDef, Npc, Sign, Warp } from '../data/maps/types';
-import { COVI, type Covo } from '../data/covi';
+import { COVI, COVO_STEP, type Covo } from '../data/covi';
 import { T, hash } from '../render/canvas/draw';
 import { st } from '../save/story-progress';
 import { darkness, sunset } from './daytime';
@@ -71,7 +71,7 @@ export function prepare(id: string): PreparedMap {
   (m.warps || []).forEach(function (w) { m.at[key(w.x, w.y)] = { kind: 'warp', w: w }; });
   m.people = (m.npcs || []).map(function (n) { return { n: n, x: n.x, y: n.y, dir: n.dir || 'down' }; });
   /* Antonio's flat keeps the creatures that are not travelling with him: one on each of these tiles, if there */
-  if (id === 'casa') HOME_SPOTS.forEach(function (c, i) {
+  if (id === 'casa' || id.indexOf('casa-') === 0) HOME_SPOTS.forEach(function (c, i) {
     m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
   });
   m.items = m.items || []; m.areas = m.areas || [];
@@ -119,7 +119,7 @@ export function present(p: Person): boolean {
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
   if (p.n.person && p.n.person === firstHuman()) return false;
-  return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
+  return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.beaten || !!st.beaten[p.n.beaten]) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
 }
@@ -178,7 +178,16 @@ export function treasureAt(m: PreparedMap): [number, number] | null {
   }
   return null;
 }
-export function cityCovi(city: string): Covo[] { return Object.keys(COVI).filter(function (k) { return COVI[k].city === city; }).map(function (k) { return COVI[k]; }); }
+/** the covi of a city for whoever is played: his own is not there for him */
+export function cityCovi(city: string): Covo[] {
+  var me = firstHuman();
+  return Object.keys(COVI).filter(function (k) { return COVI[k].city === city && COVI[k].leader !== me; }).map(function (k) { return COVI[k]; });
+}
+/** a covo's level now: its base, and COVO_STEP more for every other pin of its city already won */
+export function covoLevel(id: string): number {
+  var cv0 = COVI[id];
+  return cv0.level + COVO_STEP * cityCovi(cv0.city).filter(function (c) { return c !== cv0 && hasBadge(c); }).length;
+}
 export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badge.id) >= 0; }
 
 /** the map Antonio is on (set when the story opens, and on every door or warp) */

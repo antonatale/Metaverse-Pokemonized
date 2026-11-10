@@ -40,7 +40,7 @@ export const CH: Record<FriendId, Look> = {
       fshadow: 'M84 118C100 108 116 106 132 108C150 108 168 112 186 122L182 132C166 122 150 118 132 119C114 119 100 122 84 130Z'
     },
     outfit: { style: 'turtleneck', base: '#25272f', dark: '#14151a', light: '#3d404b', line: '#07080b' },
-    glasses: { style: 'politico', when: 'always', koTilt: true }, ko: 'eyes',
+    ko: 'eyes',
     ex: {
       smirk: { m: 'talk', bl: { outer: 0.6, mid: 0.8 }, br: { outer: 1.4, mid: 1.6 }, e: { open: 0.95, look: [2.4, -0.2] } },
       cool: { m: 'smug' }
@@ -81,7 +81,8 @@ export const CH: Record<FriendId, Look> = {
     P: 'fo', name: 'Forchetta', face: 'oval', earDx: 1, thumb: '38 12 184 184',
     skin: { base: '#e4bca1', light: '#f4d6c1', shade: '#c79c84', deep: '#a0715d', line: '#724739' },
     lips: { base: '#c07672', dark: '#924d51', light: '#dc9e98', inside: '#572229' },
-    iris: { base: '#6e5038', dark: '#2d1e15', light: '#a07c5b' },
+    /* light eyes, between blue and green */
+    iris: { base: '#7ea7b8', dark: '#3d5c6b', light: '#c2dbe4' },
     brow: { color: '#4a3324', hi: '#7a5a43', w: 0.86 },
     hair: {
       style: 'curls', p: 2.3, seed: 2024, cx: 130, cy: 106, rx: 75, ry: 77, out: '#26170e', fills: ['#4f3423', '#5b3d29', '#45301f', '#664632'], hi: '#c29670',

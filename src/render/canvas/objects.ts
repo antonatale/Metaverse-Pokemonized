@@ -620,6 +620,11 @@ const OBJ: Record<string, ObjFn> = {
     c.strokeStyle = '#ffffff'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(22, -18); c.lineTo(27, -14); c.moveTo(22, -4); c.lineTo(28, -2); c.stroke();
     c.strokeStyle = P.ink; c.lineWidth = 1.2; c.beginPath(); c.moveTo(21, -2); c.lineTo(31, -6); c.stroke();
   },
+  /* a puff of the clouds that still cover the second cities beyond their stations */
+  cloud: function (c, w, h, P) {
+    blobs(c, [[4, 18, 11], [16, 12, 13], [28, 18, 11], [16, 22, 10]], '#f4f6fb', P.ink, 1.2);
+    blobs(c, [[10, 14, 4], [20, 10, 3]], '#ffffff', null, 0);
+  },
   /* a canoe of the Lido Oriente pulled up on the sand, its paddle across it */
   canoe: function (c, w, h, P, o) {
     ell(c, 16, 25, 14, 3.5); c.fillStyle = P.shadow; c.fill();

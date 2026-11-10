@@ -33,6 +33,40 @@ Le richieste di Antonio del 5 novembre 2026, dopo aver provato il gioco a mano. 
 
 **Perché così.** Opus dove un errore è silenzioso o tocca il motore, i salvataggi e il bilanciamento. Sonnet dove il compito è definito e il giudizio finale è di Antonio, a vista o a orecchio. Haiku solo per lavoro meccanico verificato dai test.
 
+## I sei protagonisti (richiesta di Antonio dell'8 novembre 2026)
+
+**Se riprendi questo lavoro da un altro account:** leggi questa sezione e `CLAUDE.md`, guarda `git status` (il lavoro in corso è nella cartella, non ancora in un commit) e parti dalla prima riga «da fare» o «in corso». Aggiorna lo stato qui man mano. Commit e push solo quando Antonio lo chiede.
+
+**Dove eravamo (8 novembre 2026, sera):** tutto fatto tranne P5 (in più: il covo di ognuno sulle carte di «chi sei?», chi parte nel viaggio in treno, il benvenuto in stazione, l'albero delle abilità per chiunque si giochi), che aspetta le risposte di Antonio alle domande qui sotto. Ultima verifica: `npx tsc --noEmit` pulito, 373 test unitari, 38 partite Playwright. Nessun commit dopo 3539dcb: il lavoro dei sei protagonisti è tutto nella cartella. Se l'altro account è su un altro computer, prima serve un commit e push (solo se Antonio lo chiede).
+
+Antonio: all'inizio si sceglie chi giocare tra Antonio, Andrea, Costanzo, Zendavid, Forchetta e Valentin; battuti, gli amici non entrano in squadra; ognuno ha il suo covo; ognuno parte da dove vive davvero; la storia di ognuno è pensata per lui; le mosse delle persone con animazioni molto più belle; le stazioni per ultime.
+
+**Decisioni di Antonio:** sei covi a Formia, uno per amico, e chi gioca batte gli altri cinque. La seconda città è Torino per Antonio, Zendavid, Forchetta e Valentin, e Milano per Costanzo e Andrea. Per ora solo l'arrivo in stazione (Torino Porta Nuova, Milano Centrale): oltre la stazione non si va, ci sono nuvole che coprono il resto e un segno che il resto arriva con il prossimo aggiornamento. Prima della stazione, un'animazione del treno che attraversa l'Italia fino alla città.
+
+**Dove vivono (da Antonio):**
+- Antonio: Parco la Fontana, via Amendola (c'è già).
+- Valentin: via Ferrucci, accanto a piazza Risorgimento, di fronte all'ospedale.
+- Forchetta: via Abate Tosti, vicino alla Torre di Mola.
+- Costanzo: via Solaro, vicino alla chiesa di San Giovanni (Mola).
+- Andrea: Castellone, vicinissimo a piazza Mattej.
+- Zendavid (Davide): all'inizio di Scauri, vicino alla stazione. Va aggiunta quella parte di mappa, a est di Gianola.
+Niente numeri civici. Le coordinate vanno verificate (OpenStreetMap) prima di metterle in `formia-places.ts`.
+
+| # | Cosa | Stato |
+|---|---|---|
+| P1 | Aspetto: capelli di Andrea attaccati alla testa, Costanzo senza occhiali, occhi chiari a Forchetta (`render/svg/looks.ts`, `hair.ts`) | fatto (il golden degli sprite va rigenerato con `npm run golden`) |
+| P2 | Sei covi (`data/covi.ts`: in più Valentin all'Eclipse, Zendavid in pineta, Andrea al padel del Bruno Zauli, Antonio al Palamendola); il livello sale di `COVO_STEP` per ogni spilla già presa (`covoLevel`); `cityCovi` toglie il covo di chi si gioca; niente `joinFriend`; il giro di Formia (`myStops`) salta il proprio covo e la propria attività; il treno della propria città (`data/gates.ts`) | fatto: `tests/unit/covi.test.ts`, partite aggiornate (`goStory` in `tests/e2e/harness.ts` risponde a «chi sei?») |
+| P3 | Scelta del protagonista quando si comincia una storia («chi sei?» in `ui/home.ts`), `startAs`/`blank(first)` in `save/story-progress.ts` che parte da casa sua (`MapDef.starts`), `st.squad = [first]`; il guardaparco dà la prima creatura a chiunque; Cicerone saluta `{hero}`; gli oggetti persi sono solo di Antonio (`only` in `story/goals.ts`); i punti abilità seguono il livello di chi si gioca | fatto |
+| P4 | Le case vere: fatte quelle di Valentin (via Ferrucci), Costanzo (via Solaro), Forchetta (via Abate Tosti), Andrea (Castellone) e Zendavid (Scauri), con la partenza davanti a casa (`MapDef.starts`, test in `tests/unit/covi.test.ts`). **Scauri fatta:** la mappa ora è larga 200 (`X_ANCHORS` fino a 13.725), la costa a est di Gianola è cucita in `osm-extract.json` (tre vie OSM 672636933, 672636932, 437456512), ferrovia e Appia arrivano alla stazione di Minturno-Scauri (`stazione-scauri`), zona «Scauri». Gli interni: `data/maps/homes.ts`, la pianta di `casa.ts` con il letto per dormire, la finestra su quello che si vede davvero da casa e le cose di ognuno; le creature a casa aspettano lì | fatto |
+| P5 | La storia di ognuno. Fatto senza bisogno di risposte: l'intro di Cicerone dice dove abiti, i cinque covi e la tua città; il giro di Formia mette i covi in ordine di distanza da casa tua (`myStops`); il rivale Tullio sceglie la creatura che batte quella del protagonista (`st.squad[0]` in `story/rival.ts`); in una storia di un protagonista ci sono solo le sue missioni (`myMissions`). Da fare con le informazioni di Antonio: frasi, consigli, posti e mosse pensati per ognuno | in corso |
+| P6 | Animazioni delle mosse delle persone (`ui/person-scenes.ts`): ogni segnale delle persone ha la sua scena (comizio, Daje, volpe, robot, palla, coriandoli, Forza Formia, abbaio, battuta, Stronger, diagnosi), le mosse imparate crescendo sono riconosciute dalla scritta del banner (CHICAGO!, MATCH POINT!, SI VOTA!), e quelle su di sé hanno le scene di `ui/self-scenes.ts` (Personaggismo velo, King del Verde bagno di sole, Zen calma, Palestra scaglie). Da rifinire a vista con Antonio | fatto |
+| P7 | Le stazioni: `ui/train.ts` (l'Italia disegnata da ~40 punti veri, il treno da Formia per Roma, Firenze, Bologna, Milano e Torino, le città che si accendono, «Salta» o un tasto), `data/maps/stations.ts` (atrio di Torino Porta Nuova e di Milano Centrale, binari, panchine, nuvole `Z` oltre l'atrio con l'avviso del prossimo aggiornamento, il capotreno per tornare a Formia), `gateTalk` con «Sali sul treno» e «Torna a Formia» | fatto |
+| P8 | Partite, documenti, controlli: la sezione «I sei protagonisti» in `CLAUDE.md`, la partita `Andrea takes the train to Milano`; controlli verdi (372 test unitari, 38 partite, golden delle lotte invariato) | fatto |
+
+**Stato all'ultimo controllo (8 novembre, notte):** controllo dei tipi pulito, 373 test unitari, 38 partite; golden di sprite e disegno della mappa rigenerati (quello delle lotte non cambia). Niente commit. Resta solo P5, che aspetta le risposte di Antonio sui personaggi; poi rifinire a vista scene e case con lui.
+
+**Domande fatte ad Antonio** (le risposte vanno in P5 e P6, e nell'aspetto in `render/svg/looks.ts`): per ognuno, cosa fa e perché va a Torino o a Milano; due o tre posti di Formia dove va davvero e con chi; frasi tipiche e fissazioni; com'è fatto (capelli, occhi, barba, vestiti, accessori) e come lo vede nelle due forme; due o tre cose da trasformare in mosse; se i covi stanno bene dove sono (Valentin all'Eclipse, Zendavid in pineta, Andrea al padel del Bruno Zauli, Antonio al Palamendola).
+
 ## Opus 5.5, max
 
 O2 e O3 sono finite il 5 novembre. Anche S8 l'ha fatta Opus, su richiesta di Antonio, lo stesso giorno.

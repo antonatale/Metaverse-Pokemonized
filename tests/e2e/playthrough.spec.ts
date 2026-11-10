@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { play, until, toPrompt, battleOver, walk, type Run } from './harness';
+import { play, until, toPrompt, battleOver, walk, goStory, type Run } from './harness';
 
 /* Whole games played to the end: the title and its stories, the story, its battles, saves.
    Each must finish without errors; the saves they leave are checked where it matters. */
@@ -100,9 +100,12 @@ test('the intro, and three stories at once', async ({ browser }) => {
     r.keep('title', await p.locator('#ti-main').isVisible());
     /* a new story in the second slot: it starts from the beginning, with Cicero */
     await p.click('#go-slots'); await p.clock.runFor(300);
-    await p.click('[data-play="2"]'); await p.clock.runFor(1500);
+    /* «chi sei?»: the second story is Andrea's, from his home in Castellone */
+    await p.click('[data-play="2"]'); await p.clock.runFor(300);
+    await r.shot('who');
+    await p.click('[data-hero="andrea"]'); await p.clock.runFor(1500);
     await until(p, () => window.WORLD._debug.pos().dialog);
-    r.keep('second', await p.evaluate(() => { const s = window.WORLD.state() as { badges: string[]; mons: unknown[]; money: number }; return { badges: s.badges.length, mons: s.mons.length, money: s.money }; }));
+    r.keep('second', await p.evaluate(() => { const s = window.WORLD.state() as { badges: string[]; mons: unknown[]; money: number; squad: string[]; first?: string }; return { badges: s.badges.length, mons: s.mons.length, money: s.money, squad: s.squad, first: s.first }; }));
     await talkThrough(p, 20);
     await p.keyboard.press('m'); await p.clock.runFor(300);
     await p.click('[data-tab="mappa"]'); await p.click('#wm-home'); await p.clock.runFor(500);
@@ -123,7 +126,7 @@ test('the intro, and three stories at once', async ({ browser }) => {
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
   expect(get('intro')).toBe(true);
   expect(get('title')).toBe(true);
-  expect(get('second'), 'a new story, from nothing').toEqual({ badges: 0, mons: 0, money: 0 });
+  expect(get('second'), 'a new story, from nothing, Andrea alone in his company').toEqual({ badges: 0, mons: 0, money: 0, squad: ['andrea'], first: 'andrea' });
   expect(String(get('go'))).toContain('Storia 2');
   expect(get('first')).toMatchObject({ badges: 1, x: 137, y: 20, money: 40 });
   expect(get('after-delete')).toBe(2);
@@ -133,7 +136,7 @@ test('the intro, and three stories at once', async ({ browser }) => {
 test('story', async ({ browser }) => {
   await play(browser, 'story', { seed: 3 }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
     await r.shot('intro');
     await talkThrough(p);
@@ -166,7 +169,7 @@ test('story', async ({ browser }) => {
 test('story: circolo and menu', async ({ browser }) => {
   await play(browser, 'circolo', { seed: 4, dark: true, viewport: { width: 1280, height: 800 } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
     await talkThrough(p);
     await goTo(p, 'door', 'tennis');
@@ -186,7 +189,7 @@ test('story: circolo and menu', async ({ browser }) => {
 });
 test('story on a phone with the touch pad', async ({ browser }) => {
   await play(browser, 'touch', { seed: 5, touch: true }, async (r) => {
-    await r.page.click('#go-story');
+    await goStory(r.page);
     await until(r.page, () => window.WORLD._debug.pos().dialog);
     await r.shot('pad');
   });
@@ -204,7 +207,7 @@ test('hot reload keeps an open battle', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'polpastro', moves: ['spruzzo', 'catilinaria'] }], lv: { c1: { lv: 30, xp: 0 } }, money: 0, bag: {} };
   await play(browser, 'hot', { seed: 21, hot: true, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await p.evaluate(() => window.WORLD._debug.meet('gianola')); await p.clock.runFor(300);
     await talkThrough(p);
     await choose(p, 'Lotta!'); await p.clock.runFor(800);
@@ -234,13 +237,13 @@ const PRE_FORMIA2 = { 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: '
 test('old saves', async ({ browser }) => {
   await play(browser, 'saves', { storage: OLD_SAVE }, async (r) => {
     await r.shot('home', { fullPage: true });
-    await r.page.click('#go-story');
+    await goStory(r.page);
     await r.page.clock.runFor(1500);
     await r.shot('world');
     await saves(r, 'saves');
   });
   await play(browser, 'saves-migration', { storage: PRE_FORMIA2 }, async (r) => {
-    await r.page.click('#go-story');
+    await goStory(r.page);
     await r.page.clock.runFor(1500);
     await r.shot('world');
     await saves(r, 'saves');
@@ -253,7 +256,7 @@ test('a canoe at the Lido Oriente', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'oriente', { seed: 6, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await talkTo(p, 'bagnino-oriente');
     r.keep('area', await p.evaluate(() => window.WORLD._debug.area()));
     await r.shot('lido');
@@ -288,7 +291,7 @@ test('the shops of the town', async ({ browser }) => {
     const p = r.page;
     const shop = async (id: string) => { await p.evaluate((i) => (window.WORLD._debug as unknown as { shop(id: string): void }).shop(i), id); await p.clock.runFor(300); };
     const buy = async (it: string, n = 1) => { for (let k = 1; k < n; k++) await p.click('[data-qty="' + it + '"] [data-up]'); await p.click('[data-it="' + it + '"]'); await p.clock.runFor(200); };
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     /* the shops on the map */
     for (const [name, x, y] of [['pharmacy', 72, 28], ['market', 66, 37], ['fish', 95, 29], ['news', 83, 42], ['bakery', 62, 37]] as [string, number, number][]) {
       await p.evaluate(([x0, y0]) => window.WORLD._debug.travel('formia', x0, y0), [x, y]); await p.clock.runFor(600);
@@ -326,13 +329,35 @@ test('the shops of the town', async ({ browser }) => {
   expect(after.mons[0].bond).toBeGreaterThan(10);
 });
 
+/* Andrea, with the pins of the other five, takes his train: Milano Centrale, the hall closed by the clouds, and back */
+test('Andrea takes the train to Milano', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'statoarte'], squad: ['andrea'], first: 'andrea',
+    beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, palamendola: true }, found: {}, seen: { intro: true, starter: true, protagonisti: true }, mons: [], lv: {}, money: 0, bag: {} };
+  const r = await play(browser, 'train', { seed: 2, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(1500);
+    await talkTo(p, 'capotreno');
+    r.keep('offer', await p.locator('#wopts button').allInnerTexts());
+    await choose(p, 'Sali sul treno'); await p.clock.runFor(1500);
+    r.keep('there', await p.evaluate(() => window.WORLD._debug.pos().map));
+    await r.shot('milano');
+    await talkTo(p, 'capotreno-milano');
+    await choose(p, 'Torna a Formia'); await p.clock.runFor(1500);
+    r.keep('back', await p.evaluate(() => window.WORLD._debug.pos().map));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('offer')).toContain('Sali sul treno');
+  expect(get('there')).toBe('milano');
+  expect(get('back')).toBe('formia');
+});
+
 /* the bar of Mola: three coffees in one go, into the bag; from the menu, «Usa» asks whom once, and how many */
 test('three coffees, given from the bag', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
     mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 20, bag: {} };
   const r = await play(browser, 'coffee', { seed: 4, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await p.evaluate(() => (window.WORLD._debug as unknown as { shop(id: string): void }).shop('bar')); await p.clock.runFor(300);
     for (let k = 0; k < 2; k++) await p.click('[data-qty="caffe"] [data-up]');
     await r.shot('shop');
@@ -389,7 +414,7 @@ async function talkTo(p: Page, id: string) {
 test('activities around Formia', async ({ browser }) => {
   const r = await play(browser, 'activities', { seed: 9 }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
     await talkThrough(p);
     /* the pineta: a run with Zendavid, left to time out */
@@ -473,11 +498,10 @@ test('activities around Formia', async ({ browser }) => {
   expect(get('inside morgana')).toBe('morgana');
   expect(st.done).toEqual({ corsa: 1, volley: 1, windsurf: 1, lettino: 1, quiz: 1, gelato: 1 });
   expect(st.best.volley).toBe(1);
-  /* Valentin comes along after one good hit, and says so once the game is closed; Zendavid does not: the run ran out of time */
+  /* nobody joins the company any more (each friend has his covo): what is told after is the level, not a friend */
   const told = get('told') as unknown as string[];
-  expect(told.join(' ')).toContain('Da oggi la festa si sposta dove vai tu.');
-  expect(told.join(' ')).toContain('Adesso anche');
-  expect((st as unknown as { squad: string[] }).squad).toEqual(['antonio', 'valentin']);
+  expect(told.join(' ')).not.toContain('Adesso anche');
+  expect((st as unknown as { squad: string[] }).squad).toEqual(['antonio']);
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);
 });
 
@@ -485,7 +509,7 @@ test('activities around Formia', async ({ browser }) => {
 test('home and the scooter', async ({ browser }) => {
   const r = await play(browser, 'home', { seed: 10 }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
     await talkThrough(p);
     await goTo(p, 'door', 'casa');
@@ -542,12 +566,12 @@ test('home and the scooter', async ({ browser }) => {
 test('the tour of Formia', async ({ browser }) => {
   const story = (extra: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true }, found: {}, ...extra }) });
   const goal = async (r: Run) => {
-    await r.page.click('#go-story');
+    await goStory(r.page);
     await r.page.clock.runFor(1500);
     return (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' ');
   };
   const first = await play(browser, 'tour-start', {}, async (r) => {
-    await r.page.click('#go-story');
+    await goStory(r.page);
     await until(r.page, () => window.WORLD._debug.pos().dialog);
     await talkThrough(r.page);
     r.keep('goal', (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' '));
@@ -565,7 +589,7 @@ test('the tour of Formia', async ({ browser }) => {
     r.keep('menu', await r.page.locator('.tour').innerText());
     await r.shot('menu', { fullPage: true });
   });
-  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true }, badges: ['forchetta'], squad: ['antonio', 'forchetta'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }] }) }, async (r) => {
+  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
     await r.page.keyboard.press('m'); await r.page.clock.runFor(300);
     r.keep('title', await r.page.locator('.pickrow h3', { hasText: 'Giro di Formia' }).innerText());
@@ -585,7 +609,7 @@ test('the tour of Formia', async ({ browser }) => {
 test('creatures of Formia', async ({ browser }) => {
   const first = await play(browser, 'creatures', { seed: 5 }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
     await talkThrough(p);
     await talkTo(p, 'guardaparco');
@@ -642,7 +666,7 @@ test('creatures of Formia', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'gabbi' }], lv: { c1: { lv: 12, xp: 0 } }, money: 120, bag: {} };
   const second = await play(browser, 'catch', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkTo(p, 'pescatore');
     await choose(p, 'Compra');
@@ -689,7 +713,7 @@ test('a trainer of Formia', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'trainer', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkTo(p, 'animatore');
     await choose(p, 'Sfida!');
@@ -711,7 +735,7 @@ test('a trainer of Formia', async ({ browser }) => {
 test('changing creature in a battle', async ({ browser }) => {
   const r = await play(browser, 'change', { seed: 11, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpino' }, { uid: 'c2', sp: 'ramarrino' }], lv: { c1: { lv: 11, xp: 0 }, c2: { lv: 11, xp: 0 } }, money: 0 }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await talkTo(p, 'animatore');
     await choose(p, 'Sfida!');
     await p.clock.runFor(300);
@@ -761,7 +785,7 @@ test('changing creature in a battle', async ({ browser }) => {
 test('abilities, states and things to carry', async ({ browser }) => {
   const r = await play(browser, 'passives', { seed: 21, reduced: false, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpastro' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 40, xp: 0 }, c2: { lv: 40, xp: 0 } }, bag: { cozza: 1 }, money: 0 }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     /* the sheet says the ability, and takes the thing */
     await p.keyboard.press('m'); await p.clock.runFor(300);
     await p.click('[data-cr="c1"]'); await p.clock.runFor(300);
@@ -809,7 +833,7 @@ test('a trainer who sees Antonio', async ({ browser }) => {
   const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
     seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
     /* one step up the street, into the student's sight */
     await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(400);
@@ -843,7 +867,7 @@ test('the two teams and Antonio\'s abilities', async ({ browser }) => {
   const r = await play(browser, 'teams', { seed: 15, storage: inTown({ squad: ['antonio', 'forchetta'], mons: [{ uid: 'c1', sp: 'polpetto' }, { uid: 'c2', sp: 'cicalina' }],
     lv: { antonio: { lv: 9, xp: 0 }, forchetta: { lv: 8, xp: 0 }, c1: { lv: 15, xp: 0 }, c2: { lv: 9, xp: 0 } }, skills: { svelto: 1 } }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('m'); await p.clock.runFor(300);
     await r.shot('teams');
     r.keep('teams', await p.locator('.teams').innerText());
@@ -873,7 +897,7 @@ test('the stones of Telepilo', async ({ browser }) => {
     seen: { intro: true, starter: true, 'trama-archivio': true, 'pietra-mare': true, 'cap-starter': true }, mons: [{ uid: 'c1', sp: 'ramarrone' }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'plot', { seed: 14, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkTo(p, 'teatro');
     await r.shot('riddle');
@@ -937,7 +961,7 @@ test('Lamo, in three parts', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: { oro: 6 } };
   const r = await play(browser, 'legend', { seed: 21, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     await r.shot('niches');
@@ -1001,7 +1025,7 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'ramarrino', bond: 70 }, { uid: 'c2', sp: 'polpino', bond: 20 }], lv: { c1: { lv: 12, xp: 0 }, c2: { lv: 12, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'surge', { seed: 31, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     await p.evaluate(() => window.WORLD._debug.wild('cicalina', 12)); await p.clock.runFor(300);
@@ -1046,7 +1070,7 @@ test('keeping the stones', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio', bond: 70 }, { uid: 'c2', sp: 'muraglione', bond: 70 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'stones-kept', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     const m = await p.evaluate(() => window.WORLD._debug.who('mamurra'));
@@ -1089,7 +1113,7 @@ test('Lamo on his knees: a pact for three tielle', async ({ browser }) => {
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 70, xp: 0 }, c2: { lv: 70, xp: 0 } }, money: 0, bag: { tiella: 2 } };
   const r = await play(browser, 'pact', { seed: 13, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
@@ -1118,7 +1142,7 @@ test('Lamo on his knees: a pact for three tielle', async ({ browser }) => {
     /* a third one from the oven of Castellone, and back */
     await p.evaluate(() => { const k = 'lotte-tra-amici:storia:v1', v = JSON.parse(localStorage.getItem(k)!); v.bag.tiella = 3; localStorage.setItem(k, JSON.stringify(v)); });
     await p.reload(); await p.clock.runFor(1500);
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await talkThrough(p);
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     await talkThrough(p);
@@ -1144,7 +1168,7 @@ test('a question left unanswered', async ({ browser }) => {
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'pending', { seed: 15, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p, 20);
     r.keep('asked', await p.locator('#wopts button').allInnerTexts());
@@ -1172,7 +1196,7 @@ test('the people grow', async ({ browser }) => {
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 }, antonio: { lv: 13, xp: 0 }, costanzo: { lv: 25, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'people', { seed: 16, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     await r.shot('before');
@@ -1225,7 +1249,7 @@ test('playing as a friend', async ({ browser }) => {
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'polpino', bond: 40 }], lv: { c1: { lv: 12, xp: 0 }, antonio: { lv: 10, xp: 0 }, costanzo: { lv: 10, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'friend', { seed: 17, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     /* as Antonio the man at the bar only says who he is waiting for */
@@ -1273,11 +1297,11 @@ test('playing as a friend', async ({ browser }) => {
 
 /* the end of the story so far: at the train, the game told back */
 test('looking back, before the train', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true, 'sc-pietre-sigillo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
   const r = await play(browser, 'epilogue', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
     await talkTo(p, 'capotreno');
@@ -1303,7 +1327,7 @@ const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v
 test('fishing off the pier', async ({ browser }) => {
   const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 88, y: 41, dir: 'right' }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkTo(p, 'pescatore');
     await choose(p, 'Pesca dal molo');
@@ -1328,10 +1352,10 @@ test('the friends\' tournament', async ({ browser }) => {
   /* five whole battles in a row */
   test.setTimeout(480_000);
   const strong = { lv: 45, xp: 0 };
-  const r = await play(browser, 'tourney', { seed: 13, storage: inTown({ badges: ['gialosai', 'peggio'], squad: ['antonio', 'forchetta', 'costanzo'], beaten: { circolo: true, piazza: true },
+  const r = await play(browser, 'tourney', { seed: 13, storage: inTown({ badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'forchetta', 'costanzo'], beaten: { circolo: true, piazza: true },
     lv: { antonio: strong, forchetta: strong, costanzo: strong }, money: 0 }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story');
+    await goStory(p);
     await p.clock.runFor(1500);
     await talkTo(p, 'velocista');
     await choose(p, 'Iscriviti!');
@@ -1370,7 +1394,7 @@ test('the creatures\' powers', async ({ browser }) => {
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
   const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 148, y: 60, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowDown'); await p.clock.runFor(400);
     r.keep('ask', (await pos(p)).text);
     await choose(p, 'Nuota con');
@@ -1388,7 +1412,7 @@ test('the creatures\' powers', async ({ browser }) => {
 
   const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 45, y: 34, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowUp'); await p.clock.runFor(400);
     r.keep('ask', (await pos(p)).text);
     await choose(p, 'Arrampicati con');
@@ -1401,7 +1425,7 @@ test('the creatures\' powers', async ({ browser }) => {
 
   const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 88, y: 41, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     r.keep('hint', await p.textContent('.whint'));
     await p.keyboard.press('v'); await p.clock.runFor(1200);
     r.keep('up', await pos(p));
@@ -1426,7 +1450,7 @@ test('opened again in the sea', async ({ browser }) => {
   const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet };
   const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 148, y: 61, dir: 'down', mons, seen }) }, async (r) => {
     const p = r.page;
-    await p.click('#go-story'); await p.clock.runFor(1500);
+    await goStory(p); await p.clock.runFor(1500);
     r.keep('pos', await pos(p));
     await r.shot('opened');
   })).data.find((x) => x.name === 'pos')!.value as P;

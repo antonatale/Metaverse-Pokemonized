@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { goStory } from './harness';
 
 /* Sound can't be listened to in a test, so: every track and effect is rendered offline in the browser and
    measured (not silent, not clipping), and the live switch is checked (on by default, off remembered). */
@@ -75,7 +76,7 @@ test('sound is on by default, starts with the first tap, and switching it off is
   expect(await osc(), 'silence once switched off').toBe(after);
   await page.reload();
   await expect(page.locator('#home .snd')).toHaveAttribute('aria-pressed', 'false');
-  await page.click('#go-story');
+  await goStory(page);
   await page.waitForTimeout(1500);
   expect(await osc(), 'still silent after a reload').toBe(0);
   /* back on from the map's bar: the music of the place plays */

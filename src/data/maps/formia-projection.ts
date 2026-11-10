@@ -10,10 +10,12 @@ export const X_ANCHORS: [number, number][] = [
   [13.6205, 114],  // Castellone, the centre, Mola: the most room (about 33 m a tile)
   [13.634, 126],   // squeezed: Parco Gramsci, the Bruno Zauli centre
   [13.648, 146],   // Via Amendola, Parco la Fontana, Palamendola (about 59 m a tile)
-  [13.678, 164]    // Gianola, squeezed: Santo Janni, the park, the villa of Mamurra
+  [13.678, 164],   // Gianola, squeezed: Santo Janni, the park, the villa of Mamurra
+  [13.700, 178],   // past Gianola, along the coast road (about 125 m a tile)
+  [13.725, 198]    // Scauri and its station, where Zendavid lives (about 125 m a tile)
 ];
 export const LAT_TOP = 41.2705, LAT_STEP = 0.00034;
-export const W = 165, H = 82;
+export const W = 200, H = 82;
 
 export function col(lon: number): number {
   const A = X_ANCHORS;

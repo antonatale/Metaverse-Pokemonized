@@ -6,9 +6,12 @@ import { flag } from './plot';
 /* The missions of each friend (data/missions.ts): what is done is a flag of st.seen, so an old save has done none. */
 export function missionFlag(m: Mission): string { return 'ms-' + m.id; }
 export function missionDone(m: Mission): boolean { return flag(missionFlag(m)); }
+/** the missions of this story: in a story of one protagonist (title, «chi sei?») only his own; in an old save, with
+    friends in the company, everyone's */
+export function myMissions(): Mission[] { var me = firstHuman(); return st.squad.length > 1 ? MISSIONS : MISSIONS.filter(function (m) { return m.who === me; }); }
 /** the mission of someone on the map, still to do */
-export function missionOf(npc: string): Mission | null { return MISSIONS.filter(function (m) { return m.npc === npc && !missionDone(m); })[0] || null; }
-export function missionOfTrainer(id: string): Mission | null { return MISSIONS.filter(function (m) { return m.trainer === id && !missionDone(m); })[0] || null; }
+export function missionOf(npc: string): Mission | null { return myMissions().filter(function (m) { return m.npc === npc && !missionDone(m); })[0] || null; }
+export function missionOfTrainer(id: string): Mission | null { return myMissions().filter(function (m) { return m.trainer === id && !missionDone(m); })[0] || null; }
 /** only the friend it is for can do it */
 export function canDo(m: Mission): boolean { return firstHuman() === m.who; }
 /** the right one, but with no creature yet: at the start of the game the neighbour is just the neighbour */

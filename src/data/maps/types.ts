@@ -91,6 +91,8 @@ export interface Npc {
   /** there only once this friend is in Antonio's squad (he hangs out with him), or only until then (he leaves his covo) */
   with?: FriendId;
   unless?: FriendId;
+  /** there only once that covo has been beaten: a friend out of his covo, where he hangs out */
+  beaten?: string;
   /** a wild creature of Formia, and the levels it may have when met; another one in its place at night */
   wild?: { sp: SpeciesId; lv: [number, number]; night?: { sp: SpeciesId; lv: [number, number] } };
   /** gives Antonio his first creature (the guardaparco of Gianola) */
@@ -169,6 +171,8 @@ export interface MapDef {
   areas?: Area[];
   warps?: Warp[];
   start: [number, number, Dir];
+  /** where each protagonist's story begins, at his home (Antonio's is `start`) */
+  starts?: Record<string, [number, number, Dir]>;
   /** a place with a puzzle */
   place?: PlaceDef;
   /** no light of its own: dark by day and by night, only the lamps and Antonio's own light */

@@ -1,4 +1,4 @@
-import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign } from './types';
+import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign, Dir } from './types';
 import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES } from './formia-ground';
 import { PLACES } from './formia-places';
 import { tile, W, H } from './formia-projection';
@@ -61,6 +61,13 @@ const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
 
 const buildings: Building[] = [
   building('casa', { label: 'PARCO LA FONTANA', to: 'casa', tx: 5, ty: 6, tdir: 'up', v: 11 }),
+  /* the homes of the others: each one's story begins at his door (MapDef.starts) */
+  building('casa-valentin', { label: 'VIA FERRUCCI', v: 23, to: 'casa-valentin', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa-costanzo', { label: 'VIA SOLARO', v: 41, to: 'casa-costanzo', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa-forchetta', { label: 'VIA ABATE TOSTI', v: 7, to: 'casa-forchetta', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa-zendavid', { label: 'SCAURI', v: 33, to: 'casa-zendavid', tx: 5, ty: 6, tdir: 'up' }),
+  building('stazione-scauri', { label: 'MINTURNO-SCAURI', msg: ['Stazione di Minturno-Scauri, sulla linea Roma–Napoli che passa per Formia.', 'Da qui a Formia è una fermata.'] }),
+  building('casa-andrea', { label: 'PIAZZA MATTEI', v: 58, to: 'casa-andrea', tx: 5, ty: 6, tdir: 'up' }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli»: più di venti sport, all\'aperto e al coperto.', 'Si entra solo con il tesserino.'] }),
   building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
@@ -150,18 +157,20 @@ const signs: Sign[] = [
   ] as [string, string, string][]).map(([id, street, note]): Sign => ({ ...sign(id, [street + '.', note]), plate: true })));
 
 const npcs: Npc[] = [
+  /* the six covi: each friend in his, with his challenge (data/covi.ts); whoever is played does not meet himself */
   npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza', unless: 'costanzo' }),
-  /* friends who joined the squad leave their covo and turn up where Antonio and the others hang out */
-  npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', with: 'forchetta', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
+  npc('antonio-covo', { person: 'antonio', name: 'antonio', dir: 'down', covo: 'palamendola' }),
+  /* a friend once beaten comes out of his covo now and then, where the others hang out */
+  npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', beaten: 'circolo', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
   npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
   npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),
   npc('folla4', { name: 'Dalla folla', seed: 14, dir: 'right', lines: ['Io sono venuto solo per la difesa del bidet.'] }),
   npc('nicola', { name: 'Nicola Spadea', look: 'nicola', dir: 'up', activity: 'windsurf', lines: ['{hero}! Oggi a Vindicio c\'è la termica giusta, mare piatto e vento costante.', 'Ti va una lezione di windsurf? Ti insegno a planare.'] }),
   npc('barista', { name: 'Bar dell\'Eclipse', seed: 83, dir: 'down', activity: 'lettino', lines: ['Benvenuto all\'Eclipse!', 'Il solito ombrellone in prima fila, con due lettini?'] }),
-  npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', activity: 'volley', lines: ['Weee! {hero}, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
-  npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
-  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
+  npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', covo: 'eclipse', activity: 'volley', lines: ['Weee! {hero}, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
+  npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', covo: 'pineta', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
+  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', covo: 'padel', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
   npc('vicina', { reacts: [{ after: 'tr-mamurr-scavi', say: ['Ho sentito che a Gianola scavavano di notte. Tu stai attento, {hero}.'] }, { after: 'tr-mamurra', say: ['Dicono che hai mandato via un fantasma. Un fantasma! Mangia qualcosa, che sei sciupato.'] }, { after: 'sc-lamo-amico', say: ['Quello grosso che ti segue ha mangiato? Ho fatto la tiella.', 'Tre, ne ha mangiate. E ha chiesto il bis.'] }], name: 'Vicina di casa', seed: 15, dir: 'left', hint: true, lines: ['{hero}! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
   npc('capotreno', { name: 'Capotreno', seed: 21, dir: 'down', gate: 'torino' }),
   npc('turista', { name: 'Turista', seed: 22, dir: 'left', lines: ['Cicerone aveva una villa qui a Formia: è qui che lo raggiunsero i sicari di Marco Antonio, nel 43 a.C.', 'Dicono che parlasse tantissimo. Ho conosciuto uno in piazza che lo batte.'] }),
@@ -253,6 +262,7 @@ const areas: Area[] = [
   clip('Rio Fresco', 40, 5, 99, 33, 'Le case e gli uliveti sopra la ferrovia, verso le colline.'),
   clip('Via Amendola', 126, 5, 150, 30, 'Le palazzine di via Amendola, il Palamendola, Parco la Fontana.'),
   clip('Acqualonga', 99, 5, 126, 30, 'Tra Mola e via Amendola, lungo l\'Appia verso Napoli.'),
+  clip('Scauri', 165, 5, 199, 81, 'Scauri, frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'),
   clip('Gianola', 148, 30, 164, 81, 'Il parco regionale, dal 1987: la villa di Mamurra, il porticciolo romano, la spiaggia dei Sassolini.'),
   clip('Santo Janni', 150, 5, 164, 30, 'Le ultime case di Formia, verso Gianola e Scauri.'),
   clip('Campagna', 0, 5, 40, 48, 'Gli uliveti a ovest della città, verso Itri: qui la ferrovia esce dalla galleria.')
@@ -263,7 +273,8 @@ export const formia: MapDef = {
   name: 'Formia',
   rows: FORMIA_ROWS,
   buildings, objects, groundObjects, signs, npcs, items, areas,
-  start: [st[0], st[1], 'down']
+  start: [st[0], st[1], 'down'],
+  starts: (['valentin', 'costanzo', 'forchetta', 'andrea', 'zendavid'] as const).reduce(function (o, id) { const p = spot('start-' + id); o[id] = [p[0], p[1], 'down']; return o; }, {} as Record<string, [number, number, Dir]>)
 };
 /** where Antonio's scooter can take him: it is parked at each of these */
 export const RIDES: { name: string; at: [number, number] }[] = [

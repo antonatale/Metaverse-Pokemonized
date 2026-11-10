@@ -153,11 +153,11 @@ describe('a friend who joins', () => {
     setFirst('costanzo');
     expect(monsOf('costanzo')).toHaveLength(1);
   });
-  it('those with no covo come with what they do', () => {
+  it('nobody joins any more by doing something together (each of the six has his covo: data/covi.ts)', () => {
     for (const id of ['andrea', 'valentin', 'zendavid'] as const) {
       st.squad = ['antonio']; st.mons = [];
       record(JOIN[id].activity!, 3);
-      expect(st.squad as string[], id).toContain(id);
+      expect(st.squad as string[], id).toEqual(['antonio']);
     }
   });
   it('only when it went well: a run out of time, or a game with no score, is not enough', () => {
@@ -217,8 +217,12 @@ describe('the missions', () => {
   });
   it('a battle of a mission is found from its trainer', () => {
     const m = MISSIONS.filter((x) => x.trainer)[0];
+    /* played by the one it is for: a story of one protagonist has only his own missions */
+    st.squad = [m.who]; st.first = m.who; st.seen.protagonisti = true;
     expect(missionOfTrainer(m.trainer!)).toBe(m);
     expect(missionOfTrainer('guida')).toBeNull();
+    st.squad = [m.who === 'antonio' ? 'costanzo' : 'antonio']; st.first = st.squad[0];
+    expect(missionOfTrainer(m.trainer!), 'someone else\'s mission is not there for him').toBeNull();
   });
   it('a mission can be reached: the people who ask are on a map you can walk', () => {
     for (const m of MISSIONS) expect(Object.keys(MAPS).some((k) => (MAPS[k].npcs || []).some((n) => n.id === m.npc)), m.id).toBe(true);

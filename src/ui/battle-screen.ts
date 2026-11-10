@@ -18,6 +18,7 @@ import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, c
 import { WORLD } from './story-screen';
 import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
 import { cardClass, paintCard, EFF_WORD, type MoveCard } from './move-card';
+import { personScene, personSelf, personOrder } from './person-scenes';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
 
@@ -304,6 +305,18 @@ function spellNext(evs: BattleEvent[], n: number): boolean {
 /** the side that has just cast a spell: its lunge after a miss is already in the show */
 let lastSpell = -1;
 function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], next: number): Promise<unknown> {
+  /* a person's move: its scene (ui/person-scenes.ts), then the little sign it always had (not the ones the scene is) */
+  var ps = personScene(ev) || (S && S.sides[ev.who] && !isSpecies(S.sides[ev.who].id) ? personSelf(ev, fighter(S.sides[ev.who].id).type) : null);
+  if (!ps) return animSign(ev, evs, next);
+  var run = ps, order = personOrder(ev.a), a0 = ev;
+  lastSpell = -1;
+  if (order === 'after') return animSign(a0, evs, next).then(function () { return run(); });
+  if (order === 'with') return Promise.all([run(), animSign(a0, evs, next)]);
+  if (order === 'instead') return run();
+  return run().then(function () { return animSign(a0, evs, next); });
+}
+/** the little signs of the battle, as they always were */
+function animSign(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], next: number): Promise<unknown> {
   var i = ev.who, j = 1 - i, m = $('m-' + i), spelled = lastSpell === i;
   lastSpell = ev.a === 'magic' ? i : -1;
   switch (ev.a) {

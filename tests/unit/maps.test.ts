@@ -45,6 +45,9 @@ function reachable() {
       if (way) visit(way.enter!.to, way.enter!.tx, way.enter!.ty);              /* a sign that opens with the story */
       const beast = (m.npcs || []).find((n) => n.legend && n.x === nx && n.y === ny), down = beast && LEGENDS[beast.legend!].trial;
       if (down) visit(down.to, down.x, down.y);                                 /* a legend with a place of its own */
+      const crew = (m.npcs || []).find((n) => n.gate && n.x === nx && n.y === ny), G0 = crew && GATES[crew.gate!];
+      /* a capotreno: his train takes you to his city's station (data/gates.ts), each one his own */
+      if (crew && G0) for (const to of crew.gate === 'torino' ? ['torino', 'milano'] : [G0.to]) visit(to, MAPS[to].start[0], MAPS[to].start[1]);
       if (!blocked[map](nx, ny)) visit(map, nx, ny);
     }
   }

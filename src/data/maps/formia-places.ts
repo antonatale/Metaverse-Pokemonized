@@ -88,12 +88,28 @@ export const PLACES: PlaceSpec[] = [
   { id: 'scogliera', kind: 'lido', w: 4, h: 2, at: [41.2449, 13.5790], door: true, on: 'sand', reach: 6 },
   /* ---------- Gianola ---------- */
   { id: 'oriente', kind: 'lido', w: 4, h: 2, at: [41.2536, 13.6644], door: true, on: 'sand', reach: 6 },
-  { id: 'mamurra', kind: 'ruins', w: 2, h: 2, at: [41.25017, 13.66853] }
+  { id: 'mamurra', kind: 'ruins', w: 2, h: 2, at: [41.25017, 13.66853] },
+  /* the homes of the others (Antonio told where; the streets checked on OpenStreetMap, no house numbers): Valentin in
+     via Adalgiso Ferrucci, by piazza Risorgimento and opposite the Dono Svizzero hospital; Costanzo in via Solaro and
+     Forchetta in via Abate Tosti, in Mola; Andrea in Castellone, by piazza Pasquale Mattei */
+  { id: 'casa-valentin', kind: 'house', w: 3, h: 2, at: [41.2613, 13.6172], door: true, tile: [101, 10] },
+  { id: 'casa-costanzo', kind: 'borgo', w: 3, h: 2, at: [41.2600, 13.6121], door: true, tile: [101, 17] },
+  { id: 'casa-forchetta', kind: 'borgo', w: 3, h: 2, at: [41.2592, 13.6146], door: true, tile: [94, 29] },
+  { id: 'casa-andrea', kind: 'borgo', w: 3, h: 2, at: [41.2541, 13.6016], door: true, tile: [59, 53] },
+  /* Scauri, east of Gianola: the station of Minturno-Scauri (OpenStreetMap: 41.25785, 13.72077), and Zendavid's home at
+     the beginning of the village, near it */
+  { id: 'stazione-scauri', kind: 'station', w: 6, h: 3, at: [41.25785, 13.72077], door: true },
+  { id: 'casa-zendavid', kind: 'house', w: 3, h: 2, at: [41.2588, 13.7180], door: true }
 ];
 
 export const SPOTS: SpotSpec[] = [
   /* home */
   { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
+  { id: 'start-valentin', near: { place: 'casa-valentin', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-costanzo', near: { place: 'casa-costanzo', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-forchetta', near: { place: 'casa-forchetta', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-andrea', near: { place: 'casa-andrea', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-zendavid', near: { place: 'casa-zendavid', dx: 1, dy: 2 }, walk: true },
   { id: 'motorino', near: { place: 'casa', dx: -3, dy: 5 } },
   { id: 'motorino-eclipse', near: { place: 'eclipse', dx: -2, dy: 1 }, on: 'any' },
   { id: 'motorino-morgana', near: { place: 'morgana', dx: 6, dy: 2 } },
@@ -113,6 +129,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'valentin', near: { place: 'eclipse-spiaggia', dx: 9, dy: 4 }, on: 'sand' },
   { id: 'zendavid', near: { place: 'pineta', dx: 10, dy: 4 } },
   { id: 'andrea', near: { place: 'zauli', dx: 7, dy: 2 } },
+  /* Antonio's covo: at the door of the Palamendola, next to his home */
+  { id: 'antonio-covo', near: { place: 'palamendola', dx: 7, dy: 1 } },
   { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
   { id: 'vicina', near: { place: 'casa', dx: 6, dy: 3 } },
   { id: 'capotreno', near: { place: 'stazione', dx: 9, dy: 2 } },

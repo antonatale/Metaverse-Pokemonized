@@ -153,3 +153,10 @@ export async function walk(page: Page, dirs: string[]) {
   }
   await page.clock.runFor(300);
 }
+
+/** into the story from the title: «Entra nel mondo», and on a new story «chi sei?» answered with Antonio (or `who`) */
+export async function goStory(page: Page, who = 'antonio') {
+  await page.click('#go-story');
+  const pick = page.locator('[data-hero="' + who + '"]');
+  if (await pick.count()) await pick.click();
+}

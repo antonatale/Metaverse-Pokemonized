@@ -94,6 +94,15 @@ export const PATHS: Record<FriendId, PersonPath> = {
     ]
   }
 };
+/** where each one lives (Antonio told): his story begins at his door (data/maps/formia-places.ts, `casa-<id>`) */
+export const HOMES: Record<FriendId, string> = {
+  antonio: 'Parco la Fontana, in via Amendola',
+  valentin: 'Via Ferrucci, accanto a piazza Risorgimento',
+  forchetta: 'Via Abate Tosti, vicino alla Torre di Mola',
+  costanzo: 'Via Solaro, vicino alla chiesa di San Giovanni',
+  andrea: 'Castellone, a due passi da piazza Mattej',
+  zendavid: 'Scauri, vicino alla stazione'
+};
 export function isFriend(id: string): id is FriendId { return Object.prototype.hasOwnProperty.call(PATHS, id); }
 
 /** how a friend comes into the company: beating its covo, or doing its activity together (`activity`). Everyone is a

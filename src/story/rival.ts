@@ -28,8 +28,9 @@ export function formAt(sp: SpeciesId, stage: number): SpeciesId {
   while (SPECIES[s].stage < stage && SPECIES[s].evolve) s = SPECIES[s].evolve!.into;
   return s;
 }
-/** Antonio's first creature, as he has it now */
-function mine(): SpeciesId | null { var m = monsOf('antonio')[0]; return m ? m.sp : null; }
+/** the first creature of the one whose story it is (who was chosen on the title; Antonio in a save from before), as he
+    has it now: Tullio picks the one that beats it */
+function mine(): SpeciesId | null { var m = monsOf((st.squad[0] as string) || 'antonio')[0]; return m ? m.sp : null; }
 /** Tullio's creature (a save from before him: worked out from Antonio's) */
 export function rival(): SpeciesId { var m = mine(); return st.rival || rivalFor(m ? firstForm(m) : 'polpino'); }
 

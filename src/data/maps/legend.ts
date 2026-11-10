@@ -27,6 +27,8 @@ export const LEGEND: Record<string, Ground> = {
   'V': { g: 'sea', obj: 'windsurf', solid: true }, 'y': { g: 'sea', deco: 'buoy', solid: true },
   /* the Lido Oriente: its canoes pulled up on the sand, its pedalò on the water */
   'U': { g: 'sand', obj: 'canoe', solid: true }, 'X': { g: 'sea', obj: 'pedalo', solid: true },
+  /* the second cities, still in the clouds beyond their stations (stations.ts) */
+  'Z': { g: 'floor', obj: 'cloud', solid: true },
   /* inside Morgana: a wooden table with its chairs */
   't': { g: 'floor', deco: 'table', solid: true },
   /* a table outside the Gelateria Lavezzi */

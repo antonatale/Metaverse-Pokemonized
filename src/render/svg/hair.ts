@@ -167,7 +167,9 @@ export function hairWavy(c: Look): string {
 export function hairQuiff(c: Look): string {
   var H = c.hair as QuiffHair, P = c.P, R = rng(H.seed), s = '', i;
   s += '<g id="' + P + 'Back"><ellipse cx="130" cy="92" rx="55" ry="46" fill="' + H.out + '"/></g>';
-  var sideL = 'M71 106C67 117 67 128 70 137C72 144 76 150 80.6 156L84.6 156C82.8 146 82.2 132 85 119L84 106Z';
+  /* the faded sides: they start inside the mass of the top, so nothing shows between them, and their inner edge follows
+     the hairline down to the ear instead of a straight cut */
+  var sideL = 'M78 98C70 106 66 118 67 130C68 141 73 150 80.6 157L84.6 157C82.8 148 82.2 138 83 128C83.8 120 85.6 112 88.6 105Z';
   var side = '<path d="' + sideL + '" fill="url(#' + P + 'FadeG)"/><path d="' + sideL + '" fill="#000" filter="url(#fGrain)" opacity=".35"/>';
   var line = [[79, 121], [82, 113], [89, 106], [100, 101], [114, 98], [128, 97], [142, 97], [156, 99], [168, 103], [178, 109], [184, 117], [186, 124]];
   var top: number[][] = [];
@@ -195,7 +197,7 @@ export function hairQuiff(c: Look): string {
   }
   /* a few strands falling forward on the forehead (photo in the car) */
   var locks = '';
-  [[148, 99, 7, 13], [157, 101, 5, 12], [139, 98, 6, 9], [166, 104, 4, 10]].forEach(function (q) {
+  [[148, 99, 6, 10], [157, 101, 4, 9], [139, 98, 5, 7], [166, 104, 3, 8]].forEach(function (q) {
     var x = q[0], y = q[1], dx = q[2], dy = q[3];
     locks += '<path d="M' + (x - 3) + ' ' + y + 'Q' + r1(x + dx * 0.2) + ' ' + r1(y + dy * 0.7) + ' ' + (x + dx) + ' ' + (y + dy) + 'Q' + r1(x + dx * 0.15 + 2) + ' ' + r1(y + dy * 0.45) + ' ' + (x + 4) + ' ' + (y - 1) + 'Z" fill="' + H.out + '"/>';
     locks += '<path d="M' + (x - 0.5) + ' ' + y + 'Q' + r1(x + dx * 0.25) + ' ' + r1(y + dy * 0.6) + ' ' + r1(x + dx * 0.85) + ' ' + r1(y + dy * 0.85) + '" fill="none" stroke="' + H.body[1] + '" stroke-width="1.1"/>';

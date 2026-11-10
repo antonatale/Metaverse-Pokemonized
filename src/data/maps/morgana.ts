@@ -30,7 +30,7 @@ export const morgana: MapDef = {
   warps: [{ x: 5, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }],
   npcs: [
     { id: 'oste', name: 'Al bancone', seed: 82, x: 4, y: 1, dir: 'down', activity: 'quiz', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] },
-    { id: 'costanzo-morgana', person: 'costanzo', name: 'costanzo', x: 3, y: 5, dir: 'up', with: 'costanzo', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] },
+    { id: 'costanzo-morgana', person: 'costanzo', name: 'costanzo', x: 3, y: 5, dir: 'up', beaten: 'piazza', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] },
     { id: 'avventore', name: 'Avventore', seed: 84, x: 8, y: 6, dir: 'left', lines: ['La domanda su Mamurra la sbagliano tutti.', 'Io no. Io l\'ho sbagliata solo tre volte.'] }
   ],
   start: [5, 7, 'up']

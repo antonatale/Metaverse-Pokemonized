@@ -1,9 +1,13 @@
 import { MAPS } from '../data/maps';
 import { GAME_NAME } from '../data/growth';
 import { fighter } from '../data/fighters';
-import { SLOTS, slotNow, useSlot, peekSlot, eraseSlot, type StoryProgress } from '../save/story-progress';
+import { SLOTS, slotNow, useSlot, peekSlot, eraseSlot, startAs, type StoryProgress } from '../save/story-progress';
+import { ROSTER, CHARS, type FriendId } from '../data/characters';
+import { HOMES } from '../data/people';
+import { COVI } from '../data/covi';
+import { GATES, SECOND_CITY } from '../data/gates';
 import { reduced, esc, each, $ } from './dom';
-import { home, face } from './common';
+import { home, face, bust, tc } from './common';
 import { WORLD } from './story-screen';
 import { soundButton } from './sound';
 import { sfx } from '../audio';
@@ -165,11 +169,36 @@ function slots() {
   });
   setTimeout(function () { var b = el.querySelector<HTMLElement>('.ti-slot.last [data-play]') || el.querySelector<HTMLElement>('[data-play]'); if (b) b.focus(); }, 30);
 }
-/** into the world with a story: the one of that slot from now on */
+/** into the world with a story: the one of that slot from now on; an empty slot first asks who is played */
 function enter(n: number) {
-  if (n !== slotNow() || !peekSlot(n)) useSlot(n);
+  if (!peekSlot(n)) { choose(n); return; }
+  if (n !== slotNow()) useSlot(n);
   sfx('click');
   WORLD.open();
+}
+/** a new story: who are you? The six, each from his home, each toward his city */
+function choose(n: number) {
+  sfx('click');
+  $('ti-menu').hidden = true;
+  $('ti-main').classList.add('at-slots');
+  const el = $('ti-slots');
+  el.innerHTML = '<div class="ti-sl-h"><h2 id="ti-sl-t">Storia ' + n + ': chi sei?</h2><button class="ti-btn small" type="button" id="ti-back">Indietro</button></div>' +
+    '<div class="ti-heroes">' + ROSTER.map(function (id) {
+      const c = CHARS[id], G0 = GATES[SECOND_CITY[id]];
+      return '<button class="ti-hero" type="button" data-hero="' + id + '" style="--tc:' + tc(id) + '"><span class="ti-hero-art">' + bust(id, 'smirk', '', '0 6 260 294') + '</span>' +
+        '<b>' + esc(c.name) + '</b><small class="ti-hero-nick">' + esc(c.nick !== c.name ? c.nick : c.full) + '</small>' +
+        '<span class="ti-hero-home">Vive a: ' + esc(HOMES[id]) + '</span><span class="ti-hero-home">Il suo covo: ' + esc(Object.keys(COVI).map(function (k) { return COVI[k]; }).filter(function (c) { return c.leader === id; }).map(function (c) { return c.name; })[0] || '—') + '</span><span class="ti-hero-city">Poi: ' + esc(G0.station) + '</span></button>';
+    }).join('') + '</div>';
+  el.hidden = false;
+  $('ti-back').addEventListener('click', function () { sfx('click'); menu(); });
+  each(el.querySelectorAll<HTMLElement>('[data-hero]'), function (b) {
+    b.addEventListener('click', function () {
+      startAs(n, b.getAttribute('data-hero') as FriendId);
+      sfx('badge');
+      WORLD.open();
+    });
+  });
+  setTimeout(function () { const b = el.querySelector<HTMLElement>('[data-hero]'); if (b) b.focus(); }, 30);
 }
 /** Formia from above, behind the title: around where the story played last stands */
 function paintMap() {

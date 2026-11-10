@@ -180,7 +180,7 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
   var id = g.evolved ? g.evolved.from : idOf(g.key), who = nameOf(g.key), lines = first.slice();
   if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '! ' + statGain(statsAt(g.key, id, g.from), statsAt(g.key, id, g.to)) + '.');
   g.learned.forEach(function (m) { lines.push(who + ' impara ' + anyMove(m).name + '!'); });
-  if (g.key === 'antonio' && g.to > g.from) lines.push('Antonio ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
+  if (g.key === firstHuman() && g.to > g.from) lines.push(nameOf(firstHuman()) + ' ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
   if (g.waiting && g.to > g.from) lines.push(who + ' potrebbe diventare ' + SPECIES[g.waiting].name + ', ma deve fidarsi ancora di più di te: lotta insieme a lui, portalo a spasso, offrigli un caffè.');
   if (g.to > g.from) sfx('badge');
   say(lines, null, null, function () {
@@ -234,7 +234,7 @@ function pay(key: string, xp: number, won: boolean, cash: number, then?: () => v
   if (cash) earn(cash);
   save(); renderHud();
   if (cash) mentorTip('money');
-  if (key === 'antonio' && g.to > g.from) mentorTip('level');
+  if (key === firstHuman() && g.to > g.from) mentorTip('level');
   growthSay(g, [name + ' guadagna ' + xp + ' punti esperienza.' + (cash ? ' {hero} incassa ' + coins(cash) + '.' : '')], then);
 }
 function evolve(from: SpeciesId, to: SpeciesId, then?: () => void) {
@@ -311,13 +311,13 @@ export function openShop(id: string) {
 /** one of the team, with what can be done with it */
 function memberRow(key: string): string {
   var c = fighter(idOf(key)), l = level(key), mon = creatureOf(key), sp = mon ? SPECIES[mon.sp] : null, note: string;
-  if (key === 'antonio') note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
+  if (key === firstHuman()) note = pointsLeft() ? pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere' : 'Abilità: ' + (SKILLS.filter(function (s) { return grade(s.id); }).map(function (s) { return s.name + ' ' + grade(s.id); }).join(', ') || 'nessuna');
   else note = sp ? (sp.evolve ? 'Si evolve al livello ' + sp.evolve.at : 'Forma finale') + (leadCreature() === key ? ' · ti segue' : '') : personNote(key);
   var human = !mon, first = human && firstHuman() === key;
   return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
     '<small>' + esc((sp ? typesOf(sp) : c.type) + ' · ' + note) + '</small></span>' +
     (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="Sulla mappa ci sarà lui, con le sue creature">Gioca con lui</button>' : '') +
-    (key === 'antonio' ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
+    (key === firstHuman() ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
     '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button></li>';
 }
 function typesOf(sp: { type: string; type2?: string }): string { return sp.type + (sp.type2 ? '/' + sp.type2 : ''); }
@@ -338,9 +338,9 @@ export function teamHtml(): string {
     '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature di ' + esc(nameOf(firstHuman())) + '</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
     (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
     (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
-    (home || M.id === 'casa' ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
+    (home || M.id.indexOf('casa') === 0 ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
-      (M.id === 'casa' ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
+      (M.id.indexOf('casa') === 0 ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
     '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + bagList().map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span>' +
         (USE_ITEMS.indexOf(it) >= 0 && has(it) ? '<button class="btn small" type="button" data-use="' + it + '">Usa</button>' : '') + '</li>';

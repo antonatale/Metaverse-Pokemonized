@@ -125,7 +125,7 @@ export function sideOf(key: string): SideOpts {
   } else {
     o = personSide(idOf(key), lv);
     if (isFriend(key)) o.known = movesOf(key);
-    if (key === 'antonio') o.perk = perksFor(sk);
+    if (key === firstHuman()) o.perk = perksFor(sk);
   }
   /* whoever is in, the nets are Antonio's */
   if (netHand(sk) > 1) o.net = netHand(sk);
@@ -251,7 +251,7 @@ export function joinAt(key: string, lv: number) { st.lv = st.lv || {}; if (!st.l
 export function grade(id: SkillId): number { return (st.skills || {})[id] || 0; }
 export function pointsLeft(): number {
   var used = SKILLS.reduce(function (n, s) { return n + grade(s.id); }, 0);
-  return Math.max(0, level('antonio').lv - START_LEVEL + (st.books || 0) - used);
+  return Math.max(0, level(firstHuman()).lv - START_LEVEL + (st.books || 0) - used);
 }
 /** an ability opens with a point in the one before it on its branch */
 export function skillOpen(id: SkillId): boolean {

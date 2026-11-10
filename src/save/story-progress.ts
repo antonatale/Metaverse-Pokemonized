@@ -62,9 +62,13 @@ export interface StoryProgress {
   at?: number;
 }
 
-export function blank(): StoryProgress {
-  var m = MAPS.formia;
-  return { v: 1, map: 'formia', x: m.start[0], y: m.start[1], dir: m.start[2], badges: [], squad: ['antonio'], beaten: {}, seen: {}, found: {}, lv: {}, skills: {}, money: 0, bag: {}, mons: [] };
+/** a story from nothing: Antonio's, or the one of whoever is chosen on the title, from his home; he is alone in his
+    company, and nobody joins it (data/covi.ts) */
+export function blank(first?: FriendId): StoryProgress {
+  var m = MAPS.formia, at = (first && m.starts && m.starts[first]) || m.start;
+  var s: StoryProgress = { v: 1, map: 'formia', x: at[0], y: at[1], dir: at[2], badges: [], squad: [first || 'antonio'], beaten: {}, seen: {}, found: {}, lv: {}, skills: {}, money: 0, bag: {}, mons: [] };
+  if (first && first !== 'antonio') { s.first = first; s.seen.protagonisti = true; }
+  return s;
 }
 /** a story as saved in a slot, brought up to date; null for an empty slot (or one that cannot be read) */
 export function peekSlot(n: number): StoryProgress | null {
@@ -102,10 +106,17 @@ export function useSlot(n: number) {
   st = load(slot);
   try { window.localStorage.setItem(SLOT_KEY, String(slot)); } catch (e) { /* ignore */ }
 }
+/** a new story in a slot, as whoever is chosen: it is played from now on, and saved at once */
+export function startAs(n: number, first: FriendId) {
+  slot = Math.max(1, Math.min(SLOTS, Math.floor(n)));
+  st = blank(first);
+  try { window.localStorage.setItem(SLOT_KEY, String(slot)); } catch (e) { /* ignore */ }
+  save();
+}
 /** empties a slot for good; the one being played starts again from nothing */
 export function eraseSlot(n: number) {
   try { window.localStorage.removeItem(keyOf(n)); } catch (e) { /* ignore */ }
   if (n === slot) st = blank();
 }
 /** starts the story again from scratch (the caller saves) */
-export function resetProgress() { st = blank(); }
+export function resetProgress() { st = blank(st && st.first ? st.first : undefined); }
