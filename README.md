@@ -2,7 +2,7 @@
 
 Il gioco si chiamava «Lotte tra Amici»: il nome nuovo è in una costante sola, `GAME_NAME` in `src/data/growth.ts`.
 
-Gioco di lotte a turni in stile Pokémon con sei amici e un boss, l'Esame di Controlli, più una modalità storia nella Formia vera (mappa da OpenStreetMap): si parte da casa, a Parco la Fontana, e si va all'Eclipse a Vindicio, in pineta, da Morgana, con attività e minigiochi nei posti di tutti i giorni. Un giro di Formia mette in fila sfide, attività e oggetti persi: la prossima tappa è sempre in alto, con una freccia che indica la strada, e il motorino porta da un posto all'altro. Musica ed effetti sonori sono sintetizzati in tempo reale; l'interruttore audio è nella home, nella barra della lotta e nella mappa. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
+Gioco di lotte a turni in stile Pokémon nella Formia vera (mappa da OpenStreetMap), con creature originali. Si sceglie chi essere tra sei amici e si parte da casa sua; si prende una creatura dal guardaparco di Gianola, si battono i covi degli altri cinque e si seguono le Pietre di Telepilo, con Cicerone come guida, attività e minigiochi nei posti di tutti i giorni (l'Eclipse a Vindicio, la pineta, Morgana). La prossima tappa è sempre in alto, con una freccia che indica la strada, e il motorino porta da un posto all'altro. Musica ed effetti sonori sono sintetizzati in tempo reale. Scritto in TypeScript con Vite; la build è un'unica pagina HTML che si apre e si condivide da sola.
 
 ## Come avviarlo
 
@@ -47,7 +47,7 @@ Dopo un aggiornamento del gioco basta rilanciarlo: le scene sono registrate dal 
 
 ## Note
 
-- I progressi della storia e il libretto sono salvati nel `localStorage` del browser, quindi sono legati alla pagina e al browser in cui giochi. Le chiavi sono le stesse della versione in un file solo: i vecchi salvataggi restano validi se apri la nuova pagina dallo stesso indirizzo.
+- I progressi della storia e il libretto sono salvati nel `localStorage` del browser, quindi sono legati alla pagina e al browser in cui giochi. Le chiavi sono le stesse della versione in un file solo: i vecchi salvataggi restano validi se apri la nuova pagina dallo stesso indirizzo. Per portare una storia altrove (un altro browser, un altro indirizzo) c'è «Esporta» nei Salvataggi del titolo, e «Importa» dall'altra parte.
 - Struttura del progetto e regole: [CLAUDE.md](CLAUDE.md), con l'indice dei documenti in `docs/`.
 - La mappa di Formia è generata da dati © OpenStreetMap contributors (ODbL 1.0): vedi `tools/formia/`.
 
