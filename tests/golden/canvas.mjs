@@ -57,6 +57,11 @@ function prep(def, LEGEND) {
   return m;
 }
 
+/* Numbers are rounded to three decimals before hashing: Math.sin, Math.pow and friends may differ in the last
+   bits between machines and Node versions (a walker came out different on Linux than on the Mac), and a
+   thousandth of a pixel is not a change anyone can see. */
+const steady = (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 || 0 : v);
+
 const T = 32;
 /** how far above its footprint each kind of thing is drawn, as in the story module */
 const UP0 = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
@@ -76,7 +81,8 @@ export function canvasDigests(ART, MAPS, LEGEND) {
   const record = (name, fn) => {
     env.reset();
     const r = fn();
-    out[name] = createHash('sha256').update(JSON.stringify([env.log, r === undefined ? null : (typeof r === 'object' ? Object.keys(r).map((k) => [k, typeof r[k] === 'object' && r[k] && r[k].__id ? 'cv' : r[k]]) : r)])).digest('hex').slice(0, 24) + ' ' + env.log.length;
+    const data = [env.log, r === undefined ? null : (typeof r === 'object' ? Object.keys(r).map((k) => [k, typeof r[k] === 'object' && r[k] && r[k].__id ? 'cv' : r[k]]) : r)];
+    out[name] = createHash('sha256').update(JSON.stringify(data, steady)).digest('hex').slice(0, 24) + ' ' + env.log.length;
   };
   record('palette', () => JSON.stringify(ART.palette()));
   const P = ART.palette();
