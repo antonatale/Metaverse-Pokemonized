@@ -1,7 +1,7 @@
 import { CHARS as C, type CharId, type FighterId, type FriendId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { MAGIC, runeIcon } from '../render/svg/creatures';
-import { SPECIES, isSpecies } from '../data/creatures';
+import { SPECIES, CMOVES, isSpecies } from '../data/creatures';
 import { sfx } from '../audio';
 import { scene, sceneInfo } from '../render/svg/scenes';
 import { darkness } from '../story/daytime';
@@ -14,7 +14,7 @@ import { reduced, esc, each, $ } from './dom';
 import { ico } from './icons';
 import { TC, tc, typeTag, face, bust, sleep, home, battle, overlay, view, closeOverlay } from './common';
 import { charBlocks, renderLibretto, renderStory, renderSetup, storyCity } from './home';
-import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, spell, rise, ring, dust, healing } from './effects';
+import { pulse, fx, anchor, projectile, popAt, robotFall, robotFix, FOX, BALL, confetti, notes, scan, banner, impact, streaks, castSpell, rise, ring, dust, healing } from './effects';
 import { WORLD } from './story-screen';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
@@ -36,9 +36,11 @@ function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) 
 function boxHtml(i: number): string {
   var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
   return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="chip tag">' + sideLabel(i) + '</span></div>' +
-    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><span></span></div></div>' +
-    '<div class="box-f"><span class="type t-' + c.type.toLowerCase() + '" id="ty-' + i + '">' + c.type + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
+    '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><span class="lag"></span><span class="fill"></span></div></div>' +
+    '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
+/** a side's types, one tag each (two for some creatures) */
+function typesHtml(i: number): string { return E.sideTypes(S, i).map(function (t) { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }).join(''); }
 /* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
    the fighters stand on platforms of its ground */
 function sceneHtml(): string {
@@ -85,20 +87,42 @@ function renderShell() {
 /* ---------- status ---------- */
 export let uiHp = [0, 0];
 export const shown = { revealed: [true, false] };
-export function setHp(i: number, hp: number) {
+/* the health bar: the part just lost stays light for a moment and then drains away, the number counts down to the
+   new value; a heal shows the part coming back first. still: no show (the start of a battle) */
+var hpShown = [0, 0], lagT: (ReturnType<typeof setTimeout> | undefined)[] = [undefined, undefined], countT: (ReturnType<typeof setInterval> | undefined)[] = [undefined, undefined];
+export function setHp(i: number, hp: number, still?: boolean) {
   var max = S.sides[i].max, bar = $('hp-' + i), pct = Math.max(0, Math.min(100, hp / max * 100));
-  (bar.firstChild as HTMLElement).style.width = pct + '%';
+  var fill = bar.querySelector('.fill') as HTMLElement, lag = bar.querySelector('.lag') as HTMLElement, was = parseFloat(fill.style.width || '100');
+  bar.classList.toggle('still', !!still);
+  fill.style.width = pct + '%';
   bar.classList.toggle('mid', pct <= 50 && pct > 20);
   bar.classList.toggle('low', pct <= 20);
-  $('hpn-' + i).textContent = shown.revealed[i] ? hp + '/' + max : '??';
+  clearTimeout(lagT[i]);
+  if (still || reduced) lag.style.width = pct + '%';
+  else if (pct < was) { lag.classList.remove('gain'); lagT[i] = setTimeout(function () { lag.style.width = pct + '%'; }, 380); }
+  else { lag.classList.add('gain'); lag.style.width = pct + '%'; }
+  countHp(i, hp, !!still);
+}
+function countHp(i: number, hp: number, still: boolean) {
+  var el = $('hpn-' + i), max = S.sides[i].max;
+  clearInterval(countT[i]);
+  if (!shown.revealed[i]) { el.textContent = '??'; hpShown[i] = hp; return; }
+  var from = hpShown[i], t0 = Date.now(), dur = still || reduced || from === hp ? 0 : 520;
+  var tick = function () {
+    var p = dur ? Math.min(1, (Date.now() - t0) / dur) : 1;
+    el.textContent = Math.round(from + (hp - from) * p) + '/' + max;
+    if (p >= 1) { clearInterval(countT[i]); hpShown[i] = hp; }
+  };
+  tick();
+  if (dur) countT[i] = setInterval(tick, 30);
 }
 function renderSync(sn: Snap) {
   for (var i = 0; i < 2; i++) {
     shown.revealed[i] = i === 0 || S.mode === 'pvp' || S.sides[i].id !== 'esame' || sn.revealed[i];
     $('chips-' + i).innerHTML = sn.chips[i].map(function (c) { return '<span class="chip ' + c.c + '" title="' + esc(c.d) + '">' + ico(c.i) + esc(c.t) + '</span>'; }).join('');
-    $('hpn-' + i).textContent = shown.revealed[i] ? uiHp[i] + '/' + S.sides[i].max : '??';
-    var t = E.sideType(S, i), ty = $('ty-' + i);
-    ty.textContent = t; ty.className = 'type t-' + t.toLowerCase();
+    if (hpShown[i] !== uiHp[i] || !shown.revealed[i]) countHp(i, uiHp[i], true);
+    else $('hpn-' + i).textContent = uiHp[i] + '/' + S.sides[i].max;
+    $('ty-' + i).innerHTML = typesHtml(i);
     var svg = battle.querySelector('#w-' + i + ' .spr-p');
     if (svg) svg.setAttribute('data-ph', sn.ph[i] ? 'on' : 'off');
   }
@@ -116,23 +140,41 @@ function padMoves(i: number): Move[] {
   if (i === 0 && S.bag) E.available(S, i).forEach(function (id) { if (E.BAG[id]) list.push(E.BAG[id]); });
   return list;
 }
+/* the move buttons: big, each in the colour of its type with the type's rune (or the move's icon), what kind of move
+   it is, what it does, and for the creatures how well it works on the one in front */
+const KIND: Record<string, string> = { atk: 'Attacco', buff: 'Carica', heal: 'Cura', status: 'Stato' };
+function effTag(e: number): string {
+  if (e >= 1.25) return '<i class="eff up2">Doppio vantaggio</i>';
+  if (e > 1.01) return '<i class="eff up">Superefficace</i>';
+  if (e <= 0.82) return '<i class="eff down2">Quasi inutile</i>';
+  if (e < 0.99) return '<i class="eff down">Poco efficace</i>';
+  return '';
+}
 function renderPad(i: number) {
   padSide = i;
-  var ms = padMoves(i);
+  var ms = padMoves(i), mine = E.sideType(S, i);
   each(pad.querySelectorAll<HTMLButtonElement>('.mv'), function (b, k) {
     var m = ms[k];
     if (!m) { b.hidden = true; return; }
     b.hidden = false;
-    var L = E.moveLabel(S, i, m.id), sub = '';
+    var L = E.moveLabel(S, i, m.id), bag = !!E.BAG[m.id], sub = '';
     if (L.dots) sub = '<span class="stage">' + L.dots.map(function (on) { return '<i class="' + (on ? 'on' : '') + '"></i>'; }).join('') + '</span>' + esc(L.sub);
-    else sub = (L.icon ? ico(L.icon) : '') + esc(L.sub);
-    if (L.left != null && !L.locked) sub += '<span class="left">' + L.left + (L.left === 1 ? ' uso' : ' usi') + '</span>';
+    else sub = (L.icon && L.mtype === undefined ? ico(L.icon) : '') + esc(L.sub);
+    /* the creatures' moves have a type of their own (null: a plain one); the friends' moves are of their type */
+    var t = L.mtype !== undefined ? L.mtype : mine;
+    var badge = bag ? ico(L.icon || 'ball') : L.mtype !== undefined ? (t ? runeIcon(t, 36) : ico('spark')) : ico(L.icon || (m.kind === 'atk' ? 'spark' : 'up'));
+    var tags = '<i class="mv-kind">' + (bag ? 'Borsa' : KIND[m.kind] || 'Mossa') + '</i>';
+    if (L.mtype === null) tags += '<i>Senza tipo</i>';
+    else if (L.mtype) tags += '<i class="mv-t">' + L.mtype + '</i>';
+    if (L.eff != null && m.kind === 'atk') tags += effTag(L.eff);
+    if (L.left != null && !L.locked) tags += '<i class="mv-left">' + L.left + (L.left === 1 ? ' uso' : ' usi') + '</i>';
     b.setAttribute('data-id', m.id);
-    b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (E.BAG[m.id] ? ' bag' : '');
-    b.style.setProperty('--tc', TC[E.sideType(S, i)]);
-    b.innerHTML = '<b>' + esc(m.name) + '</b><small>' + sub + '</small>';
+    b.className = 'mv' + (m.kind === 'atk' ? ' atk' : '') + (L.locked ? ' locked' : '') + (bag ? ' bag' : '') + (t ? '' : ' plain');
+    b.style.setProperty('--tc', TC[mine]);
+    b.style.setProperty('--mc', bag || !t ? 'var(--t-none)' : TC[t]);
+    b.innerHTML = '<span class="mv-badge">' + badge + '</span><span class="mv-body"><b>' + esc(m.name) + '</b><small>' + sub + '</small><span class="mv-tags">' + tags + '</span></span><kbd class="mv-key">' + (k + 1) + '</kbd>';
     b.disabled = !padOn || L.locked;
-    b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + L.sub);
+    b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + L.sub + (L.eff != null && L.eff > 1.01 ? '. Superefficace' : L.eff != null && L.eff < 0.99 ? '. Poco efficace' : ''));
   });
 }
 function setPad(on: boolean, i?: number | null) { padOn = on; pad.classList.toggle('off', !on); renderPad(i == null ? padSide : i); }
@@ -192,12 +234,16 @@ function hpEvent(ev: Extract<BattleEvent, { k: 'hp' }>) {
   var i = ev.who, m = $('m-' + i);
   uiHp[i] = ev.hp;
   if (ev.dmg) {
-    m.classList.remove('shake', 'flash'); void m.offsetWidth; m.classList.add('shake', 'flash');
+    /* how hard it landed: a critical hit, a double or a single advantage, a resisted one */
+    var e = ev.eff || 1, hard = ev.crit || e > 1.01;
+    m.classList.remove('shake', 'flash', 'knock'); void m.offsetWidth; m.classList.add(hard ? 'knock' : 'shake', 'flash');
     impact(i, ev.crit);
     var p = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
-    fx('−' + ev.dmg, 'num ' + (ev.crit ? 'crit' : ''), p[0], p[1], 1150);
+    var tag = ev.crit ? 'Critico!' : e >= 1.25 ? 'Doppio!' : e > 1.01 ? 'Super!' : e < 0.99 ? 'Poco…' : '';
+    fx('<b>−' + ev.dmg + '</b>' + (tag ? '<small>' + tag + '</small>' : ''), 'num' + (ev.crit ? ' crit' : '') + (e >= 1.25 ? ' sup2' : e > 1.01 ? ' sup' : e < 0.99 ? ' weak' : ''), p[0], p[1], 1300);
+    pulse($('box-' + i), hard ? 'hit hard' : 'hit', 420);
     setHp(i, ev.hp);
-    return sleep(600).then(function () { m.classList.remove('shake', 'flash'); });
+    return sleep(hard ? 720 : 600).then(function () { m.classList.remove('shake', 'flash', 'knock'); });
   }
   if (!ev.quiet) { m.classList.add('glow'); healing(i); }
   var q = anchor(i, 0.5, i === 0 ? 0.18 : 0.12);
@@ -243,8 +289,9 @@ function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
     case 'net': return projectile(i, j, '<div class="netball">' + ico('ball') + '</div>', '', 560, 40);
     /* the creatures' magic: a rune of their type flies at the foe and bursts; raised on itself, it glows */
     case 'magic': {
-      var t = ev.style as TypeName, mc = MAGIC[t] ? MAGIC[t].col : '#ffffff';
-      return spell(i, j, t, mc, '<div class="orb" style="--mc:' + mc + '">' + runeIcon(t, 40) + '</div>')
+      /* the type of the spell decides how it flies; a plain move is a rush, a big one charges first */
+      var t = ev.style as TypeName, mc = MAGIC[t] ? MAGIC[t].col : '#ffffff', cm = ev.move ? CMOVES[ev.move] : null;
+      return castSpell(i, j, cm && cm.plain ? null : t, mc, !!cm && (cm.power || 0) >= 90)
         .then(function () { return popAt(j, '<div class="burst" style="--mc:' + mc + '"></div>', '', 0.5, 0.24, 420); });
     }
     case 'magicUp': {
@@ -438,9 +485,9 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   window.scrollTo(0, 0);
   renderShell();
   music(S.boss ? 'boss' : 'battle');
-  uiHp = [S.sides[0].hp, S.sides[1].hp];
+  uiHp = [S.sides[0].hp, S.sides[1].hp]; hpShown = uiHp.slice();
   shown.revealed = [true, S.mode === 'pvp' || S.sides[1].id !== 'esame' || S.sides[1].revealed];
-  setHp(0, uiHp[0]); setHp(1, uiHp[1]);
+  setHp(0, uiHp[0], true); setHp(1, uiHp[1], true);
   renderSync(E.snap(S));
   setPad(false, 0);
   runFlow();

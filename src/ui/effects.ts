@@ -215,3 +215,137 @@ export function healing(i: number) {
     })(k);
   }
 }
+
+/* ---------- every magic its own way of flying ----------
+   Calma throws a crescent like a boomerang, high, and a column of moonlight comes down where it lands; Caos does not
+   fly at all: a bolt falls from the sky onto the one in front, twice; Cervello shoots a spinning star that bursts into
+   rays; Chiacchiera sends rings of sound with notes in them; Cuore a wave of hearts. A plain move is a rush and a
+   shockwave. The big ones (power 90 and more) charge first, with the arena going dark. */
+function ends(from: number, to: number): number[][] { return [anchor(from, 0.5, 0.45), anchor(to, 0.5, 0.42)]; }
+/** the caster gathers its magic: a ring at its feet, the arena dims, its shapes rise */
+function charge(from: number, type: string | null, col: string) {
+  if (reduced) return Promise.resolve();
+  var dim = fx('', 'dim', 0, 0, 0), g = anchor(from, 0.5, 0.86);
+  ring(g[0], g[1], col, 320, 640, true);
+  if (type) rise(from, type, col);
+  return animate(dim, [{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 720, easing: 'ease-in-out', fill: 'forwards' })
+    .then(function () { dim.remove(); });
+}
+function trailOf(a: number[], b: number[], mid: number[], html: (k: number) => string, n: number, gap: number, dur: number, spin: number) {
+  for (var k = 0; k < n; k++) {
+    (function (k: number) {
+      var el = fx(html(k), 'part trail', 0, 0, 0);
+      el.style.opacity = '0';
+      sleep(k * gap).then(function () {
+        return animate(el, [
+          { transform: 'translate(' + a[0] + 'px,' + a[1] + 'px) translate(-50%,-50%) scale(.4)', opacity: 0 },
+          { transform: 'translate(' + mid[0] + 'px,' + mid[1] + 'px) translate(-50%,-50%) rotate(' + spin / 2 + 'deg) scale(' + (0.9 - k * 0.08) + ')', opacity: 0.8 - k * 0.1, offset: 0.5 },
+          { transform: 'translate(' + b[0] + 'px,' + b[1] + 'px) translate(-50%,-50%) rotate(' + spin + 'deg) scale(' + (0.7 - k * 0.06) + ')', opacity: 0 }
+        ], { duration: dur, easing: 'ease-in-out', fill: 'forwards' });
+      }).then(function () { el.remove(); });
+    })(k);
+  }
+}
+/** a column of light coming down on a point */
+function pillar(x: number, y: number, col: string, big: boolean) {
+  if (reduced) return;
+  var el = fx('', 'pillar', x, y, 0);
+  el.style.setProperty('--mc', col);
+  animate(el, [{ transform: 'translate(-50%,-100%) scaleY(0) scaleX(' + (big ? 1.5 : 1) + ')', opacity: 0.2 }, { transform: 'translate(-50%,-100%) scaleY(1) scaleX(' + (big ? 1.5 : 1) + ')', opacity: 1, offset: 0.3 }, { transform: 'translate(-50%,-100%) scaleY(1) scaleX(.2)', opacity: 0 }],
+    { duration: 620, easing: 'ease-out', fill: 'forwards' }).then(function () { el.remove(); });
+}
+function crescentArc(from: number, to: number, col: string, big: boolean): Promise<unknown> {
+  var e = ends(from, to), a = e[0], b = e[1], s = big ? 1.6 : 1.15, mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - (big ? 150 : 110)];
+  var el = fx(shape('Calma', col, 46), 'part moonfx', 0, 0, 0);
+  trailOf(a, b, mid, function (k) { return shape('Calma', col, 26 - k * 3); }, 5, 50, 640, 540);
+  return animate(el, [
+    { transform: 'translate(' + a[0] + 'px,' + a[1] + 'px) translate(-50%,-50%) rotate(0deg) scale(.5)', opacity: 0 },
+    { transform: 'translate(' + mid[0] + 'px,' + mid[1] + 'px) translate(-50%,-50%) rotate(360deg) scale(' + s + ')', opacity: 1, offset: 0.5 },
+    { transform: 'translate(' + b[0] + 'px,' + b[1] + 'px) translate(-50%,-50%) rotate(720deg) scale(' + s * 0.9 + ')', opacity: 1 }
+  ], { duration: 640, easing: 'ease-in-out' }).then(function () { el.remove(); pillar(b[0], b[1] + 40, col, big); ring(b[0], b[1], col, big ? 340 : 240, 560); });
+}
+function lightningStrike(from: number, to: number, col: string, big: boolean): Promise<unknown> {
+  var b = anchor(to, 0.5, 0.42), c = anchor(from, 0.5, 0.45);
+  sparks(c[0], c[1], 5, function () { return shape('Caos', col, 18); }, 60, 420);
+  if (reduced) return Promise.resolve();
+  var bolt = function (k: number) {
+    var x = b[0] + (wob() - 0.5) * 40, y = -10, d = 'M' + x.toFixed(0) + ' ' + y;
+    for (var s = 1; s <= 7; s++) { x = x + (b[0] - x) * (s / 7) + (wob() - 0.5) * 34 * (1 - s / 7); y = -10 + (b[1] + 10) * (s / 7); d += ' L' + x.toFixed(0) + ' ' + y.toFixed(0); }
+    var w = arena.clientWidth, h = arena.clientHeight;
+    var el = fx('<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="' + (big ? 22 : 15) + '" stroke-linejoin="round" opacity=".5"/>' +
+      '<path d="' + d + '" fill="none" stroke="#fffbe6" stroke-width="' + (big ? 7 : 5) + '" stroke-linejoin="round"/></svg>', 'boltfx', 0, 0, 0);
+    return sleep(k ? 140 : 90).then(function () { el.remove(); });
+  };
+  return sleep(120).then(function () { flashAt(b[0], b[1], col, big ? 520 : 380, 260); return bolt(0); }).then(function () { return sleep(60); })
+    .then(function () { flashAt(b[0], b[1], '#ffffff', big ? 600 : 420, 300); if (big) pulse(arena, 'quake', 420); return bolt(1); })
+    .then(function () { sparks(b[0], b[1], big ? 12 : 8, function () { return shape('Caos', col, 22); }, big ? 140 : 100, 560); });
+}
+function starShot(from: number, to: number, col: string, big: boolean): Promise<unknown> {
+  var e = ends(from, to), a = e[0], b = e[1], mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 20];
+  var el = fx(shape('Cervello', col, big ? 64 : 46), 'part starfx', 0, 0, 0);
+  trailOf(a, b, mid, function (k) { return shape('Cervello', k % 2 ? '#ffffff' : col, 22 - k * 2); }, 6, 35, 420, 720);
+  return animate(el, [
+    { transform: 'translate(' + a[0] + 'px,' + a[1] + 'px) translate(-50%,-50%) rotate(0deg) scale(.4)', opacity: 0 },
+    { transform: 'translate(' + b[0] + 'px,' + b[1] + 'px) translate(-50%,-50%) rotate(900deg) scale(1.1)', opacity: 1 }
+  ], { duration: 420, easing: 'cubic-bezier(.5,0,.8,.6)' }).then(function () {
+    el.remove();
+    var r = fx('', 'rays', b[0], b[1], 0); r.style.setProperty('--mc', col);
+    animate(r, [{ transform: 'translate(-50%,-50%) scale(.2) rotate(0deg)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(' + (big ? 1.8 : 1.3) + ') rotate(40deg)', opacity: 0 }], { duration: 520, easing: 'ease-out', fill: 'forwards' }).then(function () { r.remove(); });
+    sparks(b[0], b[1], big ? 12 : 8, function () { return shape('Cervello', col, 20); }, big ? 130 : 95, 560);
+  });
+}
+function soundWaves(from: number, to: number, col: string, big: boolean): Promise<unknown> {
+  var e = ends(from, to), a = e[0], b = e[1], n = big ? 5 : 3, dir = b[0] > a[0] ? 1 : -1, all: Promise<unknown>[] = [];
+  for (var k = 0; k < n; k++) {
+    (function (k: number) {
+      var el = fx('', 'wave', 0, 0, 0);
+      el.style.setProperty('--mc', col); el.style.opacity = '0';
+      if (dir < 0) el.classList.add('back');
+      all.push(sleep(k * 110).then(function () {
+        return animate(el, [
+          { transform: 'translate(' + a[0] + 'px,' + a[1] + 'px) translate(-50%,-50%) scale(.4)', opacity: 0 },
+          { transform: 'translate(' + ((a[0] + b[0]) / 2) + 'px,' + ((a[1] + b[1]) / 2) + 'px) translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.5 },
+          { transform: 'translate(' + b[0] + 'px,' + b[1] + 'px) translate(-50%,-50%) scale(' + (big ? 1.7 : 1.3) + ')', opacity: 0.2 }
+        ], { duration: 520, easing: 'ease-in', fill: 'forwards' });
+      }).then(function () { el.remove(); }));
+    })(k);
+  }
+  trailOf(a, b, [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - 50], function (k) { return shape('Chiacchiera', col, 24 - k * 2); }, 4, 90, 620, 60);
+  return Promise.all(all).then(function () { var m = $('m-' + to); if (m) pulse(m, 'dizzy', 520); sparks(b[0], b[1], 8, function () { return shape('Chiacchiera', col, 20); }, 100, 600); });
+}
+function heartStream(from: number, to: number, col: string, big: boolean): Promise<unknown> {
+  var e = ends(from, to), a = e[0], b = e[1], n = big ? 9 : 6, all: Promise<unknown>[] = [];
+  for (var k = 0; k < n; k++) {
+    (function (k: number) {
+      var el = fx(shape('Cuore', col, big ? 34 : 26), 'part heartfx', 0, 0, 0), side = k % 2 ? 1 : -1;
+      el.style.opacity = '0';
+      all.push(sleep(k * 60).then(function () {
+        return animate(el, [
+          { transform: 'translate(' + a[0] + 'px,' + a[1] + 'px) translate(-50%,-50%) scale(.3)', opacity: 0 },
+          { transform: 'translate(' + ((a[0] + b[0]) / 2) + 'px,' + ((a[1] + b[1]) / 2 + side * 34) + 'px) translate(-50%,-50%) scale(1.1) rotate(' + side * 18 + 'deg)', opacity: 1, offset: 0.5 },
+          { transform: 'translate(' + b[0] + 'px,' + b[1] + 'px) translate(-50%,-50%) scale(.8)', opacity: 0.4 }
+        ], { duration: 560, easing: 'ease-in-out', fill: 'forwards' });
+      }).then(function () { el.remove(); }));
+    })(k);
+  }
+  return Promise.all(all).then(function () { flashAt(b[0], b[1], col, big ? 480 : 360, 320); sparks(b[0], b[1], big ? 12 : 8, function () { return shape('Cuore', col, 20); }, big ? 130 : 95, 600); });
+}
+function plainStrike(from: number, to: number, big: boolean): Promise<unknown> {
+  var b = anchor(to, 0.5, 0.42);
+  streaks(from);
+  var m = $('m-' + from);
+  return Promise.all([m ? pulse(m, from === 0 ? 'lunge-me' : 'lunge-opp', 340) : null, sleep(200).then(function () { ring(b[0], b[1], '#ffffff', big ? 300 : 220, 420); })]);
+}
+/** a creature's spell: its type decides how it flies (null for a plain move), big for the strongest moves */
+export function castSpell(from: number, to: number, type: string | null, col: string, big: boolean): Promise<unknown> {
+  var go = function (): Promise<unknown> {
+    if (!type) return plainStrike(from, to, big);
+    if (reduced) return Promise.resolve();
+    if (type === 'Calma') return crescentArc(from, to, col, big);
+    if (type === 'Caos') return lightningStrike(from, to, col, big);
+    if (type === 'Cervello') return starShot(from, to, col, big);
+    if (type === 'Chiacchiera') return soundWaves(from, to, col, big);
+    return heartStream(from, to, col, big);
+  };
+  return big ? charge(from, type, col).then(go) : go();
+}

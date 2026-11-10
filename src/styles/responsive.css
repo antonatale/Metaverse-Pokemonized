@@ -1,6 +1,9 @@
 @media (max-height: 640px) {
   .arena { min-height: 214px; }
-  .mv { min-height: 56px; padding-block: 5px; }
+  .mv { min-height: 70px; padding-block: 6px; gap: 8px; }
+  .mv-badge { width: 42px; height: 42px; }
+  .mv-badge svg { width: 30px; height: 30px; }
+  .mv b { font-size: 16.5px; }
   .dialog { min-height: 70px; } .dialog .txt { font-size: 18px; line-height: 24px; min-height: 48px; }
 }
 @media (min-height: 700px) {

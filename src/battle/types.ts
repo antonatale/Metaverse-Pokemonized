@@ -121,7 +121,7 @@ export type BattleEvent =
   | { k: 'say'; text: string }
   | { k: 'line'; who: number; text: string }
   | { k: 'expr'; who: number; v: string }
-  | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string }
+  | { k: 'anim'; who: number; a: string; item?: string; text?: string; style?: string; move?: string }
   | { k: 'hp'; who: number; hp: number; dmg?: number; crit?: boolean; eff?: number; heal?: number; quiet?: boolean }
   | Snap
   | { k: 'end'; result: Result; winner: number | null; grade: Grade | null };
