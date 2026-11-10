@@ -262,7 +262,7 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **R19. La lotta non si blocca mai; partite da PC (Sonnet, high).** Ogni scena animata gira dentro una rete: se lancia un errore o supera gli otto secondi, la lotta la salta, scrive l'errore in console e continua. Le partite di prova passano a 1366×768 di base (restano a misura di telefono solo quelle che provano la croce), e almeno dieci girano con le animazioni accese.
 
-**Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Non fatto: portare a dieci le partite con le animazioni accese (oggi sono otto). Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
+**Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Non fatto: portare a dieci le partite con le animazioni accese (oggi sono sei). Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
 
 **R20. Misurare la mappa sul Mac (Sonnet, medium).** Con il profiler di Chrome: tempo per fotogramma camminando, di giorno e di notte, a schermo pieno. Se supera gli 8 ms: limitare la risoluzione del canvas a 2× di 1440×900 e disegnare la notte meno spesso. Si scrive il prima e il dopo.
 
