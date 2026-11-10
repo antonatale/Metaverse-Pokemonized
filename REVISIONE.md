@@ -8,7 +8,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Stato al 10 novembre, sera:** fatte A0, R1, R2, R3, R4, R13, R15; in parte R18 e R19. Tutto sul ramo `sei-protagonisti` di GitHub, non ancora in `main`. Le altre aspettano D1–D5 o sono le prossime (R5, R6, R14, R16, R17, R20…).
 
-**Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task già fatte restano in `TASK-MODELLI.md`.
+**Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
 ---
 
