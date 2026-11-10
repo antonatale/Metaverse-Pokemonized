@@ -158,8 +158,25 @@ describe('Cicero, the guide', () => {
     const { CHAPTERS, OPENING, advice } = await import('../../src/story/mentor');
     const { STOPS } = await import('../../src/story/goals');
     for (const s of STOPS) { expect(CHAPTERS[s.id], 'no chapter for ' + s.id).toBeDefined(); expect(CHAPTERS[s.id].intro.length).toBeGreaterThan(0); }
-    expect(OPENING.length).toBeLessThanOrEqual(10);
+    /* three lines, plus the one about whoever is played: four screens from «chi sei?» to the first step */
+    expect(OPENING.length + 1).toBeLessThanOrEqual(4);
     expect(advice()[0]).toMatch(/^Capitolo 1 di \d+/);
+  });
+  it('says the rest when it is needed: types, levels, sesterzi and covi each have their tip', async () => {
+    const { TIPS } = await import('../../src/story/mentor');
+    const all = (k: string) => TIPS[k].join(' ');
+    expect(all('covo')).toMatch(/Calma batte Caos/);
+    expect(all('wild')).toMatch(/Corrente, Calore, Cielo, Corazza e Crepuscolo/);
+    expect(all('level')).toMatch(/livello/);
+    expect(all('money')).toMatch(/sesterzi/);
+  });
+  it('tells everyone where he lives, with the capitals right', async () => {
+    const { LIVES, HOMES } = await import('../../src/data/people');
+    for (const id of Object.keys(HOMES) as (keyof typeof HOMES)[]) {
+      expect(LIVES[id]).toMatch(/^Tu abiti (a|in) /);
+      expect(LIVES[id]).not.toMatch(/ in (parco|castellone|scauri)/);
+      expect(LIVES[id].endsWith('.')).toBe(true);
+    }
   });
 });
 

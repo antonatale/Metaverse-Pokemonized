@@ -32,7 +32,7 @@ import { sceneFor, PLACE_MAGIC } from '../data/scenes';
 import { CICERO, OPENING, advice, chapterNow, tipOnce } from '../story/mentor';
 import { cicero, mamurra } from '../render/svg/cicero';
 import { plotTalk, plotSign, plotAfter, plotBefore, stonesHtml, missionsHtml, legendWay, legendEnd, legendPact, askPending } from './plot';
-import { JOIN, HOMES } from '../data/people';
+import { JOIN, LIVES } from '../data/people';
 import { endFlag, legendOf, legendOver, pactOpen, stagesNow, stonesKept } from '../story/choices';
 import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
@@ -565,6 +565,7 @@ function tourneyAfter(won: boolean, key: string) {
 function challenge(id: string) {
   var cv0 = COVI[id];
   var first = firstHuman(), keys = (st.squad as string[]).slice().sort(function (a, b) { return a === first ? -1 : b === first ? 1 : 0; });
+  mentorTip('covo');
   pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, keys, function (key) {
     hide();
     var lv = covoLevel(id);
@@ -753,10 +754,23 @@ function seesAntonio(p: Person): boolean {
 }
 /** a step has just ended: does a trainer see Antonio? then he comes to challenge him */
 var spotting = true;
+/** how many levels a trainer's weakest creature may be above the strongest of the player's, and still challenge him
+    on sight: beyond that he only looks and lets it go (the challenge stays, talking to him) */
+const SIGHT_GAP = 3;
+function tooStrong(id: string): boolean {
+  if (TRAINERS[id].rival || !teamMons().length) return false;
+  var mine = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
+  return Math.min.apply(null, teamOf(id).map(function (t) { return t.lv; })) - mine > SIGHT_GAP;
+}
 function spotted(): boolean {
   var p = spotting ? M.people.find(seesAntonio) : null;
   if (!p) return false;
   var n = p.n;
+  if (tooStrong(n.trainer!)) {
+    noticed[n.trainer!] = Date.now();
+    bubble(esc(trainerNow(n.trainer!).title + ' ti ha visto, ti ha squadrato… e ha lasciato perdere. Le sue creature sono molto più forti delle tue: se vuoi sfidarlo lo stesso, parlagli.'));
+    return false;
+  }
   approach(p, function () { trainerTalk(n.trainer!, n.name || '', [], true); });
   return true;
 }
@@ -1029,7 +1043,7 @@ function intro() {
   st.seen.intro = true; st.seen['cap-starter'] = true; save();
   /* the story of whoever is played: where he lives, the five covi of the others, and where his train goes */
   var me = firstHuman() as FriendId, G0 = gateFor('torino', me), lines = OPENING.slice();
-  lines.splice(5, 0, 'Tu abiti in ' + HOMES[me].charAt(0).toLowerCase() + HOMES[me].slice(1) + '. A Formia ci sono sei covi, uno per ognuno di voi amici: batti gli altri cinque, prendi le loro spille, e ' + G0.label.charAt(0).toLowerCase() + G0.label.slice(1) + ' ti porterà a ' + G0.station + '.');
+  lines.splice(2, 0, LIVES[me] + ' A Formia ci sono sei covi, uno per ognuno di voi amici: batti gli altri cinque, e poi il treno ti porterà a ' + G0.station + '.');
   say(lines, CICERO);
 }
 /* ---------- Cicero, when he is needed ---------- */

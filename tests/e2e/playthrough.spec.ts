@@ -861,6 +861,38 @@ test('a trainer who sees Antonio', async ({ browser }) => {
   expect(st.beaten['tr-studente']).toBe(true);
 });
 
+/* a trainer far stronger than the player's team only looks at him: no challenge on sight, a word from Cicero instead,
+   and the challenge is still there talking to him. In the battle, the sheet lists the moves the creature knows */
+test('a trainer too strong to challenge on sight', async ({ browser }) => {
+  const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cic-power': true } }) }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(1500);
+    r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
+    await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(2500);
+    r.keep('dialog', await p.evaluate(() => !!window.WORLD._debug.pos().dialog));
+    r.keep('said', await p.locator('#wcic-say').innerText());
+    r.keep('stayed', await p.evaluate(() => window.WORLD._debug.who('studente')));
+    /* talking to him, the challenge is there */
+    const him = r.data.find((x) => x.name === 'before')!.value as { y: number };
+    for (let k = 0; k < 6 && (await p.evaluate(() => window.WORLD._debug.pos().y)) > him.y + 1; k++) { await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(400); }
+    await p.keyboard.press('Enter'); await p.clock.runFor(400);
+    await talkThrough(p);
+    await choose(p, 'Sfida!');
+    await p.clock.runFor(800);
+    await toPrompt(p);
+    r.keep('pad', await p.locator('#pad .mv[data-k]:not([hidden])').count());
+    await p.click('#info'); await p.clock.runFor(300);
+    r.keep('sheet', await p.locator('#overlay .card').first().locator('.moves-list li').count());
+  });
+  const v = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(v('dialog')).toBe(false);
+  expect(v('said')).toMatch(/ha lasciato perdere/);
+  expect(v('stayed')).toEqual(v('before'));
+  expect(v('sheet')).toBe(v('pad'));
+  expect(v('pad') as number).toBeLessThanOrEqual(4);
+});
+
 /* the menu: two teams of six, the people and the creatures; Antonio's abilities, a tree of three branches where each
    ability opens with a point in the one before it */
 test('the two teams and Antonio\'s abilities', async ({ browser }) => {

@@ -595,11 +595,12 @@ function storyCity(story: { covo?: string }): string {
   return cv && MAPS[cv.city] ? MAPS[cv.city].name : 'Formia';
 }
 /** a person's passive, weakness and moves, for the sheet of the battle */
-function charBlocks(c: Character): string {
+/** `moves`: the ones to list (in a battle, the four on the pad: padMoves); without it, all of them */
+function charBlocks(c: Character, moves?: Move[]): string {
   var h = '<div class="block"><div class="trait"><span class="lbl">Passiva</span><b>' + esc(c.passive.name) + '</b><p>' + esc(c.passive.text) + '</p></div>';
   if (c.weakness) h += '<div class="trait"><span class="lbl">Difetto</span><b>' + esc(c.weakness.name) + '</b><p>' + esc(c.weakness.text) + '</p></div>';
   h += '</div><div class="block"><h3>Mosse</h3><ul class="moves-list">';
-  c.moves.forEach(function (m) {
+  (moves || c.moves).forEach(function (m) {
     h += '<li><div class="mh"><b>' + esc(m.name) + '</b>' + kindTag(m) + (m.uses ? '<span class="type">' + m.uses + (m.uses === 1 ? ' uso' : ' usi') + '</span>' : '') + '</div><p>' + esc(m.text) + '</p>';
     if (c.id === 'antonio') { var it = E.ITEMS[m.id]; h += '<span class="item">' + ico(it.icon) + 'Si blocca se perde ' + esc(it.name) + '</span>'; }
     h += '</li>';
@@ -617,7 +618,7 @@ function openSheet() {
     if (c.id === 'esame' && !S.sides[i].revealed) h += '<p class="unknown">Statistiche e mosse ancora sconosciute. Antonio può analizzarlo con Diagnosi Energetica; con gli altri lo scopri giocando.</p></div>';
     else {
       var st = S.sides[i].stats || c.stats;
-      h += '<div class="mini-stats"><div><span>Vita</span><strong>' + st.hp + '</strong></div><div><span>Attacco</span><strong>' + st.atk + '</strong></div><div><span>Difesa</span><strong>' + st.def + '</strong></div><div><span>Velocità</span><strong>' + st.spe + '</strong></div></div></div>' + charBlocks(c);
+      h += '<div class="mini-stats"><div><span>Vita</span><strong>' + st.hp + '</strong></div><div><span>Attacco</span><strong>' + st.atk + '</strong></div><div><span>Difesa</span><strong>' + st.def + '</strong></div><div><span>Velocità</span><strong>' + st.spe + '</strong></div></div></div>' + charBlocks(c, padMoves(i));
     }
     h += '</div>';
   });

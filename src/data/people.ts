@@ -103,6 +103,15 @@ export const HOMES: Record<FriendId, string> = {
   andrea: 'Castellone, a due passi da piazza Mattej',
   zendavid: 'Scauri, vicino alla stazione'
 };
+/** the same, as Cicero says it to whoever is played: a whole sentence each, so the capitals stay right */
+export const LIVES: Record<FriendId, string> = {
+  antonio: 'Tu abiti a Parco la Fontana, in via Amendola.',
+  valentin: 'Tu abiti in via Ferrucci, accanto a piazza Risorgimento.',
+  forchetta: 'Tu abiti in via Abate Tosti, vicino alla Torre di Mola.',
+  costanzo: 'Tu abiti in via Solaro, vicino alla chiesa di San Giovanni.',
+  andrea: 'Tu abiti a Castellone, a due passi da piazza Mattej.',
+  zendavid: 'Tu abiti a Scauri, vicino alla stazione.'
+};
 export function isFriend(id: string): id is FriendId { return Object.prototype.hasOwnProperty.call(PATHS, id); }
 
 /** how a friend comes into the company: beating its covo, or doing its activity together (`activity`). Everyone is a

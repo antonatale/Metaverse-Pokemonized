@@ -16,6 +16,11 @@ describe('the name of the game', () => {
     expect(fs.readFileSync(path.join(root, 'README.md'), 'utf8').split('\n')[0]).toBe('# ' + gameTitle());
     expect(GAME_NAME.name).toBe('Telepilo');
   });
+  it('is on a page that says it is in Italian, with its own icon (no request for a missing favicon)', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    expect(html).toContain('<html lang="it">');
+    expect(html).toMatch(/<link rel="icon" href="data:image\/svg\+xml,/);
+  });
   it('is the only one the code shows: the old one is left only in the save keys', () => {
     for (const f of files(path.join(root, 'src'))) {
       const s = fs.readFileSync(f, 'utf8');

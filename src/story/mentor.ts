@@ -19,16 +19,13 @@ import type { FriendId } from '../data/characters';
 export const CICERO = 'Cicerone';
 
 /** the opening of the story, when it starts from nothing */
+/* Four screens at most, then the first step: who he is, that something is happening, where to go. Everything else
+   (types, levels, sesterzi, covi, the bench) comes in TIPS, the first time it is needed. Line 2 is where the story
+   of whoever is played goes (where he lives, his covi and his train: intro() in ui/story-screen.ts). */
 export const OPENING: string[] = [
-  'Salve, {hero}! Non spaventarti: sono un fantasma, ma di quelli simpatici. Marco Tullio Cicerone, piacere.',
-  'Sì, proprio quello. Qui a Formia avevo la villa, qui sono morto nel 43 avanti Cristo, e sull\'Appia c\'è la mia tomba. Da allora faccio il cicerone: la guida, appunto.',
-  'Perché un fantasma si fa vedere proprio adesso? Perché a Formia sta per succedere qualcosa, e qualcuno dovrà accorgersene. Mi sa che quel qualcuno sei tu.',
-  'A Formia c\'è una magia antica: nelle pietre, nel mare e negli ulivi dormono creature che non trovi in nessun libro. Una lotterà con te.',
-  'E non sei l\'unico a cercare. Di notte, tra le rovine di Gianola, qualcuno scava. Cosa cerca? Non lo so ancora. E a me, questo, non piace.',
-  'Come si gioca: frecce o WASD per camminare, Invio per parlare con la gente, M per il menu. Nel menu trovi la squadra, la borsa, il diario e la mappa.',
-  'Le lotte sono a turni: scegli una mossa alla volta. Le creature lottano con le creature, le persone con le persone. I tipi girano in cerchio (Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma) e chi ha il vantaggio fa più danno.',
-  'Lottando si sale di livello e si guadagnano sesterzi, le monete della Formia romana: con quelli compri retini, tielle e caffè.',
-  'In alto a sinistra c\'è sempre la prossima tappa, con la freccia. Io resto qui in basso: quando hai un dubbio premi C, o tocca il mio ritratto. Prima tappa: Gianola, dal guardaparco. Andiamo!'
+  'Salve, {hero}! Non spaventarti: sono un fantasma, ma di quelli simpatici. Marco Tullio Cicerone, la tua guida: a Formia avevo la villa, e sull\'Appia c\'è la mia tomba.',
+  'Mi faccio vedere perché a Formia sta per succedere qualcosa. Nelle pietre, nel mare e negli ulivi dormono creature che non trovi in nessun libro. E di notte, tra le rovine di Gianola, qualcuno scava.',
+  'Frecce o WASD per camminare, Invio per parlare, M per il menu, C per chiamare me. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dal guardaparco. Andiamo!'
 ];
 
 /** each chapter of the journey: what Cicero says when it becomes the next one, and when it is done */
@@ -108,9 +105,10 @@ export const CHAPTERS: Record<string, Chapter> = {
 
 /** the first time something happens, Cicero explains it (once) */
 export const TIPS: Record<string, string[]> = {
+  covo: ['Un covo: qui lottano le persone, non le creature. Anche le persone hanno un tipo, e i cinque girano in cerchio: Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma.', 'Chi ha il vantaggio fa più danno. Ogni covo vinto è una spilla, e il covo dopo sarà più forte.'],
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
-  level: ['{hero} è salito di livello: hai un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
-  money: ['I primi sesterzi! Il retaio di Gianola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
+  level: ['{hero} è salito di livello: lottando si diventa più forti, e ogni livello è un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
+  money: ['I primi sesterzi, le monete della Formia romana! Il retaio di Gianola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],
   power: ['Le creature hanno dei poteri. Quelle del mare ti portano a nuoto, quelle dei muri e degli alberi ti fanno salire sulle mura di Castellone, quelle con le ali ti mostrano Formia dall\'alto (tasto V).', 'Cammina verso il mare o contro le mura: se una tua creatura può aiutarti, te lo dice.'],
   night: ['È scesa la notte. Si accendono i lampioni e le creature brillano: nell\'erba alta del Parco Gramsci e della pineta escono le civette.', 'Se vuoi il giorno, dormi nel letto di casa.'],
   wild: ['Una creatura selvatica! Lottano le tue creature, una dopo l\'altra: tu scendi in campo solo se cadono tutte.', 'Battila per l\'esperienza, oppure catturala: stancala, poi tocca un retino nella Borsa, sotto le mosse. Più è stanca, più è facile.',
