@@ -163,6 +163,8 @@ export interface MapDef {
   /** the city an indoors map belongs to */
   city?: string;
   inside?: boolean;
+  /** Creature waiting positions authored for this home’s furniture plan. */
+  homeSpots?: [number, number, Dir][];
   rows: string[];
   buildings?: Building[];
   objects?: MapObject[];

@@ -1,3 +1,5 @@
+import { legacyTile } from './formia-projection';
+
 /* The places of Formia: real coordinates (from OpenStreetMap, or by hand where OSM has nothing), size in tiles,
    and what they say. tools/formia/build.ts finds each one a free spot near where it really is (no roads, rails or
    sea under it, a walkable tile in front of the door) and writes the result in formia-ground.ts.
@@ -16,7 +18,7 @@ export interface PlaceSpec {
   doorAt?: number;
   /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it; a yard is a
       lawn closed by a hedge, with a gate on its west side) */
-  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard';
+  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'courtyard';
   /** tiles kept free of houses and trees around it */
   room?: number;
   /** how far it may move from where it really is, in tiles */
@@ -39,52 +41,53 @@ export interface SpotSpec {
 export const PLACES: PlaceSpec[] = [
   /* ---------- home: Parco la Fontana, Via Giovanni Amendola 1: the building, its garden closed by a hedge on the Via
      Appia, the fountain in the garden. Across the Appia, a little toward the centre, the Villaggio Don Bosco ---------- */
-  { id: 'casa', kind: 'condo', w: 5, h: 4, at: [41.2633, 13.6430], door: true, tile: [136, 16] },
-  { id: 'giardino', kind: 'area', fill: 'yard', w: 7, h: 3, at: [41.2626, 13.6430], tile: [135, 20] },
-  { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], tile: [139, 20] },
-  { id: 'palamendola', kind: 'arena', w: 6, h: 2, at: [41.2616, 13.6419], door: true, tile: [143, 17] },
-  { id: 'donbosco', kind: 'parish', w: 5, h: 3, at: [41.2614, 13.6391], door: true, tile: [129, 25] },
-  { id: 'oratorio', kind: 'coni', w: 4, h: 2, at: [41.2612, 13.6400], door: true, tile: [135, 25] },
-  { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 7, h: 4, at: [41.2611, 13.6380], tile: [120, 25] },
+  { id: 'casa', kind: 'condo', w: 2, h: 1, at: [41.26280, 13.64083], door: true },
+  { id: 'parco-corte', kind: 'area', fill: 'courtyard', w: 5, h: 5, at: [41.26270,13.64170] },
+  { id: 'giardino', kind: 'area', fill: 'yard', w: 4, h: 3, at: [41.26248, 13.64085] },
+  { id: 'fontana', kind: 'fountain', w: 1, h: 1, at: [41.26265, 13.64170] },
+  { id: 'palamendola', kind: 'arena', w: 5, h: 3, at: [41.26388, 13.64184], door: true },
+  { id: 'donbosco', kind: 'parish', w: 3, h: 3, at: [41.2614, 13.6391], door: true },
+  { id: 'oratorio', kind: 'coni', w: 3, h: 2, at: [41.2612, 13.6400], door: true },
+  { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 4, h: 3, at: [41.2611, 13.6380] },
   /* ---------- the Bruno Zauli olympic centre, and its covered tennis courts (Forchetta's covo) ---------- */
-  { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true, tile: [114, 20] },
-  { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true, tile: [114, 16] },
+  { id: 'zauli', kind: 'coni', w: 4, h: 2, at: [41.26225, 13.62905], door: true },
+  { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true },
   /* the athletics track where Mennea trained, behind the centre */
-  { id: 'pista', kind: 'area', fill: 'field', w: 12, h: 4, at: [41.2655, 13.6300], tile: [121, 16] },
-  { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250], tile: [114, 25] },
+  { id: 'pista', kind: 'area', fill: 'field', w: 6, h: 10, at: [41.26303, 13.62855] },
+  { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 6, h: 4, at: [41.2616, 13.6250] },
   /* ---------- Mola ---------- */
-  { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], tile: [93, 38] },
-  { id: 'morgana', kind: 'pub', w: 5, h: 3, at: [41.25819, 13.61234], door: true, tile: [91, 33] },
+  { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140] },
+  { id: 'morgana', kind: 'pub', w: 3, h: 2, at: [41.25819, 13.61234], door: true },
   /* Piazza San Giovanni: the collegiate church of Saints Lorenzo and Giovanni Battista, and across the square the
      Vitruvio Pollione school; by them the remains of the Roman aqueduct */
-  { id: 'chiesa-mola', kind: 'collegiata', w: 6, h: 3, at: [41.2598, 13.6162], door: true, tile: [104, 18] },
-  { id: 'piazza-sangiovanni', kind: 'area', fill: 'piazza', w: 9, h: 4, at: [41.2596, 13.6165], tile: [103, 21] },
-  { id: 'scuola', kind: 'school', w: 6, h: 2, at: [41.2609, 13.6181], door: true, tile: [104, 25] },
-  { id: 'acquedotto', kind: 'aqueduct', w: 3, h: 2, at: [41.2590, 13.6150], tile: [101, 25] },
+  { id: 'chiesa-mola', kind: 'collegiata', w: 2, h: 3, at: [41.25956, 13.61216], door: true },
+  { id: 'piazza-sangiovanni', kind: 'area', fill: 'piazza', w: 6, h: 3, at: [41.25900, 13.61222] },
+  { id: 'scuola', kind: 'school', w: 3, h: 2, at: [41.25864, 13.61200], door: true },
+  { id: 'acquedotto', kind: 'aqueduct', w: 2, h: 1, at: [41.25980, 13.61305] },
   /* the Gelateria Lavezzi, in Piazza Marconi by the Comune: gelato since 1870 */
-  { id: 'gelati', kind: 'gelateria', w: 4, h: 3, at: [41.25581, 13.60496], door: true, tile: [76, 38] },
-  { id: 'bar', kind: 'bar', w: 4, h: 3, at: [41.2584, 13.6110], door: true, tile: [86, 33] },
-  { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true, tile: [87, 38] },
+  { id: 'gelati', kind: 'gelateria', w: 2, h: 2, at: [41.25581, 13.60496], door: true },
+  { id: 'bar', kind: 'bar', w: 2, h: 2, at: [41.2584, 13.6110], door: true },
+  { id: 'biglietti', kind: 'kiosk', w: 2, h: 1, at: [41.2565, 13.6106], door: true },
   { id: 'traghetto', kind: 'ferry', w: 5, h: 3, at: [41.2554, 13.6118], on: 'sea', reach: 6 },
   /* ---------- the centre: station, town hall, Piazza della Vittoria ---------- */
-  { id: 'stazione', kind: 'station', w: 9, h: 3, at: [41.25875, 13.60613], door: true, tile: [72, 33] },
-  { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 7, at: [41.2551, 13.6062], tile: [67, 41] },
-  { id: 'comune', kind: 'palazzo', w: 8, h: 3, at: [41.2562, 13.6050], door: true, tile: [68, 38] },
-  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 3, h: 5, at: [41.2560, 13.6084], tile: [77, 43] },
-  { id: 'forno', kind: 'bakery', w: 4, h: 3, at: [41.2567, 13.6070], door: true, tile: [60, 33] },
+  { id: 'stazione', kind: 'station', w: 7, h: 3, at: [41.25875, 13.60613], door: true },
+  { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 6, at: [41.2551, 13.6062] },
+  { id: 'comune', kind: 'palazzo', w: 5, h: 3, at: [41.2562, 13.6050], door: true },
+  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 3, h: 5, at: [41.2560, 13.6084] },
+  { id: 'forno', kind: 'bakery', w: 2, h: 2, at: [41.2567, 13.6070], door: true },
   /* ---------- Castellone ---------- */
-  { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true, tile: [57, 42] },
-  { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999], tile: [62, 42] },
+  { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true },
+  { id: 'torre-castellone', kind: 'octagon', w: 2, h: 2, at: [41.2563, 13.5999] },
   /* the way down into the Cisternone romano, by Largo Sant'Anna */
-  { id: 'cisternone', kind: 'cistern', w: 1, h: 1, at: [41.25569, 13.60104], tile: [65, 42] },
+  { id: 'cisternone', kind: 'cistern', w: 1, h: 1, at: [41.25569, 13.60104] },
   /* ---------- Vindicio: the Tomba di Cicerone, the beach, the Eclipse, the pineta ---------- */
   { id: 'tomba', kind: 'tomb', w: 3, h: 3, at: [41.2516, 13.5787] },
   /* the Pineta di Vindicio, by the Lido Frungillo at the Formia end of Via Tito Scipione: from Gaeta you come to
      La Scogliera, then the Eclipse, then the pineta, then the centre. Between the Appia and the beach, crossed by footpaths */
-  { id: 'pineta', kind: 'area', fill: 'pines', w: 17, h: 7, at: [41.2503, 13.5925], tile: [40, 50] },
+  { id: 'pineta', kind: 'area', fill: 'pines', w: 10, h: 6, at: [41.25050, 13.59280] },
   /* the Eclipse beach, Nicola Spadea's lido on the lungomare of Vindicio: the lido at the back, the beach in front */
-  { id: 'eclipse', kind: 'lido', w: 6, h: 2, at: [41.2492, 13.5874], door: true, on: 'sand', reach: 8, room: 0 },
-  { id: 'eclipse-spiaggia', kind: 'area', fill: 'beach', w: 12, h: 6, at: [41.2484, 13.5880], on: 'sand', reach: 8, room: 0 },
+  { id: 'eclipse', kind: 'lido', w: 4, h: 2, at: [41.24848, 13.58688], door: true, on: 'sand', reach: 8, room: 0 },
+  { id: 'eclipse-spiaggia', kind: 'area', fill: 'beach', w: 9, h: 7, at: [41.24750, 13.58730], on: 'sand', reach: 8, room: 0 },
   { id: 'scogliera', kind: 'lido', w: 4, h: 2, at: [41.2449, 13.5790], door: true, on: 'sand', reach: 6 },
   /* ---------- Gianola ---------- */
   { id: 'oriente', kind: 'lido', w: 4, h: 2, at: [41.2536, 13.6644], door: true, on: 'sand', reach: 6 },
@@ -92,19 +95,31 @@ export const PLACES: PlaceSpec[] = [
   /* the homes of the others (Antonio told where; the streets checked on OpenStreetMap, no house numbers): Valentin in
      via Adalgiso Ferrucci, by piazza Risorgimento and opposite the Dono Svizzero hospital; Costanzo in via Solaro and
      Forchetta in via Abate Tosti, in Mola; Andrea in Castellone, by piazza Pasquale Mattei */
-  { id: 'casa-valentin', kind: 'house', w: 3, h: 2, at: [41.2613, 13.6172], door: true, tile: [101, 10] },
-  { id: 'casa-costanzo', kind: 'borgo', w: 3, h: 2, at: [41.2600, 13.6121], door: true, tile: [101, 17] },
-  { id: 'casa-forchetta', kind: 'borgo', w: 3, h: 2, at: [41.2592, 13.6146], door: true, tile: [94, 29] },
-  { id: 'casa-andrea', kind: 'borgo', w: 3, h: 2, at: [41.2541, 13.6016], door: true, tile: [59, 53] },
+  { id: 'casa-valentin', kind: 'house', w: 2, h: 2, at: [41.2613, 13.6172], door: true },
+  { id: 'casa-costanzo', kind: 'condo', w: 2, h: 2, at: [41.26037, 13.61325], door: true },
+  { id: 'casa-forchetta', kind: 'borgo', w: 2, h: 2, at: [41.2592, 13.6146], door: true },
+  { id: 'casa-andrea', kind: 'borgo', w: 2, h: 2, at: [41.2541, 13.6016], door: true },
   /* Scauri, east of Gianola: the station of Minturno-Scauri (OpenStreetMap: 41.25785, 13.72077), and Zendavid's home at
      the beginning of the village, near it */
   { id: 'stazione-scauri', kind: 'station', w: 6, h: 3, at: [41.25785, 13.72077], door: true },
-  { id: 'casa-zendavid', kind: 'house', w: 3, h: 2, at: [41.2588, 13.7180], door: true }
+  { id: 'casa-zendavid', kind: 'house', w: 2, h: 2, at: [41.2588, 13.7180], door: true },
+  { id: 'zauli-tennis', kind: 'area', fill: 'field', w: 3, h: 3, at: [41.26237,13.63012] },
+  { id: 'zauli-padel', kind: 'area', fill: 'field', w: 1, h: 2, at: [41.26308,13.62942] },
+  { id: 'zauli-beach', kind: 'area', fill: 'beach', w: 2, h: 2, at: [41.26350,13.63010] },
+  { id: 'tribuna', kind: 'grandstand', w: 1, h: 4, at: [41.26305,13.62755] },
+  { id: 'largo-paone', kind: 'area', fill: 'piazza', w: 8, h: 5, at: [41.25780, 13.61050] },
+  { id: 'altieri', kind: 'tobacconist', w: 2, h: 2, at: [41.25798, 13.61060], door: true },
+  { id: 'telaro', kind: 'winebar', w: 2, h: 2, at: [41.25823, 13.61197], door: true },
+  { id: 'barber-may', kind: 'barber', w: 2, h: 2, at: [41.2590165, 13.6134919], door: true },
+  { id: 'risorgimento', kind: 'area', fill: 'piazza', w: 5, h: 3, at: [41.26043, 13.61630] },
+  { id: 'ospedale', kind: 'hospital', w: 6, h: 3, at: [41.26128, 13.61780], door: true },
+  { id: 'san-michele', kind: 'hermitage', w: 4, h: 2, at: [41.30694, 13.63556], door: true, tile: [290, 5] }
+
 ];
 
 export const SPOTS: SpotSpec[] = [
   /* home */
-  { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
+  { id: 'start', near: { place: 'casa', dx: 1, dy: 2 }, walk: true },
   { id: 'start-valentin', near: { place: 'casa-valentin', dx: 1, dy: 2 }, walk: true },
   { id: 'start-costanzo', near: { place: 'casa-costanzo', dx: 1, dy: 2 }, walk: true },
   { id: 'start-forchetta', near: { place: 'casa-forchetta', dx: 1, dy: 2 }, walk: true },
@@ -155,7 +170,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-piazza', near: { place: 'piazza', dx: -1, dy: 5 } },
   { id: 'sign-erasmo', near: { place: 'erasmo', dx: -1, dy: 3 } },
   { id: 'sign-castellone', near: { place: 'torre-castellone', dx: 4, dy: 1 } },   /* one further on: it closed the way out of the Cisternone */
-  { id: 'sign-cisternone', tile: [64, 42] },   /* 41.25569, 13.60104: the way out comes up below it */
+  { id: 'sign-cisternone', near: { place: 'cisternone', dx: -1, dy: 1 } },   /* 41.25569, 13.60104: the way out comes up below it */
   { id: 'sign-mola', near: { place: 'torre-mola', dx: 3, dy: 2 } },
   { id: 'sign-morgana', near: { place: 'morgana', dx: -1, dy: 3 } },
   { id: 'sign-porto', near: { place: 'biglietti', dx: -1, dy: 2 } },
@@ -173,7 +188,7 @@ export const SPOTS: SpotSpec[] = [
   /* street-name plates at the corners of the real streets the map's streets stand for */
   { id: 'targa-vitruvio', near: { place: 'comune', dx: -3, dy: -1 } },
   { id: 'targa-abate-tosti', near: { place: 'morgana', dx: 6, dy: -2 } },
-  { id: 'targa-appia', tile: [24, 47] },   /* on the upper side of the Appia: below it runs the retaining wall */
+  { id: 'targa-appia', tile: legacyTile(24, 47) },   /* on the upper side of the Appia: below it runs the retaining wall */
   { id: 'targa-vindicio', near: { place: 'tomba', dx: -1, dy: 5 } },
   { id: 'targa-tito-scipione', near: { place: 'pineta', dx: -9, dy: 9 } },
   { id: 'targa-amendola', near: { place: 'casa', dx: -3, dy: 2 } },
@@ -190,63 +205,66 @@ export const SPOTS: SpotSpec[] = [
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },
   { id: 'passaporto', near: { place: 'tomba', dx: 1, dy: 4 } },
   { id: 'portafoglio', near: { place: 'eclipse-spiaggia', dx: 10, dy: 2 }, on: 'sand' },
+  { id: 'sign-paone', near: { place: 'largo-paone', dx: 3, dy: 2 } },
+  { id: 'sign-risorgimento', near: { place: 'risorgimento', dx: -1, dy: 2 } },
+  { id: 'sign-ospedale', near: { place: 'ospedale', dx: 1, dy: 4 } },
   /* where the wild creatures of Formia live (the hiding places of HIDING): the easy ones near home, the strong ones
      up in the Aurunci */
   { id: 'selv-gramsci', near: { place: 'parco-gramsci', dx: 2, dy: 1 } },
-  { id: 'selv-gianola-1', tile: [156, 62], on: 'sand' },
-  { id: 'selv-gianola-2', tile: [158, 66], on: 'sand' },
+  { id: 'selv-gianola-1', tile: legacyTile(156, 62), on: 'sand' },
+  { id: 'selv-gianola-2', tile: legacyTile(158, 66), on: 'sand' },
   { id: 'selv-pineta-1', near: { place: 'pineta', dx: 4, dy: 2 } },
   { id: 'selv-pineta-2', near: { place: 'pineta', dx: 12, dy: 4 } },
   { id: 'selv-scogli-1', near: { place: 'scogliera', dx: -2, dy: 3 }, on: 'sand' },
   { id: 'selv-scogli-2', near: { place: 'scogliera', dx: 5, dy: 4 }, on: 'sand' },
-  { id: 'selv-ulivi-1', tile: [10, 41] },
-  { id: 'selv-ulivi-2', tile: [22, 45] },
+  { id: 'selv-ulivi-1', tile: legacyTile(10, 41) },
+  { id: 'selv-ulivi-2', tile: legacyTile(22, 45) },
   /* up on the first terrace of the Aurunci, east of the mule track */
-  { id: 'selv-monti-1', tile: [79, 6] },
-  { id: 'selv-monti-2', tile: [89, 6] },
+  { id: 'selv-monti-1', tile: [285, 19] },
+  { id: 'selv-monti-2', tile: [296, 19] },
   /* the scrub of the promontory of Gianola, between the terraces of the villa; a third patch of rock pools in the cove */
-  { id: 'selv-macchia', tile: [171, 59] },
-  { id: 'selv-gianola-3', tile: [179, 52], on: 'sand' },
+  { id: 'selv-macchia', tile: legacyTile(171, 59) },
+  { id: 'selv-gianola-3', tile: legacyTile(179, 52), on: 'sand' },
   /* the three trails of the relief (VISIONE.md, V3 and V4): their signs, their belvederi, who walks them */
-  { id: 'sign-statua', tile: [71, 10] },
-  { id: 'tr-pastore', tile: [52, 6] },
-  { id: 'sign-eremo', tile: [60, 2] },
-  { id: 'tr-escursionista', tile: [63, 2] },
-  { id: 'vista-redentore', tile: [67, 2] },
-  { id: 'sign-fontana', tile: [5, 47] },
-  { id: 'tr-ciclista', tile: [33, 47] },
-  { id: 'tr-contadino', tile: [18, 40] },
-  { id: 'sign-tulliola', tile: [9, 39] },
-  { id: 'vista-acervara', tile: [3, 40] },
-  { id: 'tr-archeologa', tile: [168, 58] },
-  { id: 'sign-cisterna', tile: [172, 56] },
-  { id: 'sign-janara', tile: [165, 61] },
-  { id: 'tr-polparo', tile: [168, 65] },
-  { id: 'vista-gianola', tile: [166, 67] },
+  { id: 'sign-statua', tile: [285, 27] },
+  { id: 'tr-pastore', tile: [277, 19] },
+  { id: 'sign-eremo', tile: [288, 8] },
+  { id: 'tr-escursionista', tile: [296, 8] },
+  { id: 'vista-redentore', tile: [300, 3] },
+  { id: 'sign-fontana', tile: legacyTile(5, 47) },
+  { id: 'tr-ciclista', tile: legacyTile(33, 47) },
+  { id: 'tr-contadino', tile: legacyTile(18, 40) },
+  { id: 'sign-tulliola', tile: legacyTile(9, 39) },
+  { id: 'vista-acervara', tile: legacyTile(3, 40) },
+  { id: 'tr-archeologa', tile: legacyTile(168, 58) },
+  { id: 'sign-cisterna', tile: legacyTile(172, 56) },
+  { id: 'sign-janara', tile: legacyTile(165, 61) },
+  { id: 'tr-polparo', tile: legacyTile(168, 65) },
+  { id: 'vista-gianola', tile: legacyTile(166, 67) },
   /* along the roads that were only roads: who lives there, where they lead, a first easy challenge */
-  { id: 'nonna-penitro', tile: [50, 13] },
-  { id: 'ragazzo-salti', tile: [66, 13] },
-  { id: 'corridore', tile: [88, 13] },
-  { id: 'sign-bivio-gianola', tile: [163, 22] },
-  { id: 'giardiniere', tile: [162, 30] },
-  { id: 'tr-bagnante', tile: [162, 41] },
-  { id: 'sign-scauri', tile: [186, 22] },
-  { id: 'pendolare', tile: [190, 30] },
+  { id: 'nonna-penitro', tile: legacyTile(50, 13) },
+  { id: 'ragazzo-salti', tile: legacyTile(66, 13) },
+  { id: 'corridore', tile: legacyTile(88, 13) },
+  { id: 'sign-bivio-gianola', tile: legacyTile(163, 22) },
+  { id: 'giardiniere', tile: legacyTile(162, 30) },
+  { id: 'tr-bagnante', tile: legacyTile(162, 41) },
+  { id: 'sign-scauri', tile: legacyTile(186, 22) },
+  { id: 'pendolare', tile: legacyTile(190, 30) },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
-  { id: 'selv-lamo', tile: [48, 35] },
+  { id: 'selv-lamo', tile: legacyTile(48, 35) },
   /* the other legends: Janus by the ruins of Gianola, the fire of Sant'Elmo on the mole by the lighthouse */
-  { id: 'selv-giano', tile: [164, 60] },
-  { id: 'selv-elmo', tile: [95, 51] },
+  { id: 'selv-giano', tile: legacyTile(164, 60) },
+  { id: 'selv-elmo', tile: legacyTile(95, 51) },
   /* the plot (story/plot.ts): Mamurra's men where the stones of Telepilo are, the archivist in the Torre di Mola,
      the ghost of Mamurra at his villa */
   { id: 'mamurr-scavi', near: { place: 'mamurra', dx: -1, dy: 3 } },
-  { id: 'archivista', tile: [92, 39] },
-  { id: 'mamurr-cisterna', tile: [67, 43] },
+  { id: 'archivista', near: { place: 'torre-mola', dx: -1, dy: 3 } },
+  { id: 'mamurr-cisterna', near: { place: 'cisternone', dx: 2, dy: 1 } },
   { id: 'mamurr-peschiere', at: [41.2510, 13.5981] },
   { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } },
   /* Tullio, the rival: by his grandfather at the park, and on the Appia, on the way to Cicero's tomb */
-  { id: 'tullio', tile: [159, 56] },
-  { id: 'tullio-appia', tile: [31, 57] }
+  { id: 'tullio', near: { place: 'mamurra', dx: 4, dy: 4 } },
+  { id: 'tullio-appia', tile: legacyTile(31, 57) }
 ];
 /* where the wild creatures hide, out of sight (data/encounters.ts says which ones, by the id): the generator paints
    tall grass on the grass ('E') and rock pools on the sand ('A') out to about r tiles around each spot */
@@ -263,5 +281,5 @@ export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand'
   { id: 'monti', spot: 'selv-monti-1', r: 4, on: 'grass' },
   { id: 'monti', spot: 'selv-monti-2', r: 4, on: 'grass' },
   { id: 'macchia', spot: 'selv-macchia', r: 3, on: 'grass' },
-  { id: 'gianola', spot: 'selv-gianola-3', r: 2, on: 'sand' }
+  { id: 'gianola', spot: 'selv-gianola-3', r: 3, on: 'sand' }
 ];

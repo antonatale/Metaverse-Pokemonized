@@ -5,3 +5,7 @@ playwright-report/
 .DS_Store
 dist-google-fonts/
 /promo/
+
+# Local browser verification artifacts
+.playwright-cli/
+/output/playwright/

@@ -14,11 +14,11 @@ type GroundObjFn = (c: Ctx, o: Placed, P: Palette) => void;
 /* ---------- ground: what each map character is made of (see data/maps/legend.ts) ---------- */
 /** kinds of ground that get no outline between them */
 const GROUP: Record<string, string> = { grass: 'g', path: 'p', road: 'r', sand: 's', sea: 'w', pier: 'd', stone: 'st', steps: 'st', clay: 'c', floor: 'f', wall: 'x', rail: 'rl',
-  hill: 'h', paving: 'pv', mura: 'mu', far: 'fr', scarp: 'sc' };
+  running: 'g', hill: 'h', paving: 'pv', mura: 'mu', far: 'fr', scarp: 'sc' };
 
 function groundFill(P: Palette, g: string): string {
   return ({ grass: P.grass, path: P.path, road: P.road, sand: P.sand, sea: P.sea, pier: P.wood, stone: P.stone, steps: P.stone, clay: P.clay, floor: P.wood,
-    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far, scarp: P.rock } as Record<string, string>)[g] || P.paper;
+    running: P.grass, wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far, scarp: P.rock } as Record<string, string>)[g] || P.paper;
 }
 /** the same kind of ground (its group) at a tile of the map */
 function same(map: GroundMap, x: number, y: number, g: string): boolean {
@@ -406,6 +406,7 @@ export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
   }
 }
 const DECO: Record<string, DecoFn> = {
+  gate: function(c,X,Y,P){c.strokeStyle=P.ink;c.lineWidth=2;for(var i=0;i<5;i++){c.beginPath();c.moveTo(X+4+i*6,Y+7);c.lineTo(X+4+i*6,Y+26);c.stroke();}c.beginPath();c.moveTo(X+2,Y+11);c.lineTo(X+30,Y+11);c.moveTo(X+2,Y+23);c.lineTo(X+30,Y+23);c.stroke();},
   /* a retaining wall and a ledge are faces of a terrace: they are drawn with the relief */
   wall: function () { /* see scarp */ },
   ledge: function () { /* see scarp */ },
@@ -578,6 +579,16 @@ const DECO: Record<string, DecoFn> = {
 
 /* flat things drawn into the ground: court lines, banners, the mountains, the running track, names written on the map */
 const GROUND_OBJ: Record<string, GroundObjFn> = {
+  courtyard: function(c,o,P){
+    var X=(o.x+o.w/2)*T,Y=(o.y+o.h/2)*T,r=o.w*T/2-4;
+    circle(c,X,Y,r);c.fillStyle=P.grass;c.fill();c.strokeStyle=P.stone;c.lineWidth=12;circle(c,X,Y,r-7);c.stroke();
+    c.strokeStyle=P.ink;c.lineWidth=1;circle(c,X,Y,r-1);c.stroke();circle(c,X,Y,r-13);c.stroke();
+    c.strokeStyle=P.stone;c.lineWidth=6;for(var a=0;a<8;a++){c.beginPath();c.moveTo(X+Math.cos(a*Math.PI/4)*14,Y+Math.sin(a*Math.PI/4)*14);c.lineTo(X+Math.cos(a*Math.PI/4)*(r-12),Y+Math.sin(a*Math.PI/4)*(r-12));c.stroke();}
+    circle(c,X,Y,15);c.fillStyle=P.stone;c.fill();
+  },
+  'tennis-court': function(c,o,P){var X=o.x*T+2,Y=o.y*T+2,W=o.w*T-4,H=o.h*T-4;c.fillStyle=P.clay;c.fillRect(X,Y,W,H);GROUND_OBJ.court(c,o,P);c.strokeStyle=P.ink;c.lineWidth=2;c.beginPath();c.moveTo(X+W/2,Y);c.lineTo(X+W/2,Y+H);c.stroke();},
+  'padel-court': function(c,o,P){var X=o.x*T+1,Y=o.y*T+1,W=o.w*T-2,H=o.h*T-2;c.fillStyle=P['tent-b'];c.fillRect(X,Y,W,H);c.strokeStyle=P.line;c.lineWidth=1;c.strokeRect(X+2,Y+2,W-4,H-4);c.beginPath();c.moveTo(X,Y+H/2);c.lineTo(X+W,Y+H/2);c.stroke();c.strokeStyle=P.ink;c.strokeRect(X,Y,W,H);},
+  'volley-court': function(c,o,P){var X=o.x*T+3,Y=o.y*T+3,W=o.w*T-6,H=o.h*T-6;c.fillStyle=P.sand;c.fillRect(X,Y,W,H);c.strokeStyle=P.line;c.lineWidth=2;c.strokeRect(X,Y,W,H);c.strokeStyle=P.ink;c.beginPath();c.moveTo(X+W/2,Y);c.lineTo(X+W/2,Y+H);c.stroke();},
   court: function (c, o, P) {
     var X = o.x * T + 6, Y = o.y * T + 6, W = o.w * T - 12, H = o.h * T - 12;
     c.strokeStyle = P.line; c.lineWidth = 2.6;
@@ -599,10 +610,6 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.fillStyle = '#1b1f2e'; c.font = '16px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(o.text, X + W / 2, Y + H / 2 + 1);
   },
-  rug: function (c, o, P) {
-    rr(c, o.x * T + 4, o.y * T + 4, o.w * T - 8, o.h * T - 8, 6); fillStroke(c, o.color || P['roof-b'], P.ink, 1.6);
-  },
-  /* a range of mountains (the Aurunci behind Formia), two rows of peaks */
   peaks: function (c, o, P) {
     var X = o.x * T, Y = o.y * T, W = o.w * T, H = o.h * T, base = Y + H - 3;
     c.beginPath(); c.rect(X, Y, W, H); c.clip();
@@ -639,18 +646,39 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
       poly(c, [[vx + 8, vy - 17], [vx + 11.5, vy - 23], [vx + 15, vy - 17]]); fillStroke(c, P['roof-a'], P.ink, 1.1);
     }
   },
-  /* the athletics track of the Olympic training centre */
+  /* Six lanes around the north–south infield, plus the two sprint lanes on the east straight. */
   track: function (c, o, P) {
-    var X = o.x * T + 4, Y = o.y * T + 4, W = o.w * T - 8, H = o.h * T - 8, rad = H / 2, lane = 13;
-    rr(c, X, Y, W, H, rad); rr(c, X + lane * 2, Y + lane * 2, W - lane * 4, H - lane * 4, rad - lane * 2, true);
-    c.fillStyle = P.track; c.fill('evenodd');
-    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.stroke();
-    c.strokeStyle = P.line; c.lineWidth = 1.2; c.globalAlpha = 0.9;
-    rr(c, X + lane, Y + lane, W - lane * 2, H - lane * 2, rad - lane); c.stroke();
-    c.globalAlpha = 1; c.lineWidth = 2.2;
-    c.beginPath(); c.moveTo(X + W / 2, Y + 2); c.lineTo(X + W / 2, Y + lane * 2 - 2); c.stroke();
-    c.fillStyle = P.ink; c.font = '12px "Patrick Hand", "Comic Sans MS", cursive'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.globalAlpha = 0.55; c.fillText('100 m', X + W / 2, Y + H - lane); c.globalAlpha = 1;
+    var X=o.x*T+2,Y=o.y*T+2,W=o.w*T-4,H=o.h*T-4,r=W/2,band=T,step=band/6;
+    rr(c,X,Y,W,H,r);rr(c,X+band,Y+band,W-band*2,H-band*2,r-band,true);
+    c.fillStyle=P.track;c.fill('evenodd');c.strokeStyle=P.ink;c.lineWidth=1.4;c.stroke();
+    c.strokeStyle=P.line;c.lineWidth=1;
+    for(var i=1;i<6;i++){var d=i*step;rr(c,X+d,Y+d,W-d*2,H-d*2,r-d);c.stroke();}
+    var straight=H-W;
+    c.fillStyle=P.track;c.fillRect(X+W-band,Y+r,band,straight);
+    for(i=0;i<=8;i++){c.beginPath();c.moveTo(X+W-band+i*band/8,Y+r);c.lineTo(X+W-band+i*band/8,Y+r+straight);c.stroke();}
+    c.lineWidth=2;c.beginPath();c.moveTo(X+W-band,Y+r+straight-14);c.lineTo(X+W,Y+r+straight-14);c.stroke();
+    c.font='9px sans-serif';c.textAlign='center';c.fillStyle=P.line;
+    for(i=0;i<6;i++)c.fillText(String(i+1),X+W-band+(i+.5)*step,Y+r+straight-4);
+    /* The grass belongs to the infield, with football lines and goals. */
+    var fx=X+band+8,fy=Y+r*.8,fw=W-band*2-16,fh=H-r*1.6;
+    c.strokeStyle=P.line;c.lineWidth=1.5;c.strokeRect(fx,fy,fw,fh);c.beginPath();c.moveTo(fx,fy+fh/2);c.lineTo(fx+fw,fy+fh/2);c.stroke();
+    circle(c,fx+fw/2,fy+fh/2,Math.min(12,fw/4));c.stroke();
+    c.strokeRect(fx+fw*.25,fy,fw*.5,16);c.strokeRect(fx+fw*.25,fy+fh-16,fw*.5,16);
+  },
+  rug: function(c,o,P){var X=o.x*T+3,Y=o.y*T+3,W=o.w*T-6,H=o.h*T-6;rr(c,X,Y,W,H,5);c.fillStyle=P[o.color||'wall-b']||P.stone;c.globalAlpha=.65;c.fill();c.globalAlpha=1;c.strokeStyle=P.ink;c.lineWidth=1.4;c.stroke();c.strokeStyle=P.line;c.strokeRect(X+5,Y+5,W-10,H-10);},
+  nameplate: function(c,o,P){var X=o.x*T,Y=o.y*T;c.font='bold 13px "Patrick Hand",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=P.ink;c.fillText(o.text,X+o.w*T/2,Y+T/2,o.w*T-4);},
+  'home-prop': function(c,o,P){
+    var X=o.x*T+o.w*T/2,Y=o.y*T+o.h*T/2;c.translate(X,Y);c.lineWidth=1.6;c.strokeStyle=P.ink;
+    if(o.text==='racket'){ell(c,0,-7,9,13);fillStroke(c,P['tent-a'],P.ink,1.5);c.beginPath();c.moveTo(0,6);c.lineTo(0,22);c.stroke();c.strokeStyle=P.line;for(var k=-4;k<=4;k+=4){c.beginPath();c.moveTo(k,-17);c.lineTo(k,3);c.stroke();}}
+    else if(o.text==='roma'){c.fillStyle=P['wall-c'];c.fillRect(-25,-11,50,22);c.fillStyle=P['wall-b'];c.fillRect(-25,-3,50,6);c.font='bold 12px sans-serif';c.textAlign='center';c.fillStyle=P.ink;c.fillText('ROMA',0,4);}
+    else if(o.text==='weights'){c.beginPath();c.moveTo(-22,0);c.lineTo(22,0);c.lineWidth=5;c.stroke();[-1,1].forEach(function(d){rr(c,d*17-5,-12,10,24,3);fillStroke(c,P.stone2,P.ink,1.5);});}
+    else if(o.text==='decks'){rr(c,-o.w*T/2+4,-13,o.w*T-8,26,3);fillStroke(c,P.stone2,P.ink,1.5);[-1,1].forEach(function(d){circle(c,d*23,0,10);fillStroke(c,P.ink,P.line,1);circle(c,d*23,0,3);c.fillStyle=P['tent-a'];c.fill();});c.fillStyle=P.line;for(var k=-2;k<=2;k++)c.fillRect(k*3,-7,1,14);}
+    else if(o.text==='speaker'){rr(c,-11,-14,22,28,3);fillStroke(c,P.stone2,P.ink,1.5);circle(c,0,4,7);fillStroke(c,P.ink,P.line,1);circle(c,0,-8,3);c.stroke();}
+    else if(o.text==='trophies'){[-1,0,1].forEach(function(d){rr(c,d*18-5,-10,10,12,3);fillStroke(c,P['wall-b'],P.ink,1);c.beginPath();c.moveTo(d*18,2);c.lineTo(d*18,9);c.moveTo(d*18-5,9);c.lineTo(d*18+5,9);c.stroke();});}
+    else if(o.text==='glasses'){[-1,1].forEach(function(d){circle(c,d*8,0,7);fillStroke(c,P['shutter-a'],P.ink,2);});c.beginPath();c.moveTo(-1,0);c.lineTo(1,0);c.stroke();}
+    else if(o.text==='robot'){rr(c,-9,-10,18,20,3);fillStroke(c,P.stone2,P.ink,1.5);[-1,1].forEach(function(d){circle(c,d*4,-3,2);c.fillStyle=P['tent-a'];c.fill();});c.beginPath();c.moveTo(0,-10);c.lineTo(0,-16);c.stroke();}
+    else if(o.text==='mirror'){rr(c,-18,-13,36,26,3);fillStroke(c,P.far,P.ink,2);c.strokeStyle=P.line;c.beginPath();c.moveTo(-12,7);c.lineTo(8,-8);c.stroke();}
+    else {c.rotate(-.12);rr(c,-14,-11,28,22,1);fillStroke(c,P.paper,P.ink,1);c.lineWidth=1;for(var k=0;k<4;k++){c.beginPath();c.moveTo(-9,-6+k*4);c.lineTo(9,-6+k*4);c.stroke();}}
   },
   /* a hill village seen from far (Maranola, up in the Aurunci): houses in tiers and a bell tower */
   village: function (c, o, P) {

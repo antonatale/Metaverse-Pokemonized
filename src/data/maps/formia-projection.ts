@@ -1,29 +1,19 @@
-/* From real coordinates to tiles of the Formia map. North is up. Rows are 0.00034° of latitude (about 38 m).
-   Columns are piecewise: the places that matter to Antonio get room (Vindicio, the centre, Via Amendola),
-   the stretches in between are squeezed. tools/formia/build.ts draws the ground through it, and
-   src/data/maps/formia.ts places people, signs and things through it. */
-
-/** longitude → column, by anchors */
-export const X_ANCHORS: [number, number][] = [
-  [13.566, 0],     // west of the Pineta di Vindicio
-  [13.593, 44],    // Vindicio: the beach, the pineta, the Tomba di Cicerone (about 51 m a tile)
-  [13.6205, 114],  // Castellone, the centre, Mola: the most room (about 33 m a tile)
-  [13.634, 126],   // squeezed: Parco Gramsci, the Bruno Zauli centre
-  [13.648, 146],   // Via Amendola, Parco la Fontana, Palamendola (about 59 m a tile)
-  [13.678, 164],   // Gianola, squeezed: Santo Janni, the park, the villa of Mamurra
-  [13.700, 178],   // past Gianola, along the coast road (about 125 m a tile)
-  [13.725, 198]    // Scauri and its station, where Zendavid lives (about 125 m a tile)
-];
-export const LAT_TOP = 41.2705, LAT_STEP = 0.00034;
-export const W = 200, H = 82;
-
-export function col(lon: number): number {
-  const A = X_ANCHORS;
-  let k = 0;
-  while (k < A.length - 2 && lon > A[k + 1][0]) k++;
-  const [l0, x0] = A[k], [l1, x1] = A[k + 1];
-  return x0 + (lon - l0) / (l1 - l0) * (x1 - x0);
+/* North is up. The urban map uses the same 20 m scale in both directions, from Vindicio to Scauri.
+   Only the mountain approach north of 41.275° is compressed: it keeps the Redentore walk on this map.
+   Source coordinates remain in formia-places.ts; buildings can move a few tiles to keep their doors usable. */
+export const METRES_PER_TILE = 20;
+export const WEST = 13.566;
+export const X_ANCHORS: [number, number][] = [[WEST, 0], [13.7255, 668]];
+export const LAT_TOP = 41.310, LAT_STEP = METRES_PER_TILE / 111320;
+export const W = 670, H = 210;
+export function col(lon: number): number { return (lon - WEST) * 83760 / METRES_PER_TILE; }
+export function row(lat: number): number {
+  return lat > 41.275 ? (LAT_TOP - lat) / (LAT_TOP - 41.275) * 24 : 24 + (41.275 - lat) / LAT_STEP;
 }
-export function row(lat: number): number { return (LAT_TOP - lat) / LAT_STEP; }
-/** the tile a real place falls on */
 export function tile(lat: number, lon: number): [number, number] { return [Math.floor(col(lon)), Math.floor(row(lat))]; }
+/** Compatibility for the few story spots authored on the former schematic map. New places use coordinates. */
+export function legacyTile(x: number, y: number): [number, number] {
+  const a = [[13.566, 0], [13.593, 44], [13.6205, 114], [13.634, 126], [13.648, 146], [13.678, 164], [13.700, 178], [13.725, 198]];
+  let k = 0; while (k < a.length - 2 && x > a[k + 1][1]) k++;
+  return tile(41.2705 - y * 0.00034, a[k][0] + (x - a[k][1]) / (a[k + 1][1] - a[k][1]) * (a[k + 1][0] - a[k][0]));
+}

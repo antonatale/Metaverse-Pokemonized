@@ -92,7 +92,13 @@ export function canvasDigests(ART, MAPS, LEGEND) {
   for (const s of [1, 2]) {
     for (const mid of Object.keys(MAPS)) {
       const m = prep(MAPS[mid], LEGEND);
-      record('ground ' + mid + ' @' + s, () => ART.paintGround(m, P, s));
+      // Large geographic maps are rendered in chunks in the game. Keep the golden's peak memory bounded too.
+      if (m.w * m.h > 30000) {
+        for (let y=0; y<m.h; y+=12) for (let x=0; x<m.w; x+=12) {
+          const rect={x,y,w:Math.min(12,m.w-x),h:Math.min(12,m.h-y)};
+          record('ground '+mid+' chunk '+x+','+y+' @'+s,()=>ART.paintGround(m,P,s,rect));
+        }
+      } else record('ground ' + mid + ' @' + s, () => ART.paintGround(m, P, s));
       for (const rect of [{ x: 0, y: 0, w: 12, h: 12 }, { x: 12, y: 24, w: 12, h: 12 }, { x: 36, y: 36, w: 12, h: 4 }, { x: 0, y: 0, w: 12, h: 13 }]) {
         if (rect.x >= m.w || rect.y >= m.h) continue;
         record('ground ' + mid + ' ' + JSON.stringify(rect) + ' @' + s, () => ART.paintGround(m, P, s, { x: rect.x, y: rect.y, w: Math.min(rect.w, m.w - rect.x), h: Math.min(rect.h, m.h - rect.y) }));

@@ -658,7 +658,7 @@ export function preview(el: HTMLElement | null, o?: { at?: [number, number]; spa
 /** the whole map as one picture, as a data URL (used by the automated playtest) */
 export function overview(id?: string, s?: number): string {
   var m = prepare(id || 'formia'), P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
-  s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
+  s = Math.min(s || 1, 4096 / (m.w * T), 4096 / (m.h * T)); c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
   c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
   var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });

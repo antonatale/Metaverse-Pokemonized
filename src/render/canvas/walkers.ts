@@ -147,6 +147,7 @@ function bigCurls(c: Ctx, H: HairLook, d: Dir) {
   }
 }
 function hairFront(c: Ctx, S: PersonLook, d: Dir) {
+  if (S.hair.style === 'bald') return;
   var H = S.hair, ink = STICKER_INK, back = d === 'up', side = d === 'left', st = H.style;
   if (st === 'bigcurls') { bigCurls(c, H, d); return; }
   c.save();
@@ -268,6 +269,9 @@ export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<Person
 /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
 export const LOOKS: Record<string, PersonLook> = {
+  nonno: { skin: '#e3b99d', hair: { style: 'buzz', color: '#c4bca9' }, top: '#6e5238', top2: '#fffaf0', style: 'jacket', pants: '#56627a', shoes: '#20263a', glasses: 'thin' },
+  nonna: { skin: '#e6bea5', hair: { style: 'mane', color: '#c4bca9', hi: '#fffaf0' }, top: '#9a5442', top2: '#e9ebee', style: 'knit', pants: '#56627a', shoes: '#20263a' },
+  lele: { skin: '#ddae93', hair: { style: 'bald', color: '#ddae93' }, top: '#e9ebee', top2: '#414c72', style: 'tee', pants: '#26324a', shoes: '#20263a' },
   nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
   /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
   mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' },

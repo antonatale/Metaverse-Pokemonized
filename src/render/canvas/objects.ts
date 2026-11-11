@@ -51,6 +51,7 @@ function flowers(c: Ctx, P: Palette, x: number, y: number, ww: number) {
 /* ---------- tall objects: drawn sorted by their bottom edge, so people walk behind them ---------- */
 /** how far above its footprint each kind of thing is drawn, in px (1 tile when missing) */
 export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, house: T * 0.75, station: T * 0.75, circolo: T * 0.9, bar: T * 0.75, shop: T * 0.75, palazzo: T * 1.1,
+  grandstand: T*.7, barber: T*.9, tobacconist: T*.9, winebar: T*.9, hospital: T*1.8, hermitage: T*2.1,
   church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
   lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.75, pub: T * 0.75,
   arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7, pedalo: T * 0.3,
@@ -730,46 +731,40 @@ const OBJ: Record<string, ObjFn> = {
   },
   /* the collegiate church of Saints Lorenzo and Giovanni Battista, on Piazza San Giovanni in Mola: a baroque front in two
      orders with pilasters, a pediment and an oculus, three doors, and the bell tower with its clock beside it */
-  collegiata: function (c, w, h, P, o) {
-    /* the front is centred on the door; the bell tower stands on the side with more room */
-    var dx = (o.doorX! - o.x!) * T, tw = 34, fw = w - tw - 6, cx = dx + T / 2, left = cx > w / 2;
-    var fx = left ? tw + 4 : 2, bx = left ? 1 : w - tw - 1, top1 = T * 0.15, top2 = -T * 0.95, uw = fw * 0.3;
-    ell(c, w / 2, h - 1, w / 2, 6); c.fillStyle = P.shadow; c.fill();
-    var btop = -T * 2.2;
-    rr(c, bx, btop + 16, tw, h - btop - 18, 2); fillStroke(c, P['wall-d'], P.ink, 1.8);
-    for (var k = 0; k < 3; k++) { c.strokeStyle = P.stone2; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx + 2, btop + 40 + k * 26); c.lineTo(bx + tw - 2, btop + 40 + k * 26); c.stroke(); }
-    rr(c, bx + 8, btop + 22, tw - 16, 16, 7); fillStroke(c, '#20263a', P.ink, 1.3);
-    c.strokeStyle = '#d9a35c'; c.lineWidth = 2; c.beginPath(); c.arc(bx + tw / 2, btop + 34, 4.5, Math.PI, 0); c.stroke();
-    circle(c, bx + tw / 2, btop + 54, 8); fillStroke(c, '#fffdf6', P.ink, 1.3);
-    c.strokeStyle = P.ink; c.lineWidth = 1.3; c.beginPath(); c.moveTo(bx + tw / 2, btop + 54); c.lineTo(bx + tw / 2, btop + 49); c.moveTo(bx + tw / 2, btop + 54); c.lineTo(bx + tw / 2 + 4, btop + 55); c.stroke();
-    poly(c, [[bx - 3, btop + 17], [bx + tw / 2, btop - 2], [bx + tw + 3, btop + 17]]); fillStroke(c, P['roof-a'], P.ink, 1.6);
-    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.beginPath(); c.moveTo(bx + tw / 2, btop - 2); c.lineTo(bx + tw / 2, btop - 14); c.moveTo(bx + tw / 2 - 4, btop - 9); c.lineTo(bx + tw / 2 + 4, btop - 9); c.stroke();
-    /* the lower order: pilasters, a cornice, three doors */
-    rr(c, fx, top1, fw, h - top1 - 2, 2); fillStroke(c, P.wall, P.ink, 1.9);
-    [fx, cx - fw * 0.22 - 8, cx + fw * 0.22, fx + fw - 10].forEach(function (px) { c.fillStyle = P.stone; c.fillRect(px + 2, top1 + 2, 7, h - top1 - 6); c.strokeStyle = P.stone2; c.lineWidth = 1; c.strokeRect(px + 2, top1 + 2, 7, h - top1 - 6); });
-    rr(c, fx - 2, top1 - 4, fw + 4, 7, 1); fillStroke(c, P.stone, P.ink, 1.4);
-    /* the upper order, narrower: two niches with their saints, the oculus, the pediment with the cross */
-    rr(c, cx - uw, top2 + 12, uw * 2, top1 - top2 - 12, 1); fillStroke(c, P.wall, P.ink, 1.7);
-    poly(c, [[cx - uw - 5, top2 + 14], [cx, top2 - 8], [cx + uw + 5, top2 + 14]]); fillStroke(c, P.stone, P.ink, 1.7);
-    poly(c, [[cx - uw + 5, top2 + 10], [cx, top2 - 1], [cx + uw - 5, top2 + 10]]); c.strokeStyle = P.stone2; c.lineWidth = 1; c.stroke();
-    c.strokeStyle = P.ink; c.lineWidth = 1.5;
-    c.beginPath(); c.moveTo(cx - uw, top1 - 4); c.quadraticCurveTo(cx - uw - 12, top1 - 4, cx - uw - 12, top1 - 10); c.stroke();
-    c.beginPath(); c.moveTo(cx + uw, top1 - 4); c.quadraticCurveTo(cx + uw + 12, top1 - 4, cx + uw + 12, top1 - 10); c.stroke();
-    [-1, 1].forEach(function (sd) {
-      var nx = cx + sd * uw * 0.62 - 5, ny = top2 + 22;
-      c.beginPath(); c.moveTo(nx, ny + 20); c.lineTo(nx, ny + 5); c.arc(nx + 5, ny + 5, 5, Math.PI, 0); c.lineTo(nx + 10, ny + 20); c.closePath(); fillStroke(c, P.stone2, P.ink, 1.1);
-      circle(c, nx + 5, ny + 6, 2.2); c.fillStyle = P.stone; c.fill(); rr(c, nx + 2.5, ny + 9, 5, 9, 2); c.fill();
-    });
-    circle(c, cx, top2 + 30, 9); fillStroke(c, '#bfe3ff', P.ink, 1.5);
-    c.strokeStyle = P.ink; c.lineWidth = 0.9; for (var r = 0; r < 6; r++) { c.beginPath(); c.moveTo(cx, top2 + 30); c.lineTo(cx + Math.cos(r * Math.PI / 3) * 9, top2 + 30 + Math.sin(r * Math.PI / 3) * 9); c.stroke(); }
-    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.beginPath(); c.moveTo(cx, top2 - 8); c.lineTo(cx, top2 - 20); c.moveTo(cx - 4, top2 - 15); c.lineTo(cx + 4, top2 - 15); c.stroke();
-    /* the main door under its little pediment, the two small ones, the step */
-    c.beginPath(); c.moveTo(cx - 10, h - 2); c.lineTo(cx - 10, h - T + 6); c.arc(cx, h - T + 6, 10, Math.PI, 0); c.lineTo(cx + 10, h - 2); c.closePath(); fillStroke(c, P.wood2, P.ink, 1.6);
-    c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, h - T + 1); c.lineTo(cx, h - 2); c.stroke();
-    poly(c, [[cx - 15, h - T - 6], [cx, h - T - 14], [cx + 15, h - T - 6]]); fillStroke(c, P.stone, P.ink, 1.2);
-    [-1, 1].forEach(function (sd) { var sx = cx + sd * fw * 0.36 - 6; c.beginPath(); c.moveTo(sx, h - 2); c.lineTo(sx, h - 22); c.arc(sx + 6, h - 22, 6, Math.PI, 0); c.lineTo(sx + 12, h - 2); c.closePath(); fillStroke(c, P.wood2, P.ink, 1.3); });
-    rr(c, cx - 22, h - 4, 44, 4, 1); fillStroke(c, P.stone2, P.ink, 1);
-    if (o.label) plaque(c, P, o.label, fx + fw / 2, top1 + 9, fw - 24, 12);
+  /* San Giovanni's actual brick front: broad recessed arch, oculus, pale cornice and papal shield. */
+  collegiata: function(c,w,h,P,o){
+    var left=2,right=w-2,mid=w/2,top=-T*1.7,arch=Math.min(25,w*.4);
+    rr(c,left,top,right-left,h-top-2,1);fillStroke(c,P.brick,P.ink,1.7);
+    c.save();c.beginPath();c.rect(left,top,right-left,h-top);c.clip();c.strokeStyle=P['shutter-b'];c.lineWidth=.8;
+    for(var y=top+6;y<h;y+=6){c.beginPath();c.moveTo(left,y);c.lineTo(right,y);c.stroke();for(var x=left+(Math.round(y/6)%2)*7;x<right;x+=14){c.beginPath();c.moveTo(x,y-6);c.lineTo(x,y);c.stroke();}}c.restore();
+    c.beginPath();c.moveTo(mid-arch,h-3);c.lineTo(mid-arch,top+61);c.arc(mid,top+61,arch,Math.PI,0);c.lineTo(mid+arch,h-3);c.closePath();fillStroke(c,P['shutter-b'],P.ink,1.5);
+    circle(c,mid,top+66,11);fillStroke(c,P.far,P.brick,3);c.strokeStyle=P.ink;c.lineWidth=1;c.beginPath();c.moveTo(mid-9,top+66);c.lineTo(mid+9,top+66);c.moveTo(mid,top+57);c.lineTo(mid,top+75);c.stroke();
+    var dx=(o.doorX!-o.x!)*T;rr(c,dx+3,h-T,T-6,T,1);fillStroke(c,P.wood2,P.stone,3);
+    c.fillStyle=P.stone;c.fillRect(left-1,top-7,w-2,8);rr(c,mid-6,top+9,12,17,1);fillStroke(c,P.stone,P.ink,1);c.strokeStyle=P.stone2;c.beginPath();c.moveTo(mid-4,top+13);c.lineTo(mid+4,top+20);c.moveTo(mid+4,top+13);c.lineTo(mid-4,top+20);c.stroke();
+    c.strokeStyle=P.ink;c.lineWidth=2;c.beginPath();c.moveTo(mid,top-7);c.lineTo(mid,top-22);c.moveTo(mid-5,top-17);c.lineTo(mid+5,top-17);c.stroke();
+    if(o.label)plaque(c,P,'SAN GIOVANNI',mid,h-T-12,w-6,10);
+  },
+  grandstand: function(c,w,h,P){
+    poly(c,[[2,h-2],[2,0],[w-4,-16],[w-4,h-18]]);fillStroke(c,P.stone2,P.ink,1.5);
+    for(var k=0;k<4;k++){var x=5+k*5;c.fillStyle=k%2?P['tent-a']:P['tent-b'];c.fillRect(x,-k*3,4,h-10);c.strokeStyle=P.ink;c.lineWidth=.8;c.strokeRect(x,-k*3,4,h-10);}
+    poly(c,[[0,-18],[w-2,-31],[w,-23],[2,-10]]);fillStroke(c,P.wall,P.ink,1.5);c.strokeStyle=P.ink;c.lineWidth=2;c.beginPath();c.moveTo(2,-10);c.lineTo(2,h-2);c.moveTo(w-3,-23);c.lineTo(w-3,h-18);c.stroke();
+  },
+  barber: function(c,w,h,P,o){OBJ.shop(c,w,h,P,{...o,label:o.label||'BARBER MAY'});rr(c,w-16,h-48,9,32,4);fillStroke(c,P.line,P.ink,1.2);c.strokeStyle=P['wall-c'];c.lineWidth=4;for(var k=0;k<3;k++){c.beginPath();c.moveTo(w-15,h-44+k*9);c.lineTo(w-8,h-50+k*9);c.stroke();}},
+  tobacconist: function(c,w,h,P,o){OBJ.shop(c,w,h,P,{...o,label:o.label||'TABACCHI ALTIERI'});rr(c,3,-20,19,23,2);fillStroke(c,P.ink,P.line,1.5);c.font='bold 17px sans-serif';c.textAlign='center';c.fillStyle=P.line;c.fillText('T',12,-2);},
+  winebar: function(c,w,h,P,o){OBJ.pub(c,w,h,P,{...o,label:o.label||'TELARO'});for(var k=0;k<3;k++){rr(c,6+k*10,h-44,5,16,2);fillStroke(c,P['shutter-a'],P.ink,1);}},
+  hospital: function(c,w,h,P,o){OBJ.school(c,w,h,P,o);c.fillStyle=P.line;c.fillRect(w-38,-42,28,28);c.fillStyle=P['wall-c'];c.fillRect(w-28,-38,8,20);c.fillRect(w-34,-32,20,8);plaque(c,P,'PRONTO SOCCORSO',w*.5,h-34,w-30,11);},
+  hermitage: function(c,w,h,P,o){
+    poly(c,[[0,h],[2,-20],[w*.12,-T*1.3],[w*.22,-T*1.7],[w*.34,-T*1.45],[w*.48,-T*1.9],[w*.65,-T*2],[w*.8,-T*1.45],[w-2,-T*.8],[w,h]]);fillStroke(c,P.rock,P.ink,1.8);
+    poly(c,[[w*.65,-T*2],[w*.51,-20],[w*.82,-5],[w-2,-T*.8]]);c.fillStyle=P.rock2;c.fill();
+    poly(c,[[3,-14],[w*.22,-T*1.7],[w*.34,-22],[w*.21,-3]]);c.fillStyle=P.stone2;c.fill();
+    c.strokeStyle=P.rock2;c.lineWidth=1.4;for(var r=0;r<4;r++){c.beginPath();c.moveTo(w*.1,-20-r*5);c.lineTo(w*.3,-30-r*4);c.lineTo(w*.44,-24-r*5);c.stroke();}
+    c.beginPath();c.ellipse(w/2,4,w*.38,27,0,Math.PI,Math.PI*2);c.fillStyle=P.ink;c.globalAlpha=.25;c.fill();c.globalAlpha=1;
+    poly(c,[[12,h],[12,4],[w*.5,-T*.7],[w-12,4],[w-12,h]]);fillStroke(c,P.stone,P.ink,1.6);
+    [-1,1].forEach(function(d){var x=d<0?10:w-34;rr(c,x,-8,24,h+7,1);fillStroke(c,P.stone,P.ink,1.3);c.beginPath();c.moveTo(x+8,17);c.lineTo(x+8,4);c.quadraticCurveTo(x+12,-4,x+16,4);c.lineTo(x+16,17);c.closePath();fillStroke(c,P.ink,P.stone2,1);});
+    c.save();c.beginPath();c.rect(13,22,w-26,h-23);c.clip();c.strokeStyle=P.rock2;c.lineWidth=1;for(var by=26;by<h;by+=8){c.beginPath();c.moveTo(13,by);c.lineTo(w-13,by);c.stroke();for(var bx=16+(Math.round(by/8)%2)*8;bx<w-13;bx+=16){c.beginPath();c.moveTo(bx,by-8);c.lineTo(bx,by);c.stroke();}}c.restore();
+    var mid=w/2;circle(c,mid,5,10);fillStroke(c,P.ink,P.stone2,2);c.strokeStyle=P.stone;c.lineWidth=1;for(var k=0;k<6;k++){c.beginPath();c.moveTo(mid,5);c.lineTo(mid+Math.cos(k*Math.PI/3)*9,5+Math.sin(k*Math.PI/3)*9);c.stroke();}
+    var dx=(o.doorX!-o.x!)*T+T/2;c.beginPath();c.moveTo(dx-10,h);c.lineTo(dx-10,h-26);c.quadraticCurveTo(dx-8,h-35,dx,h-40);c.quadraticCurveTo(dx+8,h-35,dx+10,h-26);c.lineTo(dx+10,h);c.closePath();fillStroke(c,P.wood2,P.ink,1.5);
+    c.strokeStyle=P.ink;c.lineWidth=2;c.beginPath();c.moveTo(mid,-T*.7);c.lineTo(mid,-T*.7-12);c.moveTo(mid-4,-T*.7-8);c.lineTo(mid+4,-T*.7-8);c.stroke();if(o.label)plaque(c,P,o.label,mid,26,w-25,10);
   },
   /* a school of the sixties: two floors of ribbon windows, the entrance under a canopy, the flags */
   school: function (c, w, h, P, o) {

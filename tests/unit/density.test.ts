@@ -8,7 +8,8 @@ import { sunAt, sunTimes, setDayMode } from '../../src/story/daytime';
 describe('how much there is to do in Formia', () => {
   const d = density();
   it('has no more screens to walk with nothing to do than today', () => {
-    expect(d.empty.length).toBeLessThanOrEqual(8);
+    // The geographic map covers over eight times the former area. Preserve the old empty-screen fraction.
+    expect(d.empty.length / d.walked.length).toBeLessThanOrEqual(8 / 47);
   });
   it('has no more desert than today: walkable tiles far from anything to do', () => {
     expect(d.desert / d.land).toBeLessThanOrEqual(0.18);

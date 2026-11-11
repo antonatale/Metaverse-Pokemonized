@@ -129,13 +129,13 @@ function playRally(n: Npc, R: Rally) {
 function windsurf(n: Npc) {
   const best0 = bestOf('windsurf'), k0 = timesDone('windsurf');
   sheet('<div class="award mg" role="dialog" aria-modal="true" aria-labelledby="mg-t">' +
-    '<h2 id="mg-t">Windsurf con Nicola</h2>' +
+    '<h2 id="mg-t">Windsurf con Nicola · Eclipse Beach</h2>' +
     '<p>Il vento ti spinge in avanti: tocca, o premi Spazio, per cazzare la vela e tornare in equilibrio. Troppo poco e il vento ti catapulta in acqua, troppo e cadi all\'indietro. Più resti in piedi, più vai veloce.</p>' +
-    '<canvas class="mg-court" id="mg-c" width="320" height="120" aria-label="Il mare di Vindicio, con la tavola e la vela"></canvas>' +
+    '<canvas class="mg-court" id="mg-c" width="520" height="190" aria-label="Il mare di Vindicio, con la tavola e la vela"></canvas>' +
     '<p class="mg-score" id="mg-s" aria-live="polite">Planata: 0 m' + (best0 ? ' · record ' + best0 + ' m' : '') + '</p>' +
     '<button class="btn" type="button" id="mg-x">Basta così</button></div>', 'result');
   const cv = $('mg-c') as HTMLCanvasElement, c = cv.getContext('2d')!, scoreEl = $('mg-s');
-  const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 320, Hc = 120;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), Wc = 520, Hc = 190;
   cv.width = Wc * dpr; cv.height = Hc * dpr; cv.style.width = '100%'; cv.style.maxWidth = Wc + 'px';
   const col = { sea: css('--m-sea', '#a7d8f2'), sea2: css('--m-sea2', '#79bde6'), foam: css('--m-foam', '#ffffff'), ink: css('--m-ink', '#1f2c6e'),
     zone: css('--good', '#2c9a55'), warn: css('--red', '#c8372d'), sky: css('--m-paper', '#f7f6f0'), far: css('--m-far2', '#b0bed9') };
@@ -151,12 +151,16 @@ function windsurf(n: Npc) {
     c.fillStyle = col.sea; c.fillRect(0, 30, Wc, Hc - 30);
     c.strokeStyle = col.sea2; c.lineWidth = 2;
     const off = (dist * 3) % 40;
-    for (let r = 0; r < 4; r++) for (let k = -1; k < 9; k++) { const wx = k * 40 - off + (r % 2) * 20, wy = 42 + r * 20; c.beginPath(); c.moveTo(wx, wy); c.quadraticCurveTo(wx + 8, wy - 4, wx + 16, wy); c.stroke(); }
+    for (let r = 0; r < 7; r++) for (let k = -1; k < Math.ceil(Wc / 40) + 1; k++) { const wx = k * 40 - off + (r % 2) * 20, wy = 42 + r * 20; c.beginPath(); c.moveTo(wx, wy); c.quadraticCurveTo(wx + 8, wy - 4, wx + 16, wy); c.stroke(); }
     /* a gust coming: dark ripples on the water */
     const g = gust(t + 0.6);
     if (g > 0.05) { c.globalAlpha = Math.min(0.5, g); c.fillStyle = col.sea2; for (let k = 0; k < 14; k++) c.fillRect(((k * 47 + t * 160) % (Wc + 40)) - 40, 36 + (k * 19) % 70, 22, 2); c.globalAlpha = 1; }
+    /* Wind telltales and a readable gust indicator, matching the force used by the lesson. */
+    c.fillStyle=col.ink;c.font='12px sans-serif';c.textAlign='right';c.fillText('TERMICA  →  '+(wind(t)*12).toFixed(0)+' kn',Wc-15,38);
+    c.strokeStyle=col.foam;c.lineWidth=1.2;
+    for(let j=0;j<4;j++){const x=Wc-110+j*22,y=49+Math.sin(t*2+j)*3;c.beginPath();c.moveTo(x,y);c.lineTo(x+16,y);c.lineTo(x+12,y-3);c.stroke();}
     /* the board, the sail leaning with the wind, the sailor */
-    const bx = 150, by = 92, a = lean * 0.75;
+    const bx = Wc * 0.52, by = Hc - 24, a = lean * 0.75;
     c.fillStyle = col.foam; c.globalAlpha = 0.9; c.beginPath(); c.ellipse(bx - 34, by + 6, 26, 3, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
     c.beginPath(); c.moveTo(bx - 34, by); c.quadraticCurveTo(bx, by - 6, bx + 38, by + 1); c.quadraticCurveTo(bx, by + 7, bx - 34, by); c.closePath();
     c.fillStyle = '#fffdf6'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
@@ -164,6 +168,10 @@ function windsurf(n: Npc) {
     c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -66); c.strokeStyle = col.ink; c.lineWidth = 2.4; c.stroke();
     c.beginPath(); c.moveTo(0, -66); c.quadraticCurveTo(-34, -30, -4, -4); c.closePath(); c.fillStyle = '#ff8a3c'; c.fill(); c.strokeStyle = col.ink; c.lineWidth = 2; c.stroke();
     c.strokeStyle = '#ffffff'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-6, -50); c.lineTo(-14, -44); c.moveTo(-6, -30); c.lineTo(-16, -26); c.stroke();
+    /* Battens, a clear sail window and the boom: the rig is attached to the board's mast foot. */
+    c.fillStyle=col.foam;c.globalAlpha=.55;c.beginPath();c.moveTo(-4,-51);c.lineTo(-18,-29);c.lineTo(-4,-18);c.closePath();c.fill();c.globalAlpha=1;
+    c.strokeStyle=col.ink;c.lineWidth=1.2;for(let j=0;j<3;j++){c.beginPath();c.moveTo(0,-18-j*13);c.lineTo(-15,-16-j*13);c.stroke();}
+    c.beginPath();c.ellipse(-8,-30,13,3,-.3,0,Math.PI*2);c.lineWidth=2;c.stroke();
     c.restore();
     /* the sailor hangs off the boom, leaning against the sail */
     const hx = bx + 22 + lean * 6, hy = by - 40 + Math.abs(lean) * 6;

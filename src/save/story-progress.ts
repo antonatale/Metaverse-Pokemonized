@@ -106,7 +106,11 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
   /* the first of the company used to be only who went first in a covo: now it is who is played, chosen anew */
   { id: 'protagonisti', what: 'chi si gioca', run: function (v) { if (v.first) delete v.first; } },
   /* Formia on three levels (VISIONE.md, V3 and V4): the terraces, the trails, the countryside closed behind its walls */
-  { id: 'formia7', what: 'Formia a tre piani', run: backHome }
+  { id: 'formia7', what: 'Formia a tre piani', run: backHome },
+  { id: 'formia8', what: 'Formia su strade e scala geografiche', run: function(v) {
+    backHome(v);
+    if(v.map.indexOf('casa-')===0 && MAPS[v.map]) { const p=MAPS[v.map].start;v.x=p[0];v.y=p[1];v.dir=p[2]; }
+  } }
 ];
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {

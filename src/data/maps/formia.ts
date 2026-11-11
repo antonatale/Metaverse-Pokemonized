@@ -1,5 +1,5 @@
 import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign, Dir } from './types';
-import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES } from './formia-ground';
+import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES, FORMIA_STREET_SIGNS } from './formia-ground';
 import { PLACES } from './formia-places';
 import { tile, W, H } from './formia-projection';
 
@@ -45,22 +45,28 @@ const ROOFS = ['#ff9a8b', '#9ec5ff', '#ffd166', '#c3a6ff', '#ff9a8b', '#ffd166']
 /* the shops of the town: a few places, each one its own (its face in render/canvas/objects.ts, what it sells in SHOPS of
    data/growth.ts), at the shop fronts the generator leaves along the streets; the other shop fronts are homes. No shop
    bears the name of a private person: the names are of the places (Largo Paone, Mola) or of what they are */
-const SHOP_AT: Record<string, { kind: string; label: string; shop: string; msg: string[] }> = {
-  '71,23': { kind: 'pharmacy', label: 'FARMACIA', shop: 'farmacia', msg: ['La farmacia. La croce verde è accesa.'] },
-  '71,26': { kind: 'bookshop', label: 'LIBRERIA', shop: 'libreria', msg: ['La libreria. In vetrina, un libro su Cicerone e uno su Mennea.'] },
-  '94,26': { kind: 'fishmonger', label: 'PESCHERIA', shop: 'pescheria', msg: ['La pescheria di Mola: il pesce arriva la mattina dalle barche del borgo.'] },
-  '82,39': { kind: 'newsstand', label: 'EDICOLA', shop: 'edicola', msg: ['L\'edicola. Il giornale di oggi è appeso davanti.'] },
-  '65,34': { kind: 'market', label: 'MERCATO', shop: 'mercato', msg: ['Il mercato di Largo Paone, su via Vitruvio: il sabato ci sono tutte le bancarelle.'] }
-};
+const SHOPS_ON_MAP = [
+  { at: [41.2565,13.6057], kind: 'pharmacy', label: 'FARMACIA', shop: 'farmacia', msg: ['La farmacia di via Vitruvio. La croce verde è accesa.'] },
+  { at: [41.2572,13.6095], kind: 'bookshop', label: 'LIBRERIA', shop: 'libreria', msg: ['La libreria. In vetrina, un libro su Cicerone e uno su Mennea.'] },
+  { at: [41.2590,13.6143], kind: 'fishmonger', label: 'PESCHERIA', shop: 'pescheria', msg: ['La pescheria di Mola. Le barche tornano al mattino.'] },
+  { at: [41.2577,13.6105], kind: 'newsstand', label: 'EDICOLA', shop: 'edicola', msg: ['L’edicola di Largo Paone. Il giornale di oggi è appeso davanti.'] },
+  { at: [41.2574,13.6102], kind: 'market', label: 'MERCATO', shop: 'mercato', msg: ['Le bancarelle di Largo Paone.'] }
+];
+const shopHouses = new Map<number, typeof SHOPS_ON_MAP[number]>();
+for (const sh of SHOPS_ON_MAP) {
+  const [x,y] = tile(sh.at[0], sh.at[1]);
+  const candidates = FORMIA_HOUSES.map((h,k) => ({ k, d: Math.abs(h.x-x)+Math.abs(h.y-y) })).filter(h => !shopHouses.has(h.k));
+  candidates.sort((a,b) => a.d-b.d); if(candidates[0])shopHouses.set(candidates[0].k,sh);
+}
 const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
-  const base = { id: 'casa-' + k, kind: h.kind, x: h.x, y: h.y, w: h.w, h: h.h, door: h.door, roof: ROOFS[h.v % ROOFS.length], v: h.v };
-  const sh = h.kind === 'shop' ? SHOP_AT[h.x + ',' + h.y] : undefined;
+  const base = { id: h.id || 'casa-' + k, kind: h.kind, x: h.x, y: h.y, w: h.w, h: h.h, door: h.door, roof: ROOFS[h.v % ROOFS.length], v: h.v };
+  const sh = shopHouses.get(k);
   if (sh) return { ...base, kind: sh.kind, label: sh.label, shop: sh.shop, msg: sh.msg };
   return { ...base, kind: h.kind === 'shop' ? 'house' : h.kind, msg: DOORS[h.v % DOORS.length] };
 });
 
 const buildings: Building[] = [
-  building('casa', { label: 'PARCO LA FONTANA', to: 'casa', tx: 5, ty: 6, tdir: 'up', v: 11 }),
+  building('casa', { label: 'CASA DI ANTONIO', to: 'casa', tx: 5, ty: 6, tdir: 'up', v: 11 }),
   /* the homes of the others: each one's story begins at his door (MapDef.starts) */
   building('casa-valentin', { label: 'VIA FERRUCCI', v: 23, to: 'casa-valentin', tx: 5, ty: 6, tdir: 'up' }),
   building('casa-costanzo', { label: 'VIA SOLARO', v: 41, to: 'casa-costanzo', tx: 5, ty: 6, tdir: 'up' }),
@@ -69,10 +75,10 @@ const buildings: Building[] = [
   building('stazione-scauri', { label: 'MINTURNO-SCAURI', msg: ['Stazione di Minturno-Scauri, sulla linea Roma–Napoli che passa per Formia.', 'Da qui a Formia è una fermata.'] }),
   building('casa-andrea', { label: 'PIAZZA MATTEI', v: 58, to: 'casa-andrea', tx: 5, ty: 6, tdir: 'up' }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
-  building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli»: più di venti sport, all\'aperto e al coperto.', 'Si entra solo con il tesserino.'] }),
+  building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli»: più di venti sport, all\'aperto e al coperto.', 'Il viale porta alla pista, al campo centrale e ai campi da tennis.'] }),
   building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
   building('morgana', { label: 'MORGANA', to: 'morgana', tx: 5, ty: 7, tdir: 'up' }),
-  building('chiesa-mola', { label: 'SAN GIOVANNI BATTISTA', msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, in piazza San Giovanni, nel borgo di Mola: è citata già nell\'841.', 'Fino all\'Ottocento erano due chiese divise da un muro. La guerra l\'ha quasi distrutta, poi è stata ricostruita.', 'Dentro c\'è una tavola di Antoniazzo Romano, dipinta verso il 1490.'] }),
+  building('chiesa-mola', { label: 'SAN GIOVANNI BATTISTA', msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, in piazza San Giovanni, nel borgo di Mola.', 'La chiesa moderna fu costruita tra il 1936 e il 1951, su progetto di Giovannoni rielaborato da Zander. La facciata è in laterizio.', 'Dentro c\'è una tavola di Antoniazzo Romano, dipinta verso il 1490.'] }),
   building('scuola', { label: 'VITRUVIO POLLIONE', msg: ['Istituto comprensivo «Vitruvio Pollione»: la scuola media di Mola, in via Emanuele Filiberto.', 'Dalle finestre aperte si sente la ricreazione.'] }),
   building('donbosco', { label: 'DON BOSCO', msg: ['Villaggio Don Bosco: la parrocchia del Cuore Immacolato di Maria, su via Appia Lato Napoli.', 'Quasi di fronte a casa di Antonio, dall\'altra parte dell\'Appia. La chiesa è aperta: dentro c\'è silenzio.'] }),
   building('oratorio', { label: 'ORATORIO', msg: ['L\'oratorio del Villaggio Don Bosco.', 'Da dentro arrivano voci di ragazzi e il rumore di una partita a biliardino.'] }),
@@ -83,18 +89,23 @@ const buildings: Building[] = [
   building('comune', { label: 'COMUNE · MUSEO', msg: ['Museo archeologico nazionale di Formia, nell\'ala sud del Palazzo comunale.', 'Due statue togate conservano ancora tracce del loro colore: le statue antiche erano dipinte.', 'Oggi è chiuso.'] }),
   building('forno', { label: 'FORNO', awning: '#ffd166', roof: '#ff9a8b', msg: ['Il forno di Castellone. Profumo di tiella: di polpo, di scarola, di cipolle.'], shop: 'forno' }),
   building('erasmo', { msg: ['Chiesa di Sant\'Erasmo, patrono di Formia e protettore dei marinai, morto qui il 2 giugno del 303.', 'Sotto la chiesa gli scavi hanno trovato una necropoli romana, la sua tomba e una cripta carolingia.'] }),
-  building('eclipse', { label: 'ECLIPSE', msg: ['Eclipse beach, via Tito Scipione 58.', 'Ombrelloni, gazebo, lettini, beach volley. E il windsurf con Nicola Spadea.'] }),
+  building('eclipse', { label: 'ECLIPSE BEACH', msg: ['Eclipse beach, via Tito Scipione 58.', 'Ombrelloni, gazebo, lettini, beach volley. E il windsurf con Nicola Spadea.'] }),
   building('scogliera', { label: 'LA SCOGLIERA', msg: ['Lido La Scogliera, in fondo a Vindicio, verso Gaeta.'] }),
+  building('altieri', { label: 'TABACCHI ALTIERI', to: 'altieri', tx: 5, ty: 6, tdir: 'up' }),
+  building('barber-may', { label: 'BARBER MAY', to: 'barber-may', tx: 5, ty: 6, tdir: 'up' }),
+  building('telaro', { label: 'TELARO', msg: ['Enoteca Telaro, in via Tullia.', 'Gli scaffali pieni di bottiglie e i tavolini segnano l’angolo della via.'] }),
+  building('ospedale', { label: 'DONO SVIZZERO', msg: ['Ospedale Dono Svizzero, accanto a via Adalgiso Ferrucci.', 'L’ingresso e il pronto soccorso hanno i loro viali di accesso.'] }),
+  building('san-michele', { label: 'SAN MICHELE', msg: ['L’eremo di San Michele Arcangelo, incastonato nella roccia del Monte Altino.', 'Il portale a sesto acuto e il rosone chiudono la grotta. Davanti, il sentiero si affaccia sul golfo.'] }),
   building('oriente', { label: 'LIDO ORIENTE', msg: ['Lido Oriente, sul lungomare di Formia che va verso Gianola: si chiama lungomare Città di Ferrara, al numero 128.', 'Uno stabilimento di famiglia: bar, ristorante con il pesce del giorno, canoe e pedalò, beach volley e beach soccer.'] })
 ].concat(houses);
 
 const objects: MapObject[] = [
-  object('fontana'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'), object('cisternone'), object('acquedotto'),
+  object('fontana'), object('tribuna'), object('torre-mola'), object('torre-castellone'), object('tomba'), object('mamurra'), object('cisternone'), object('acquedotto'),
   object('traghetto', { bob: true }),
   /* a train standing at the station, the monument in Piazza della Vittoria, the lighthouse at the end of the mole */
   { kind: 'train', x: at('stazione').x + 1, y: at('stazione').y - 1, w: 7, h: 1 },
   { kind: 'monument', x: at('piazza').x + 8, y: at('piazza').y + 5, w: 1, h: 1 },
-  { kind: 'lighthouse', x: 97, y: 50, w: 1, h: 1 }
+  { kind: 'lighthouse', x: tile(41.2538,13.6126)[0], y: tile(41.2538,13.6126)[1], w: 1, h: 1 }
 ].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })))
   .concat(SCOOTERS.map((id): MapObject => { const [x, y] = spot(id); return { kind: 'scooter', x, y, w: 1, h: 1 }; }));
 
@@ -102,16 +113,20 @@ const pz = at('piazza'), cam = at('campo-amendola'), track = at('pista');
 const groundObjects: GroundObject[] = [
   { kind: 'banner', x: pz.x + 2, y: pz.y + 1, w: 6, text: 'COMIZIO' },
   { kind: 'court', x: cam.x, y: cam.y, w: cam.w, h: cam.h },
+  {kind:'courtyard', ...at('parco-corte')},
+  {kind:'tennis-court', ...at('zauli-tennis')},
+  {kind:'padel-court', ...at('zauli-padel')},
+  {kind:'volley-court', ...at('zauli-beach')},
   { kind: 'track', x: track.x, y: track.y, w: track.w, h: track.h },
   /* the cavea of the Roman theatre, south of Sant'Erasmo; Maranola up in the Aurunci */
   { kind: 'cavea', x: at('erasmo').x - 1, y: at('erasmo').y + 4, w: 8, h: 2 },
-  { kind: 'village', x: 71, y: 0, w: 9, h: 4 },
-  text(41.2700, 13.6070, 'Maranola', 15, 0.7),
-  text(41.2700, 13.5740, 'Monti Aurunci', 19),
+  { kind: 'village', x: tile(41.285,13.628)[0], y: tile(41.285,13.628)[1], w: 9, h: 4 },
+  text(41.285, 13.628, 'Maranola', 15, 0.7),
+  text(41.302, 13.626, 'Monti Aurunci', 19),
   text(41.24857, 13.58073, 'Vindicio', 20, 0.6),
   text(41.2470, 13.6050, 'Golfo di Gaeta', 26, 0.5),
   text(41.2604, 13.6000, 'Castellone', 17, 0.7),
-  text(41.26047, 13.6115, 'Mola', 18, 0.7),
+  text(41.26047, 13.6145, 'Mola', 18, 0.7),
   text(41.2590, 13.6620, 'Gianola', 18, 0.7),
   /* where the roads lead, past the edges of the map */
   text(41.24347, 13.5734, 'verso Gaeta', 15, 0.6),
@@ -120,6 +135,9 @@ const groundObjects: GroundObject[] = [
 ];
 
 const signs: Sign[] = [
+  sign('sign-paone', ['Largo Domenico Paone.', 'Il punto dove ci si dà appuntamento: via Vitruvio, i negozi e la piazza.']),
+  sign('sign-risorgimento', ['Piazza Risorgimento.', 'Da qui via Adalgiso Ferrucci sale verso l’ospedale e le colline.']),
+  sign('sign-ospedale', ['Ospedale Dono Svizzero.', 'Via Adalgiso Ferrucci · Piazza Risorgimento.']),
   sign('sign-casa', ['Parco la Fontana, via Giovanni Amendola 1.', 'Casa di Antonio.', '← Il Bruno Zauli, Mola, il centro, Vindicio · → Gianola']),
   sign('sign-stazione', ['Stazione di Formia-Gaeta, sulla linea Roma–Napoli.', '↓ Piazza della Vittoria, il porto · → Mola, Morgana']),
   sign('sign-comune', ['Palazzo comunale, via Vitruvio 184.', 'Nell\'ala sud, nelle sale degli «Stalloni dei Borbone», c\'è il Museo archeologico nazionale: statue romane trovate nell\'antico Foro, oggi piazza Mattej.']),
@@ -137,7 +155,7 @@ const signs: Sign[] = [
   sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli», via Appia Lato Napoli.', 'Nato nel 1955 da un\'idea di Bruno Zauli, presidente della federazione di atletica. Qui il professor Carlo Vittori allenava Pietro Mennea.', '← Mola, il centro · → Via Amendola, casa']),
   sign('sign-gianola', ['Parco regionale di Gianola e del Monte di Scauri, nato nel 1987.', 'Sul promontorio la villa di Mamurra, con l\'edificio ottagonale detto «Tempio di Giano». Sotto, il porticciolo romano.']),
   sign('sign-caposele', ['Porticciolo di Caposele.', 'Da qui parte la spiaggia di Vindicio, verso Gaeta.']),
-  sign('sign-porticciolo', ['Il porticciolo romano di Gianola.', 'Forse era la peschiera della villa di Mamurra: vasche per allevare il pesce. Oggi è area marina protetta.']),
+  sign('sign-porticciolo', ['Il porticciolo romano di Gianola.', 'Le banchine di oggi risalgono circa al 1930, sopra strutture di una peschiera romana della villa di Mamurra. Oggi è area marina protetta.']),
   sign('sign-sangiovanni', ['Piazza San Giovanni, nel borgo di Mola.', 'Di qua la chiesa dei Santi Lorenzo e Giovanni Battista, di là la scuola Vitruvio Pollione. Accanto, i resti dell\'acquedotto romano.', '← Morgana, il porto, il centro · → Il Bruno Zauli, via Amendola']),
   /* the three trails of the relief (VISIONE.md, V3 and V4): what they pass, and the belvederi at their ends */
   sign('sign-statua', ['Da qui si sale a piedi verso Maranola e gli Aurunci.', 'Più su, la Strada della Statua porta alla Cima del Redentore, a 1252 metri: fu fatta per portarci la statua di ghisa, alzata il 31 luglio 1901.', '↑ Gli uliveti a terrazze · il belvedere']),
@@ -152,7 +170,7 @@ const signs: Sign[] = [
   sign('sign-bivio-gianola', ['↓ Via Gianola: il parco, la villa di Mamurra, il Lido Oriente.', '→ Scauri · ← Via Amendola, Mola, il centro']),
   sign('sign-scauri', ['→ Scauri e la stazione di Minturno-Scauri.', '← Gianola, Formia']),
   sign('sign-donbosco', ['Villaggio Don Bosco, parrocchia del Cuore Immacolato di Maria.', 'La chiesa, l\'oratorio e il campo: il pomeriggio è pieno di ragazzi.', '↑ Via Amendola, Parco la Fontana · ← Mola, il centro'])
-].concat(SCOOTERS.map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })))
+].concat(FORMIA_STREET_SIGNS.map(s => ({ ...s, plate: true }))).concat(SCOOTERS.map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })))
   /* the monument in Piazza della Vittoria: read it by walking up to it */
   .concat([{ x: at('piazza').x + 8, y: at('piazza').y + 5, quiet: true, text: ['Il monumento ai caduti, del 1926: una Vittoria accanto all\'epigrafe per i caduti di Formia.'] }])
   /* the street-name plates, with a word on each street */
@@ -178,7 +196,7 @@ const npcs: Npc[] = [
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
   npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),
   npc('folla4', { name: 'Dalla folla', seed: 14, dir: 'right', lines: ['Io sono venuto solo per la difesa del bidet.'] }),
-  npc('nicola', { name: 'Nicola Spadea', look: 'nicola', dir: 'up', activity: 'windsurf', lines: ['{hero}! Oggi a Vindicio c\'è la termica giusta, mare piatto e vento costante.', 'Ti va una lezione di windsurf? Ti insegno a planare.'] }),
+  npc('nicola', { name: 'Nicola Spadea', look: 'nicola', dir: 'up', activity: 'windsurf', lines: ['{hero}! Oggi a Vindicio c\'è la termica giusta, mare piatto e vento costante.', 'Ho iniziato a fare windsurf nel golfo di Formia nell’estate del 1999. Vindicio è il mio spot di casa.', 'Mi piacciono le onde e il freestyle. Quando non sono in acqua, cammino in montagna o leggo.', 'Ti va una lezione? Partiamo dalla posizione dei piedi, poi impariamo a leggere le raffiche.'] }),
   npc('barista', { name: 'Bar dell\'Eclipse', seed: 83, dir: 'down', activity: 'lettino', lines: ['Benvenuto all\'Eclipse!', 'Il solito ombrellone in prima fila, con due lettini?'] }),
   npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', covo: 'eclipse', activity: 'volley', lines: ['Weee! {hero}, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
   npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', covo: 'pineta', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
@@ -260,41 +278,35 @@ const clip = (name: string, x0: number, y0: number, x1: number, y1: number, note
   return { name, x, y, w: Math.min(W - 1, x1) - x + 1, h: Math.min(H - 1, y1) - y + 1, note };
 };
 const near = (name: string, id: string, m: number, note?: string): Area => { const p = at(id); return clip(name, p.x - m, p.y - m, p.x + p.w - 1 + m, p.y + p.h - 1 + m, note); };
+const geo = (name: string, north: number, west: number, south: number, east: number, note?: string): Area => {
+  const a=tile(north,west),b=tile(south,east);return clip(name,a[0],a[1],b[0],b[1],note);
+};
 const areas: Area[] = [
-  /* the places */
-  near('Parco la Fontana', 'casa', 3, 'Casa di Antonio, al numero 1 di via Giovanni Amendola.'),
-  clip('Lido Oriente', 146, 39, 157, 51, 'Lo stabilimento del lungomare Città di Ferrara, a Formia, verso Gianola: canoe, pedalò, beach volley e beach soccer.'),
-  near('Eclipse beach', 'eclipse-spiaggia', 2, 'Il lido di via Tito Scipione: ombrelloni, beach volley e il windsurf di Nicola Spadea.'),
-  near('Pineta di Vindicio', 'pineta', 1, 'Pini domestici e ombra accanto al Lido Frungillo, a due passi dalla spiaggia.'),
-  near('Birreria Morgana', 'morgana', 2, 'Via Abate Tosti 105, nel borgo di Mola: la sera ci si ritrova qui.'),
-  near('Piazza della Vittoria', 'piazza', 2, 'Il cuore di Formia, con il monumento ai caduti del 1926.'),
-  near('Stazione', 'stazione', 3, 'Formia-Gaeta, sulla linea Roma–Napoli.'),
-  near('Bruno Zauli', 'zauli', 5, 'Il centro di preparazione olimpica, nato nel 1955: la pista dove correva Mennea.'),
-  near('Tomba di Cicerone', 'tomba', 3, 'Sull\'Appia verso Itri: la tradizione dice che qui riposa Cicerone.'),
-  near('Parco Gramsci', 'parco-gramsci', 1),
-  near('Gelateria Lavezzi', 'gelati', 1, 'In piazza Marconi dal 1870: quattro generazioni di gelatai.'),
-  near('Piazza San Giovanni', 'piazza-sangiovanni', 1, 'Il cuore di Mola: la chiesa dei Santi Lorenzo e Giovanni Battista e, di fronte, la scuola Vitruvio Pollione.'),
-  clip('Villaggio Don Bosco', 119, 25, 139, 30, 'La parrocchia del Cuore Immacolato di Maria, l\'oratorio e il campo: dall\'altra parte dell\'Appia, quasi di fronte a casa.'),
-  /* the trails of the relief */
-  clip('Strada della Statua', 45, 2, 95, 8, 'La mulattiera che sale verso Maranola e la Cima del Redentore, tra gli uliveti a terrazze.'),
-  clip('Acervara', 0, 38, 27, 47, 'Il pendio sopra l\'Appia: la Tomba di Tulliola, gli ulivi, il golfo davanti.'),
-  clip('Punta di Gianola', 162, 55, 175, 69, 'Le terrazze della villa di Mamurra, nel parco di Gianola.'),
-  /* the neighbourhoods */
-  clip('Porto', 74, 41, 104, 58, 'Il porto di Formia: traghetti e aliscafi per Ponza e Ventotene, le barche dei pescatori, il faro sul molo.'),
-  clip('Largo Paone', 63, 32, 68, 36, 'Su via Vitruvio, accanto a piazza della Vittoria: il sabato c\'è il mercato.'),
-  clip('Castellone', 41, 33, 66, 48, 'Il borgo alto, nato contro i Saraceni sull\'acropoli romana: la torre ottagonale dei Caetani, Sant\'Erasmo, il teatro romano con le case dentro.'),
-  clip('Centro', 66, 22, 84, 50, 'Via Vitruvio, i negozi, il Comune con il Museo archeologico nazionale.'),
-  clip('Mola', 84, 22, 112, 41, 'Il borgo marinaro: la torre del castello angioino, la chiesa di San Giovanni Battista, le barche dei pescatori.'),
-  clip('Caposele', 57, 50, 74, 60, 'Il porticciolo di Caposele, dove comincia la spiaggia di Vindicio.'),
-  clip('Vindicio', 0, 49, 57, 81, 'Più di un chilometro di spiaggia, dal porto fino a Gaeta: i lidi, il lungomare, la Bandiera Blu.'),
-  clip('Monti Aurunci', 0, 0, 164, 4, 'Le montagne dietro Formia. Lassù c\'è Maranola, il borgo del presepe vivente.'),
-  clip('Rio Fresco', 40, 5, 99, 33, 'Le case e gli uliveti sopra la ferrovia, verso le colline.'),
-  clip('Via Amendola', 126, 5, 150, 30, 'Le palazzine di via Amendola, il Palamendola, Parco la Fontana.'),
-  clip('Acqualonga', 99, 5, 126, 30, 'Tra Mola e via Amendola, lungo l\'Appia verso Napoli.'),
-  clip('Scauri', 165, 5, 199, 81, 'Scauri, frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'),
-  clip('Gianola', 148, 30, 164, 81, 'Il parco regionale, dal 1987: la villa di Mamurra, il porticciolo romano, la spiaggia dei Sassolini.'),
-  clip('Santo Janni', 150, 5, 164, 30, 'Le ultime case di Formia, verso Gianola e Scauri.'),
-  clip('Campagna', 0, 5, 40, 48, 'Gli uliveti a ovest della città, verso Itri: qui la ferrovia esce dalla galleria.')
+  near('Parco la Fontana','casa',7,'Le palazzine, i viali e il giardino privato di Antonio, al piano terra.'),
+  near('Largo Paone','largo-paone',3,'Il punto di ritrovo sul corso: il Tabacchi Altieri e via Vitruvio.'),
+  near('Eclipse beach','eclipse',4,'Il lido e l’accesso alla scuola di windsurf di Nicola.'),
+  near('Eclipse beach','eclipse-spiaggia',2,'La scuola di windsurf di Nicola, i gazebo e le passerelle verso il mare.'),
+  near('Pineta di Vindicio','pineta',1,'L’ombra dei pini accanto al lungomare.'),
+  near('Piazza San Giovanni','piazza-sangiovanni',3,'La chiesa in mattoni, la scuola e la salita di via Solaro.'),
+  near('Piazza Risorgimento','risorgimento',2,'Via Ferrucci, le case e l’ospedale.'),
+  near('Ospedale Dono Svizzero','ospedale',2),
+  near('Bruno Zauli','pista',6,'La pista, il campo centrale, le tribune e i campi del centro olimpico.'),
+  near('Eremo di San Michele','san-michele',3,'La facciata di pietra chiude la grotta, sotto la roccia degli Aurunci.'),
+  near('Birreria Morgana','morgana',1),near('Piazza della Vittoria','piazza',1),near('Stazione','stazione',2),
+  near('Villaggio Don Bosco','donbosco',3),near('Lido Oriente','oriente',3),
+  geo('Strada della Statua',41.310,13.630,41.275,13.640,'La salita da Maranola all’eremo e al Redentore.'),
+  geo('Castellone',41.2578,13.596,41.2532,13.6025,'Il borgo alto, i vicoli di pietra, la torre e il Cisternone.'),
+  geo('Porto',41.2572,13.608,41.253,13.616,'Le banchine, il traghetto e il golfo.'),
+  geo('Centro',41.260,13.6025,41.2535,13.611,'Via Vitruvio, il Comune, i negozi e le piazze.'),
+  geo('Mola',41.263,13.611,41.256,13.620,'Via Abate Tosti corre nel borgo, sotto San Giovanni.'),
+  geo('Vindicio',41.2535,13.572,41.242,13.597,'La curva del lungomare di via Tito Scipione, i lidi e le vele.'),
+  geo('Acervara',41.257,13.566,41.250,13.582),
+  geo('Via Amendola',41.266,13.638,41.259,13.645,'Le curve di via Amendola, Parco la Fontana e il Palamendola.'),
+  geo('Santo Janni',41.268,13.645,41.255,13.659),
+  geo('Gianola',41.264,13.659,41.243,13.690,'Il lungomare Città di Ferrara, poi il promontorio e il parco.'),
+  geo('Scauri',41.275,13.690,41.242,13.726),
+  geo('Acqualonga',41.275,13.620,41.259,13.638),
+  clip('Monti Aurunci',0,0,W-1,57,'Le montagne sopra la città e il golfo.')
 ];
 
 const st = spot('start');

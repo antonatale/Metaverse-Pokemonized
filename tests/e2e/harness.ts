@@ -156,7 +156,9 @@ export async function walk(page: Page, dirs: string[]) {
   for (const d of dirs) {
     if ((await pos()).dir !== d) { await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]); }
     await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]);
-    for (let k = 0; k < 60; k++) { await page.clock.runFor(20); const p = await pos(); if (!p.moving && !p.busy) break; }
+    // A step is 165 ms; check after it, rather than making ten browser round trips per tile.
+    // Jumps and door fades may need another interval. Keep the same 1.2 s upper bound.
+    for (let k = 0; k < 6; k++) { await page.clock.runFor(200); const p = await pos(); if (!p.moving && !p.busy) break; }
   }
   await page.clock.runFor(300);
 }

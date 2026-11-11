@@ -272,6 +272,8 @@ export function fullScreen() {
 
 /* ---------- a click on the map (R17): walk there; on someone, a sign or a thing, walk next to it and use it ---------- */
 var clickTo: { x: number; y: number; dir: Dir } | null = null;
+/** Talking to someone should use a clear approach when one exists beside tall grass or tide pools. */
+function approachCost(x: number,y: number,length: number) { return length + (/^(tall|pools)$/.test(M.cell(x,y).deco||'') ? M.w*M.h : 0); }
 function clickMap(e: MouseEvent) {
   if (!running || dialog || busy || overlayOpen() || e.button !== 0) return;
   var t = tileAt(e.clientX, e.clientY);
@@ -281,12 +283,12 @@ function clickMap(e: MouseEvent) {
   if (!used && !blocked(M, tx, ty)) { var r = route(tx, ty); if (r && r.length) walkAlong(r); return; }
   if (!used) return;
   /* the nearest free tile next to it, and which way to face from there */
-  var best: { x: number; y: number; dir: Dir; path: Dir[] } | null = null;
+  var best: { x: number; y: number; dir: Dir; path: Dir[]; cost: number } | null = null;
   (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
     var sx = tx - DV[d][0], sy = ty - DV[d][1], here = sx === st.x && sy === st.y;
     if (!here && blocked(M, sx, sy)) return;
     var p = here ? [] : route(sx, sy);
-    if (p && (!best || p.length < best.path.length)) best = { x: sx, y: sy, dir: d, path: p };
+    if (p) { const cost=approachCost(sx,sy,p.length); if(!best||cost<best.cost) best={x:sx,y:sy,dir:d,path:p,cost}; }
   });
   if (!best) return;
   var b = best as { x: number; y: number; dir: Dir; path: Dir[] };
@@ -1246,7 +1248,7 @@ export const WORLD = {
       else if (kind === 'door') { list = (M.buildings || []).filter(function (q) { return q.id === id; }); if (list[0]) t = list[0].door!; }
       else if (kind === 'sign') { list = (M.signs || []).filter(function (q) { return q.text.join(' ').indexOf(id) >= 0; }); if (list[0]) t = [list[0].x, list[0].y]; }
       if (!t) return null;
-      var best: { x: number; y: number; dir: Dir; len: number } | null = null;
+      var best: { x: number; y: number; dir: Dir; len: number; cost: number } | null = null;
       (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
         for (var k = 1; k <= 2; k++) {
           var cx = t![0] - DV[d][0] * k, cy = t![1] - DV[d][1] * k;
@@ -1254,7 +1256,7 @@ export const WORLD = {
           var here = cx === st.x && cy === st.y;
           if (!here && (blocked(M, cx, cy) || M.at[key(cx, cy)])) continue;
           var r = here ? [] : route(cx, cy);
-          if (r && (!best || r.length < best.len)) best = { x: cx, y: cy, dir: d, len: r.length };
+          if(r) {const cost=approachCost(cx,cy,r.length);if(!best||cost<best.cost)best={x:cx,y:cy,dir:d,len:r.length,cost};}
         }
       });
       return best;
