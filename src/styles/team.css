@@ -45,6 +45,7 @@
 .wares { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .wares li { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); }
 .wares li > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wares li > .qty { flex: none; flex-direction: row; gap: 0; }
 /* the money is a coin with its number; the nets and the tiella have their little drawing */
 .coin { flex: none; display: inline-block; vertical-align: -3px; margin-right: 3px; }
 .wmoney { display: inline-flex; align-items: center; gap: 2px; }

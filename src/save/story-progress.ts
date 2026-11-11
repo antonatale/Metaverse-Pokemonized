@@ -90,19 +90,29 @@ function load(n: number): StoryProgress {
   } catch (e) { /* no storage: nothing to keep */ }
   return blank();
 }
+/** the redrawings of Formia: whoever was on the old map starts again from home (his own: the six protagonists),
+    keeping pins, team and found things */
+function backHome(v: StoryProgress) {
+  if (v.map !== 'formia') return;
+  var m0 = MAPS.formia, at = (v.first && m0.starts && m0.starts[v.first]) || m0.start;
+  v.x = at[0]; v.y = at[1]; v.dir = at[2];
+}
+export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => void }[] = [
+  { id: 'formia2', what: 'Formia ridisegnata', run: backHome },
+  { id: 'formia3', what: 'Formia vera, da OpenStreetMap', run: backHome },
+  { id: 'formia4', what: 'le strade unite', run: backHome },
+  { id: 'formia5', what: 'la rete di strade disegnata a mano', run: backHome },
+  { id: 'formia6', what: 'l\'est della città e i lampioni', run: backHome },
+  /* the first of the company used to be only who went first in a covo: now it is who is played, chosen anew */
+  { id: 'protagonisti', what: 'chi si gioca', run: function (v) { if (v.first) delete v.first; } }
+];
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
     v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
     v.lv = v.lv || {}; v.skills = v.skills || {}; v.money = v.money || 0; v.bag = v.bag || {}; v.mons = v.mons || [];
-    /* Formia was redrawn (formia2), as the real town (formia3), with joined-up streets (formia4), as a game map
-       with a hand-drawn network of streets (formia5), with the east of town and the street lamps redrawn (formia6):
-       start again from home, keep pins, squad and found things */
-    if (v.map === 'formia' && (!v.seen.formia2 || !v.seen.formia3 || !v.seen.formia4 || !v.seen.formia5 || !v.seen.formia6)) {
-      var m0 = MAPS.formia; v.x = m0.start[0]; v.y = m0.start[1]; v.dir = m0.start[2];
-    }
-    /* the first of the company used to be only who went first in a covo: now it is who is played, and that is chosen anew */
-    if (v.first && !v.seen.protagonisti) delete v.first;
-    v.seen.formia2 = true; v.seen.formia3 = true; v.seen.formia4 = true; v.seen.formia5 = true; v.seen.formia6 = true;
+    /* the steps from one version of the save to the next, in order (R18): each has a flag in `seen`, set once it is
+       done, so a save takes the steps it has not taken yet and nothing more. A new step is one more line at the end */
+    MIGRATIONS.forEach(function (m) { if (!v.seen[m.id]) { m.run(v); v.seen[m.id] = true; } });
     return v;
   }
   return null;

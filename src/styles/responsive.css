@@ -13,3 +13,12 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* A PC screen (D3 of REVISIONE.md: the PC first, the phone still works): sheets are not strips glued to the bottom
+   edge, but cards in the middle, wider and as tall as the screen allows, never cut. Below 900 px nothing changes. */
+@media (min-width: 900px) and (min-height: 560px) {
+  .overlay { align-items: center; padding: 3vh 0; }
+  .sheet { max-width: min(880px, 92vw); max-height: 94vh; border-bottom: 2px solid var(--line); border-radius: 16px; box-shadow: 6px 6px 0 var(--shadow); }
+  .sheet.learn { max-width: min(980px, 94vw); }
+  .townmap { max-height: 62vh; }
+  .townmap canvas, .townmap img, .townmap svg { width: 100%; height: auto; }
+}

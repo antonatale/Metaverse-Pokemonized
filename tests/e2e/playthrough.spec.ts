@@ -78,7 +78,7 @@ const SAVED = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialo
   mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { antonio: { lv: 9, xp: 0 } }, money: 40, bag: {} };
 /* a story taken away as a code and brought back into another slot (save/transfer.ts); a bad code says why */
 test('a story exported and imported', async ({ browser }) => {
-  const r = await play(browser, 'transfer', { storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) } }, async (r) => {
+  const r = await play(browser, 'transfer', { reduced: false, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(SAVED) } }, async (r) => {
     const p = r.page;
     await p.click('#go-slots'); await p.clock.runFor(300);
     await p.click('[data-out="1"]'); await p.clock.runFor(300);
@@ -760,7 +760,7 @@ test('a trainer of Formia', async ({ browser }) => {
 /* a change: Polpino comes off for Ramarrino, by the button on the pad; when the trainer's second creature is coming the
    player may change again; both creatures get their share, and the trainer pays once */
 test('changing creature in a battle', async ({ browser }) => {
-  const r = await play(browser, 'change', { seed: 11, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpino' }, { uid: 'c2', sp: 'ramarrino' }], lv: { c1: { lv: 11, xp: 0 }, c2: { lv: 11, xp: 0 } }, money: 0 }) }, async (r) => {
+  const r = await play(browser, 'change', { seed: 11, reduced: false, storage: inTown({ mons: [{ uid: 'c1', sp: 'polpino' }, { uid: 'c2', sp: 'ramarrino' }], lv: { c1: { lv: 11, xp: 0 }, c2: { lv: 11, xp: 0 } }, money: 0 }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await talkTo(p, 'animatore');
@@ -962,7 +962,7 @@ for (const vel of ['normale', 'veloce'] as const) {
 
 /* R17: a click on the map walks there; a click on someone walks next to him and talks */
 test('walking with a click', async ({ browser }) => {
-  const r = await play(browser, 'click', { seed: 3, storage: inTown({ x: 110, y: 28, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+  const r = await play(browser, 'click', { seed: 3, reduced: false, storage: inTown({ x: 110, y: 28, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
     seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
@@ -991,7 +991,7 @@ test('walking with a click', async ({ browser }) => {
 /* the menu: two teams of six, the people and the creatures; Antonio's abilities, a tree of three branches where each
    ability opens with a point in the one before it */
 test('the two teams and Antonio\'s abilities', async ({ browser }) => {
-  const r = await play(browser, 'teams', { seed: 15, storage: inTown({ squad: ['antonio', 'forchetta'], mons: [{ uid: 'c1', sp: 'polpetto' }, { uid: 'c2', sp: 'cicalina' }],
+  const r = await play(browser, 'teams', { seed: 15, reduced: false, storage: inTown({ squad: ['antonio', 'forchetta'], mons: [{ uid: 'c1', sp: 'polpetto' }, { uid: 'c2', sp: 'cicalina' }],
     lv: { antonio: { lv: 9, xp: 0 }, forchetta: { lv: 8, xp: 0 }, c1: { lv: 15, xp: 0 }, c2: { lv: 9, xp: 0 } }, skills: { svelto: 1 } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
@@ -1195,7 +1195,7 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
 /* the choices of the story, in the game: the stones after Mamurra, and what they do from there on */
 test('keeping the stones', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
-    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
+    seen: { 'cic-change': true,  intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio', bond: 70 }, { uid: 'c2', sp: 'muraglione', bond: 70 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'stones-kept', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;

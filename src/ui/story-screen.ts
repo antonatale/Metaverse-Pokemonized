@@ -1,3 +1,4 @@
+import { magicBeats } from '../data/types';
 import { crewAt } from '../story/covo-crew';
 import { speedChoice } from './speed';
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
@@ -76,7 +77,7 @@ function build() {
       return '<button type="button" data-d="' + d + '" aria-label="' + DLABEL[d] + '"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ARROW[d] + '"/></svg></button>';
     }).join('') +
     '</div><button class="abtn" type="button" id="wa" aria-label="Parla, leggi o conferma">A</button></div>' +
-    '<p class="whint">Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone</p>';
+    '<p class="whint">Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero</p>';
   cv = $('wcv') as HTMLCanvasElement; ctx = cv.getContext('2d')!;
   cv.addEventListener('click', clickMap);
   dlg = $('wdialog'); dlgWho = $('wwho'); dlgTxt = $('wtxt'); dlgOpts = $('wopts');
@@ -231,7 +232,7 @@ function renderBars() {
 export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
   var hint = root.querySelector('.whint');
-  if (hint) hint.textContent = 'Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
+  if (hint) hint.textContent = 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
   $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
@@ -657,6 +658,19 @@ function foeMember(foe: Foe): Member {
 function fightOn() {
   var f = fight!, foe = f.foes[0], sp = SPECIES[foe.sp], left = teamMons().map(function (m) { return m.uid; });
   var go = function (k: string) {
+    /* R10: the first time the one sent in is at a disadvantage of type and there is someone else, Cicero says how to
+       change, before the battle (a bubble would be hidden by it) */
+    var mine = creatureOf(k), ft = (foe.stages && foe.stages[0].types) || [sp.type].concat(sp.type2 ? [sp.type2] : []);
+    if (mine && !foe.stages && left.length > 1 && !st.seen['cic-change']) {
+      var ms = SPECIES[mine.sp], bad = ft.some(function (t) { return magicBeats(t, ms.type); });
+      if (bad) {
+        var t = tipOnce('change');
+        if (t) { save(); say(t.map(function (l) { return l.replace('{mine}', nameOf(k)).replace('{foe}', sp.name); }), CICERO, null, function () { go2(k); }); return; }
+      }
+    }
+    go2(k);
+  };
+  var go2 = function (k: string) {
     hide();
     see(foe.sp); save();
     var place = sceneFor(M.id, areaName());
@@ -1223,6 +1237,12 @@ export const WORLD = {
     },
     area: function () { return areaName(); },
     screenOf: screenOf,
+    /* the automatic player (tools/playtest): the next stop, the tour, what the story has; skip an activity */
+    goal: function () { var h = heading(M.id); return h ? { x: h.x, y: h.y, exact: h.exact, id: h.stop.id, text: h.stop.text } : null; },
+    stops: function () { return myStops().map(function (q) { return [q.id, q.done()]; }); },
+    lv: function () { return JSON.parse(JSON.stringify({ lv: st.lv, money: st.money, badges: st.badges, mons: (st.mons || []).map(function (m) { return { uid: m.uid, sp: m.sp, home: !!m.home }; }), bag: st.bag })); },
+    skipStop: function () { var q = nextStop(); st.done = st.done || {}; st.done[q.id] = (st.done[q.id] || 0) + 1; save(); renderHud(); return q.id; },
+    hiding: function () { var h = hidingAt(st.x, st.y); return h ? h.id : null; },
     /* a creature for who is played, as the park keeper gives it (playtests that go to a covo) */
     adopt: function (sp: SpeciesId, lv: number) { var uid = addCreature(sp, lv); st.seen.starter = true; save(); renderHud(); return uid; },
     /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */

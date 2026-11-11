@@ -90,3 +90,21 @@ describe('saves that are not lost', () => {
     const { vi } = await import('vitest'); vi.unstubAllGlobals();
   });
 });
+
+/* R18: the steps from one version of a save to the next, in order, each once (save/story-progress.ts MIGRATIONS) */
+describe('the versions of a save', () => {
+  it('takes the steps it has not taken, and sends whoever is played back to his own home', async () => {
+    const { vi } = await import('vitest');
+    vi.resetModules();
+    const store: Record<string, string> = {};
+    vi.stubGlobal('window', { localStorage: { getItem: (k: string) => (k in store ? store[k] : null), setItem: (k: string, v: string) => { store[k] = v; }, removeItem: (k: string) => { delete store[k]; } } });
+    const { MAPS } = await import('../../src/data/maps');
+    store['lotte-tra-amici:storia:v1'] = JSON.stringify({ v: 1, map: 'formia', x: 1, y: 1, dir: 'up', badges: [], squad: ['zendavid'], first: 'zendavid', beaten: {}, found: {}, seen: { protagonisti: true, formia2: true } });
+    const P = await import('../../src/save/story-progress');
+    const home = MAPS.formia.starts!.zendavid;
+    expect([P.st.x, P.st.y]).toEqual([home[0], home[1]]);
+    expect(P.st.first).toBe('zendavid');
+    P.MIGRATIONS.forEach((m) => expect(P.st.seen[m.id], m.id).toBe(true));
+    vi.unstubAllGlobals();
+  });
+});

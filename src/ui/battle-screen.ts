@@ -583,7 +583,9 @@ function showResult() {
     sideB: { stats: B.stats, lvl: B.lvl, known: B.known, nick: B.nick, gold: B.gold, perk: B.perk }, wild: S.wild, bag: S.bag, trainer: S.trainer };
   if (story) {
     $('st-go').addEventListener('click', function () { backToWorld(story!, storyWon, false); });
-    if ($('st-retry')) $('st-retry').addEventListener('click', function () { closeOverlay(); startBattle(cfg); });
+    var again = firstCfg ? JSON.parse(JSON.stringify(firstCfg)) as BattleConfig : cfg;
+    again.bag = S.bag;   /* what was used is gone */
+    if ($('st-retry')) $('st-retry').addEventListener('click', function () { closeOverlay(); startBattle(again); });
     setTimeout(function () { var b = $('st-retry') || $('st-go'); if (b) b.focus(); }, 50);
     return;
   }
@@ -653,8 +655,12 @@ function curtain(trainer: boolean) {
   });
   setTimeout(function () { el.remove(); }, 1300);
 }
+/* the battle as it was asked for: «Riprova» starts that one again, with both teams whole (a covo is a team battle:
+   rebuilt from how it ended, it was only the one left on the field against the leader) */
+var firstCfg: BattleConfig | null = null;
 export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   if (!restore) {
+    firstCfg = cfg ? JSON.parse(JSON.stringify(cfg)) : null;
     newShows();
     var seed = (Date.now() ^ Math.floor(Math.random() * 4294967296)) >>> 0;
     S = E.newBattle({ a: cfg!.a, b: cfg!.b, mode: cfg!.mode, seed: seed, safe: cfg!.safe, sideA: cfg!.sideA, sideB: cfg!.sideB, wild: cfg!.wild, bag: cfg!.bag, trainer: cfg!.trainer, night: (!!cfg!.wild || !!cfg!.trainer) && (!!cfg!.dark || darkness(new Date()) > 0.5), benchA: cfg!.benchA, benchB: cfg!.benchB, smart: cfg!.smart, field: cfg!.field, shield: cfg!.shield, surgeStart: cfg!.surgeStart, hero: cfg!.hero });
@@ -709,6 +715,9 @@ export const UI = {
   startBattle: startBattle, goHome: goHome, setScreen: function (s: string) { view.screen = s; },
   /* the computer's choice for the side that has to move, on a copy so the battle's dice stay untouched (playtests) */
   _debug: {
+    /* the automatic player (tools/playtest): a choice as from a button, and where the battle stands */
+    pick: function (id: string) { onMove(id); },
+    info: function () { return S ? { turn: S.turn, phase: S.phase, result: S.result, winner: S.winner, a: S.sides[0].id, b: S.sides[1].id, alv: S.sides[0].lvl, blv: S.sides[1].lvl, ahp: S.sides[0].hp, amax: S.sides[0].max, bhp: S.sides[1].hp, bmax: S.sides[1].max, story: S.story, bag: S.bag } : null; },
     suggest: function () { return S && S.phase === 'select' && needQ.length ? E.ai(JSON.parse(JSON.stringify(S)), needQ[0]) : null; },
     battle: function () { return S ? { a: S.sides[0].id, b: S.sides[1].id, story: S.story, safe: S.safe } : null; },
     /* Slancio, set by hand: three points take a whole battle to come */

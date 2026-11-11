@@ -114,6 +114,7 @@ export const CHAPTERS: Record<string, Chapter> = {
 
 /** the first time something happens, Cicero explains it (once) */
 export const TIPS: Record<string, string[]> = {
+  change: ['Attento: {mine} è di un tipo che {foe} batte. In lotta puoi cambiare creatura con «Cambia» (o il tasto C): chi entra prende il colpo, ma è in guardia e ne prende metà. Manda chi ha il tipo giusto.'],
   covo: ['Un covo: il capo manda le sue creature, tutte del suo tipo, e alla fine scende in campo lui, come farai tu quando le tue saranno a terra. Porta creature che battono il suo tipo.', 'Anche le persone hanno un tipo, e i cinque girano in cerchio: Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma. Ogni covo vinto è una spilla, e il covo dopo sarà più forte: dal terzo, le creature del capo sono tre.'],
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
   level: ['{hero} è salito di livello: lottando si diventa più forti, e ogni livello è un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],

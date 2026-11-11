@@ -6,7 +6,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
-**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R6, R7, R13, R14, R15, R17; in parte R8, R10, R18 e R19. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R5, R8, R10, R16, R20.
+**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R5, R6, R7, R10, R13, R14, R15, R17, R18, R19; in parte R8 e R16. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R8 (con quello che dice R5), R20, R11, R12.
 
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
@@ -208,6 +208,11 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - *Il rapporto* (`npm run playtest`, un file Markdown): per tappa livelli, squadra, soldi, lotte vinte e perse, turni; e in fondo i sistemi mai toccati (catture, cambi, oggetti, Risonanza, negozi).
 - *Fatto quando:* diciotto partite arrivano in fondo o dichiarano il muro; il rapporto di oggi ritrova i numeri del punto B.
 
+**Fatto (11 novembre):** `tools/playtest/` (`bot.mjs`, `report.mjs`, `npm run playtest`, vedi il suo README): i modi «freccia» e «prudente», i luoghi con enigma ripresi dopo una lotta, i minigiochi saltati e dichiarati, il muro (quattro sconfitte con lo stesso), il rapporto in Markdown. Prima misura, sei partite «prudente» (`docs/revisione/playtest-11-novembre.md`): **quattro su sei arrivano al treno** (Antonio con Polpino e con Gabbì, Zendavid con Polpino e con Gabbì), Valentin con Polpino si ferma al terzo covo (Costanzo, Micetto 11), Valentin con Gabbì si è perso a girare negli scogli (corretto dopo: al massimo 400 passi per tappa). Quello che dice:
+- **La prima creatura porta tutto.** Al treno: 30, 12, 9. L'esperienza va a chi butta giù l'avversario, e l'IA manda sempre la stessa: le altre restano indietro di quindici livelli. È il primo problema di R8.
+- **Nessun cambio in lotta** in nessuna partita, e mai oggetti, Risonanza o negozi: il percorso non li chiede.
+- Da fare: le 18 partite «freccia» e «prudente» per ogni protagonista e iniziale (qui girano lente: 4–11 minuti l'una).
+
 **R6. Il simulatore dei covi (Sonnet, medium).** `docs/revisione/covi-sim.ts` diventa `tools/sim-covi.ts`, con la regola di lotta decisa in D1. Un test fallisce se un protagonista ha un covo sotto il 45% al livello previsto.
 
 **Fatto:** `tools/sim-covi.ts`: ogni protagonista con ogni iniziale contro ogni covo, da 0 a 4 spille; la squadra del giocatore è l'iniziale al livello del capo, un Riccetto due livelli sotto e, dal terzo covo, una Cicalina; lui per ultimo. `--tune` cerca i livelli delle creature dei capi. Il test (`tests/unit/covo-crew.test.ts`) guarda la mediana di ogni covo a ogni posto nell'ordine, non il singolo protagonista: con i tipi contro, alcuni abbinamenti scendono sotto il 20% e lo devono poter fare (si cattura chi batte il capo). Soglia 40%.
@@ -238,7 +243,7 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - la prima volta che una creatura è in svantaggio di tipo, Cicerone insegna a cambiare;
 - nel Cisternone la selvatica di livello 20 esce solo dopo la prima pietra.
 
-**Fatto in parte (11 novembre):** tre tappe nuove nel giro (`team` in `story/goals.ts`, con il loro capitolo di Cicerone): «La tua seconda creatura» subito dopo la prima, «Tre creature per il buio» prima del Cisternone, «Una squadra per Mamurra» (quattro) prima di Mamurra; la freccia porta al guardaparco, accanto all'erba e agli scogli di Gianola. La Pipistrega del Cisternone esce solo dopo la Pietra delle Mura (`after` su una voce di `data/encounters.ts`). Non fatto: il consiglio di Cicerone sul cambio alla prima creatura in svantaggio. Test: `tests/unit/teaching.test.ts`.
+**Fatto in parte (11 novembre):** tre tappe nuove nel giro (`team` in `story/goals.ts`, con il loro capitolo di Cicerone): «La tua seconda creatura» subito dopo la prima, «Tre creature per il buio» prima del Cisternone, «Una squadra per Mamurra» (quattro) prima di Mamurra; la freccia porta al guardaparco, accanto all'erba e agli scogli di Gianola. La Pipistrega del Cisternone esce solo dopo la Pietra delle Mura (`after` su una voce di `data/encounters.ts`). Dall'11 novembre anche il consiglio di Cicerone sul cambio, prima della lotta, la prima volta che la creatura mandata è in svantaggio di tipo e ce n'è un'altra (`TIPS.change`). Test: `tests/unit/teaching.test.ts`.
 
 **R11. Tre percorsi con erba e allenatori (Opus, high).** La strada per tre tappe della trama passa da un tratto con erba alta, due allenatori e una cosa da trovare: il sentiero della pineta verso la Tomba di Cicerone, il parco di Gianola verso la villa, gli uliveti verso i monti. Si fa con `tools/formia/network.ts` e `build.ts`; se le caselle cambiano serve il nuovo `formiaN` nei salvataggi. *Fatto quando:* il giocatore «solo freccia» incontra almeno dieci selvatiche e sei allenatori prima di Mamurra.
 
@@ -260,6 +265,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **R16. L'interfaccia da PC (Sonnet, xhigh).** Dipende da D3. Sopra i 900 pixel di larghezza: menu e schede al centro o di lato, alti quanto lo schermo, mai tagliati; la pianta di Formia a schermo intero con M; le carte delle mosse opache. Sotto, tutto resta com'è. Antonio guarda le schermate a 1366×768 e 1920×1080 prima di chiudere.
 
+**Fatto (11 novembre):** sopra i 900 pixel menu, negozi e schede sono finestre al centro, larghe fino a 880 pixel e alte quanto lo schermo (`styles/responsive.css`), la pianta di Formia cresce con loro; il contatore dei negozi resta piccolo. Guardato a 1366×768 (le schermate in `test-results/shots`). Non fatto: la pianta a schermo intero con M (M apre il menu), le carte delle mosse sono già opache.
+
 **R17. Comandi da PC (Sonnet, medium).** Clic su una casella: ci si cammina con `route`. Clic su una persona vicina: ci si parla. Tasto F: schermo intero. Gamepad solo se resta tempo.
 
 **Fatto (R17):** un clic su una casella ci porta camminando (`route`, `walkAlong` in `story/movement.ts`, `tileAt` in `render/world-view.ts`); un clic su una persona, un cartello o una cosa porta accanto e la usa; il tasto F mette lo schermo intero. Test: la partita «walking with a click». Gamepad no.
@@ -270,11 +277,11 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - *Avviso:* se salvare fallisce, il giocatore lo vede.
 - *Versioni:* una lista ordinata di passaggi da una versione alla successiva, al posto dei `formia2…6`.
 
-**Fatto in parte:** esporta e importa (codice e file), copia di riserva, avviso se salvare fallisce; test unitari e la partita «a story exported and imported» (vedi `docs/titolo-e-salvataggi.md`). Non fatto: la lista ordinata delle versioni al posto dei `formia2…6`.
+**Fatto:** esporta e importa (codice e file), copia di riserva, avviso se salvare fallisce, e la lista ordinata dei passaggi (`MIGRATIONS` in `save/story-progress.ts`, al posto dei `formia2…6`: chi era su una mappa vecchia torna a casa sua, non più sempre a quella di Antonio). Test unitari e la partita «a story exported and imported».
 
 **R19. La lotta non si blocca mai; partite da PC (Sonnet, high).** Ogni scena animata gira dentro una rete: se lancia un errore o supera gli otto secondi, la lotta la salta, scrive l'errore in console e continua. Le partite di prova passano a 1366×768 di base (restano a misura di telefono solo quelle che provano la croce), e almeno dieci girano con le animazioni accese.
 
-**Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Non fatto: portare a dieci le partite con le animazioni accese (oggi sono sei). Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
+**Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Dall'11 novembre le partite con le animazioni accese sono dieci. Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
 
 **R20. Misurare la mappa sul Mac (Sonnet, medium).** Con il profiler di Chrome: tempo per fotogramma camminando, di giorno e di notte, a schermo pieno. Se supera gli 8 ms: limitare la risoluzione del canvas a 2× di 1440×900 e disegnare la notte meno spesso. Si scrive il prima e il dopo.
 
