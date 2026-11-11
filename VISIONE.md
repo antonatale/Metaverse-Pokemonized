@@ -338,7 +338,7 @@ Sempre 60 fotogrammi al secondo (480 su 8 secondi); il fotogramma più lento, un
 
 **La partita fino al primo belvedere.** Giocata da un browser automatico a tempo vero, come la giocherebbe una persona, a 1366×768, con le animazioni accese: il titolo, «chi sei?» (Antonio), casa, la freccia fino al guardaparco, Polpino, il sentiero di Gianola, le terrazze con le scale, il cannocchiale della punta. La camera sale, compare «Una veduta nuova nel Diario» e il Diario dice «Vedute · 1 su 3». Poi il salto sopra le terrazze: da (168,61) si atterra a (168,63) e non si risale. Nessun errore in console.
 
-**Il tema scuro e i sentieri di notte.** I tre belvedere (Aurunci, Acervara, punta di Gianola) in chiaro e in scuro, di giorno e di notte, la veduta dagli Aurunci di notte, Castellone di notte, via Vitruvio al tramonto: nessun errore in console, i fianchi, le scale e le freccette dei salti si vedono in tutti e otto i modi.
+**Il tema scuro e i sentieri di notte.** I tre belvedere (Aurunci, Acervara, punta di Gianola) in chiaro e in scuro, di giorno e di notte, la veduta dagli Aurunci di notte, Castellone di notte, via Vitruvio al tramonto: nessun errore in console, i fianchi, le scale e le freccette dei salti si vedono in tutti e quattro i modi.
 
 **Visti e segnati, non corretti qui:**
 - **Il primo sentiero è troppo duro per chi ci va subito.** Il belvedere della punta è a pochi passi dal guardaparco, quindi è il primo posto dove va chi esplora: lì, con Polpino da solo al 5, Antonio ha incontrato un allenatore del sentiero e ha perso (Cicerone: «Hai perso?»). L'archeologa ha due creature al 5 e al 6, il pescatore di polpi due al 7. È bilanciamento: va con la curva di R8 (C4). Si può abbassare il pescatore o spostarlo più in fondo, dopo la seconda creatura.
