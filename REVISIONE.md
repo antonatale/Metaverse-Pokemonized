@@ -6,7 +6,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
-**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R5, R6, R7, R10, R13, R14, R15, R17, R18, R19; in parte R8 e R16. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R8 (con quello che dice R5), R20, R11, R12. Dall'11 novembre c'è `VISIONE.md`: dove portare il gioco dopo, con le task V1…V11; R11 confluisce in V3. **L'ordine di tutto quello che resta, R e V insieme, è la coda C1…C10 in cima a `VISIONE.md`.**
+**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R5, R6, R7, R10, R13, R14, R15, R17, R18, R19; in parte R8 e R16. Tutto in `main`. La sera R20, con C1 di `VISIONE.md`, sul ramo `visione-formia-tre-piani`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R8 (con quello che dice R5), R11, R12. Dall'11 novembre c'è `VISIONE.md`: dove portare il gioco dopo, con le task V1…V11; R11 confluisce in V3. **L'ordine di tutto quello che resta, R e V insieme, è la coda C1…C10 in cima a `VISIONE.md`.**
 
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
@@ -288,6 +288,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 **R20. Misurare la mappa sul Mac (Sonnet, medium).** Con il profiler di Chrome: tempo per fotogramma camminando, di giorno e di notte, a schermo pieno. Se supera gli 8 ms: limitare la risoluzione del canvas a 2× di 1440×900 e disegnare la notte meno spesso. Si scrive il prima e il dopo.
 
 **Dall'11 novembre** c'è anche Grafica: Alta o Bassa (`ui/gfx.ts`, V1 di `VISIONE.md`): la misura va fatta con tutte e due. Nel contenitore, a 1440×900 di giorno: Bassa 2,9 ms, Alta 10,5 ms.
+
+**Fatto (11 novembre, sera, con C1 di `VISIONE.md`):** sul MacBook Air di Antonio, nel browser dell'app Claude (il Chromium di Electron, con la scheda grafica del Mac), camminando su via Vitruvio, un fotogramma costa da 1,1 a 2,3 ms a 1440×900 (lo schermo intero del Mac) e da 1,3 a 1,5 ms a 1920×1080, con Alta come con Bassa, di giorno e di notte; il 95% dei fotogrammi sotto i 3,5 ms, sempre 60 al secondo. Sotto gli 8 ms con largo margine: non serve limitare il canvas né disegnare la notte meno spesso. Lo strumento è `npm run perf` (`tools/perf/`): scrive `dist/perf.html`, che si apre con un doppio clic e misura da sola. I numeri e il resto di C1 sono in fondo a `VISIONE.md`.
 
 ### Fase 4: l'architettura, dopo che il gioco è deciso
 

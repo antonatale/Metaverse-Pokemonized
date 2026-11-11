@@ -70,7 +70,7 @@ Tutto in `render/atmosphere.ts`, chiamato da `drawFrame` in `render/world-view.t
 - **La cornice:** un foglio della pagina sopra il canvas (`.wframe` in `styles/story.css`), più scuro verso i bordi.
 - **Il titolo** (`preview`): le ombre di un pomeriggio di sole.
 - **Regole:** niente `Math.random` (posizioni e tempi vengono da `hash` e dal tempo del fotogramma); con «riduci il movimento» tutto resta fermo; con Bassa non si disegna niente di questo. I colori sono token: `--m-shade`, `--m-sunlit`, `--m-glint`, `--m-firefly`.
-- **Quanto costa:** nel contenitore, senza scheda grafica, a 1440×900: Bassa 2,9 ms a fotogramma, Alta 10,5 ms; a 1920×1080: 4,0 e 15,6. Sul Mac è da misurare (R20, V1).
+- **Quanto costa:** sul MacBook Air di Antonio (C1 di `VISIONE.md`, 11 novembre), camminando, da 1,1 a 2,3 ms a fotogramma a 1440×900 e da 1,3 a 1,5 a 1920×1080, con Alta come con Bassa, di giorno e di notte, sempre a 60 fotogrammi al secondo: la scheda grafica si prende quasi tutto. Senza scheda grafica (il contenitore, le partite di Playwright) Alta costa da due a cinque volte Bassa: a 1440×900 e densità 2, Bassa 22 ms e Alta 42; a densità 1, 2,9 e 10,5; nelle partite di Playwright, 4,4 e 23. Si misura con `npm run perf` (`tools/perf/`): `dist/perf.html` entra in mappa, cammina su via Vitruvio e scrive i numeri sulla pagina.
 
 ## Formia a tre piani (11 novembre 2026, V3 e V4 di `VISIONE.md`)
 

@@ -158,7 +158,7 @@ test('the intro, and three stories at once', async ({ browser }) => {
 });
 
 test('story', async ({ browser }) => {
-  await play(browser, 'story', { seed: 3 }, async (r) => {
+  await play(browser, 'story', { seed: 3, gfx: 'bassa' }, async (r) => {
     const p = r.page;
     await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
@@ -438,7 +438,10 @@ async function talkTo(p: Page, id: string) {
   await talkThrough(p);
 }
 test('activities around Formia', async ({ browser }) => {
-  const r = await play(browser, 'activities', { seed: 9 }, async (r) => {
+  /* the longest game: minutes of fake clock (a minute of run in the pineta alone). On Bassa, without a graphics card,
+     it still takes about four minutes, most of them Playwright's own: three times the time of the others (C1) */
+  test.slow();
+  const r = await play(browser, 'activities', { seed: 9, gfx: 'bassa' }, async (r) => {
     const p = r.page;
     await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
@@ -634,7 +637,7 @@ test('the tour of Formia', async ({ browser }) => {
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
    the menu; then money spent on nets at Mola and one out of the tall grass caught */
 test('creatures of Formia', async ({ browser }) => {
-  const first = await play(browser, 'creatures', { seed: 5 }, async (r) => {
+  const first = await play(browser, 'creatures', { seed: 5, gfx: 'bassa' }, async (r) => {
     const p = r.page;
     await goStory(p);
     await until(p, () => window.WORLD._debug.pos().dialog);
@@ -691,7 +694,7 @@ test('creatures of Formia', async ({ browser }) => {
 
   const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, seen: { intro: true, starter: true }, found: {},
     mons: [{ uid: 'c1', sp: 'gabbi' }], lv: { c1: { lv: 12, xp: 0 } }, money: 120, bag: {} };
-  const second = await play(browser, 'catch', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+  const second = await play(browser, 'catch', { seed: 8, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
@@ -1022,9 +1025,11 @@ test('the two teams and Antonio\'s abilities', async ({ browser }) => {
 /* the plot: the lady of the theatre's riddle gives the stone of the walls, Cicero's three questions at his tomb the
    stone of the voice; then Mamurra is waiting at his villa */
 test('the stones of Telepilo', async ({ browser }) => {
+  /* long as activities: the riddle, the three questions and two battles, about four minutes on Bassa without a graphics card */
+  test.slow();
   const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurr-scavi': true, 'tr-mamurr-cisterna': true }, found: {},
     seen: { intro: true, starter: true, 'trama-archivio': true, 'pietra-mare': true, 'cap-starter': true }, mons: [{ uid: 'c1', sp: 'ramarrone' }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
-  const r = await play(browser, 'plot', { seed: 14, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+  const r = await play(browser, 'plot', { seed: 14, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);

@@ -4,7 +4,7 @@ Antonio ha chiesto di essere ambiziosi: idee prese dai grandi giochi, decisioni 
 
 **Su cosa è fatta:** `main` al commit `6d1f9b8` (11 novembre, dopo R5, R10, R16, R18, R19). Ho letto codice e documenti, costruito il gioco, guardato la mappa intera e una ventina di schermate a 1366×768 di giorno, al tramonto e di notte, e misurato la mappa con uno strumento nuovo.
 
-**Cosa c'è già di fatto, l'11 novembre:** la base di V1 (la luce e la vita della mappa) e, la sera, la base di V3 e V4 insieme (Formia più piena e a tre piani: gradoni, sentieri, salti, belvedere, la campagna chiusa). Sono in fondo, in «Cosa è stato fatto oggi».
+**Cosa c'è già di fatto, l'11 novembre:** la base di V1 (la luce e la vita della mappa) e, la sera, la base di V3 e V4 insieme (Formia più piena e a tre piani: gradoni, sentieri, salti, belvedere, la campagna chiusa). Poi C1, la verifica. Sono in fondo, in «Cosa è stato fatto oggi».
 
 ---
 
@@ -26,7 +26,7 @@ Una task per sessione, come sempre. Chi apre una sessione nuova prende la prima 
 
 | # | Cosa | Modello | Fatto quando |
 |---|---|---|---|
-| C1 | **Verifica sul Mac** del lavoro dell'11 novembre (V1, V3, V4; è anche R20): `npm run test:e2e` intero, il fotogramma con Grafica Alta e Bassa di giorno e di notte, il tema scuro, una partita a mano fino al primo belvedere | Sonnet 5.5, high | le misure sono scritte in V1; le partite stanno nei 240 secondi (se no: il foglio delle ombre a un quarto, o Bassa nelle partite lunghe); ogni difetto visto è corretto o segnato qui |
+| C1 | **Fatta l'11 novembre, sera** (vedi «C1, la verifica» in fondo); resta solo `npm run test:e2e` lanciato sul Mac da Antonio. **Verifica sul Mac** del lavoro dell'11 novembre (V1, V3, V4; è anche R20): `npm run test:e2e` intero, il fotogramma con Grafica Alta e Bassa di giorno e di notte, il tema scuro, una partita a mano fino al primo belvedere | Sonnet 5.5, high | le misure sono scritte in V1; le partite stanno nei 240 secondi (se no: il foglio delle ombre a un quarto, o Bassa nelle partite lunghe); ogni difetto visto è corretto o segnato qui |
 | C2 | **Finire V3:** legare i tre sentieri al giro (una tappa in cima a ognuno, o una tappa della trama spostata lì), riempire le otto schermate vuote, misurare R11 con `npm run playtest` | Opus 5.5, high | il giocatore «solo freccia» incontra dieci selvatiche e sei allenatori prima di Mamurra; schermate vuote 6 o meno |
 | C3 | **Finire V4:** Castellone in alto (il muro tra il borgo e l'Appia, la salita, il belvedere dalla Torre), e le strade che salgono un fianco disegnate come salite | Opus 5.5, max | da casa di ognuno dei sei si arriva a ogni tappa; quattro belvedere nel Diario |
 | C4 | **R8, il resto** (la curva di crescita, la terza mossa delle iniziali): con i sette allenatori nuovi dentro la tabella tappa → livello | Opus 5.5, max | come scritto in R8 di `REVISIONE.md` |
@@ -99,7 +99,7 @@ Una cosa che nessuno di questi ha, e questo sì: **il posto è vero, e chi gioca
 - *Perché:* la mappa era bella e ferma, senza un'ombra. È la differenza tra una pianta e un posto.
 - *Fatto oggi* (vedi in fondo): ombre che girano con il sole vero, ombre delle nuvole, luce sui volumi, vento tra gli alberi, risacca e luccichio del mare, piccioni che scappano, farfalle, lucciole, la camminata con il passo e il respiro, l'opzione Grafica.
 - *Resta da fare (Sonnet, high):*
-  - **misurare sul Mac** (è R20): fotogramma a 1440×900 e a schermo pieno, Alta e Bassa, giorno e notte. Nel contenitore, senza scheda grafica: Bassa 2,9 ms, Alta 10,5 ms a 1440×900; Bassa 4,0 ms, Alta 15,6 ms a 1920×1080. Se sul Mac Alta supera gli 8 ms: il foglio delle ombre a un quarto, il vento un fotogramma sì e uno no;
+  - ~~misurare sul Mac~~ **fatto con C1** (è R20): sul MacBook Air di Antonio, camminando, da 1,1 a 2,3 ms a fotogramma a 1440×900 (lo schermo intero del Mac) e da 1,3 a 1,5 a 1920×1080, Alta come Bassa, giorno e notte, sempre 60 fotogrammi al secondo. Sotto gli 8 ms con largo margine: il foglio delle ombre e il vento restano come sono. I numeri sono in «C1, la verifica», in fondo; si rifà la misura con `npm run perf`;
   - **il treno che passa**: ogni tanto un regionale attraversa la mappa sui binari, le sbarre dei passaggi a livello scendono e non si passa finché non è passato. Un orario finto ma fisso (dall'ora, non da `Math.random`);
   - **il traghetto per Ponza** che esce dal porto e rientra;
   - **il fumo dai comignoli** d'inverno, **i panni stesi** che si muovono a Mola, **le bandiere** della scuola;
@@ -314,3 +314,41 @@ Una cosa che nessuno di questi ha, e questo sì: **il posto è vero, e chi gioca
 **Controlli della sera:** `npx tsc --noEmit` pulito; `npm test` 404 su 404; `npm run build`. I golden della mappa sono rigenerati apposta (la mappa e il disegno del terreno sono cambiati); le 2040 lotte e i 168 ritratti sono identici. `sim-story trainers` con i sette allenatori nuovi: tra il 40 e il 100% secondo l'iniziale. Nel gioco, con un browser automatico: il belvedere degli Aurunci (la camera sale, la veduta entra nel Diario), un salto giù e il tentativo di risalire, il clic che attraversa un salto, nessun errore in console. Le 43 partite Playwright, con il Chrome di sistema, passano tutte: 39 al primo giro con quattro worker; le altre quattro («story», «activities around Formia», «creatures of Formia», «the stones of Telepilo») sono andate fuori tempo a 400 secondi e passano rilanciate con più tempo, in 3–10,5 minuti. Senza scheda grafica la Grafica Alta rallenta ogni fotogramma, e le partite lunghe ne risentono: sul Mac va guardato che restino sotto i 240 secondi di `playwright.config.ts` (è C1).
 
 **Non provato la sera:** il Mac; una partita intera dall'inizio alla fine sulla mappa nuova (è C1 e la misura di C2); i sentieri di notte.
+
+### C1, la sera: la verifica
+
+**Il fotogramma sul Mac** (è R20). Misurato sul MacBook Air di Antonio (schermo 1440×900, densità 2), nel browser integrato dell'app Claude: è il Chromium di Electron, con la scheda grafica del Mac. La pagina di misura è il gioco con davanti `tools/perf/bench.js` (`npm run perf` scrive `dist/perf.html`): entra in mappa con una storia sua, cammina otto secondi avanti e indietro su via Vitruvio, e somma per ogni fotogramma il tempo delle chiamate del gioco (il giro della mappa: `update` e `drawWorld`). Una pagina caricata per ogni prova, così Grafica e ora si leggono come all'avvio.
+
+| Finestra (canvas) | Alta, giorno | Alta, notte | Bassa, giorno | Bassa, notte |
+|---|---|---|---|---|
+| 1440×860 (2880×1720) | 1,2 ms (95%: 3,0) | 2,3 (3,5) | 1,4 (2,6) | 1,1 (2,7) |
+| 1920×1040 (3840×2080) | 1,4 (3,1) | 1,3 (3,3) | 1,5 (2,7) | 1,4 (2,7) |
+
+Sempre 60 fotogrammi al secondo (480 su 8 secondi); il fotogramma più lento, uno solo, 18,5 ms di notte a 1920. Il tetto di DV6 è 8 ms: Alta sul Mac costa quanto Bassa, e nessun rimedio serve. Con lo stesso strumento nel contenitore, senza scheda grafica e alla stessa densità, a 1440×900 di giorno: Bassa 22 ms, Alta 42 (da 15 a 30 fotogrammi al secondo). I numeri di prima (2,9 e 10,5) erano a densità 1.
+
+**Le partite intere.** Sul Mac non le ho potute lanciare (sotto, «Non fatto»). Nel contenitore, con il Chrome di sistema e due worker, passano tutte e 43, ma due andavano oltre i 240 secondi. Dentro «activities around Formia», da sola, con Alta i fotogrammi prendono 231 secondi su 415 (23 ms l'uno, su quasi diecimila), con Bassa 44 su 246: il resto è il giro di Playwright. Quindi il rimedio scritto in C1, Bassa nelle partite lunghe: un'opzione `gfx` di `play()` in `tests/e2e/harness.ts`, e `gfx: 'bassa'` nelle quattro più lunghe. Le due che anche su Bassa restano sopra i 4 minuti hanno `test.slow()`, cioè 720 secondi. Le altre 39 restano su Alta, comprese le due di notte.
+
+| Partita | Prima (Alta) | Dopo |
+|---|---|---|
+| activities around Formia | 524 s | 318 s (Bassa, `test.slow`) |
+| the stones of Telepilo | 348 s | 249 s (Bassa, `test.slow`) |
+| story | 187 s | 125 s (Bassa) |
+| creatures of Formia | 187 s | 126 s (Bassa) |
+| Tutte e 43 | 24,0 minuti | 20,0 minuti, tutte verdi con il tetto di 240 s |
+
+**La partita fino al primo belvedere.** Giocata da un browser automatico a tempo vero, come la giocherebbe una persona, a 1366×768, con le animazioni accese: il titolo, «chi sei?» (Antonio), casa, la freccia fino al guardaparco, Polpino, il sentiero di Gianola, le terrazze con le scale, il cannocchiale della punta. La camera sale, compare «Una veduta nuova nel Diario» e il Diario dice «Vedute · 1 su 3». Poi il salto sopra le terrazze: da (168,61) si atterra a (168,63) e non si risale. Nessun errore in console.
+
+**Il tema scuro e i sentieri di notte.** I tre belvedere (Aurunci, Acervara, punta di Gianola) in chiaro e in scuro, di giorno e di notte, la veduta dagli Aurunci di notte, Castellone di notte, via Vitruvio al tramonto: nessun errore in console, i fianchi, le scale e le freccette dei salti si vedono in tutti e otto i modi.
+
+**Visti e segnati, non corretti qui:**
+- **Il primo sentiero è troppo duro per chi ci va subito.** Il belvedere della punta è a pochi passi dal guardaparco, quindi è il primo posto dove va chi esplora: lì, con Polpino da solo al 5, Antonio ha incontrato un allenatore del sentiero e ha perso (Cicerone: «Hai perso?»). L'archeologa ha due creature al 5 e al 6, il pescatore di polpi due al 7. È bilanciamento: va con la curva di R8 (C4). Si può abbassare il pescatore o spostarlo più in fondo, dopo la seconda creatura.
+- **Il tema scuro di notte è molto scuro.** Si legge grazie ai contorni a penna chiari, ma il terreno quasi non si vede. Da giudicare a occhio sul Mac: se è troppo, il foglio della notte va alleggerito quando il tema è scuro.
+
+**Non fatto:** `npm run test:e2e` sul Mac. Da qui il Terminale del Mac non si può usare: l'app concede ai terminali solo i clic, non la tastiera, e la shell remota è una macchina Linux, non il Mac. Antonio, sul ramo `visione-formia-tre-piani`: `git pull && npm install && npm run test:e2e`. Se tutte passano, C1 è chiusa del tutto; se «activities» o «the stones of Telepilo» stanno sotto i 240 secondi, il loro `test.slow()` si può togliere.
+
+**Come è fatto, per chi continua:**
+- `dist/perf.html` si apre con un doppio clic (meglio in Chrome) e lavora da solo per circa un minuto e mezzo. Rimette a posto la storia, la Grafica e l'ora di chi gioca, e alla fine scrive i numeri sulla pagina, con «Rifai». Tra un caricamento e l'altro ricorda il punto in `window.name`, che sopravvive anche in un frame senza `sessionStorage`. Se la pagina è nascosta lo scrive, perché il browser allora non disegna;
+- per misurare sul Mac senza toccarlo: la pagina pubblicata come artifact privato, aperta nel browser integrato dell'app con la finestra emulata (1440×900, 1920×1080). Il pannello deve essere visibile e collegato a claude.ai: l'accesso lo fa Antonio;
+- con l'orologio finto di Playwright e le animazioni accese, una scena della lotta («abil») superava gli 8 secondi finti e `safeShow` la saltava con un errore. A tempo vero non succede: è il giocatore automatico, non il gioco (nota in `docs/test.md`).
+
+**Controlli:** `npx tsc --noEmit` pulito; `npm test` 404 su 404; `npm run build`; le 43 partite come sopra.

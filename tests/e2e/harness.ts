@@ -28,6 +28,10 @@ export interface TwinOpts {
   spot?: boolean;
   /** what goes after the address, as ?intro=1 */
   url?: string;
+  /** the graphics of the map (menu, Mappa): Alta unless a test asks. The longest games play on Bassa, where the light
+      and the life of the map are not drawn: in a browser without a graphics card every frame of Alta costs two to five times
+      as much, and a game that lets minutes of fake clock run draws thousands of them (C1 of VISIONE.md) */
+  gfx?: 'alta' | 'bassa';
 }
 
 async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
@@ -60,6 +64,8 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
       for (const k of Object.keys(storage)) localStorage.setItem(k, storage[k]);
     }
   }, { seed: o.seed ?? 7, storage: o.storage || null });
+  /* after the storage above, which clears it */
+  if (o.gfx) await page.addInitScript((g) => { try { localStorage.setItem('lotte-tra-amici:grafica:v1', g); } catch (e) { /* none */ } }, o.gfx);
   if (o.hot) await page.addInitScript(() => {
     const W = window as unknown as Record<string, unknown>;
     W.claude = { hot: {

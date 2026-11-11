@@ -30,6 +30,7 @@ e `BRIEFING-IDEE.md`. `VISIONE.md` (11 novembre 2026) dice dove portare il gioco
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | una leggenda contro una squadra |
 | `npx tsx tools/formia/density.ts` | quanto c'è da fare in ogni schermata di Formia, e quanto è deserto (V3 di `VISIONE.md`) |
 | `npx tsx tools/sim-covi.ts` | i covi con le creature: ogni protagonista e iniziale, da 0 a 4 spille (`--tune` ritara le squadre dei capi) |
+| `npm run perf` | `dist/perf.html`: si apre con un doppio clic e misura da sola il fotogramma della mappa, Alta e Bassa, di giorno e di notte (R20) |
 | `npm run promo` | il trailer (serve macOS) |
 
 GitHub fa typecheck, `npm test` e build a ogni push (`.github/workflows/ci.yml`). Le partite Playwright girano sul Mac;
