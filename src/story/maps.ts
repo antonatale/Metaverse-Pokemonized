@@ -184,9 +184,11 @@ export function cityCovi(city: string): Covo[] {
   return Object.keys(COVI).filter(function (k) { return COVI[k].city === city && COVI[k].leader !== me; }).map(function (k) { return COVI[k]; });
 }
 /** a covo's level now: its base, and COVO_STEP more for every other pin of its city already won */
-export function covoLevel(id: string): number {
+export function covoLevel(id: string): number { return COVI[id].level + COVO_STEP * covoPins(id); }
+/** how many pins of its city are already won, besides its own: it says the covo's level and how many creatures */
+export function covoPins(id: string): number {
   var cv0 = COVI[id];
-  return cv0.level + COVO_STEP * cityCovi(cv0.city).filter(function (c) { return c !== cv0 && hasBadge(c); }).length;
+  return cityCovi(cv0.city).filter(function (c) { return c !== cv0 && hasBadge(c); }).length;
 }
 export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badge.id) >= 0; }
 

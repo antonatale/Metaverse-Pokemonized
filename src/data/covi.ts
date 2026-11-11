@@ -1,4 +1,5 @@
 import type { FriendId } from './characters';
+import type { SpeciesId } from './creatures';
 
 /* The covi: our gyms. Each of the six friends has one in Formia, and gives a pin. Whoever is played beats the other
    five (his own covo is not there for him: story/maps.ts cityCovi) and the train for his second city leaves. Nobody
@@ -12,6 +13,12 @@ export interface Covo {
       covoLevel), so the order is free and the last one is the hardest */
   level: number;
   badge: Badge;
+  /** the leader's creatures, of his type, in the order he sends them (the first forms: they grow with the level,
+      story/covo-crew.ts); he steps in last, as a person (`last` on the bench), like the player does */
+  crew: SpeciesId[];
+  /** levels added to (or taken from) the crew, by how many pins of the city are already won (0 to 4): tuned with
+      `npx tsx tools/sim-covi.ts --tune`, so that the median player wins about seven times in ten at the leader's level */
+  crewTune?: number[];
   /** what the leader says before the challenge, after winning, after losing, and once beaten */
   intro: string[];
   win: string[];
@@ -26,7 +33,7 @@ export const COVO_STEP = 3;
 
 export const COVI: Record<string, Covo> = {
   piazza: {
-    name: 'Piazza della Vittoria', city: 'formia', leader: 'costanzo', level: 6,
+    name: 'Piazza della Vittoria', city: 'formia', leader: 'costanzo', level: 6, crew: ['micetto', 'cicalina', 'micetto'], crewTune: [2, 1, 1, 2, -1],
     badge: { id: 'gialosai', name: 'Spilla «Già lo sai»', mark: 'C', color: '#ffe45c' },
     intro: ['GIÀ LO SAI.', 'Questa è la mia piazza. Se vuoi parlare, prima devi battermi.'],
     win: ['Daje Roma daje… va bene, hai vinto tu.', 'La spilla è tua. Il comizio però resta mio: GIÀ LO SAI.'],
@@ -41,7 +48,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   circolo: {
-    name: 'Tennis coperti del Bruno Zauli', city: 'formia', leader: 'forchetta', level: 6,
+    name: 'Tennis coperti del Bruno Zauli', city: 'formia', leader: 'forchetta', level: 6, crew: ['lumacotta', 'ramarrino', 'lumacotta'], crewTune: [0, 1, 0, 1, 0],
     badge: { id: 'peggio', name: 'Spilla «Poteva andare peggio»', mark: 'F', color: '#8fd0f6' },
     intro: ['Poteva andare peggio.', 'Palleggiamo? Chi perde paga il campo.'],
     win: ['Poteva andare peggio. Per me.', 'Tieni la spilla. Il campo però lo paghi tu lo stesso.'],
@@ -56,7 +63,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   eclipse: {
-    name: 'Eclipse beach', city: 'formia', leader: 'valentin', level: 6,
+    name: 'Eclipse beach', city: 'formia', leader: 'valentin', level: 6, crew: ['granchietto', 'cinghialetto', 'gabbi'], crewTune: [1, 2, -2, 0, 0],
     badge: { id: 'weee', name: 'Spilla «Weee!»', mark: 'W', color: '#ffa04a' },
     intro: ['Weee! Qui all\'Eclipse la festa è mia.', 'Vuoi la spilla? Prima balli con me. Cioè, lotti.'],
     win: ['Weee… cambio di programma: hai vinto tu.', 'La spilla è tua. La festa stasera continua lo stesso, sei invitato.'],
@@ -71,7 +78,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   pineta: {
-    name: 'Pineta di Vindicio', city: 'formia', leader: 'zendavid', level: 6,
+    name: 'Pineta di Vindicio', city: 'formia', leader: 'zendavid', level: 6, crew: ['olivella', 'ginestrella', 'olivella'], crewTune: [5, 2, 2, 3, 0],
     badge: { id: 'bau', name: 'Spilla «Bau»', mark: 'Z', color: '#ff8fc1' },
     intro: ['Bau.', 'In pineta la musica la scelgo io. Se vinci, la spilla è tua.'],
     win: ['Ansia… va bene, hai vinto. Bau.', 'Tieni la spilla. Io rimetto le cuffie.'],
@@ -86,7 +93,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   padel: {
-    name: 'Campi da padel del Bruno Zauli', city: 'formia', leader: 'andrea', level: 6,
+    name: 'Campi da padel del Bruno Zauli', city: 'formia', leader: 'andrea', level: 6, crew: ['stellina', 'civettina', 'stellina'], crewTune: [5, 3, -2, 4, 1],
     badge: { id: 'calcolato', name: 'Spilla «Ho calcolato tutto»', mark: 'V', color: '#9be7c4' },
     intro: ['Ho calcolato tutto.', 'Statisticamente vinco io. Vuoi provare lo stesso?'],
     win: ['Sono cucinato.', 'Non era nei dati. La spilla è tua: complimenti, davvero.'],
@@ -101,7 +108,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   palamendola: {
-    name: 'Palamendola', city: 'formia', leader: 'antonio', level: 6,
+    name: 'Palamendola', city: 'formia', leader: 'antonio', level: 6, crew: ['civettina', 'polpino', 'stellina'], crewTune: [0, 0, -1, 0, -2],
     badge: { id: 'statoarte', name: 'Spilla «Stato dell\'arte»', mark: 'A', color: '#c3a0ff' },
     intro: ['Ho già letto il paper di questa settimana.', 'Al Palamendola si gioca in casa mia. Sfida?'],
     win: ['…mi servono più basi di controlli.', 'Crazy shit. La spilla è tua: stato dell\'arte.'],

@@ -6,7 +6,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
-**Stato al 10 novembre, sera:** fatte A0, R1, R2, R3, R4, R13, R15; in parte R18 e R19. Tutto sul ramo `sei-protagonisti` di GitHub, non ancora in `main`. Le altre aspettano D1–D5 o sono le prossime (R5, R6, R14, R16, R17, R20…).
+**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R6, R7, R13, R14, R15, R17; in parte R18 e R19. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R5, R8, R10, R16, R20.
 
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
@@ -133,9 +133,9 @@ Lo dico perché chi fa le task non lo «sistemi»: il motore con lo stato in JSO
 
 | # | Decisione | Cosa consiglio |
 |---|---|---|
-| D1 | **Cosa sono i covi.** | Il capo ha due o tre creature del suo tipo e scende in campo per ultimo, con le sue mosse da persona. Tu lotti con la tua squadra, e per ultimo scendi tu. Il motore ha già la regola: è il tuo «Lotto io!» (`last` sulla panchina), e non distingue i due lati; dal lato del computer va provata. Le creature diventano il modo di prendere le spille e i sei protagonisti tornano pari. L'alternativa, tenere i duelli tra persone e ribilanciarne trenta, costa di più e resta fragile. |
-| D2 | **Persone vere.** | Chiedi ai cinque amici se va bene. Poi una di queste: repo privato; oppure togliere cognomi, vie e numero civico dal gioco e dai documenti pubblici (restano nella storia di git: per cancellarli davvero serve riscriverla o rifare il repo). |
-| D3 | **PC o anche telefono.** | Se lo mandi agli amici con un link, lo apriranno dal telefono. Consiglio: PC come schermo principale, telefono che funziona. Decidilo prima di R16. |
+| D1 | **Cosa sono i covi.** *Deciso l'11 novembre: come consigliato.* | Il capo ha due o tre creature del suo tipo e scende in campo per ultimo, con le sue mosse da persona. Tu lotti con la tua squadra, e per ultimo scendi tu. Il motore ha già la regola: è il tuo «Lotto io!» (`last` sulla panchina), e non distingue i due lati; dal lato del computer va provata. Le creature diventano il modo di prendere le spille e i sei protagonisti tornano pari. L'alternativa, tenere i duelli tra persone e ribilanciarne trenta, costa di più e resta fragile. |
+| D2 | **Persone vere.** *Deciso: Antonio rende privato il repo.* | Chiedi ai cinque amici se va bene. Poi una di queste: repo privato; oppure togliere cognomi, vie e numero civico dal gioco e dai documenti pubblici (restano nella storia di git: per cancellarli davvero serve riscriverla o rifare il repo). |
+| D3 | **PC o anche telefono.** *Deciso: PC principale, telefono che funziona.* | Se lo mandi agli amici con un link, lo apriranno dal telefono. Consiglio: PC come schermo principale, telefono che funziona. Decidilo prima di R16. |
 | D4 | **I tipi devono sentirsi?** | Fai fare l'esperimento R9 e giocalo. Non decidere a tavolino. |
 | D5 | **Fermare i sistemi nuovi.** | Finché R5, R7 e R8 non sono fatte, niente meccaniche nuove. Ogni sistema in più oggi allarga il problema B. |
 
@@ -210,12 +210,16 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **R6. Il simulatore dei covi (Sonnet, medium).** `docs/revisione/covi-sim.ts` diventa `tools/sim-covi.ts`, con la regola di lotta decisa in D1. Un test fallisce se un protagonista ha un covo sotto il 45% al livello previsto.
 
+**Fatto:** `tools/sim-covi.ts`: ogni protagonista con ogni iniziale contro ogni covo, da 0 a 4 spille; la squadra del giocatore è l'iniziale al livello del capo, un Riccetto due livelli sotto e, dal terzo covo, una Cicalina; lui per ultimo. `--tune` cerca i livelli delle creature dei capi. Il test (`tests/unit/covo-crew.test.ts`) guarda la mediana di ogni covo a ogni posto nell'ordine, non il singolo protagonista: con i tipi contro, alcuni abbinamenti scendono sotto il 20% e lo devono poter fare (si cattura chi batte il capo). Soglia 40%.
+
 ### Fase 2: il cuore
 
 **R7. I covi con le creature (Opus, max).** Dipende da D1.
 - *Cosa:* ogni capo ha una squadra di creature del suo tipo (2 al primo covo, 3 dal terzo) e scende per ultimo come persona (`last` sulla panchina, come già il giocatore: oggi è usato solo dal lato del giocatore, quindi l'IA che manda in campo va controllata). Il suo meccanismo di sempre resta, ed è il suo carattere da boss. Il livello segue le spille come oggi. I premi e le frasi restano.
 - *Misura:* con R5 e R6, ogni protagonista con ognuna delle tre iniziali vince ogni covo tra il 55 e l'85% con la squadra che il percorso gli ha fatto costruire.
 - *Attenzione:* le lotte tra sole persone restano nel torneo; i golden di oggi non devono cambiare.
+
+**Fatto:** ogni covo ha `crew` (tre specie del tipo del capo, in `data/covi.ts`): due creature ai primi due covi, tre dal terzo, un po' sotto il livello del capo, nelle forme che quel livello dà ma tre livelli dopo le selvatiche (`story/covo-crew.ts`); poi il capo scende in campo di persona (`last`, con la sua frase nel motore). Si lotta con la squadra e con sé stessi per ultimi, come contro un allenatore; esperienza a chi ha lottato, sesterzi alla vittoria. Senza creature il capo ti rimanda dal guardaparco. Misura (`sim-covi`, IA contro IA, 60 lotte): mediana tra il 42 e il 95%, dentro il 55–85% in 24 casi su 30; i minimi, con le iniziali in svantaggio di tipo, vanno da 0 a 60%. Golden invariati. Da rifare dopo R5 (la squadra vera che il percorso costruisce) e R8 (la curva).
 
 **R8. Economia e curva di crescita (Opus, max).**
 - *Il caffè:* non deve comprare livelli. Proposta: dà legame e un piccolo vantaggio per la prossima lotta, niente esperienza; oppure esperienza con un tetto legato alle spille. Scegliere con i numeri.
@@ -244,6 +248,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **R14. Via i resti di «tutti in compagnia» (Sonnet, high).** Dipende da D1. Dal menu spariscono «Le persone, 1 su 6», il testo «vengono con te» e «Gioca con lui»; dal codice `joinFriend` e quello che lo serve, se niente lo chiama più. I salvataggi vecchi con una compagnia devono aprirsi lo stesso.
 
+**Fatto (R14):** il menu mostra solo chi si gioca («scende in campo per ultimo»), senza «Le persone, 1 su 6», senza «vengono con te» e senza «Gioca con lui». `joinFriend` e `setFirst` restano nel codice: li usano i test dei salvataggi vecchi, e un salvataggio con una compagnia si apre lo stesso. La partita «playing as a friend» ora parte da Costanzo scelto all'inizio.
+
 **R15. La velocità della lotta (Sonnet, high).** Un'opzione nel menu e in lotta: Normale, Veloce, Lampo. In Veloce un turno sta sotto i 2,5 secondi: attese tra le righe dimezzate, la carica della mossa mostrata intera solo la prima volta in ogni lotta. Tenere premuto Invio manda avanti. La scelta si ricorda (`lotte-tra-amici:velocita:v1`). Un test in tempo reale misura il turno.
 
 **Fatto:** `ui/speed.ts` (vedi `docs/lotta-a-schermo.md`). Veloce: testo ×2, attese a metà, tutte le animazioni della lotta a 0,4; Lampo: testo intero, attese a un quarto, animazioni a 0,3. Invio tenuto premuto andava già avanti. Misura con l'orologio del gioco (partite «a turn at speed …»): primo turno sotto i 2,5 s in Veloce, sopra i 5 a Normale. Da guardare a occhio da Antonio: se Lampo è troppo.
@@ -251,6 +257,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 **R16. L'interfaccia da PC (Sonnet, xhigh).** Dipende da D3. Sopra i 900 pixel di larghezza: menu e schede al centro o di lato, alti quanto lo schermo, mai tagliati; la pianta di Formia a schermo intero con M; le carte delle mosse opache. Sotto, tutto resta com'è. Antonio guarda le schermate a 1366×768 e 1920×1080 prima di chiudere.
 
 **R17. Comandi da PC (Sonnet, medium).** Clic su una casella: ci si cammina con `route`. Clic su una persona vicina: ci si parla. Tasto F: schermo intero. Gamepad solo se resta tempo.
+
+**Fatto (R17):** un clic su una casella ci porta camminando (`route`, `walkAlong` in `story/movement.ts`, `tileAt` in `render/world-view.ts`); un clic su una persona, un cartello o una cosa porta accanto e la usa; il tasto F mette lo schermo intero. Test: la partita «walking with a click». Gamepad no.
 
 **R18. Salvataggi sicuri (Opus, high).**
 - *Esporta e importa:* dal titolo, un codice da copiare o un file. Quello che si importa va controllato e ripulito campo per campo (nomi delle creature compresi), perché viene da fuori.

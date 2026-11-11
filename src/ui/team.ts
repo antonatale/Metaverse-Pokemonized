@@ -1,7 +1,7 @@
 import { st, save } from '../save/story-progress';
 import { beatersOf, isPersonType, type TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
-import { ROSTER, type FriendId } from '../data/characters';
+import type { FriendId } from '../data/characters';
 import { PATHS, formAt, isFriend, withForm } from '../data/people';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, MANUALS, marketToday, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
@@ -9,7 +9,7 @@ import { beaterOf, moveBits, moveIcon } from '../battle';
 import { newsOf } from '../story/newspaper';
 import { cardHtml, cardClass, cardColour, type MoveCard } from './move-card';
 import { TC } from './common';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, setFirst, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
 import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -316,7 +316,6 @@ function memberRow(key: string): string {
   var human = !mon, first = human && firstHuman() === key;
   return '<li style="--tc:' + tcOf(key) + '"' + (first ? ' class="first"' : '') + '><span class="face">' + portrait(key) + '</span><span class="tm"><b>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + l.lv + '</small>' + (first ? ' <small class="tag-first">Primo</small>' : '') + '</b>' + xpBar(key) +
     '<small>' + esc((sp ? typesOf(sp) : c.type) + ' · ' + note) + '</small></span>' +
-    (human && !first ? '<button class="btn small" type="button" data-first="' + key + '" title="Sulla mappa ci sarà lui, con le sue creature">Gioca con lui</button>' : '') +
     (key === firstHuman() ? '<button class="btn small" type="button" data-skills>Abilità</button>' : '') +
     '<button class="btn small" type="button" data-cr="' + key + '">Scheda</button></li>';
 }
@@ -328,12 +327,13 @@ function slotsHtml(keys: string[], max: number): string {
   return '<span class="slots" aria-hidden="true">' + out + '</span>';
 }
 export function teamHtml(): string {
-  var people = (st.squad as string[]).slice(), mons = teamMons().map(function (m) { return m.uid; }), home = homeMons().length;
+  /* who is played, alone: nobody joins the company any more (8 November). An old save with friends in it still opens,
+     and they stay in st.squad, but the menu shows only who is played */
+  var people = [firstHuman()], mons = teamMons().map(function (m) { return m.uid; }), home = homeMons().length;
   return '<div class="teams">' +
-    /* the people: Antonio, and the friends who joined him once beaten in their covo; they fight people */
-    '<section class="party people"><div class="party-h">' + ico('users') + '<h3>Le persone</h3><small>' + people.length + ' su ' + ROSTER.length + '</small>' + slotsHtml(people, ROSTER.length) + '</div>' +
-    '<ul class="team">' + people.map(memberRow).join('') + '</ul>' +
-    (people.length < ROSTER.length ? '<p class="hint">Gli altri amici sono in giro per Formia: batti chi ha un covo, gioca con gli altri, e vengono con te. Ognuno ha la sua squadra, e alcune missioni può farle solo lui.</p>' : '') + '</section>' +
+    /* who is played: he steps in last when his creatures are down, in a covo too */
+    '<section class="party people"><div class="party-h">' + ico('users') + '<h3>' + esc(nameOf(firstHuman())) + '</h3><small>scende in campo per ultimo</small></div>' +
+    '<ul class="team">' + people.map(memberRow).join('') + '</ul></section>' +
     /* the creatures: up to six travel with him, the others wait at home; they fight creatures */
     '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature di ' + esc(nameOf(firstHuman())) + '</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
     (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
@@ -358,9 +358,7 @@ export function wireTeam(reopen: () => void) {
     b.addEventListener('click', function () { setLead(b.getAttribute('data-lead')!); save(); closeSheet(); reopen(); });
   });
   each(document.querySelectorAll('[data-skills]'), function (b) { b.addEventListener('click', function () { openSkills(reopen); }); });
-  each(document.querySelectorAll('[data-first]'), function (b) {
-    b.addEventListener('click', function () { setFirst(b.getAttribute('data-first')!); save(); renderHud(); closeSheet(); reopen(); });
-  });
+
   each(document.querySelectorAll('[data-home-open]'), function (b) { b.addEventListener('click', function () { openHome(reopen); }); });
 }
 

@@ -27,7 +27,7 @@ e `BRIEFING-IDEE.md`.
 | `npm run sim`, `npm run sim:fun` | bilanciamento tra amici; duelli tra creature (tipi, scelte, panchina) |
 | `npx tsx tools/sim-story.ts trainers` | ogni allenatore della storia contro le tre iniziali |
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | una leggenda contro una squadra |
-| `npx tsx docs/revisione/covi-sim.ts` | i cinque covi per ognuno dei sei protagonisti |
+| `npx tsx tools/sim-covi.ts` | i covi con le creature: ogni protagonista e iniziale, da 0 a 4 spille (`--tune` ritara le squadre dei capi) |
 | `npm run promo` | il trailer (serve macOS) |
 
 GitHub fa typecheck, `npm test` e build a ogni push (`.github/workflows/ci.yml`). Le partite Playwright girano sul Mac;

@@ -382,6 +382,19 @@ function skyZoom(now: number): number {
   return 0.38 + 0.62 * ease((t - (SKY_MS - 700)) / 700);
 }
 /** draws one frame of the map, around the player (from higher up during the view from above) */
+/* where the last frame looked from: a click on the map is a tile (clicking to walk, ui/story-screen.ts) */
+var lastCam = { x: 0, y: 0, vs: 1 };
+/** the tile under a point of the screen, or null outside the map */
+export function tileAt(clientX: number, clientY: number): [number, number] | null {
+  var r = cv.getBoundingClientRect(), px = (clientX - r.left) * DPR / lastCam.vs + lastCam.x, py = (clientY - r.top) * DPR / lastCam.vs + lastCam.y;
+  var tx = Math.floor(px / T), ty = Math.floor(py / T);
+  return tx >= 0 && ty >= 0 && tx < M.w && ty < M.h ? [tx, ty] : null;
+}
+/** the middle of a tile on the screen (playtests click there) */
+export function screenOf(tx: number, ty: number): [number, number] {
+  var r = cv.getBoundingClientRect();
+  return [r.left + ((tx + 0.5) * T - lastCam.x) * lastCam.vs / DPR, r.top + ((ty + 0.5) * T - lastCam.y) * lastCam.vs / DPR];
+}
 export function drawWorld(now: number) {
   var k = skyZoom(now);
   if (k === 1) { drawFrame(now, 1); return; }
@@ -397,6 +410,7 @@ function drawFrame(now: number, sk: number) {
   var camX = mw <= vw ? (mw - vw) / 2 : Math.max(0, Math.min(mw - vw, pp.x + T / 2 - vw / 2));
   var camY = mh <= vh ? (mh - vh) / 2 : Math.max(0, Math.min(mh - vh, pp.y + T / 2 - vh / 2 + lift));
   camX = Math.round(camX * VS) / VS; camY = Math.round(camY * VS) / VS;
+  lastCam = { x: camX, y: camY, vs: VS };
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = M.inside ? P.stone2 : P.paper; ctx.fillRect(0, 0, W, H);   /* indoors, the outside is just wall */
   ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS);

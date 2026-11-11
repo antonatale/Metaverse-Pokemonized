@@ -19,13 +19,17 @@ let held: Dir | null = null, pressedAt = 0, lastBump = '', walking = false;
 /** the step in progress, and which foot */
 export let mover: Mover | null = null, parity = 0, busy = false;
 /** stop walking: a dialogue, a sheet or leaving the map */
-export function halt() { held = null; walking = false; }
+export function halt() { held = null; walking = false; auto = []; }
+/* a walk along a path (a click on the map): one step after the other, stopped by anything that stops a step */
+let auto: Dir[] = [];
+export function walkAlong(path: Dir[]) { if (!running || dialog || busy || skyFrom) return; held = null; auto = path.slice(); }
+export function walkingAlong(): boolean { return auto.length > 0; }
 /** Antonio stands still (a trainer who has seen him walks up to him), and may walk again */
 export function lock(on: boolean) { busy = on; if (on) halt(); }
 export function press(d: Dir) {
   /* nobody walks while a winged creature shows Formia from above */
   if (!running || dialog || busy || skyFrom) return;
-  held = d; pressedAt = performance.now();
+  held = d; pressedAt = performance.now(); auto = [];
   if (mover) return;
   if (st.dir !== d) st.dir = d; else tryStep(d, pressedAt);
 }
@@ -61,6 +65,12 @@ export function update(now: number) {
     walking = !!held;
     if (arrived()) return;
   }
+  if (!held && auto.length && !dialog && !busy && !skyFrom) {
+    var d = auto.shift()!;
+    st.dir = d;
+    if (!tryStep(d, now)) auto = [];
+    return;
+  }
   if (dialog || busy || skyFrom || !held) return;
   if (st.dir !== held) { st.dir = held; pressedAt = now; if (!walking) return; }
   if (!walking && now - pressedAt < TURN_HOLD) return;
@@ -90,6 +100,7 @@ function arrived(): boolean {
 /** to another map, or another part of this one, with a fade (doors, warps, the scooter) */
 export function travel(to: string, x: number, y: number, dir?: Dir) { warp(to, x, y, dir); }
 function warp(to: string, x: number, y: number, dir?: Dir) {
+  auto = [];
   busy = true; held = null; walking = false;
   root.classList.add('fade');
   sfx('door');

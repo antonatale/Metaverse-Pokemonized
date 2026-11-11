@@ -1,3 +1,4 @@
+import { crewAt } from '../story/covo-crew';
 import { speedChoice } from './speed';
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
 import { ITEMS } from '../data/items';
@@ -9,13 +10,13 @@ import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress, onSaveFail } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP } from '../story/movement';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
+import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP, walkAlong, walkingAlong } from '../story/movement';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
 import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
-import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt } from '../render/world-view';
+import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt, tileAt, screenOf } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity, startActivity } from './activities';
@@ -25,7 +26,7 @@ import { TOURNEY, roundsOf } from '../data/tourney';
 import { myStops, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
 import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
-import { SPECIES, type SpeciesId } from '../data/creatures';
+import { SPECIES, isSpecies, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, wildLevel, type Hiding } from '../data/encounters';
 import { SHOPS, WARES, HELD_IDS, meetChance, luck, lastStand, coins, moneyFor } from '../data/growth';
 import { TRAINERS } from '../data/trainers';
@@ -77,6 +78,7 @@ function build() {
     '</div><button class="abtn" type="button" id="wa" aria-label="Parla, leggi o conferma">A</button></div>' +
     '<p class="whint">Frecce o WASD per camminare · Invio per parlare · M per il menu · C per chiamare Cicerone</p>';
   cv = $('wcv') as HTMLCanvasElement; ctx = cv.getContext('2d')!;
+  cv.addEventListener('click', clickMap);
   dlg = $('wdialog'); dlgWho = $('wwho'); dlgTxt = $('wtxt'); dlgOpts = $('wopts');
   /* one pointer on the whole cross: sliding the thumb changes direction */
   var dp = $('dpad'), dpId: number | null = null, cur: Dir | null = null;
@@ -252,8 +254,50 @@ export function installStoryKeys() {
     } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
     else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); e.stopImmediatePropagation(); mentorTalk(); }
     else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); e.stopImmediatePropagation(); flyUp(); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); e.stopImmediatePropagation(); fullScreen(); }
   });
   document.addEventListener('keyup', function (e) { var d = KEYMAP[e.key]; if (d) release(d); });
+}
+
+/** F: the whole screen, and F (or Esc) again to come back */
+export function fullScreen() {
+  try {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) void document.documentElement.requestFullscreen().catch(function () { /* refused: nothing to do */ });
+  } catch (e) { /* a frame that does not allow it */ }
+}
+
+/* ---------- a click on the map (R17): walk there; on someone, a sign or a thing, walk next to it and use it ---------- */
+var clickTo: { x: number; y: number; dir: Dir } | null = null;
+function clickMap(e: MouseEvent) {
+  if (!running || dialog || busy || overlayOpen() || e.button !== 0) return;
+  var t = tileAt(e.clientX, e.clientY);
+  if (!t) return;
+  var tx = t[0], ty = t[1], used = !!personAt(M, tx, ty) || !!M.at[key(tx, ty)] || !!itemAt(M, tx, ty);
+  clickTo = null;
+  if (!used && !blocked(M, tx, ty)) { var r = route(tx, ty); if (r && r.length) walkAlong(r); return; }
+  if (!used) return;
+  /* the nearest free tile next to it, and which way to face from there */
+  var best: { x: number; y: number; dir: Dir; path: Dir[] } | null = null;
+  (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
+    var sx = tx - DV[d][0], sy = ty - DV[d][1], here = sx === st.x && sy === st.y;
+    if (!here && blocked(M, sx, sy)) return;
+    var p = here ? [] : route(sx, sy);
+    if (p && (!best || p.length < best.path.length)) best = { x: sx, y: sy, dir: d, path: p };
+  });
+  if (!best) return;
+  var b = best as { x: number; y: number; dir: Dir; path: Dir[] };
+  clickTo = { x: b.x, y: b.y, dir: b.dir };
+  if (b.path.length) walkAlong(b.path); else arriveClick();
+}
+/** at the end of a click's walk: face what was clicked and use it */
+function arriveClick() {
+  var c = clickTo;
+  if (!c || mover || walkingAlong() || dialog || busy) return;
+  clickTo = null;
+  if (st.x !== c.x || st.y !== c.y) return;
+  st.dir = c.dir;
+  interact();
 }
 
 /* ---------- talking ---------- */
@@ -566,17 +610,22 @@ function tourneyAfter(won: boolean, key: string) {
     setTimeout(function () { var bt = $('cup-ok'); if (bt) bt.focus(); }, 30);
   }, true);
 }
-/* people fight people: in a covo it is Antonio, or one of the friends who joined him */
+/* A covo is fought with creatures (D1, 10 November 2026): the leader sends his crew, of his type, and steps in last
+   himself, as a person; the player has his team, and himself last on the bench, as against a trainer. Indoors: no
+   magic of the place. */
 function challenge(id: string) {
-  var cv0 = COVI[id];
-  var first = firstHuman(), keys = (st.squad as string[]).slice().sort(function (a, b) { return a === first ? -1 : b === first ? 1 : 0; });
+  var cv0 = COVI[id], left = teamMons().map(function (m) { return m.uid; });
+  if (!left.length) { say(['Senza una creatura non si entra in un covo: qui si lotta con la propria squadra.', 'Il guardaparco di Gianola te ne affida una.'], cv0.leader); return; }
+  var lv = covoLevel(id), crew = crewAt(id, lv, covoPins(id)), leader = Object.assign({ id: cv0.leader, last: true }, foeSide(cv0.leader, lv)) as Member;
+  var foes = crew.map(function (c) { return foeMember({ sp: c.sp, lv: c.lv }); }).concat([leader]);
   mentorTip('covo');
-  pickFighter('Chi mandi contro ' + C[cv0.leader].name + '?', C[cv0.leader].type, keys, function (key) {
+  pickFighter('Chi mandi contro ' + SPECIES[crew[0].sp].name + ' di ' + C[cv0.leader].name + '?', SPECIES[crew[0].sp].type, left, function (k) {
     hide();
-    var lv = covoLevel(id);
-    startBattle({ a: idOf(key), b: cv0.leader, mode: 'cpu', story: { covo: id, key: key, foeLv: lv, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
-      sideA: sideOf(key), sideB: foeSide(cv0.leader, lv), bag: battleBag() });
-  });
+    crew.forEach(function (c) { see(c.sp); }); save();
+    startBattle({ a: idOf(k), b: crew[0].sp, mode: 'cpu', story: { covo: id, key: k, foeLv: lv, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
+      sideA: memberOf(k), sideB: foes[0], benchA: left.concat([firstHuman()]).filter(function (x) { return x !== k; }).map(memberOf), benchB: foes.slice(1),
+      smart: [0, 1], bag: battleBag(), trainer: C[cv0.leader].name, surgeStart: stonesKept() ? 1 : 0, hero: nameOf(firstHuman()) });
+  }, SPECIES[crew[0].sp].type2);
 }
 /** Antonio's moves whose thing he has found around town: in story battles he can't lose it any more */
 function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
@@ -889,14 +938,18 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
   if (tag.tourney != null && tour) { tourneyAfter(res.won, key); return; }
   var cv0 = tag.covo ? COVI[tag.covo] : null;
   if (!cv0) return;
-  var lv = tag.foeLv || cv0.level;
+  var lv = tag.foeLv || cv0.level, bouts = res.bouts || [];
+  bouts.forEach(function (b) { if (isSpecies(b.foe)) see(b.foe as SpeciesId); });
+  /* each one who fought gets what he earned, as against a trainer; the covo pays a win */
+  var pay = bouts.length ? fightPay(bouts, true) : [{ key: key, xp: 0, won: res.won }], cash = res.won ? moneyFor(lv, true) : 0;
+  if (!bouts.length) return rewards(key, lv, res.won, true);
   if (res.won && !st.beaten[tag.covo!]) {
     st.beaten[tag.covo!] = true;
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewards(key, lv, true, true, trainNews); }); });
-  } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewards(key, lv, true, false); });
-  else say(cv0.lose, cv0.leader, null, function () { rewards(key, lv, false, true); });
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewardsAll(pay, cash, trainNews); }); });
+  } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewardsAll(pay, cash); });
+  else say(cv0.lose, cv0.leader, null, function () { rewardsAll(pay, 0); });
 }
 /** after a pin: how many are left before the train, or that the train is waiting */
 function pinsLeft(city: string, who: string): string {
@@ -1029,6 +1082,7 @@ function frame(now: number) {
   nudge(now);
   raf = requestAnimationFrame(frame);
   update(now);
+  if (clickTo) arriveClick();
   walkPeople(now);
   checkRun(now);
   renderGoal();
@@ -1167,6 +1221,9 @@ export const WORLD = {
       return best;
     },
     area: function () { return areaName(); },
+    screenOf: screenOf,
+    /* a creature for who is played, as the park keeper gives it (playtests that go to a covo) */
+    adopt: function (sp: SpeciesId, lv: number) { var uid = addCreature(sp, lv); st.seen.starter = true; save(); renderHud(); return uid; },
     /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */
     spotting: function (on: boolean) { spotting = on; },
     who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir } : null; },

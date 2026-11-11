@@ -308,7 +308,9 @@ function announce(s: BattleState, ev: BattleEvent[]) {
     if (x.human || x.hp > 0) continue;
     const slot = nextUp(s, i);
     s.nextIn![i] = slot;
-    ev.push(say((s.trainer || ch(x).name) + ' sta per mandare in campo ' + ch(s.bench![i][slot]).name + '.'));
+    /* a covo's leader is the last of his bench: he does not send himself, he steps in */
+    const nx = s.bench![i][slot];
+    ev.push(say(nx.last ? ch(nx).name + ' sta per scendere in campo di persona!' : (s.trainer || ch(x).name) + ' sta per mandare in campo ' + ch(nx).name + '.'));
   }
 }
 /** the player's say before the next turn: who is down must be replaced; whoever is up may change, knowing who is coming */
@@ -336,7 +338,8 @@ export function sendIn(s: BattleState, picks?: Record<number, number>): BattleEv
     }
     const slot = x.human ? (can.indexOf(p[i]) >= 0 ? p[i] : can[0]) : s.nextIn![i] as number;
     s.nextIn![i] = null;
-    ev.push(say(x.human ? 'Vai, ' + ch(s.bench![i][slot]).name + '!' : (s.trainer || ch(x).name) + ' manda in campo ' + ch(s.bench![i][slot]).name + '!'));
+    const nx = s.bench![i][slot];
+    ev.push(say(x.human ? 'Vai, ' + ch(nx).name + '!' : nx.last ? ch(nx).name + ' scende in campo!' : (s.trainer || ch(x).name) + ' manda in campo ' + ch(nx).name + '!'));
     enter(s, i, slot, ev);
     came.push(i);
     ev.push(snap(s));

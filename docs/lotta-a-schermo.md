@@ -45,3 +45,12 @@
 - **Una scena non ferma mai la lotta** (`ui/safe-show.ts`, `safeShow` attorno a ogni evento `anim`): se lancia un errore
   o non finisce in 8 secondi, la lotta va avanti e l'errore va in console. Lo stato della lotta è del motore e non cambia.
   Test: `tests/unit/safe-show.test.ts`.
+
+## Comandi da PC (11 novembre 2026, R17)
+
+- **Clic sulla mappa** (`clickMap` in `ui/story-screen.ts`): su una casella libera si cammina fin lì (`route` in
+  `story/maps.ts`, `walkAlong` in `story/movement.ts`: un passo dopo l'altro, e tutto quello che ferma un passo ferma
+  anche il cammino: un incontro, un allenatore, una porta, un tasto). Su una persona, un cartello o una cosa si va alla
+  casella libera accanto più vicina e la si usa. `tileAt` e `screenOf` in `render/world-view.ts` passano dallo schermo
+  alla casella e ritorno, con la telecamera dell'ultimo fotogramma.
+- **F** mette e toglie lo schermo intero.

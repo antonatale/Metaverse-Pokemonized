@@ -25,7 +25,7 @@ export const CICERO = 'Cicerone';
 export const OPENING: string[] = [
   'Salve, {hero}! Non spaventarti: sono un fantasma, ma di quelli simpatici. Marco Tullio Cicerone, la tua guida: a Formia avevo la villa, e sull\'Appia c\'è la mia tomba.',
   'Mi faccio vedere perché a Formia sta per succedere qualcosa. Nelle pietre, nel mare e negli ulivi dormono creature che non trovi in nessun libro. E di notte, tra le rovine di Gianola, qualcuno scava.',
-  'Frecce o WASD per camminare, Invio per parlare, M per il menu, C per chiamare me. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dal guardaparco. Andiamo!'
+  'Frecce o WASD per camminare, o un clic dove vuoi andare; Invio per parlare, M per il menu, C per chiamare me, F per lo schermo intero. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dal guardaparco. Andiamo!'
 ];
 
 /** each chapter of the journey: what Cicero says when it becomes the next one, and when it is done */
@@ -105,7 +105,7 @@ export const CHAPTERS: Record<string, Chapter> = {
 
 /** the first time something happens, Cicero explains it (once) */
 export const TIPS: Record<string, string[]> = {
-  covo: ['Un covo: qui lottano le persone, non le creature. Anche le persone hanno un tipo, e i cinque girano in cerchio: Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma.', 'Chi ha il vantaggio fa più danno. Ogni covo vinto è una spilla, e il covo dopo sarà più forte.'],
+  covo: ['Un covo: il capo manda le sue creature, tutte del suo tipo, e alla fine scende in campo lui, come farai tu quando le tue saranno a terra. Porta creature che battono il suo tipo.', 'Anche le persone hanno un tipo, e i cinque girano in cerchio: Calma batte Caos, Caos batte Cervello, Cervello batte Chiacchiera, Chiacchiera batte Cuore, Cuore batte Calma. Ogni covo vinto è una spilla, e il covo dopo sarà più forte: dal terzo, le creature del capo sono tre.'],
   loss: ['Hai perso? Capita anche ai consoli. Guarda i tipi: chi ha il vantaggio fa più danno.', 'E alza il livello: lotta con le creature selvatiche, fai le attività, o bevi un caffè.'],
   level: ['{hero} è salito di livello: lottando si diventa più forti, e ogni livello è un punto abilità. Menu, Squadra, Abilità: tre strade, l\'Esploratore di Formia, l\'Allenatore di creature e il Formiano doc.', 'Non sono numeri: ognuna cambia qualcosa del viaggio. Meno incontri nell\'erba, catture più facili, creature che resistono per te…'],
   money: ['I primi sesterzi, le monete della Formia romana! Il retaio di Gianola vende i retini, il forno di Castellone la tiella, il bar di Mola il caffè.'],

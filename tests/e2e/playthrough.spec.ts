@@ -173,6 +173,8 @@ test('story', async ({ browser }) => {
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
     await r.shot('sign');
     await talkThrough(p);
+    /* a covo is fought with creatures: one, as from the park keeper */
+    await p.evaluate(() => (window.WORLD._debug as unknown as { adopt(sp: string, lv: number): string }).adopt('ramarrino', 8));
     await goTo(p, 'npc', 'costanzo');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
     await r.shot('costanzo');
@@ -957,6 +959,34 @@ for (const vel of ['normale', 'veloce'] as const) {
   });
 }
 
+/* R17: a click on the map walks there; a click on someone walks next to him and talks */
+test('walking with a click', async ({ browser }) => {
+  const r = await play(browser, 'click', { seed: 3, storage: inTown({ x: 110, y: 28, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(1500);
+    type W = { WORLD: { _debug: { route(x: number, y: number): string[] | null; screenOf(x: number, y: number): [number, number]; pos(): { x: number; y: number; dialog: boolean } } } };
+    const to = await p.evaluate(() => {
+      const d = (window as unknown as W).WORLD._debug;
+      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 110 + dx, y = 28 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
+      return null;
+    });
+    r.keep('to', to);
+    const at = await p.evaluate(([x, y]) => (window as unknown as W).WORLD._debug.screenOf(x, y), [to!.x, to!.y]);
+    await p.mouse.click(at[0], at[1]);
+    await p.clock.runFor(4000);
+    r.keep('walked', await p.evaluate(() => { const q = (window as unknown as W).WORLD._debug.pos(); return { x: q.x, y: q.y }; }));
+    const him = await p.evaluate(() => window.WORLD._debug.who('studente'));
+    const there = await p.evaluate(([x, y]) => (window as unknown as W).WORLD._debug.screenOf(x, y), [him!.x, him!.y]);
+    await p.mouse.click(there[0], there[1]);
+    await p.clock.runFor(8000);
+    r.keep('talking', await p.evaluate(() => (window as unknown as W).WORLD._debug.pos().dialog));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(get('walked')).toEqual(get('to'));
+  expect(get('talking')).toBe(true);
+});
+
 /* the menu: two teams of six, the people and the creatures; Antonio's abilities, a tree of three branches where each
    ability opens with a point in the one before it */
 test('the two teams and Antonio\'s abilities', async ({ browser }) => {
@@ -979,9 +1009,11 @@ test('the two teams and Antonio\'s abilities', async ({ browser }) => {
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
-  expect(String(get('teams'))).toContain('Le persone');
+  /* who is played, alone (nobody joins any more), and his creatures in their six places */
+  expect(String(get('teams'))).toContain('scende in campo per ultimo');
+  expect(String(get('teams'))).not.toContain('Forchetta');
   expect(String(get('teams'))).toContain('Le creature');
-  expect(get('slots')).toEqual([[2, 6], [2, 6]]);
+  expect(get('slots')).toEqual([[2, 6]]);
   expect(get('closed')).toEqual([true, 'Chiusa']);
   expect((get('state') as { skills: Record<string, number> }).skills).toEqual({ svelto: 1, passo: 1 });
 });
@@ -1340,29 +1372,26 @@ test('the people grow', async ({ browser }) => {
 });
 
 /* everyone is a protagonist: from the menu Antonio becomes Costanzo, with Costanzo's creatures, and a mission waits for him */
+/* a story played as Costanzo (chosen at «chi sei?»: here from a save): the menu is his, and so is his mission */
 test('playing as a friend', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: { piazza: true }, found: {},
-    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'polpino', bond: 40 }], lv: { c1: { lv: 12, xp: 0 }, antonio: { lv: 10, xp: 0 }, costanzo: { lv: 10, xp: 0 } }, money: 0, bag: {} };
+  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['costanzo'], first: 'costanzo', beaten: {}, found: {},
+    seen: { intro: true, starter: true, protagonisti: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c2', sp: 'cicalina', bond: 40, owner: 'costanzo' }], lv: { c2: { lv: 12, xp: 0 }, costanzo: { lv: 10, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'friend', { seed: 17, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
     await talkThrough(p);
-    /* as Antonio the man at the bar only says who he is waiting for */
     const t = await p.evaluate(() => window.WORLD._debug.who('tifoso'));
-    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [t!.x, t!.y + 1]); await p.clock.runFor(500);
-    await talkTo(p, 'tifoso');
-    await p.clock.runFor(200);
-    await r.shot('as-antonio');
-    /* the menu: Costanzo takes over */
+    /* the menu: who is played, alone, with his creatures; nobody else to play */
     await p.keyboard.press('m'); await p.clock.runFor(300);
     await r.shot('menu');
-    await p.locator('[data-first="costanzo"]').click({ timeout: 5000 }); await p.clock.runFor(300);
     r.keep('team', await p.locator('.party.mons').innerText());
+    r.keep('switch', await p.locator('[data-first]').count());
     await p.keyboard.press('Escape'); await p.clock.runFor(300);
-    if (await p.locator('.sheet').count()) { await p.keyboard.press('m'); await p.clock.runFor(300); }
+    if (await p.locator('.sheet').count()) { await p.keyboard.press('Escape'); await p.clock.runFor(300); }
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [t!.x, t!.y + 1]); await p.clock.runFor(500);
     await r.shot('as-costanzo');
-    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await talkTo(p, 'tifoso'); await p.clock.runFor(300);
     await talkThrough(p);
     r.keep('offer', await p.locator('#wopts button').allInnerTexts());
     await choose(p, 'Ci sto');
@@ -1381,14 +1410,13 @@ test('playing as a friend', async ({ browser }) => {
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
   expect(String(get('team'))).toContain('Le creature di Costanzo');
   expect(String(get('team'))).toContain('Cicalina');
-  expect(String(get('team'))).not.toContain('Polpino');
+  expect(get('switch')).toBe(0);
   expect(get('offer')).toEqual(['Ci sto', 'Più tardi']);
   const st = get('state') as { first: string; seen: Record<string, boolean>; money: number; mons: { uid: string; sp: string; owner?: string }[] };
   expect(st.first).toBe('costanzo');
   expect(st.seen['ms-comizio']).toBe(true);
   expect(st.money).toBe(80);
   expect(st.mons.filter((m) => m.owner === 'costanzo').map((m) => m.sp)).toEqual(['cicalina', 'micetto']);
-  expect(st.mons.filter((m) => !m.owner).map((m) => m.sp), 'Antonio\'s are where they were').toEqual(['polpino']);
 });
 
 /* the end of the story so far: at the train, the game told back */
