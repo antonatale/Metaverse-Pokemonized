@@ -6,7 +6,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
-**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R5, R6, R7, R10, R13, R14, R15, R17, R18, R19; in parte R8 e R16. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R8 (con quello che dice R5), R20, R11, R12.
+**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R5, R6, R7, R10, R13, R14, R15, R17, R18, R19; in parte R8 e R16. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R8 (con quello che dice R5), R20, R11, R12. Dall'11 novembre c'è `VISIONE.md`: dove portare il gioco dopo, con le task V1…V11; R11 confluisce in V3. **L'ordine di tutto quello che resta, R e V insieme, è la coda C1…C10 in cima a `VISIONE.md`.**
 
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
@@ -245,6 +245,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 
 **Fatto in parte (11 novembre):** tre tappe nuove nel giro (`team` in `story/goals.ts`, con il loro capitolo di Cicerone): «La tua seconda creatura» subito dopo la prima, «Tre creature per il buio» prima del Cisternone, «Una squadra per Mamurra» (quattro) prima di Mamurra; la freccia porta al guardaparco, accanto all'erba e agli scogli di Gianola. La Pipistrega del Cisternone esce solo dopo la Pietra delle Mura (`after` su una voce di `data/encounters.ts`). Dall'11 novembre anche il consiglio di Cicerone sul cambio, prima della lotta, la prima volta che la creatura mandata è in svantaggio di tipo e ce n'è un'altra (`TIPS.change`). Test: `tests/unit/teaching.test.ts`.
 
+**Dall'11 novembre** R11 è dentro V3 e V4 di `VISIONE.md`, e la base è fatta: tre sentieri (la Strada della Statua sugli Aurunci, l'Acervara, la punta di Gianola), ognuno con erba alta, due allenatori, cartelli e un belvedere; vedi «Formia a tre piani» in `docs/mappa.md`. Resta la misura di R11 (dieci selvatiche e sei allenatori incontrati dal giocatore «solo freccia» prima di Mamurra): i sentieri sono a lato delle tappe, non sulla strada obbligata.
+
 **R11. Tre percorsi con erba e allenatori (Opus, high).** La strada per tre tappe della trama passa da un tratto con erba alta, due allenatori e una cosa da trovare: il sentiero della pineta verso la Tomba di Cicerone, il parco di Gianola verso la villa, gli uliveti verso i monti. Si fa con `tools/formia/network.ts` e `build.ts`; se le caselle cambiano serve il nuovo `formiaN` nei salvataggi. *Fatto quando:* il giocatore «solo freccia» incontra almeno dieci selvatiche e sei allenatori prima di Mamurra.
 
 **R12. Golden delle lotte vere (Opus, high).** Un secondo file di golden con lotte di squadra tra creature (panchina, stati, abilità, oggetti, parti delle leggende, capo che scende per ultimo), stesso metodo delle 2040. Poi togliere dallo schermo e dai golden quello che il gioco non usa più (Esame, due giocatori), lasciando le coppie di amici che servono al torneo.
@@ -284,6 +286,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 **Fatto in parte:** `safeShow` (`ui/safe-show.ts`) con test; partite a 1366×768 di base (telefono solo con la croce). Dall'11 novembre le partite con le animazioni accese sono dieci. Nel contenitore, a 1366×768 alcune partite sono lente (fino a 5 minuti): il tempo massimo è salito a 240 s; sul Mac vanno guardate.
 
 **R20. Misurare la mappa sul Mac (Sonnet, medium).** Con il profiler di Chrome: tempo per fotogramma camminando, di giorno e di notte, a schermo pieno. Se supera gli 8 ms: limitare la risoluzione del canvas a 2× di 1440×900 e disegnare la notte meno spesso. Si scrive il prima e il dopo.
+
+**Dall'11 novembre** c'è anche Grafica: Alta o Bassa (`ui/gfx.ts`, V1 di `VISIONE.md`): la misura va fatta con tutte e due. Nel contenitore, a 1440×900 di giorno: Bassa 2,9 ms, Alta 10,5 ms.
 
 ### Fase 4: l'architettura, dopo che il gioco è deciso
 

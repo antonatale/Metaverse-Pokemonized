@@ -68,6 +68,8 @@ src/
     canvas/                arte della mappa: terreno, edifici e oggetti, omini visti dall'alto, palette dai token --m-*
     world-view.ts          camera, cache dei pezzi di terreno, disegno ordinato, la notte (lampioni, finestre, faro),
                            anteprima della home, mappa intera
+    atmosphere.ts          la luce e la vita della mappa: ombre che girano con il sole, nuvole, luce sui volumi, vento, risacca,
+                           piccioni, farfalle, lucciole (vedi «La luce e la vita» in mappa.md)
   audio/                   musica ed effetti sintetizzati con la Web Audio API (nessun file audio)
     context.ts             AudioContext creato al primo tocco o tasto, bus musica/effetti, acceso/spento
                            (chiave lotte-tra-amici:audio:v1), pausa quando la scheda non è visibile
@@ -77,6 +79,7 @@ src/
     cues.ts                quale suono va con quale evento del motore; blip della macchina da scrivere
     synth.ts               strumenti: oscillatori con inviluppo, rumore filtrato, batteria
   ui/
+    gfx.ts                 Grafica della mappa: Alta o Bassa (chiave lotte-tra-amici:grafica:v1)
     sound.ts               l'interruttore audio (home, barra della lotta, HUD della storia) e il clic dei pulsanti
     common.ts              colori dei tipi, ritratti, le sezioni della pagina, scelte del giocatore (view)
     home.ts                il titolo a schermo intero: l'intro da saltare, il nome, «Entra nel mondo» e i tre salvataggi
@@ -109,7 +112,8 @@ tools/
   sim.ts                   simulatore di bilanciamento
   golden.mjs               genera i golden
   formia/                  la mappa di Formia: network.ts (strade e ferrovia disegnate a mano), build.ts (il generatore),
-                           playable.ts e audit.ts (controlli), extract.mjs, paint.ts, show.ts, where.ts, drift.ts
+                           playable.ts e audit.ts (controlli), extract.mjs, paint.ts, show.ts, where.ts, drift.ts, density.ts (quanto c'è
+                           da fare in ogni schermata)
   promo/                   il trailer: make.ts (tutto in un comando), capture.ts (le scene giocate), music.ts (la musica),
                            trailer.ts e trailer.html (il montaggio), city3d.ts (Formia in 3D), timeline.ts (battute e
                            suoni), encode.swift (l'mp4)

@@ -858,7 +858,7 @@ test('abilities, states and things to carry', async ({ browser }) => {
    later, and once beaten walks back to his place */
 test('a trainer who sees Antonio', async ({ browser }) => {
   const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
@@ -892,7 +892,7 @@ test('a trainer who sees Antonio', async ({ browser }) => {
    and the challenge is still there talking to him. In the battle, the sheet lists the moves the creature knows */
 test('a trainer too strong to challenge on sight', async ({ browser }) => {
   const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
@@ -925,7 +925,7 @@ test('a trainer too strong to challenge on sight', async ({ browser }) => {
 for (const vel of ['normale', 'veloce'] as const) {
   test('a turn at speed ' + vel, async ({ browser }) => {
     const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
-      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
+      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
       const p = r.page;
       await goStory(p); await p.clock.runFor(1500);
       await p.evaluate(() => window.WORLD._debug.wild('cicalina', 9)); await p.clock.runFor(300);
@@ -963,7 +963,7 @@ for (const vel of ['normale', 'veloce'] as const) {
 /* R17: a click on the map walks there; a click on someone walks next to him and talks */
 test('walking with a click', async ({ browser }) => {
   const r = await play(browser, 'click', { seed: 3, reduced: false, storage: inTown({ x: 110, y: 28, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     type W = { WORLD: { _debug: { route(x: number, y: number): string[] | null; screenOf(x: number, y: number): [number, number]; pos(): { x: number; y: number; dialog: boolean } } } };
@@ -1446,7 +1446,7 @@ test('looking back, before the train', async ({ browser }) => {
 
 /* a save already in town, with Formia as it is now (positions kept) */
 const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
-  seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
+  seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
 
 /* fishing off the pier with the fisherman of Mola: three casts, a pull right after each bite */
 test('fishing off the pier', async ({ browser }) => {
@@ -1517,7 +1517,7 @@ test('the creatures\' powers', async ({ browser }) => {
   type P = { x: number; y: number; dialog: boolean; text: string; swim: boolean; climb: boolean; sky: boolean };
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
-  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 148, y: 60, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 148, y: 60, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowDown'); await p.clock.runFor(400);
@@ -1535,7 +1535,7 @@ test('the creatures\' powers', async ({ browser }) => {
   expect(String((get(swim, 'in the water') as P).text)).toContain('vasca romana');
   expect((get(swim, 'state') as { money: number; seen: Record<string, boolean> }).money).toBe(60);
 
-  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 45, y: 34, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 45, y: 34, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowUp'); await p.clock.runFor(400);
@@ -1548,7 +1548,7 @@ test('the creatures\' powers', async ({ browser }) => {
   expect(String(get(climb, 'ask'))).toContain('mura');
   expect(get(climb, 'on the walls')).toMatchObject({ x: 45, y: 33, climb: true });
 
-  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 88, y: 41, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet } }) }, async (r) => {
+  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 88, y: 41, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('hint', await p.textContent('.whint'));
@@ -1572,7 +1572,7 @@ test('opened again in the sea', async ({ browser }) => {
   type P = { x: number; y: number; swim: boolean };
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
-  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, ...quiet };
+  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet };
   const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 148, y: 61, dir: 'down', mons, seen }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);

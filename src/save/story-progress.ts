@@ -22,7 +22,7 @@ export interface StoryProgress {
   squad: FriendId[];
   /** covi beaten */
   beaten: Record<string, boolean>;
-  /** one-off things already seen: intro, formia2 … formia6 (the save was moved to a redrawn Formia) */
+  /** one-off things already seen: intro, formia2 … formia7 (the save was moved to a redrawn Formia) */
   seen: Record<string, boolean>;
   /** lost things picked up */
   found: Record<string, boolean>;
@@ -104,7 +104,9 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
   { id: 'formia5', what: 'la rete di strade disegnata a mano', run: backHome },
   { id: 'formia6', what: 'l\'est della città e i lampioni', run: backHome },
   /* the first of the company used to be only who went first in a covo: now it is who is played, chosen anew */
-  { id: 'protagonisti', what: 'chi si gioca', run: function (v) { if (v.first) delete v.first; } }
+  { id: 'protagonisti', what: 'chi si gioca', run: function (v) { if (v.first) delete v.first; } },
+  /* Formia on three levels (VISIONE.md, V3 and V4): the terraces, the trails, the countryside closed behind its walls */
+  { id: 'formia7', what: 'Formia a tre piani', run: backHome }
 ];
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {

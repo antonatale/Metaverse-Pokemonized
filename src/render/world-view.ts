@@ -10,13 +10,15 @@ import { run } from '../story/run';
 import { placeNow } from '../story/place-run';
 import { drawThings } from './canvas/place';
 import { heading } from '../story/goals';
-import { darkness, sunset } from '../story/daytime';
+import { darkness, sunset, sunAt } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
 import { cicero, mamurra } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { reduced } from '../ui/dom';
+import { rich } from '../ui/gfx';
+import { shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
 import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS } from '../ui/story-screen';
 
 /* Drawing the story map: camera, cached pictures, everything sorted so people walk behind trees and roofs.
@@ -26,8 +28,13 @@ let CACHE_MAX = 12;   /* pieces kept: more while a winged creature shows Formia 
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
-interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number }
-interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null }
+interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number;
+  /** a walker's little hop at each step (px), and how much it breathes standing still (its height, around 1) */
+  hop?: number; breath?: number }
+interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null;
+  /** the light and the wind (render/atmosphere.ts): how much it leans in the wind; the block that casts its shadow (a
+      building), or none when it floats; the same picture without the light on it, to find its windows at night */
+  sway?: number; box?: Caster['box']; afloat?: boolean; flat?: () => Sprite }
 /** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
 interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
 
@@ -45,25 +52,39 @@ function themeKey() { return getComputedStyle(document.documentElement).getPrope
 /* the tall still things of a map, sorted by their bottom edge (the ground is painted in pieces, see chunk) */
 function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   var items: SceneItem[] = [], spr: Record<string, Sprite> = {};
-  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number, lit?: boolean) { items.push({ x: x, yb: yb, spr: sp, bob: !!bob, glide: glide || 0, lit: !!lit }); };
+  var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number, lit?: boolean): SceneItem {
+    var it: SceneItem = { x: x, yb: yb, spr: sp, bob: !!bob, glide: glide || 0, lit: !!lit };
+    items.push(it);
+    return it;
+  };
+  /* a block casts the shadow of its footprint, as high as it stands over it (and a little more: its front has a height too) */
+  var block = function (x: number, y: number, w: number, h: number, kind: string) { return { x: x * T, y: y * T, w: w * T, h: h * T, up: (UP[kind] || T) + T * 0.45 }; };
   for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
     var L = m.cell(x, y);
     if (!L.obj) continue;
     var sail = L.obj === 'board' || L.obj === 'windsurf';
     var color = L.obj === 'umbrella' ? UMBRELLAS[(x + y) % 3] : L.obj === 'boat' ? BOATS[(x + y) % 2] : sail ? SAILS[(x * 3 + y) % SAILS.length] : null, k = L.obj + (color || '');
-    if (!spr[k]) spr[k] = paintObject(L.obj, P0, s, { color: color, up: UP[L.obj] });
+    if (!spr[k]) spr[k] = volume(paintObject(L.obj, P0, s, { color: color, up: UP[L.obj] }), P0);
     /* the windsurfers glide back and forth across the bay */
-    add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
+    var it = add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
+    it.sway = SWAY[L.obj] || 0; it.afloat = L.g === 'sea';
   }
   (m.buildings || []).forEach(function (b) {
     /* at night the windows light up: in every place, and in most of the houses */
     var lit = b.id.indexOf('casa-') !== 0 || hash(b.x, b.y, 7) < 0.7;
-    add(b.x * T, (b.y + b.h) * T, paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }), false, 0, lit);
+    var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }); };
+    var it = add(b.x * T, (b.y + b.h) * T, volume(paint(), P0), false, 0, lit);
+    it.box = block(b.x, b.y, b.w, b.h, b.kind); it.flat = paint;
   });
-  (m.objects || []).forEach(function (o) { add(o.x * T, (o.y + o.h) * T, paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), o.bob); });
+  (m.objects || []).forEach(function (o) {
+    var it = add(o.x * T, (o.y + o.h) * T, volume(paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), P0), o.bob);
+    /* wide things are blocks; slender ones (a monument, the lighthouse) are laid down as they are drawn */
+    if (o.w * o.h > 2) it.box = block(o.x, o.y, o.w, o.h, o.kind);
+    it.afloat = !!o.bob || m.cell(o.x, o.y).g === 'sea';
+  });
   if (m.signs && m.signs.length) {
-    var sg = paintObject('sign', P0, s, {}), pl = paintObject('plate', P0, s, {});
-    m.signs.forEach(function (g) { if (!g.quiet) add(g.x * T, (g.y + 1) * T, g.plate ? pl : sg); });
+    var sg = volume(paintObject('sign', P0, s, {}), P0), pl = volume(paintObject('plate', P0, s, {}), P0), vw = volume(paintObject('viewer', P0, s, {}), P0);
+    m.signs.forEach(function (g) { if (!g.quiet) add(g.x * T, (g.y + 1) * T, g.view ? vw : g.plate ? pl : sg); });
   }
   items.sort(function (a, b) { return a.yb - b.yb; });
   return items;
@@ -170,9 +191,10 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
   var person = function (e: Drawn) {
     if (e.img) { var z = e.size || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
-    var img = e.w![e.d!][e.f || 0];
+    var img = e.w![e.d!][e.f || 0], ih = img.height / s, br = e.breath || 1;
     if (e.alpha) c.globalAlpha = e.alpha;
-    c.drawImage(img, e.x, e.y! - 12, img.width / s, img.height / s); c.globalAlpha = 1;
+    /* breathing: the picture grows and shrinks by a hair from the feet up (the last 2 px are its shadow on the ground) */
+    c.drawImage(img, e.x, e.y! - 12 - (e.hop || 0) - (ih - 2) * (br - 1), img.width / s, ih * br); c.globalAlpha = 1;
   };
   for (var n = 0; n < items.length; n++) {
     var it = items[n];
@@ -180,6 +202,11 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
     var gx = it.glide && now && !reduced ? Math.sin(now / 5200 + it.x * 0.013) * it.glide * T : 0;
     if (view && (it.x + gx + it.spr.w < view.x || it.x + gx > view.x + view.w || it.yb < view.y || it.yb - it.spr.h > view.y + view.h)) continue;
     var dy = it.bob && now && !reduced ? Math.sin(now / 650 + it.x * 0.037) * 1.5 : 0;
+    if (it.sway && now && !reduced && rich()) {
+      /* a tree in the wind: it leans from its foot, the top the most */
+      c.save(); c.transform(1, 0, -it.sway * wind(it.x, it.yb, now), 1, it.x + T / 2, it.yb - 3);
+      c.drawImage(it.spr.cv, -T / 2, 3 - it.spr.h, it.spr.cv.width / s, it.spr.cv.height / s); c.restore();
+    } else
     c.drawImage(it.spr.cv, it.x + gx, it.yb - it.spr.h + dy, it.spr.cv.width / s, it.spr.cv.height / s);
     if (night && it.lit) {
       var g = glowOf(it);
@@ -234,8 +261,9 @@ var GLASS = [[191, 227, 255], [232, 245, 255]];
 function glowOf(it: SceneItem): HTMLCanvasElement | null {
   if (it.glow !== undefined) return it.glow;
   it.glow = null;
+  /* the glass is found by its colour, so on the picture as it was painted, before the light of the day went over it */
   var w = it.spr.cv.width, h = it.spr.cv.height, src: ImageData;
-  try { src = it.spr.cv.getContext('2d')!.getImageData(0, 0, w, h); } catch (e) { return null; }
+  try { src = (it.flat ? it.flat() : it.spr).cv.getContext('2d')!.getImageData(0, 0, w, h); } catch (e) { return null; }
   var c0 = document.createElement('canvas'); c0.width = w; c0.height = h;
   var c = c0.getContext('2d')!, out = c.createImageData(w, h), d = src.data, o = out.data, any = false;
   var n = parseInt((P.lamp || '#ffc96b').slice(1), 16), lr = (n >> 16) & 255, lg = (n >> 8) & 255, lb = n & 255;
@@ -369,7 +397,7 @@ export function invalidate() { cache.map = null; }
 function hero() { return { person: firstHuman() as FriendId }; }
 function playerPx(now: number) {
   if (!mover) return { x: st.x * T, y: st.y * T, t: 0 };
-  var t = Math.min(1, (now - mover.t0) / STEP);
+  var t = Math.min(1, (now - mover.t0) / (mover.dur || STEP));
   return { x: (mover.fx + (mover.tx - mover.fx) * t) * T, y: (mover.fy + (mover.ty - mover.fy) * t) * T, t: t };
 }
 /** how far the camera is from the map: 1 normally, less while a winged creature shows Formia from above (story-screen skyFrom) */
@@ -395,6 +423,39 @@ export function screenOf(tx: number, ty: number): [number, number] {
   var r = cv.getBoundingClientRect();
   return [r.left + ((tx + 0.5) * T - lastCam.x) * lastCam.vs / DPR, r.top + ((ty + 0.5) * T - lastCam.y) * lastCam.vs / DPR];
 }
+function renderScale() { return RS; }
+/** a step is a little hop: up in the middle of it, down on the tile */
+function stepHop(t: number): number { return Math.sin(Math.max(0, Math.min(1, t)) * Math.PI) * 1.6; }
+/** the map as the light and the life of it read it (render/atmosphere.ts) */
+var tilesFor: { m: PreparedMap; t: Tiles } | null = null;
+function tilesOf(m: PreparedMap): Tiles {
+  if (tilesFor && tilesFor.m === m) return tilesFor.t;
+  var t: Tiles = {
+    w: m.w, h: m.h,
+    ground: function (x, y) { return m.cell(x, y).g; },
+    deco: function (x, y) { return m.cell(x, y).deco; },
+    free: function (x, y) { return !blocked(m, x, y) && !m.at[key(x, y)] && !m.people.some(function (p) { return p.x === x && p.y === y; }); }
+  };
+  tilesFor = { m: m, t: t };
+  return t;
+}
+/** who and what casts a shadow in this frame: what stands on the land, and everyone who is not a ghost */
+function casters(items: SceneItem[], people: Drawn[], now: number, rs?: number): Caster[] {
+  var out: Caster[] = [], RS = rs || renderScale();
+  items.forEach(function (it) {
+    if (it.afloat) return;
+    if (it.box) { out.push({ x: it.x, yb: it.yb, w: it.spr.cv.width / RS, h: it.spr.cv.height / RS, box: it.box }); return; }
+    out.push({ x: it.x, yb: it.yb - 3, w: it.spr.cv.width / RS, h: it.spr.cv.height / RS, img: it.spr.cv, foot: 3, lean: it.sway && !reduced ? -it.sway * wind(it.x, it.yb, now) : 0 });
+  });
+  people.forEach(function (e) {
+    if (e.alpha) return;
+    if (e.img) { var z = e.size || 52; out.push({ x: e.x + 16 - z / 2, yb: e.yb - 5, w: z, h: z, img: e.img, foot: 5 }); return; }
+    if (e.spr) { out.push({ x: e.x, yb: e.yb - 3, w: e.spr.cv.width / RS, h: e.spr.cv.height / RS, img: e.spr.cv, foot: 3 }); return; }
+    var img = e.w![e.d!][e.f || 0];
+    out.push({ x: e.x, yb: e.yb - 3, w: img.width / RS, h: img.height / RS, img: img, foot: 3 });
+  });
+  return out;
+}
 export function drawWorld(now: number) {
   var k = skyZoom(now);
   if (k === 1) { drawFrame(now, 1); return; }
@@ -402,8 +463,11 @@ export function drawWorld(now: number) {
   VS = VS * k; CACHE_MAX = 90;
   try { drawFrame(now, k); } finally { VS = vs0; CACHE_MAX = 12; }
 }
+var framed: boolean | null = null, landed: { x: number; y: number; at: number } | null = null;
 function drawFrame(now: number, sk: number) {
   ensureCaches(now);
+  /* the darker frame around the picture is a sheet of the page over the canvas (.wframe): there with the graphics on Alta */
+  if (framed !== rich()) { framed = rich(); root.classList.toggle('rich', framed); }
   /* everything below is in map units (one tile = T); VS turns them into canvas pixels */
   var W = cv.width, H = cv.height, vw = W / VS, vh = H / VS, mw = M.w * T, mh = M.h * T;
   var pp = playerPx(now), lift = (H / DPR > 600 ? 56 : 28) / Z;   /* the player sits a little above the middle, clear of the pad */
@@ -433,6 +497,10 @@ function drawFrame(now: number, sk: number) {
   ctx.globalAlpha = 1;
   /* the floor of a place with a puzzle: it changes with the steps, so it is not part of the ground */
   if (M.place) { var ps = placeNow(M.id); drawThings(ctx, P, M.place, ps.flags, ps.tick, now, reduced, { x0: x0, x1: x1, y0: y0, y1: y1 }); }
+  /* the light and the life of Formia (render/atmosphere.ts): outdoors, with the graphics set to Alta */
+  var date = new Date(), dk = M.dark ? 1 : M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
+  var fx = rich() && !M.inside && !M.dark, sun = fx ? sunAt(date) : { x: 0, y: 0, k: 0 }, cam = { x: camX, y: camY, w: vw, h: vh }, tiles = fx ? tilesOf(M) : null;
+  if (tiles) seaLife(ctx, tiles, x0, x1, y0, y1, now, reduced, 1 - dk * 0.8, P);
   var people: Drawn[] = [], alerts: [number, number, number][] = [];
   M.people.filter(present).forEach(function (p) {
     if (p.n.ghost) {
@@ -459,19 +527,26 @@ function drawFrame(now: number, sk: number) {
     if (p.mv) { var u = Math.min(1, (now - p.mv.t0) / STEP); wx = (p.mv.fx + (p.x - p.mv.fx) * u) * T; wy = (p.mv.fy + (p.y - p.mv.fy) * u) * T; wf = u > 0.12 && u < 0.88 ? 1 + ((p.x + p.y) & 1) : 0; }
     /* a beaten rival walking away fades out over his last steps */
     var fade = p.leaving ? Math.min(1, ((p.path ? p.path.length : 0) + 1) / 3) : 1;
-    people.push({ yb: wy + T, x: wx, y: wy, w: walkerFor(p.n, RS), d: p.dir, f: wf, alpha: fade < 1 ? fade : undefined });
+    people.push({ yb: wy + T, x: wx, y: wy, w: walkerFor(p.n, RS), d: p.dir, f: wf, alpha: fade < 1 ? fade : undefined,
+      hop: p.mv && !reduced ? stepHop(Math.min(1, (now - p.mv.t0) / STEP)) : 0, breath: p.mv || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820 + hash(p.x, p.y, 11) * 6.3) });
     if (p.alert) alerts.push([wx + T / 2, wy - 14, now - p.alert]);
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
-  people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step });
+  people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step,
+    hop: mover && !reduced && !moveMode.swim ? (mover.jump ? Math.sin(pp.t * Math.PI) * 13 : stepHop(pp.t)) : 0, breath: mover || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820) });
   var fw = follower(now);
   if (fw) people.push(fw);
   var gh = ghost(now, pp);
   if (gh) people.push(gh);
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
-  var date = new Date(), dk = M.dark ? 1 : M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
-  drawSorted(ctx, cache.items, people, RS, { x: camX, y: camY, w: vw, h: vh }, now, lampsOn(dk), lit);
+  if (tiles) {
+    /* on the ground, under everyone: the shadows, turning with the sun, and the clouds'; the pigeons that have not flown off */
+    shade(ctx, W, H, VS, cam, casters(cache.items, people, now), sun, now, reduced, P);
+    ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS);
+    pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, false);
+  }
+  drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   /* in the tall grass the blades hide Antonio's feet, and his creature's */
   [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {
     if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P);
@@ -484,7 +559,17 @@ function drawFrame(now: number, sk: number) {
     ctx.globalAlpha = 1; ctx.strokeStyle = P.foam; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.62 + wv, T * 0.5, T * 0.16, 0, 0, Math.PI * 2); ctx.stroke();
   }
+  if (tiles) {
+    /* in the air, over everyone: the pigeons flying off, the butterflies */
+    pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, true);
+    butterflies(ctx, tiles, x0, x1, y0, y1, now, reduced, 1 - dk, P);
+    hawks(ctx, tiles, M.id, cam, now, reduced, 1 - dk);
+  }
+  /* the dust where a jump down a terrace lands */
+  if (mover && mover.jump) landed = { x: mover.tx * T + T / 2, y: mover.ty * T + T - 4, at: mover.t0 + (mover.dur || STEP) };
+  if (landed && !reduced) { landing(ctx, landed.x, landed.y, (now - landed.at) / 380, P); if (now - landed.at > 380) landed = null; }
   ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
+  if (tiles) { ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS); fireflies(ctx, tiles, x0, x1, y0, y1, now, reduced, dk, P); }
   /* over the night too: the "!" of a trainer who has seen Antonio */
   alerts.forEach(function (a) { exclaim(ctx, a[0], a[1], a[2]); });
   /* from above, the lost things are easy to spot: a ring that pulses around each one, and the creature flying over Antonio */
@@ -559,7 +644,13 @@ export function preview(el: HTMLElement | null, o?: { at?: [number, number]; spa
   var people = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(hero(), s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
-  drawSorted(c, sceneItems(m, P0, s), people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
+  var items = sceneItems(m, P0, s);
+  if (rich()) {
+    /* the title is Formia on a sunny afternoon, whatever the hour (the picture is a still: the night is not drawn on it) */
+    shade(c, c0.width, c0.height, s * k, { x: sx, y: sy, w: sw, h: sh }, casters(items, people, 0, s), { x: 0.42, y: 0.36, k: 1 }, 0, true, P0);
+    c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
+  }
+  drawSorted(c, items, people, s, { x: sx, y: sy, w: sw, h: sh }, 0);
   el.innerHTML = ''; el.appendChild(c0);
 }
 

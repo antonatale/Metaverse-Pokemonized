@@ -14,11 +14,11 @@ type GroundObjFn = (c: Ctx, o: Placed, P: Palette) => void;
 /* ---------- ground: what each map character is made of (see data/maps/legend.ts) ---------- */
 /** kinds of ground that get no outline between them */
 const GROUP: Record<string, string> = { grass: 'g', path: 'p', road: 'r', sand: 's', sea: 'w', pier: 'd', stone: 'st', steps: 'st', clay: 'c', floor: 'f', wall: 'x', rail: 'rl',
-  hill: 'h', paving: 'pv', mura: 'mu', far: 'fr' };
+  hill: 'h', paving: 'pv', mura: 'mu', far: 'fr', scarp: 'sc' };
 
 function groundFill(P: Palette, g: string): string {
   return ({ grass: P.grass, path: P.path, road: P.road, sand: P.sand, sea: P.sea, pier: P.wood, stone: P.stone, steps: P.stone, clay: P.clay, floor: P.wood,
-    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far } as Record<string, string>)[g] || P.paper;
+    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far, scarp: P.rock } as Record<string, string>)[g] || P.paper;
 }
 /** the same kind of ground (its group) at a tile of the map */
 function same(map: GroundMap, x: number, y: number, g: string): boolean {
@@ -180,13 +180,29 @@ function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     c.fillStyle = P.sand2;
     for (k = 0; k < 4; k++) { circle(c, X + 3 + hash(x, y, 70 + k) * 26, Y + 3 + hash(x, y, 80 + k) * 26, 0.7); c.fill(); }
   } else if (L.g === 'hill') {
-    /* little "∧" marks, as a mountain is drawn on a hand-made map */
+    /* the higher up the mountain, the farther away: paler, ridge behind ridge */
+    var dep = hillDepth(map, x, y);
+    if (dep > 1) { c.fillStyle = P.far; c.globalAlpha = Math.min(0.66, (dep - 1) * 0.085); c.fillRect(X, Y, T, T); c.globalAlpha = 1; }
+    if ((dep === 4 || dep === 8) && same(map, x - 1, y, g) && same(map, x + 1, y, g) && hillDepth(map, x - 1, y) === dep && hillDepth(map, x + 1, y) === dep) {
+      /* a crest: a line that runs on from tile to tile, the slope behind it lighter */
+      var crest = function (px: number) { return Y + 17 + (noise1((x + px / T) * 0.9, dep, 61) - 0.5) * 18; };
+      c.beginPath(); c.moveTo(X, crest(0));
+      for (k = 4; k <= T; k += 4) c.lineTo(X + k, crest(k));
+      c.lineTo(X + T, Y); c.lineTo(X, Y); c.closePath();
+      c.fillStyle = P.far; c.globalAlpha = 0.3; c.fill(); c.globalAlpha = 0.9;
+      c.beginPath(); c.moveTo(X, crest(0));
+      for (k = 4; k <= T; k += 4) c.lineTo(X + k, crest(k));
+      c.strokeStyle = P.hill2; c.lineWidth = 1.7; c.stroke(); c.globalAlpha = 1;
+    }
+    /* little "∧" marks, as a mountain is drawn on a hand-made map: fainter with the distance */
+    c.globalAlpha = Math.max(0.3, 1 - dep * 0.08);
     c.strokeStyle = P.hill2; c.lineWidth = 1.4;
     for (k = 0; k < 2; k++) {
       var hx = X + 7 + hash(x, y, 110 + k) * 18, hy = Y + 9 + hash(x, y, 120 + k) * 15;
       c.beginPath(); c.moveTo(hx - 5, hy + 3); c.lineTo(hx, hy - 3); c.lineTo(hx + 5, hy + 3); c.stroke();
     }
     if (r < 0.2) { ell(c, X + 8 + r * 70, Y + 24, 3.6, 2.4); fillStroke(c, P.rock, P.ink, 1.1); }
+    c.globalAlpha = 1;
   } else if (L.g === 'steps') {
     c.fillStyle = P.shadow;
     for (k = 1; k < 4; k++) c.fillRect(X + 1, Y + k * 8, T - 2, 2.5);
@@ -208,6 +224,114 @@ function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
       .forEach(function (pts) { poly(c, pts); c.stroke(); });
   }
   c.restore();
+}
+
+/* ---------- the relief: Formia on three levels (VISIONE.md, V4) ---------- */
+/** how far up the mountain a hill tile is: the rows from it down to the nearest ground that is not hill, looking south
+    in a widening fan (so the height changes along slanting lines, not column by column); 10 at most */
+function hillDepth(map: GroundMap, x: number, y: number): number {
+  for (var d = 1; d < 10; d++) {
+    if (y + d >= map.h) return 10;
+    for (var dx = -d; dx <= d; dx++) { var q = x + dx; if (q >= 0 && q < map.w && map.cell(q, y + d).g !== 'hill') return d; }
+  }
+  return 10;
+}
+/** a hill that ends here, with lower ground to the south: its side shows as a face of rock */
+function hillEnds(map: GroundMap, x: number, y: number): boolean {
+  if (y + 1 >= map.h || map.cell(x, y).g !== 'hill') return false;
+  var s = map.cell(x, y + 1).g;
+  return s !== 'hill' && s !== 'scarp' && s !== 'far';
+}
+/** the face of a terrace: the higher ground runs on to its edge, then the rock (or the blocks of a retaining wall) goes
+    down to the foot. The edge is one line from tile to tile. A ledge is where the edge dips: one jumps down there. */
+function scarp(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
+  var L = map.cell(x, y), X = x * T, Y = y * T, ledge = L.deco === 'ledge', k: number;
+  /* a ledge is made of what the scarp beside it is made of */
+  var wall = L.deco === 'wall' || (ledge && (map.cell(x - 1, y).deco === 'wall' || map.cell(x + 1, y).deco === 'wall'));
+  var up = y > 0 ? map.cell(x, y - 1) : L, top = Y + (wall ? 7 : 9);
+  var edge = function (px: number) {
+    var e = wall ? top : top + (noise1((x + px / T) * 1.4, y, 71) - 0.5) * 4.5;
+    /* the dip of a ledge, in the middle of the tile */
+    if (ledge) { var u = Math.abs(px - T / 2) / (T / 2); e += (1 - u * u) * (1 - u * u) * 12; }
+    return e;
+  };
+  c.save(); c.beginPath(); c.rect(X, Y - 1.2, T, T + 1.2); c.clip();
+  var g = c.createLinearGradient(0, top, 0, Y + T);
+  g.addColorStop(0, wall ? P.stone : P.rock); g.addColorStop(1, wall ? P.stone2 : P.rock2);
+  c.fillStyle = g; c.fillRect(X, Y - 1.2, T, T + 1.2);
+  if (wall) {
+    /* courses of squared blocks, the joints of one course over the middle of the blocks of the next */
+    c.strokeStyle = P.stone2; c.lineWidth = 1.1;
+    for (k = 1; k < 3; k++) { c.beginPath(); c.moveTo(X, top + k * 8.5); c.lineTo(X + T, top + k * 8.5); c.stroke(); }
+    for (k = 0; k < 3; k++) for (var j = 0; j < 2; j++) { var jx = X + j * 16 + (k % 2) * 8; c.beginPath(); c.moveTo(jx, top + k * 8.5); c.lineTo(jx, top + (k + 1) * 8.5); c.stroke(); }
+  } else {
+    /* layers in the rock, a crack or two */
+    c.strokeStyle = P.rock2; c.lineWidth = 1.1;
+    for (k = 0; k < 2; k++) {
+      c.beginPath();
+      for (var sx = 0; sx <= T; sx += 4) { var sy = top + 7 + k * 7 + (noise1((x + sx / T) * 1.1, y * 3 + k, 72) - 0.5) * 5 + (ledge ? 6 : 0); if (sx) c.lineTo(X + sx, sy); else c.moveTo(X + sx, sy); }
+      c.stroke();
+    }
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.globalAlpha = 0.55;
+    for (k = 0; k < 2; k++) { var cx0 = X + 5 + hash(x, y, 73 + k) * 22, cy0 = top + 6 + hash(x, y, 75 + k) * 6 + (ledge ? 8 : 0); c.beginPath(); c.moveTo(cx0, cy0); c.lineTo(cx0 + 1.5, cy0 + 4); c.lineTo(cx0 - 0.5, cy0 + 7); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  /* the foot, in shade */
+  c.fillStyle = P.shade; c.globalAlpha = 0.2; c.fillRect(X, Y + T - 4, T, 4); c.globalAlpha = 1;
+  /* the higher ground, up to the edge */
+  c.beginPath(); c.moveTo(X, Y - 1.2); c.lineTo(X + T, Y - 1.2);
+  for (k = T; k >= 0; k -= 4) c.lineTo(X + k, edge(k));
+  c.closePath(); c.fillStyle = up.g === 'scarp' ? P.rock : groundFill(P, up.g); c.fill();
+  if (wall && !ledge) { c.fillStyle = P.wall; c.fillRect(X, top - 3.5, T, 4.5); c.strokeStyle = P.ink; c.lineWidth = 1.2; c.beginPath(); c.moveTo(X, top - 3.5); c.lineTo(X + T, top - 3.5); c.stroke(); }
+  c.beginPath(); c.moveTo(X, edge(0));
+  for (k = 4; k <= T; k += 4) c.lineTo(X + k, edge(k));
+  c.strokeStyle = P.ink; c.lineWidth = 1.7; c.stroke();
+  if (ledge) {
+    /* two little arrows: this way down */
+    c.strokeStyle = P.ink; c.lineWidth = 1.6; c.globalAlpha = 0.75;
+    for (k = 0; k < 2; k++) { var ay = Y + 4 + k * 5; c.beginPath(); c.moveTo(X + 12, ay); c.lineTo(X + 16, ay + 3.5); c.lineTo(X + 20, ay); c.stroke(); }
+    c.globalAlpha = 1;
+  } else if (!wall && up.g === 'grass') {
+    /* grass hanging over the edge */
+    c.strokeStyle = P.grass2; c.lineWidth = 1.4;
+    for (k = 0; k < 3; k++) { var tx = 4 + hash(x, y, 77 + k) * 24, ty = edge(tx); c.beginPath(); c.moveTo(X + tx - 2, ty - 1); c.lineTo(X + tx - 1, ty + 3); c.moveTo(X + tx + 1.5, ty - 1); c.lineTo(X + tx + 2, ty + 2.5); c.stroke(); }
+  }
+  c.restore();
+}
+/** the side of a hill over lower ground: a band of rock along its foot */
+function hillFace(c: Ctx, P: Palette, x: number, y: number) {
+  var X = x * T, Y = y * T, top = Y + T - 13, k: number;
+  var edge = function (px: number) { return top + (noise1((x + px / T) * 1.4, y, 78) - 0.5) * 5; };
+  c.save(); c.beginPath(); c.rect(X, Y, T, T); c.clip();
+  var g = c.createLinearGradient(0, top, 0, Y + T);
+  g.addColorStop(0, P.rock); g.addColorStop(1, P.rock2);
+  c.beginPath(); c.moveTo(X, Y + T); c.lineTo(X, edge(0));
+  for (k = 4; k <= T; k += 4) c.lineTo(X + k, edge(k));
+  c.lineTo(X + T, Y + T); c.closePath(); c.fillStyle = g; c.fill();
+  c.strokeStyle = P.rock2; c.lineWidth = 1;
+  c.beginPath();
+  for (k = 0; k <= T; k += 4) { var sy = top + 7 + (noise1((x + k / T) * 1.1, y, 79) - 0.5) * 4; if (k) c.lineTo(X + k, sy); else c.moveTo(X + k, sy); }
+  c.stroke();
+  c.fillStyle = P.shade; c.globalAlpha = 0.2; c.fillRect(X, Y + T - 3, T, 3); c.globalAlpha = 1;
+  c.beginPath(); c.moveTo(X, edge(0));
+  for (k = 4; k <= T; k += 4) c.lineTo(X + k, edge(k));
+  c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
+  c.restore();
+}
+/** what stands higher throws a little shade on the ground at its foot */
+function footShade(c: Ctx, P: Palette, x: number, y: number) {
+  var X = x * T, Y = y * T, g = c.createLinearGradient(0, Y, 0, Y + 12);
+  g.addColorStop(0, P.shade); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.save(); c.globalAlpha = 0.2; c.fillStyle = g; c.fillRect(X, Y, T, 12); c.restore();
+}
+/** the relief of a piece of the map, over its outlines */
+function relief(c: Ctx, map: GroundMap, P: Palette, x0: number, y0: number, x1: number, y1: number) {
+  for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++) {
+    var g = map.cell(x, y).g;
+    if (g === 'scarp') scarp(c, map, P, x, y);
+    else if (hillEnds(map, x, y)) hillFace(c, P, x, y);
+    else if (y > 0 && g !== 'hill' && (map.cell(x, y - 1).g === 'scarp' || hillEnds(map, x, y - 1))) footShade(c, P, x, y);
+  }
 }
 
 /* The ballpoint outline wherever two kinds of ground meet. Corners are rounded off: where a tile sticks out of the
@@ -257,6 +381,7 @@ export function paintGround(map: GroundMap, P: Palette, s: number, rect?: Rect):
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) { c.fillStyle = groundFill(P, map.cell(x, y).g); c.fillRect(x * T, y * T, T, T); }
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) texture(c, map, P, x, y);
   outlines(c, map, P, x0, y0, x1, y1);
+  relief(c, map, P, x0, y0, x1, y1);
   /* low decorations, drawn flat into the ground */
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
     L = map.cell(x, y);
@@ -281,6 +406,20 @@ export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
   }
 }
 const DECO: Record<string, DecoFn> = {
+  /* a retaining wall and a ledge are faces of a terrace: they are drawn with the relief */
+  wall: function () { /* see scarp */ },
+  ledge: function () { /* see scarp */ },
+  /* a macera, the dry-stone wall that holds an olive terrace: along the slope, or down it where the walls above and
+     below say so */
+  macera: function (c, X, Y, P, x, y, map) {
+    var is = function (a: number, b: number) { var q = map.cell(a, b); return q.deco === 'macera' || q.g === 'scarp'; };
+    var down = (is(x, y - 1) || is(x, y + 1)) && !is(x - 1, y) && !is(x + 1, y), k: number;
+    for (k = 0; k < 6; k++) {
+      var row = k % 2, n = Math.floor(k / 2), w = 9 + hash(x, y, 90 + k) * 4, h = 5.5 + hash(x, y, 96 + k) * 2;
+      var sx = down ? X + 9 + row * 7 + hash(x, y, 102 + k) * 2 : X + 1 + n * 10.5 + row * 5, sy = down ? Y + 1 + n * 10.5 + row * 5 : Y + 11 + row * 6 + hash(x, y, 102 + k) * 2;
+      rr(c, sx, sy, down ? h + 2 : w, down ? w : h, 2.6); fillStroke(c, row ? P.rock : P.stone, P.ink, 1.1);
+    }
+  },
   /* water you can wade through: lighter, with stones showing under it */
   ford: function (c, X, Y, P, x, y) {
     c.globalAlpha = 0.45; c.fillStyle = P.sea2; c.fillRect(X, Y, T, T); c.globalAlpha = 0.5;

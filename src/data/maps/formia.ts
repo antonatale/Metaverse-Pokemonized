@@ -139,6 +139,18 @@ const signs: Sign[] = [
   sign('sign-caposele', ['Porticciolo di Caposele.', 'Da qui parte la spiaggia di Vindicio, verso Gaeta.']),
   sign('sign-porticciolo', ['Il porticciolo romano di Gianola.', 'Forse era la peschiera della villa di Mamurra: vasche per allevare il pesce. Oggi è area marina protetta.']),
   sign('sign-sangiovanni', ['Piazza San Giovanni, nel borgo di Mola.', 'Di qua la chiesa dei Santi Lorenzo e Giovanni Battista, di là la scuola Vitruvio Pollione. Accanto, i resti dell\'acquedotto romano.', '← Morgana, il porto, il centro · → Il Bruno Zauli, via Amendola']),
+  /* the three trails of the relief (VISIONE.md, V3 and V4): what they pass, and the belvederi at their ends */
+  sign('sign-statua', ['Da qui si sale a piedi verso Maranola e gli Aurunci.', 'Più su, la Strada della Statua porta alla Cima del Redentore, a 1252 metri: fu fatta per portarci la statua di ghisa, alzata il 31 luglio 1901.', '↑ Gli uliveti a terrazze · il belvedere']),
+  sign('sign-eremo', ['Sotto la Cima del Redentore, dentro la roccia, c\'è l\'eremo di San Michele Arcangelo: è ricordato già nell\'830.', 'L\'ultima domenica di giugno i devoti di Maranola portano lassù a spalla la statua del santo. Il 29 settembre la riportano in paese.']),
+  { ...sign('vista-redentore', ['Il belvedere degli Aurunci.', 'Dalla Cima del Redentore, nelle giornate limpide, si vedono Ponza, Ventotene, Ischia e il Vesuvio. Da qui, intanto, tutta Formia.']), view: { id: 'aurunci', name: 'Formia dagli Aurunci' } },
+  sign('sign-fontana', ['Sull\'Appia, verso Itri, c\'è la Fontana di San Remigio: una fontana romana a parete, di età tardo-repubblicana.', 'L\'acqua usciva da due mascheroni, il sole e la luna. Ha dato da bere a chi passava fino agli anni Sessanta.']),
+  sign('sign-tulliola', ['La Tomba di Tulliola, sul pendio dell\'Acervara, un centinaio di metri sopra la Tomba di Cicerone.', 'La tradizione la dice della figlia di Cicerone. Lui voleva dedicarle un santuario, e ne scrisse all\'amico Attico.']),
+  { ...sign('vista-acervara', ['Il belvedere dell\'Acervara.', 'Laggiù, lungo l\'Appia, spunta la Tomba di Cicerone, alta 24 metri. Oltre, il golfo fino a Gaeta.']), view: { id: 'acervara', name: 'Il golfo dall\'Acervara' } },
+  sign('sign-cisterna', ['La Cisterna delle 36 colonne.', 'Dava l\'acqua alla villa di Mamurra, che scendeva verso il mare su tre terrazze. Nel parco ce n\'è un\'altra, la Cisterna maggiore.']),
+  sign('sign-janara', ['La Grotta della Janara.', 'Non è una grotta: è la scala coperta, a volta, che univa due livelli della villa. Le janare, da queste parti, sono le streghe.', '↓ La punta di Gianola']),
+  { ...sign('vista-gianola', ['Il belvedere della punta di Gianola.', 'La villa fu costruita intorno al 50 a.C. Da qui si guarda tutto il golfo di Gaeta.']), view: { id: 'gianola', name: 'Il golfo dalla punta di Gianola' } },
+  sign('sign-bivio-gianola', ['↓ Via Gianola: il parco, la villa di Mamurra, il Lido Oriente.', '→ Scauri · ← Via Amendola, Mola, il centro']),
+  sign('sign-scauri', ['→ Scauri e la stazione di Minturno-Scauri.', '← Gianola, Formia']),
   sign('sign-donbosco', ['Villaggio Don Bosco, parrocchia del Cuore Immacolato di Maria.', 'La chiesa, l\'oratorio e il campo: il pomeriggio è pieno di ragazzi.', '↑ Via Amendola, Parco la Fontana · ← Mola, il centro'])
 ].concat(SCOOTERS.map((id): Sign => ({ ...sign(id, ['Il motorino di Antonio.']), quiet: true, ride: true })))
   /* the monument in Piazza della Vittoria: read it by walking up to it */
@@ -194,6 +206,19 @@ const npcs: Npc[] = [
   /* the net maker, by the guardaparco: every kind of net there is */
   npc('retaio', { name: 'Retaio', seed: 46, dir: 'down', shop: 'reti', lines: ['Reti e retini li faccio io, a mano, come si faceva a Mola.', 'Una creatura stanca si prende meglio: prima la fai lottare, poi le lanci il retino. Più il retino è buono, meno scappa.', 'La nassa è per le creature di mare. La rete della lampara è quella della pesca di notte: col buio vale il triplo.'] }),
   npc('pescatore', { name: 'Pescatore', seed: 31, dir: 'down', shop: 'pesca', lines: ['Mola è il borgo dei pescatori: la torre, il porto, le barche.', 'Il 24 giugno è San Giovanni: a Mola si fa festa fino a tardi.', 'Ti serve un retino? Con quello si prendono pure le creature.'] }),
+  /* who walks the three trails of the relief (VISIONE.md, V3): each with creatures of the place (data/trainers.ts) */
+  npc('tr-bagnante', { trainer: 'bagnante', name: 'Bagnante', seed: 77, dir: 'left', lines: ['Tra gli scogli di Gianola, con la bassa marea, si trova di tutto.'] }),
+  npc('nonna-penitro', { name: 'Signora di via Penitro', seed: 78, dir: 'down', lines: ['Da ragazza salivo a Maranola a piedi, per la mulattiera.', 'Adesso mi fermo al primo muretto e guardo il mare da lì.'] }),
+  npc('ragazzo-salti', { name: 'Ragazzo con lo zaino', seed: 79, dir: 'up', lines: ['Dai gradoni si scende saltando, dove il bordo si abbassa e ci sono le freccette.', 'A risalire no: tocca fare il giro dalle scale.'] }),
+  npc('corridore', { name: 'Corridore', seed: 80, dir: 'left', hint: true, lines: ['Faccio il giro di via Penitro tutte le sere, prima di cena.'] }),
+  npc('giardiniere', { name: 'Giardiniere', seed: 81, dir: 'left', lines: ['Tengo in ordine i giardini delle villette, fino al parco.', 'Dopo la casa del guardaparco il sentiero va sulla punta: da lì si vede tutto il golfo.'] }),
+  npc('pendolare', { name: 'Pendolare', seed: 82, dir: 'left', lines: ['Scauri è a una fermata di treno da Formia.', 'A piedi, invece, ci vuole pazienza.'] }),
+  npc('tr-archeologa', { trainer: 'archeologa', name: 'Archeologa', seed: 71, dir: 'left', lines: ['La villa di Mamurra scendeva al mare su tre terrazze. Io le misuro una per una.'] }),
+  npc('tr-polparo', { trainer: 'polparo', name: 'Pescatore di polpi', seed: 72, dir: 'left', lines: ['Dalla punta si vede il fondo. E chi ci vive.'] }),
+  npc('tr-ciclista', { trainer: 'ciclista', name: 'Ciclista', seed: 73, dir: 'down', lines: ['L\'Appia verso Itri è tutta in salita. Per questo mi piace.'] }),
+  npc('tr-contadino', { trainer: 'contadino', name: 'Contadino', seed: 74, dir: 'left', lines: ['Sono olive itrane. Mature e messe in salamoia, diventano le olive di Gaeta.'] }),
+  npc('tr-pastore', { trainer: 'pastore', name: 'Pastore', seed: 75, dir: 'right', lines: ['Le macere tengono su la terra degli uliveti: muretti a secco, pietra su pietra.'] }),
+  npc('tr-escursionista', { trainer: 'escursionista', name: 'Escursionista', seed: 76, dir: 'down', lines: ['La cima più alta degli Aurunci è il Petrella. Ma la più bella è quella del Redentore.'] }),
   /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
      sight: Lamo, at night, under the walls of Castellone */
   npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: 'lamo' }),
@@ -250,6 +275,10 @@ const areas: Area[] = [
   near('Gelateria Lavezzi', 'gelati', 1, 'In piazza Marconi dal 1870: quattro generazioni di gelatai.'),
   near('Piazza San Giovanni', 'piazza-sangiovanni', 1, 'Il cuore di Mola: la chiesa dei Santi Lorenzo e Giovanni Battista e, di fronte, la scuola Vitruvio Pollione.'),
   clip('Villaggio Don Bosco', 119, 25, 139, 30, 'La parrocchia del Cuore Immacolato di Maria, l\'oratorio e il campo: dall\'altra parte dell\'Appia, quasi di fronte a casa.'),
+  /* the trails of the relief */
+  clip('Strada della Statua', 45, 2, 95, 8, 'La mulattiera che sale verso Maranola e la Cima del Redentore, tra gli uliveti a terrazze.'),
+  clip('Acervara', 0, 38, 27, 47, 'Il pendio sopra l\'Appia: la Tomba di Tulliola, gli ulivi, il golfo davanti.'),
+  clip('Punta di Gianola', 162, 55, 175, 69, 'Le terrazze della villa di Mamurra, nel parco di Gianola.'),
   /* the neighbourhoods */
   clip('Porto', 74, 41, 104, 58, 'Il porto di Formia: traghetti e aliscafi per Ponza e Ventotene, le barche dei pescatori, il faro sul molo.'),
   clip('Largo Paone', 63, 32, 68, 36, 'Su via Vitruvio, accanto a piazza della Vittoria: il sabato c\'è il mercato.'),

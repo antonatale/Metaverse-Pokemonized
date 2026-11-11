@@ -9,9 +9,10 @@ titolo e lotta, canvas 2D per la mappa, audio sintetizzato. La build è un unico
 Il nome è in una costante sola, `GAME_NAME` in `src/data/growth.ts`. Il vecchio nome «Lotte tra Amici» resta solo nelle
 chiavi dei salvataggi `lotte-tra-amici:*` (che non cambiano mai), nel trailer e nel nome del repo.
 
-**Cosa fare adesso:** `REVISIONE.md` (10 novembre 2026) ha le task R1…R22 e le decisioni D1…D5 che spettano ad Antonio.
+**Cosa fare adesso:** la prima task non fatta della coda C1…C10, in cima a `VISIONE.md`. `REVISIONE.md` (10 novembre 2026) ha le task R1…R22 e le decisioni D1…D5 che spettano ad Antonio.
 In fondo a ogni task fatta c'è cosa è stato fatto. Le task vecchie sono in `TASK-MODELLI.md`, le idee in `PROSSIMI-PASSI.md`
-e `BRIEFING-IDEE.md`.
+e `BRIEFING-IDEE.md`. `VISIONE.md` (11 novembre 2026) dice dove portare il gioco dopo: le decisioni DV1…DV7 e le task V1…V11
+(la luce e la vita della mappa, Formia più piena e a tre piani, l'Intento, i Legami, le doti). Di V1, V3 e V4 è fatta la base.
 
 ## Comandi
 
@@ -27,6 +28,7 @@ e `BRIEFING-IDEE.md`.
 | `npm run sim`, `npm run sim:fun` | bilanciamento tra amici; duelli tra creature (tipi, scelte, panchina) |
 | `npx tsx tools/sim-story.ts trainers` | ogni allenatore della storia contro le tre iniziali |
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | una leggenda contro una squadra |
+| `npx tsx tools/formia/density.ts` | quanto c'è da fare in ogni schermata di Formia, e quanto è deserto (V3 di `VISIONE.md`) |
 | `npx tsx tools/sim-covi.ts` | i covi con le creature: ogni protagonista e iniziale, da 0 a 4 spille (`--tune` ritara le squadre dei capi) |
 | `npm run promo` | il trailer (serve macOS) |
 
@@ -53,6 +55,8 @@ in un contenitore senza il browser di Playwright si possono lanciare con il Chro
 - **Persone vere:** gli amici sono persone reali. Niente numeri civici né cognomi in testi nuovi, e niente persone che
   non sono nel gruppo in primo piano (D2 di `REVISIONE.md`).
 - **Bilanciamento:** prima di cambiare un numero si misura con il simulatore, `sim-story trainers` oltre a `sim:fun`.
+- **Quello che è solo da vedere** (ombre, vento, nuvole, animali) sta in `src/render/atmosphere.ts`: non legge la storia, niente
+  `Math.random`, si ferma con «riduci il movimento» e si spegne con Grafica: Bassa (`ui/gfx.ts`).
 
 ## Come si lavora
 
@@ -68,7 +72,7 @@ in un contenitore senza il browser di Playwright si possono lanciare con il Chro
 |---|---|
 | Dove sta ogni file, città nuove, Artifact, Phaser | `docs/architettura.md` |
 | Convenzioni di codice, ritratti, TypeScript | `docs/convenzioni.md` |
-| La mappa, il generatore, i quartieri, com'è disegnata | `docs/mappa.md` |
+| La mappa, il generatore, i quartieri, com'è disegnata, la luce e la vita, il rilievo (gradoni, salti, belvedere) | `docs/mappa.md` |
 | Cicerone, la trama, le scelte, il giro di Formia | `docs/trama.md` |
 | «Chi sei?», i sei covi, le case, il treno | `docs/protagonisti.md` |
 | Il titolo e le tre storie (salvataggi) | `docs/titolo-e-salvataggi.md` |

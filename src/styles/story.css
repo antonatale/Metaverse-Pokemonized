@@ -15,6 +15,9 @@ body.in-world { overflow: hidden; }
 #world [hidden] { display: none !important; }
 #world canvas { position: absolute; left: 0; top: 0; display: block; touch-action: none; transition: opacity .19s ease; }
 #world.fade canvas { opacity: 0; }
+/* a darker frame around the map, so the eye stays where the player is: only with the graphics on Alta (ui/gfx.ts) */
+.wframe { position: absolute; inset: 0; pointer-events: none; display: none; background: radial-gradient(ellipse at 50% 46%, transparent 52%, color-mix(in srgb, var(--m-shade) 24%, transparent) 118%); }
+#world.rich .wframe { display: block; }
 /* asleep in the bed at home: the screen goes dark, slowly */
 #world.sleep { background: var(--m-night); }
 #world.sleep canvas { opacity: 0; transition-duration: .6s; }

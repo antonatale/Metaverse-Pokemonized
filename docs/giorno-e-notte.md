@@ -5,6 +5,7 @@
 ## Giorno e notte
 
 - **L'ora di Formia** (`story/daytime.ts`): di base è quella di fuori, dall'orologio del dispositivo. Alba e tramonto sono quelli veri di Formia per quel giorno, calcolati da latitudine, longitudine, equazione del tempo e ora legale (il 30 ottobre: 6:38 e 17:00). Il buio cresce da un quarto d'ora prima del tramonto a un'ora dopo, e al contrario all'alba.
+- **Il sole** (`sunAt`, 11 novembre): dalla stessa ora, dove cadono le ombre e quanto è forte la luce del giorno (vedi «La luce e la vita» in `mappa.md`).
 - **Dal menu** ("Ora del giorno") si sceglie Come fuori, Giorno, Tramonto o Notte. La scelta sta in `lotte-tra-amici:ora:v1`, sempre in `try/catch`; i salvataggi non si toccano.
 - **Il letto di casa** (cartello `sleep` in `casa.ts`, `sleep()` in `ui/story-screen.ts`): quando è buio si dorme fino a domattina e l'ora diventa Giorno; di giorno si fa un pisolino fino a stasera e diventa Notte. Lo schermo sfuma nel colore della notte.
 - **Come si disegna** (`drawNight` in `render/world-view.ts`): un foglio di notte (`--m-night`) a un terzo della risoluzione, con buchi sfumati dove c'è luce e una tinta calda (`--m-lamp`) nelle pozze; poi la lampadina di ogni lampione. Al tramonto c'è una velatura arancio (`--m-dusk`). Fanno luce:

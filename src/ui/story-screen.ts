@@ -1,6 +1,7 @@
 import { magicBeats } from '../data/types';
 import { crewAt } from '../story/covo-crew';
 import { speedChoice } from './speed';
+import { gfxChoice } from './gfx';
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
@@ -68,6 +69,7 @@ function build() {
   root = $('world');
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
+    '<div class="wframe" aria-hidden="true"></div>' +
     '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
@@ -374,7 +376,7 @@ function interact() {
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
   var a = M.at[key(x, y)];
-  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else if (!plotSign(a.s)) say(a.s.text); }
+  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else if (a.s.view) lookOut(a.s); else if (!plotSign(a.s)) say(a.s.text); }
   else if (a && a.kind === 'door') useDoor(a.b);
   else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
 }
@@ -564,6 +566,22 @@ function flyUp() {
   halt();
   skyWho = who; skyFrom = performance.now();
   sfx('whoosh');
+}
+/** a belvedere (VISIONE.md, V4): what it says, then Formia from above, as with a winged creature but with one's own
+    eyes. The first time, the view goes in the diary (st.seen['veduta-…']) */
+function lookOut(s: Sign) {
+  var v = s.view!, k = 'veduta-' + v.id;
+  say(s.text, null, null, function () {
+    if (!running || M.inside || busy || run || skyFrom) return;
+    halt();
+    skyWho = ''; skyFrom = performance.now();
+    sfx('whoosh');
+    if (!st.seen[k]) { st.seen[k] = true; save(); sfx('found'); notify('<b>Una veduta nuova nel Diario:</b> ' + esc(v.name) + '.'); }
+  });
+}
+/** the belvederi of the town where the story is, for the diary */
+function views(): { id: string; name: string }[] {
+  return (MAPS[M.city].signs || []).filter(function (s) { return !!s.view; }).map(function (s) { return s.view!; });
 }
 /* ---------- the friends' tournament at the Bruno Zauli (data/tourney.ts): five friends in a row, then a cup ---------- */
 var tour: { round: number; edition: number; wins: number; host: string } | null = null;
@@ -1028,6 +1046,11 @@ function openMenu(tab?: string) {
       return '<li class="' + (n ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + (n ? n + '×' : '·') + '</span><span><b>' + esc(a.name) + '</b><small>' +
         esc(a.where + (n ? ' · fatto ' + (n === 1 ? 'una volta' : n + ' volte') + (b != null && a.score ? ' · record ' + a.score(b) : '') : ' · ancora da fare')) + '</small></span></li>';
     }).join('') + '</ul></div>' +
+      '<div class="pickrow"><h3>Vedute · ' + views().filter(function (v) { return st.seen['veduta-' + v.id]; }).length + ' su ' + views().length + '</h3><ul class="wbadge-list diary">' + views().map(function (v) {
+        var got = !!st.seen['veduta-' + v.id];
+        return '<li class="' + (got ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + (got ? '✓' : '·') + '</span><span><b>' + esc(got ? v.name : '???') + '</b><small>' +
+          esc(got ? 'Vista da un belvedere.' : 'Un belvedere da trovare, in alto.') + '</small></span></li>';
+      }).join('') + '</ul></div>' +
       '<div class="pickrow"><h3>Oggetti ritrovati · ' + foundItems().length + ' su ' + allItems().length + '</h3><ul class="wbadge-list">' + allItems().map(function (it) {
         var got = !!st.found[it.id], nm = ITEMS[it.move].name;
         return '<li class="' + (got ? 'got' : '') + '">' + itemSVG(ITEMS[it.move].icon, got, 40) + '<span><b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b><small>' +
@@ -1038,6 +1061,7 @@ function openMenu(tab?: string) {
         return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
       }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
       '<div class="pickrow"><h3>Velocità delle lotte</h3>' + speedChoice() + '<p class="hint">Quanto corrono le parole in lotta. Tenendo premuto Invio vanno avanti da sole.</p></div>' +
+      '<div class="pickrow"><h3>Grafica della mappa</h3>' + gfxChoice() + '<p class="hint">Alta: le ombre che girano con il sole, le nuvole, il vento tra gli alberi, il mare che luccica, piccioni, farfalle e lucciole. Bassa: la mappa semplice, se il computer fatica.</p></div>' +
       '<p class="hint">La storia si salva da sola, su questo dispositivo. Dal titolo puoi giocarne un\'altra: ce ne sono tre.</p>' +
       '<div class="menu-actions"><button class="btn" type="button" id="wm-home">Torna al titolo</button>' +
       '<button class="btn" type="button" id="wm-reset">Ricomincia la storia</button></div>'

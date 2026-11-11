@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { W, H, col, row } from '../../src/data/maps/formia-projection';
 import { PAINT, CLEAR } from './paint';
 import { PLACES, SPOTS, HIDING } from '../../src/data/maps/formia-places';
-import { RAIL, TUNNEL_ENDS, HILLS, STREETS, PATHS, type Line } from './network';
+import { RAIL, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, type Line } from './network';
 
 type LL = [number, number];   /* lat, lon */
 type XY = [number, number];   /* a tile */
@@ -241,7 +241,7 @@ for (const l of STREETS) walkLine(l, (x, y) => {
   if (!isLand(x, y)) { problems.push(l.name + ' in the sea at ' + x + ',' + y); return; }
   set(x, y, l.ch || '=');   /* over the railway: a level crossing */
 });
-for (const l of PATHS) walkLine(l, (x, y) => { if (isLand(x, y) && !isStreet(x, y) && get(x, y) !== 'r') set(x, y, ','); });
+for (const l of PATHS.concat(TRAILS)) walkLine(l, (x, y) => { if (isLand(x, y) && !isStreet(x, y) && get(x, y) !== 'r') set(x, y, ','); });
 {
   const pieces = components(isStreet);
   if (pieces.length > 1) problems.push('the streets are in ' + pieces.length + ' pieces: ' + pieces.map((c) => c[0].join(',') + ' (' + c.length + ')').join(' '));
@@ -250,6 +250,21 @@ for (const l of PATHS) walkLine(l, (x, y) => { if (isLand(x, y) && !isStreet(x, 
 /* ---------- 7. by hand ---------- */
 for (const c of CLEAR) for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) if (isLand(x, y) && !/[=v,r]/.test(get(x, y))) set(x, y, c.to || '.');
 for (const p of PAINT) p.rows.forEach((line, dy) => [...line].forEach((ch, dx) => { if (ch !== ' ') set(p.x + dx, p.y + dy, ch); }));
+/* the terraces of the relief are open ground: no mountain on them, and later no houses and no wilderness */
+const terraced = grid(false);
+for (const t of TERRACES) for (let y = t.y0; y <= t.y1; y++) for (let x = t.x0; x <= t.x1; x++) {
+  if (!isLand(x, y)) continue;
+  terraced[y][x] = true;
+  if (/[MQJ]/.test(get(x, y))) set(x, y, '.');
+}
+/* no house stands across the face of a terrace either */
+for (const s of SCARPS) walkLine({ name: s.name, w: 1, pts: s.pts }, (x, y) => { if (inside(x, y)) terraced[y][x] = true; });
+/* nor right under it, where a tall one would hide it: a strip of open ground runs along the foot of the mountain scarps */
+for (const s of SCARPS) if (s.ch === '^') walkLine({ name: s.name, w: 1, pts: s.pts }, (x, y) => { if (inside(x, y + 1) && isLand(x, y + 1)) terraced[y + 1][x] = true; });
+/* a few umbrella pines on the open terraces, clear of the trails */
+for (const t of TERRACES) if (!t.olives) for (let y = t.y0; y <= t.y1; y++) for (let x = t.x0; x <= t.x1; x++) {
+  if (get(x, y) === '.' && noise(x, y, 33) < 0.07 && !N4.some(([a, b]) => get(x + a, y + b) === ',') && !(get(x, y + 1) === ',' || get(x, y + 2) === ',')) set(x, y, 'i');
+}
 
 /* ---------- 8. the places: near where each one really is, with the door on a street ---------- */
 const reserved = grid(false);
@@ -262,7 +277,7 @@ const roofed = grid(false);
 const roof = (x: number, y: number, w: number) => { for (let a = y - 2; a < y; a++) for (let b = x; b < x + w; b++) if (inside(b, a)) roofed[a][b] = true; };
 /** where people, signs and things stand */
 const spotted = grid(false);
-const free = (x: number, y: number) => inside(x, y) && !reserved[y][x];
+const free = (x: number, y: number) => inside(x, y) && !reserved[y][x] && !terraced[y][x];
 /* buildings and gardens stand on open ground, never on a street, a quay or the railway */
 const OPEN = /[.fTiOQ]/;
 const GROUND: Record<string, RegExp> = { land: OPEN, sand: /[:PI]/, sea: /~/, area: OPEN, beach: /[:PI~]/ };
@@ -556,9 +571,65 @@ for (const h of HIDING) {
   for (let y = c[1] - h.r - 1; y <= c[1] + h.r + 1; y++) for (let x = c[0] - h.r - 1; x <= c[0] + h.r + 1; x++) {
     if (!inside(x, y) || !from.test(get(x, y))) continue;
     if (!(x === c[0] && y === c[1]) && (foot[y][x] || pathed[y][x] || roofed[y][x] || front[y][x])) continue;
+    /* a patch on a terrace stays on it */
+    if (terraced[c[1]][c[0]] && !terraced[y][x]) continue;
     if (Math.hypot(x - c[0], y - c[1]) + (noise(x, y, 23) - 0.5) * 1.6 > h.r) continue;
     set(x, y, to);
   }
+}
+/* ---------- 12c. the relief: terraces, wilderness, scarps, ledges (network.ts; VISIONE.md, V3 and V4) ---------- */
+{
+  /* olive trees on the farmed terraces, in a row along their upper and lower edge, clear of the trail */
+  for (const t of TERRACES) if (t.olives) for (const y of [t.y0, t.y1]) for (let x = t.x0; x <= t.x1; x++) {
+    if (get(x, y) !== '.' || foot[y][x] || pathed[y][x] || x % 3 || N4.some(([a, b]) => /[,H]/.test(get(x + a, y + b)) || (inside(x + a, y + b) && spotted[y + b][x + a]))) continue;
+    set(x, y, 'O');
+  }
+  /* what anchors the open ground around it: everything one walks on purpose (streets, paths, stone, sand, tall
+     grass), every building with the room around it, every spot. The terraces are left as they are */
+  const anchor = grid(false);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) anchor[y][x] = foot[y][x] || reserved[y][x] || /[=vz,_:HEAWuhgSNUdePILYK#]/.test(get(x, y));
+  const far = (x: number, y: number, keep: number) => {
+    for (let a = -keep; a <= keep; a++) for (let b = -keep; b <= keep; b++) if (inside(x + b, y + a) && anchor[y + a][x + b]) return false;
+    return true;
+  };
+  const grove = grid(false);
+  for (const z of WILD) for (let y = z.y0; y <= z.y1; y++) for (let x = z.x0; x <= z.x1; x++) {
+    if (!inside(x, y) || terraced[y][x] || !/[.fTO]/.test(get(x, y)) || green[y][x] || !far(x, y, z.keep)) continue;
+    if (z.kind === 'grove') { grove[y][x] = true; set(x, y, y % 3 === 0 ? 'a' : (x + y) % 2 === 0 ? 'O' : '.'); }
+    else set(x, y, noise(x, y, 31) < (z.kind === 'wood' ? 0.42 : 0.13) ? 'Q' : noise(x, y, 32) < 0.05 ? 'J' : 'M');
+  }
+  /* a grove is closed by its walls: no gap in it opens on the ground outside */
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (grove[y][x] && get(x, y) === '.' && N4.some(([a, b]) => inside(x + a, y + b) && !grove[y + b][x + a] && /[.f:_v,=zHEAe]/.test(get(x + a, y + b)))) set(x, y, 'a');
+  }
+  for (const m of MACERE) walkLine({ name: 'macera', w: 1, pts: m }, (x, y) => { if (/[.fTO]/.test(get(x, y)) && !foot[y][x] && !pathed[y][x]) set(x, y, 'a'); });
+  /* the faces of the terraces: a street climbs them, a path takes the steps */
+  for (const s of SCARPS) walkLine({ name: s.name, w: 1, pts: s.pts }, (x, y) => {
+    if (!isLand(x, y) || /[=vz]/.test(get(x, y))) return;
+    if (/[,H]/.test(get(x, y))) { set(x, y, 'H'); return; }
+    if (foot[y][x]) { if (spotted[y][x]) problems.push(s.name + ': someone stands on the scarp at ' + x + ',' + y); return; }
+    set(x, y, s.ch);
+  });
+  const stand = (x: number, y: number) => inside(x, y) && !foot[y][x] && /[.f:_v,=zHeEA]/.test(get(x, y));
+  for (const [x, y] of LEDGES) {
+    if (!/[\^\[]/.test(get(x, y)) || !stand(x, y - 1) || !stand(x, y + 1)) { problems.push('ledge at ' + x + ',' + y + ': no scarp there, or no ground above or below it (' + get(x, y - 1) + get(x, y) + get(x, y + 1) + ')'); continue; }
+    set(x, y, 'j');
+  }
+  /* everyone and everything must still be reached on foot from every home: steps both ways, ledges only down */
+  const seen = grid(false), q: XY[] = [spots.start];
+  seen[spots.start[1]][spots.start[0]] = true;
+  while (q.length) {
+    const [x, y] = q.pop()!;
+    for (const [a, b] of N4) {
+      let u = x + a, v = y + b;
+      if (b === 1 && get(u, v) === 'j') v++;
+      if (inside(u, v) && !seen[v][u] && (stand(u, v) || (u === spots.start[0] && v === spots.start[1]))) { seen[v][u] = true; q.push([u, v]); }
+    }
+  }
+  for (const [id, [x, y]] of Object.entries(spots)) {
+    if (!seen[y][x] && !N4.some(([a, b]) => inside(x + a, y + b) && seen[y + b][x + a]) && !/^selv-(elmo|lamo)$/.test(id)) problems.push(id + ' at ' + x + ',' + y + ' cannot be reached from home');
+  }
+  for (const [id, p] of Object.entries(placed)) if (p.door && !seen[p.door[1] + 1]?.[p.door[0]] && !N4.some(([a, b]) => seen[p.door![1] + b]?.[p.door![0] + a])) problems.push('the door of ' + id + ' cannot be reached from home');
 }
 /* ---------- 13. street lamps: along the streets of the town, on the pavement or the verge, the two sides taking turns ---------- */
 let lamps = 0;

@@ -60,6 +60,8 @@ export interface GroundObject {
     plates are the street-name plates at the corners */
 export interface Sign {
   x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean; sleep?: boolean;
+  /** a belvedere: read from there, Formia is seen from above (the id of the view, for the diary, and its name) */
+  view?: { id: string; name: string };
   /** a way in that opens with the story: once one of these flags is there the sign offers to go in (a place under the town) */
   enter?: { to: string; tx: number; ty: number; tdir: Dir; after: string[]; label: string };
 }

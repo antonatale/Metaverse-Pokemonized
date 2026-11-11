@@ -34,6 +34,10 @@ export const HIDINGS: Record<string, Hiding> = {
   scogliera: { id: 'scogliera', name: 'La Scogliera', on: 'scogli',
     day: [{ sp: 'granchietto', lv: [6, 9], w: 6 }, { sp: 'riccetto', lv: [6, 7], w: 2 }, { sp: 'granchione', lv: [18, 19], w: 1 }, { sp: 'murenaccia', lv: [9, 12], w: 2 }],
     night: [{ sp: 'murenaccia', lv: [10, 13], w: 4 }, { sp: 'granchietto', lv: [7, 9], w: 2 }, { sp: 'medusella', lv: [7, 9], w: 2 }] },
+  /* the scrub on the promontory of Gianola, between the terraces of the villa: one step up from the rock pools below */
+  macchia: { id: 'macchia', name: 'La macchia di Gianola', on: 'erba',
+    day: [{ sp: 'cicalina', lv: [4, 6], w: 4 }, { sp: 'ginestrella', lv: [5, 7], w: 3 }, { sp: 'lumacotta', lv: [5, 7], w: 2 }, { sp: 'olivella', lv: [5, 6], w: 1 }],
+    night: [{ sp: 'civettina', lv: [5, 7], w: 4 }, { sp: 'lucciolina', lv: [5, 7], w: 3 }, { sp: 'lumacotta', lv: [5, 7], w: 2 }] },
   ulivi: { id: 'ulivi', name: 'Gli uliveti', on: 'erba',
     day: [{ sp: 'olivella', lv: [7, 10], w: 5 }, { sp: 'cicalina', lv: [7, 8], w: 1 }, { sp: 'lumacotta', lv: [7, 10], w: 3 }, { sp: 'ginestrella', lv: [7, 9], w: 2 }],
     night: [{ sp: 'civettina', lv: [8, 10], w: 3 }, { sp: 'olivella', lv: [7, 9], w: 2 }, { sp: 'lumacotta', lv: [7, 9], w: 2 }, { sp: 'pipistrillo', lv: [8, 10], w: 2 }] },

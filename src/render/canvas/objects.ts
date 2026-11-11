@@ -150,6 +150,20 @@ const OBJ: Record<string, ObjFn> = {
     c.strokeStyle = P.wood2; c.lineWidth = 1.4;
     c.beginPath(); c.moveTo(8, 3); c.lineTo(24, 3); c.moveTo(8, 8); c.lineTo(20, 8); c.stroke();
   },
+  /* a belvedere: a telescope on its post, the kind you put a coin in, by a bit of railing (VISIONE.md, V4) */
+  viewer: function (c, w, h, P) {
+    ell(c, 16, 29, 9, 2.6); c.fillStyle = P.shadow; c.fill();
+    c.strokeStyle = P.ink; c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(3, 28); c.lineTo(3, 17); c.moveTo(29, 28); c.lineTo(29, 17); c.moveTo(2, 18); c.lineTo(30, 18); c.moveTo(2, 23); c.lineTo(30, 23); c.stroke();
+    rr(c, 14, 6, 4, 23, 1.5); fillStroke(c, P.stone2, P.ink, 1.5);
+    c.save(); c.translate(16, 3); c.rotate(-0.22);
+    rr(c, -11, -5, 20, 10, 4); fillStroke(c, P['roof-b'], P.ink, 1.7);
+    circle(c, 10, 0, 5.2); fillStroke(c, P['roof-b'], P.ink, 1.7);
+    circle(c, 10, 0, 2.8); fillStroke(c, P.foam, P.ink, 1.2);
+    rr(c, -13.5, -3, 4, 6, 1.5); fillStroke(c, P.ink, null);
+    c.restore();
+    circle(c, 16, 14, 2.4); fillStroke(c, P['roof-c'], P.ink, 1.2);
+  },
   /* the ferry to Ponza and Ventotene, moored at the pier */
   ferry: function (c, w, h, P) {
     rr(c, 0, 36, w, 56, 26); c.strokeStyle = P.foam; c.lineWidth = 3; c.stroke();

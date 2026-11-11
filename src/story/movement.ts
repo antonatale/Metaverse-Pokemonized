@@ -13,7 +13,12 @@ export const TURN_HOLD = 110;
 /** how long a step takes: quicker with Antonio's legs (setPace, when the story opens and when he trains them) */
 export let STEP = 165;
 export function setPace() { STEP = stepTime(st.skills || {}); }
-export interface Mover { fx: number; fy: number; tx: number; ty: number; t0: number }
+/** a step, or a jump down a terrace: two tiles in one go, a little longer than a step (`dur`), in an arc (`jump`) */
+export interface Mover { fx: number; fy: number; tx: number; ty: number; t0: number; dur?: number; jump?: boolean }
+/** how long a jump down a terrace takes */
+export const JUMP = 340;
+/** the spot of a terrace one jumps down from (the legend's 'j'), walking south: never the other way */
+export function ledgeAt(x: number, y: number): boolean { return M.cell(x, y).deco === 'ledge'; }
 
 let held: Dir | null = null, pressedAt = 0, lastBump = '', walking = false;
 /** the step in progress, and which foot */
@@ -44,6 +49,14 @@ export function onEdge(f: (kind: 'swim' | 'climb', d: Dir) => boolean) { edgeHoo
 export function stepNow(d: Dir) { held = null; walking = false; st.dir = d; tryStep(d, performance.now()); }
 function tryStep(d: Dir, now: number): boolean {
   var v = DV[d], nx = st.x + v[0], ny = st.y + v[1], k = key(nx, ny);
+  /* down from a terrace: over its edge and onto the ground below, in one jump */
+  if (d === 'down' && ledgeAt(nx, ny) && !moveMode.swim && !moveMode.climb && !blocked(M, nx, ny + 1)) {
+    lastBump = '';
+    mover = { fx: st.x, fy: st.y, tx: nx, ty: ny + 1, t0: now, dur: JUMP, jump: true };
+    sfx('whoosh');
+    parity ^= 1;
+    return true;
+  }
   if (blocked(M, nx, ny)) {
     var a = M.at[k];
     if (a && a.kind === 'door' && !a.b.to && lastBump !== k) { lastBump = k; held = null; useDoor(a.b); }
@@ -60,7 +73,8 @@ function tryStep(d: Dir, now: number): boolean {
 }
 export function update(now: number) {
   if (mover) {
-    if (now - mover.t0 < STEP) return;
+    if (now - mover.t0 < (mover.dur || STEP)) return;
+    if (mover.jump) sfx('step');
     st.x = mover.tx; st.y = mover.ty; mover = null;
     walking = !!held;
     if (arrived()) return;

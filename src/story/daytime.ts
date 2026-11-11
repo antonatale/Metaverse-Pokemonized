@@ -49,3 +49,19 @@ export function sunset(d: Date): number {
   var bell = function (c: number) { return Math.max(0, 1 - Math.abs(h - c) / 0.9); };
   return Math.max(bell(t[1]), bell(t[0]) * 0.6);
 }
+
+/** the sun over the map: where a shadow falls for each px of height (x: to the right, y: towards the viewer), and how
+    strong the daylight is (0 at night) */
+export interface Sun { x: number; y: number; k: number }
+/** The shadows turn with the hour: long and to the west in the morning (the sun rises over Gianola), short at noon,
+    long and to the east as the sun goes down behind Gaeta. They always lean a little towards the viewer: the map is
+    seen from the south, and a shadow that fell straight north would hide behind what casts it. */
+export function sunAt(d: Date): Sun {
+  if (dayMode === 'notte') return { x: 0, y: 0, k: 0 };
+  if (dayMode === 'tramonto') return { x: 1.15, y: 0.3, k: 0.7 };
+  if (dayMode === 'giorno') return { x: 0.42, y: 0.36, k: 1 };
+  var t = sunTimes(d), u = (hours(d) - t[0]) / (t[1] - t[0]);
+  if (!(u > 0 && u < 1)) return { x: 0, y: 0, k: 0 };
+  var e = Math.sin(Math.PI * u), len = 0.35 + 1.25 * Math.pow(1 - e, 1.5);
+  return { x: len * Math.sin((u - 0.5) * Math.PI), y: 0.28 + 0.1 * e, k: Math.min(1, e * 3.5) };
+}

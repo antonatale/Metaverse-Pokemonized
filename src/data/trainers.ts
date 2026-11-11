@@ -66,6 +66,64 @@ export const TRAINERS: Record<string, Trainer> = {
     lose: ['La storia non si improvvisa. Torna quando sarai più forte.'],
     after: ['Le mie creature si ricordano di te. Un\'altra lezione?']
   },
+  /* the three trails of the relief (VISIONE.md, V3): two on each, from the promontory of Gianola, where the story
+     begins, to the Appia of the Acervara and up the Aurunci, at the levels of the creatures that live there */
+  bagnante: {
+    id: 'bagnante', title: 'La bagnante di Gianola', prize: 15,
+    team: [{ sp: 'riccetto', lv: 4 }],
+    intro: ['Torno adesso dagli scogli: guarda che cosa mi è venuto dietro!', 'Tu ce l\'hai una creatura? Facciamo una lotta, una sola.'],
+    win: ['Brava la tua! Il mio Riccetto ci è rimasto male.', 'Tieni: sono i soldi del ghiacciolo.'],
+    lose: ['Ha vinto il Riccetto! Non ci credo nemmeno io.'],
+    after: ['Il Riccetto vuole la rivincita. Io pure.']
+  },
+  archeologa: {
+    id: 'archeologa', title: 'L\'archeologa di Gianola', prize: 30,
+    team: [{ sp: 'lumacotta', lv: 5 }, { sp: 'ginestrella', lv: 6 }],
+    intro: ['Sto rilevando le terrazze della villa: erano tre, una sotto l\'altra, fino al mare.', 'Le creature della macchia mi fanno compagnia mentre misuro. Le vuoi conoscere?'],
+    win: ['Brave, le tue. Lo segno sul taccuino, accanto alle misure.', 'Tieni: è il rimborso della trasferta.'],
+    lose: ['Le mie conoscono ogni pietra di questo posto. Torna quando vuoi.'],
+    after: ['Ancora qui? Allora un\'altra lotta, tra una misura e l\'altra.']
+  },
+  polparo: {
+    id: 'polparo', title: 'Il pescatore di polpi', prize: 35,
+    team: [{ sp: 'riccetto', lv: 7 }, { sp: 'stellina', lv: 7 }],
+    intro: ['Sotto la punta, tra gli scogli, ci sono le tane dei polpi. E non solo quelle.', 'Queste due le ho trovate stamattina. Vediamo se le tue sanno nuotare.'],
+    win: ['Va bene, hai vinto: oggi il polpo lo offro io.', 'Tieni, sono i soldi del pescato.'],
+    lose: ['Il mare insegna la pazienza. Riprova con calma.'],
+    after: ['Il mare è piatto e i polpi dormono. Facciamo un\'altra lotta?']
+  },
+  ciclista: {
+    id: 'ciclista', title: 'La ciclista dell\'Appia', prize: 45,
+    team: [{ sp: 'cicalina', lv: 9 }, { sp: 'olivella', lv: 10 }],
+    intro: ['Da Formia a Itri l\'Appia sale, e io la faccio tutte le mattine.', 'Le mie creature mi vengono dietro in salita. Le tue ce la fanno?'],
+    win: ['Mi hai staccata. Succede di rado.', 'Tieni: ci pago il caffè in cima.'],
+    lose: ['In salita non si improvvisa. Allenati e torna.'],
+    after: ['Sto recuperando il fiato. Un\'altra lotta mentre riparto?']
+  },
+  contadino: {
+    id: 'contadino', title: 'Il contadino dell\'Acervara', prize: 50, smart: 1,
+    team: [{ sp: 'olivella', lv: 10 }, { sp: 'ginestrella', lv: 11 }],
+    intro: ['Queste terrazze le tengono su le macere, i muretti a secco: pietra su pietra, senza calce.', 'E tra gli ulivi ci vivono loro due. Vuoi vedere come lavorano?'],
+    win: ['Hai le mani buone, ragazzo. Con le creature come con la terra.', 'Tieni, per il disturbo.'],
+    lose: ['La terra non regala niente. Ritorna dopo la raccolta.'],
+    after: ['Ho finito di potare. Una lotta, prima che faccia buio?']
+  },
+  pastore: {
+    id: 'pastore', title: 'Il pastore degli Aurunci', prize: 70, smart: 1,
+    team: [{ sp: 'cinghialetto', lv: 13 }, { sp: 'ginestrella', lv: 13 }, { sp: 'falchetto', lv: 14 }],
+    intro: ['Quassù si sale da sempre con le bestie. E da sempre ci sono anche le altre, quelle dei giganti.', 'Le mie tengono lontani i cinghiali dal gregge. Vediamo se tengono lontano anche te.'],
+    win: ['Piano, piano. Hai vinto.', 'Prendi: è il prezzo di una forma di cacio.'],
+    lose: ['La montagna va presa con rispetto. Torna più forte.'],
+    after: ['Il gregge è al pascolo e io ho tempo. Rivincita?']
+  },
+  escursionista: {
+    id: 'escursionista', title: 'L\'escursionista del Redentore', prize: 80, smart: 1,
+    team: [{ sp: 'civettina', lv: 14 }, { sp: 'falchetto', lv: 15 }, { sp: 'cinghialetto', lv: 15 }],
+    intro: ['Vengo dalla cima: lassù il vento porta via il cappello.', 'Mi hanno seguito in tre per tutto il sentiero. Li alleniamo un po\'?'],
+    win: ['Che gambe! E che squadra.', 'Tieni: con questi ti compri l\'acqua per la salita.'],
+    lose: ['In montagna vince chi ha più fiato. Riposa e riprova.'],
+    after: ['Riparto tra poco. Un\'ultima lotta prima della discesa?']
+  },
   /* the plot (story/plot.ts): Mamurra's men, who look for the stones of Telepilo, and Mamurra himself */
   'mamurr-scavi': {
     id: 'mamurr-scavi', title: 'L\'uomo con la pala', prize: 30,

@@ -173,7 +173,7 @@ export const SPOTS: SpotSpec[] = [
   /* street-name plates at the corners of the real streets the map's streets stand for */
   { id: 'targa-vitruvio', near: { place: 'comune', dx: -3, dy: -1 } },
   { id: 'targa-abate-tosti', near: { place: 'morgana', dx: 6, dy: -2 } },
-  { id: 'targa-appia', near: { place: 'tomba', dx: 5, dy: -4 } },
+  { id: 'targa-appia', tile: [24, 47] },   /* on the upper side of the Appia: below it runs the retaining wall */
   { id: 'targa-vindicio', near: { place: 'tomba', dx: -1, dy: 5 } },
   { id: 'targa-tito-scipione', near: { place: 'pineta', dx: -9, dy: 9 } },
   { id: 'targa-amendola', near: { place: 'casa', dx: -3, dy: 2 } },
@@ -200,9 +200,38 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-scogli-1', near: { place: 'scogliera', dx: -2, dy: 3 }, on: 'sand' },
   { id: 'selv-scogli-2', near: { place: 'scogliera', dx: 5, dy: 4 }, on: 'sand' },
   { id: 'selv-ulivi-1', tile: [10, 41] },
-  { id: 'selv-ulivi-2', tile: [22, 44] },
-  { id: 'selv-monti-1', tile: [66, 6] },
-  { id: 'selv-monti-2', tile: [75, 9] },
+  { id: 'selv-ulivi-2', tile: [22, 45] },
+  /* up on the first terrace of the Aurunci, east of the mule track */
+  { id: 'selv-monti-1', tile: [79, 6] },
+  { id: 'selv-monti-2', tile: [89, 6] },
+  /* the scrub of the promontory of Gianola, between the terraces of the villa; a third patch of rock pools in the cove */
+  { id: 'selv-macchia', tile: [171, 59] },
+  { id: 'selv-gianola-3', tile: [179, 52], on: 'sand' },
+  /* the three trails of the relief (VISIONE.md, V3 and V4): their signs, their belvederi, who walks them */
+  { id: 'sign-statua', tile: [71, 10] },
+  { id: 'tr-pastore', tile: [52, 6] },
+  { id: 'sign-eremo', tile: [60, 2] },
+  { id: 'tr-escursionista', tile: [63, 2] },
+  { id: 'vista-redentore', tile: [67, 2] },
+  { id: 'sign-fontana', tile: [5, 47] },
+  { id: 'tr-ciclista', tile: [33, 47] },
+  { id: 'tr-contadino', tile: [18, 40] },
+  { id: 'sign-tulliola', tile: [9, 39] },
+  { id: 'vista-acervara', tile: [3, 40] },
+  { id: 'tr-archeologa', tile: [168, 58] },
+  { id: 'sign-cisterna', tile: [172, 56] },
+  { id: 'sign-janara', tile: [165, 61] },
+  { id: 'tr-polparo', tile: [168, 65] },
+  { id: 'vista-gianola', tile: [166, 67] },
+  /* along the roads that were only roads: who lives there, where they lead, a first easy challenge */
+  { id: 'nonna-penitro', tile: [50, 13] },
+  { id: 'ragazzo-salti', tile: [66, 13] },
+  { id: 'corridore', tile: [88, 13] },
+  { id: 'sign-bivio-gianola', tile: [163, 22] },
+  { id: 'giardiniere', tile: [162, 30] },
+  { id: 'tr-bagnante', tile: [162, 41] },
+  { id: 'sign-scauri', tile: [186, 22] },
+  { id: 'pendolare', tile: [190, 30] },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
   { id: 'selv-lamo', tile: [48, 35] },
   /* the other legends: Janus by the ruins of Gianola, the fire of Sant'Elmo on the mole by the lighthouse */
@@ -230,7 +259,9 @@ export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand'
   { id: 'scogliera', spot: 'selv-scogli-1', r: 3, on: 'sand' },
   { id: 'scogliera', spot: 'selv-scogli-2', r: 3, on: 'sand' },
   { id: 'ulivi', spot: 'selv-ulivi-1', r: 4, on: 'grass' },
-  { id: 'ulivi', spot: 'selv-ulivi-2', r: 4, on: 'grass' },
+  { id: 'ulivi', spot: 'selv-ulivi-2', r: 3, on: 'grass' },
   { id: 'monti', spot: 'selv-monti-1', r: 4, on: 'grass' },
-  { id: 'monti', spot: 'selv-monti-2', r: 4, on: 'grass' }
+  { id: 'monti', spot: 'selv-monti-2', r: 4, on: 'grass' },
+  { id: 'macchia', spot: 'selv-macchia', r: 3, on: 'grass' },
+  { id: 'gianola', spot: 'selv-gianola-3', r: 2, on: 'sand' }
 ];

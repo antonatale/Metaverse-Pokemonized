@@ -9,6 +9,7 @@ import { gameTitle } from './data/growth';
 import { installAudio, music } from './audio';
 import { installSoundButtons } from './ui/sound';
 import { installSpeedButtons } from './ui/speed';
+import { installGfxButtons } from './ui/gfx';
 
 /* the story's keys first: they stop the keys that belong to the map before the battle screen sees them */
 installStoryKeys();
@@ -17,6 +18,7 @@ installBattleKeys();
 installAudio();
 installSoundButtons();
 installSpeedButtons();
+installGfxButtons();
 
 /* the automated playtests drive the game through these, as they did with the old single file */
 const G = window as unknown as Record<string, unknown>;

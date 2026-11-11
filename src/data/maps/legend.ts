@@ -37,6 +37,11 @@ export const LEGEND: Record<string, Ground> = {
   'e': { g: 'stone', deco: 'nets' },
   /* the Cisternone: water you can wade through, where a current may carry you (see `slide` in data/maps/types.ts) */
   '%': { g: 'sea', deco: 'ford' },
+  /* Formia on three levels (VISIONE.md, V4): the face of a terrace, of rock out of town and of stone blocks in it (the
+     higher ground is always to the north, so the face looks at the player); the spot where one jumps down from it, and
+     never climbs back (story/movement.ts); a macera, the dry-stone wall of the olive terraces of the Aurunci */
+  '^': { g: 'scarp', solid: true }, '[': { g: 'scarp', deco: 'wall', solid: true }, 'j': { g: 'scarp', deco: 'ledge', solid: true },
+  'a': { g: 'grass', deco: 'macera', solid: true },
   /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
   'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' }
 };

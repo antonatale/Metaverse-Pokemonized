@@ -246,7 +246,10 @@ export function route(tx: number, ty: number): Dir[] | null {
       return out;
     }
     (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
-      var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1], k2 = key(nx, ny), a = M.at[k2];
+      var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1];
+      /* down a terrace where one can jump: one step, two tiles (story/movement.ts) */
+      if (d === 'down' && M.cell(nx, ny).deco === 'ledge') ny++;
+      var k2 = key(nx, ny), a = M.at[k2];
       if (seen[k2] || blocked(M, nx, ny)) return;
       if (a && (a.kind === 'warp' || a.kind === 'door') && !(nx === tx && ny === ty)) return;
       seen[k2] = 1; prev[k2] = { k: key(p[0], p[1]), d: d }; q.push([nx, ny]);
