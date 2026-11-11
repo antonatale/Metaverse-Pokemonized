@@ -26,7 +26,7 @@ Una task per sessione, come sempre. Chi apre una sessione nuova prende la prima 
 
 | # | Cosa | Modello | Fatto quando |
 |---|---|---|---|
-| C1 | **Fatta l'11 novembre, sera** (vedi «C1, la verifica» in fondo); resta solo `npm run test:e2e` lanciato sul Mac da Antonio. **Verifica sul Mac** del lavoro dell'11 novembre (V1, V3, V4; è anche R20): `npm run test:e2e` intero, il fotogramma con Grafica Alta e Bassa di giorno e di notte, il tema scuro, una partita a mano fino al primo belvedere | Sonnet 5.5, high | le misure sono scritte in V1; le partite stanno nei 240 secondi (se no: il foglio delle ombre a un quarto, o Bassa nelle partite lunghe); ogni difetto visto è corretto o segnato qui |
+| C1 | **Fatta l'11 novembre, sera** (vedi «C1, la verifica» in fondo), con le 43 partite verdi anche sul Mac. **Verifica sul Mac** del lavoro dell'11 novembre (V1, V3, V4; è anche R20): `npm run test:e2e` intero, il fotogramma con Grafica Alta e Bassa di giorno e di notte, il tema scuro, una partita a mano fino al primo belvedere | Sonnet 5.5, high | le misure sono scritte in V1; le partite stanno nei 240 secondi (se no: il foglio delle ombre a un quarto, o Bassa nelle partite lunghe); ogni difetto visto è corretto o segnato qui |
 | C2 | **Finire V3:** legare i tre sentieri al giro (una tappa in cima a ognuno, o una tappa della trama spostata lì), riempire le otto schermate vuote, misurare R11 con `npm run playtest` | Opus 5.5, high | il giocatore «solo freccia» incontra dieci selvatiche e sei allenatori prima di Mamurra; schermate vuote 6 o meno |
 | C3 | **Finire V4:** Castellone in alto (il muro tra il borgo e l'Appia, la salita, il belvedere dalla Torre), e le strade che salgono un fianco disegnate come salite | Opus 5.5, max | da casa di ognuno dei sei si arriva a ogni tappa; quattro belvedere nel Diario |
 | C4 | **R8, il resto** (la curva di crescita, la terza mossa delle iniziali): con i sette allenatori nuovi dentro la tabella tappa → livello | Opus 5.5, max | come scritto in R8 di `REVISIONE.md` |
@@ -326,15 +326,17 @@ Una cosa che nessuno di questi ha, e questo sì: **il posto è vero, e chi gioca
 
 Sempre 60 fotogrammi al secondo (480 su 8 secondi); il fotogramma più lento, uno solo, 18,5 ms di notte a 1920. Il tetto di DV6 è 8 ms: Alta sul Mac costa quanto Bassa, e nessun rimedio serve. Con lo stesso strumento nel contenitore, senza scheda grafica e alla stessa densità, a 1440×900 di giorno: Bassa 22 ms, Alta 42 (da 15 a 30 fotogrammi al secondo). I numeri di prima (2,9 e 10,5) erano a densità 1.
 
-**Le partite intere.** Sul Mac non le ho potute lanciare (sotto, «Non fatto»). Nel contenitore, con il Chrome di sistema e due worker, passano tutte e 43, ma due andavano oltre i 240 secondi. Dentro «activities around Formia», da sola, con Alta i fotogrammi prendono 231 secondi su 415 (23 ms l'uno, su quasi diecimila), con Bassa 44 su 246: il resto è il giro di Playwright. Quindi il rimedio scritto in C1, Bassa nelle partite lunghe: un'opzione `gfx` di `play()` in `tests/e2e/harness.ts`, e `gfx: 'bassa'` nelle quattro più lunghe. Le due che anche su Bassa restano sopra i 4 minuti hanno `test.slow()`, cioè 720 secondi. Le altre 39 restano su Alta, comprese le due di notte.
+**Le partite intere.** Nel contenitore, con il Chrome di sistema e due worker, passano tutte e 43, ma due andavano oltre i 240 secondi. Dentro «activities around Formia», da sola, con Alta i fotogrammi prendono 231 secondi su 415 (23 ms l'uno, su quasi diecimila), con Bassa 44 su 246: il resto è il giro di Playwright. Quindi il rimedio scritto in C1, Bassa nelle partite lunghe: un'opzione `gfx` di `play()` in `tests/e2e/harness.ts`, e `gfx: 'bassa'` nelle quattro più lunghe. Le due che anche su Bassa restano sopra i 4 minuti hanno `test.slow()`, cioè 720 secondi. Le altre 39 restano su Alta, comprese le due di notte.
 
-| Partita | Prima (Alta) | Dopo |
-|---|---|---|
-| activities around Formia | 524 s | 318 s (Bassa, `test.slow`) |
-| the stones of Telepilo | 348 s | 249 s (Bassa, `test.slow`) |
-| story | 187 s | 125 s (Bassa) |
-| creatures of Formia | 187 s | 126 s (Bassa) |
-| Tutte e 43 | 24,0 minuti | 20,0 minuti, tutte verdi con il tetto di 240 s |
+| Partita | Contenitore, prima (Alta) | Contenitore, dopo | Mac di Antonio, dopo |
+|---|---|---|---|
+| activities around Formia | 524 s | 318 s (Bassa, `test.slow`) | 300 s |
+| the stones of Telepilo | 348 s | 249 s (Bassa, `test.slow`) | 250 s |
+| story | 187 s | 125 s (Bassa) | 116 s |
+| creatures of Formia | 187 s | 126 s (Bassa) | 118 s |
+| Tutte e 43 | 24,0 minuti (2 worker) | 20,0 minuti (2 worker), tutte verdi con il tetto di 240 s | 9 minuti e 19 secondi (4 worker), 43 su 43 |
+
+**Sul Mac** le ha lanciate Antonio la sera, sul ramo, con `npm run test:e2e` e un rapporto JSON: 43 su 43, nessuna instabile. Le due con `test.slow()` restano oltre i 240 secondi anche lì (300 e 250), quindi il tempo triplo resta; tutte le altre stanno sotto i 150 secondi (la più lunga, «Lamo, in three parts», 147).
 
 **La partita fino al primo belvedere.** Giocata da un browser automatico a tempo vero, come la giocherebbe una persona, a 1366×768, con le animazioni accese: il titolo, «chi sei?» (Antonio), casa, la freccia fino al guardaparco, Polpino, il sentiero di Gianola, le terrazze con le scale, il cannocchiale della punta. La camera sale, compare «Una veduta nuova nel Diario» e il Diario dice «Vedute · 1 su 3». Poi il salto sopra le terrazze: da (168,61) si atterra a (168,63) e non si risale. Nessun errore in console.
 
@@ -344,7 +346,7 @@ Sempre 60 fotogrammi al secondo (480 su 8 secondi); il fotogramma più lento, un
 - **Il primo sentiero è troppo duro per chi ci va subito.** Il belvedere della punta è a pochi passi dal guardaparco, quindi è il primo posto dove va chi esplora: lì, con Polpino da solo al 5, Antonio ha incontrato un allenatore del sentiero e ha perso (Cicerone: «Hai perso?»). L'archeologa ha due creature al 5 e al 6, il pescatore di polpi due al 7. È bilanciamento: va con la curva di R8 (C4). Si può abbassare il pescatore o spostarlo più in fondo, dopo la seconda creatura.
 - **Il tema scuro di notte è molto scuro.** Si legge grazie ai contorni a penna chiari, ma il terreno quasi non si vede. Da giudicare a occhio sul Mac: se è troppo, il foglio della notte va alleggerito quando il tema è scuro.
 
-**Non fatto:** `npm run test:e2e` sul Mac. Da qui il Terminale del Mac non si può usare: l'app concede ai terminali solo i clic, non la tastiera, e la shell remota è una macchina Linux, non il Mac. Antonio, sul ramo `visione-formia-tre-piani`: `git pull && npm install && npm run test:e2e`. Se tutte passano, C1 è chiusa del tutto; se «activities» o «the stones of Telepilo» stanno sotto i 240 secondi, il loro `test.slow()` si può togliere.
+**Come sono state lanciate sul Mac:** il Terminale del Mac da qui non si può usare (l'app concede ai terminali e agli editor solo i clic, non la tastiera; la shell remota è una macchina Linux senza browser). La cartella del Mac l'ho portata sul ramo con git dalla shell remota, e la riga di Playwright l'ha incollata Antonio.
 
 **Come è fatto, per chi continua:**
 - `dist/perf.html` si apre con un doppio clic (meglio in Chrome) e lavora da solo per circa un minuto e mezzo. Rimette a posto la storia, la Grafica e l'ora di chi gioca, e alla fine scrive i numeri sulla pagina, con «Rifai». Tra un caricamento e l'altro ricorda il punto in `window.name`, che sopravvive anche in un frame senza `sessionStorage`. Se la pagina è nascosta lo scrive, perché il browser allora non disegna;
