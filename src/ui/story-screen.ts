@@ -747,7 +747,8 @@ function sniff(key: string) {
 function meet(h: Hiding) {
   /* Antonio's eye for the rare ones: the creatures of weight 1 come out more often, the golden ones too */
   var night = darkness(new Date()) > 0.5, lk = luck(st.skills || {});
-  var m = pickMeet(((night && h.night) || h.day).map(function (x) { return x.w <= 1 ? { sp: x.sp, lv: x.lv, w: x.w * lk.rare } : x; }), Math.random());
+  /* the strong ones of a place come out only once the story has got there (R10: no Pipistrega at 20 on the way in) */
+  var m = pickMeet(((night && h.night) || h.day).filter(function (x) { return !x.after || flag(x.after); }).map(function (x) { return x.w <= 1 ? { sp: x.sp, lv: x.lv, w: x.w * lk.rare } : x; }), Math.random());
   var lv = wildLevel(m, h, teamRef(), storyStage(), Math.random()), gold = Math.random() < lk.gold / 48;
   halt();
   sfx('meet');

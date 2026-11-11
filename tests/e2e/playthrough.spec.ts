@@ -615,7 +615,7 @@ test('the tour of Formia', async ({ browser }) => {
     r.keep('menu', await r.page.locator('.tour').innerText());
     await r.shot('menu', { fullPage: true });
   });
-  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }] }) }, async (r) => {
+  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'riccetto' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
     await r.page.keyboard.press('m'); await r.page.clock.runFor(300);
     r.keep('title', await r.page.locator('.pickrow h3', { hasText: 'Giro di Formia' }).innerText());
@@ -627,7 +627,8 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(first, 'menu')).toContain('???');
   expect(get(first, 'menu')).not.toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Chi scava tra le rovine di Gianola?');
-  expect(get(later, 'title').toLowerCase()).toContain('3 su 21');
+  /* the second creature is a stop too (R10), done with two */
+  expect(get(later, 'title').toLowerCase()).toContain('4 su 24');
 });
 
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
@@ -891,7 +892,7 @@ test('a trainer who sees Antonio', async ({ browser }) => {
    and the challenge is still there talking to him. In the battle, the sheet lists the moves the creature knows */
 test('a trainer too strong to challenge on sight', async ({ browser }) => {
   const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cic-power': true } }) }, async (r) => {
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));

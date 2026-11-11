@@ -60,6 +60,11 @@ const plot = (id: string, text: string, where: string, tip: string, who: string,
   const [x, y] = npcAt('formia', who);
   return { id, text, where, tip, map: 'formia', x, y, done: () => flag(done) };
 };
+/** a stop done when the team has that many creatures (caught, or at home): it points to the grass of Gianola */
+const team = (id: string, n: number, text: string, where: string, tip: string): Stop => {
+  const [x, y] = npcAt('formia', 'guardaparco');
+  return { id, text, where, tip, map: 'formia', x, y, done: () => (st.mons || []).length >= n };
+};
 const [tx, ty] = npcAt('formia', 'capotreno');
 const tomb = (MAPS.formia.signs || []).find((g) => g.text.join(' ').indexOf('Tomba di Cicerone') >= 0)!;
 
@@ -69,6 +74,8 @@ export const STOPS: Stop[] = [
     return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'Il guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
       map: 'formia', x, y, done: () => !!st.seen.starter };
   })(),
+  /* R10: the stops that teach the game: a second creature from the grass, then a team for the dark and for Mamurra */
+  team('seconda-creatura', 2, 'La tua seconda creatura', 'L\'erba alta del Parco di Gianola', 'Il guardaparco dice: con i retini che ti ho dato, cammina nell\'erba alta o tra gli scogli di Gianola. Indebolisci una creatura e lancia il retino.'),
   covo('palamendola', 'formia', 'Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta per una sfida. Ha appena letto un paper.'),
   plot('trama-scavi', 'Chi scava tra le rovine di Gianola?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa romana, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
   covo('padel', 'formia', 'Andrea ti aspetta ai campi da padel del Bruno Zauli: ha calcolato che oggi vince lui.'),
@@ -77,6 +84,7 @@ export const STOPS: Stop[] = [
   doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),
   doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
+  team('squadra-cisterna', 3, 'Tre creature per il buio', 'L\'erba alta e gli scogli', 'Nel Cisternone si lotta al buio: Cicerone dice di non scendere con meno di tre creature. Cattura nell\'erba alta o tra gli scogli.'),
   plot('trama-cisterna', 'L\'uomo del Cisternone', 'Castellone', 'A Castellone, davanti al Cisternone, c\'è uno con la torcia che cerca di forzare la porta.', 'mamurr-cisterna', 'tr-mamurr-cisterna'),
   { ...plot('trama-mura', 'La parola del Cisternone', 'Castellone, dalla signora del teatro', 'La signora che abita dentro il teatro romano sa la parola che apre il Cisternone.', 'teatro', 'porta-cisterna'),
     done: () => flag('porta-cisterna') || flag('pietra-mura') },
@@ -92,6 +100,7 @@ export const STOPS: Stop[] = [
   lost('passaporto'),
   { id: 'trama-voce', text: 'La Pietra della Voce', where: 'Tomba di Cicerone', tip: 'Alla Tomba di Cicerone, sull\'Appia, di sera si sente una voce che parla latino.',
     map: 'formia', x: tomb.x, y: tomb.y, done: () => flag('pietra-voce') },
+  team('squadra-mamurra', 4, 'Una squadra per Mamurra', 'Dove vuoi, ma allena tutti', 'Mamurra ha tre creature evolute e la Ricchezza: con quattro creature, che battono tipi diversi, si vince.'),
   plot('trama-mamurra', 'Il fantasma di Mamurra', 'Villa di Mamurra, Gianola', 'Tra le rovine della villa di Mamurra, a Gianola, si vede una luce dorata.', 'mamurra', 'tr-mamurra'),
   /* the end of the tour: the train of whoever is played (data/gates.ts) */
   { id: 'torino', text: 'Il treno per la tua città', where: 'Stazione di Formia', tip: 'Hai fatto tutto il giro di Formia! In stazione il capotreno sa qualcosa del tuo treno.',

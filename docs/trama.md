@@ -48,4 +48,5 @@
   - sulla pianta del menu, come una stella. Il menu (scheda Viaggio) elenca le tappe fatte e la prossima; quelle dopo restano «???», da scoprire, perché la trama non va anticipata.
 - **Dentro casa o al circolo**, la freccia punta all'uscita; fuori, alla porta del posto dove sta la tappa (`heading`).
 - **Chi dà consigli:** alcuni abitanti (la vicina, il tifoso al bar, il marinaio al porto, il bagnino all'Eclipse) hanno `hint: true`. Dopo le loro frasi dicono il `tip` della prossima tappa, con parole loro.
+- **Le tappe che insegnano** (11 novembre, R10): dopo la prima creatura «La tua seconda creatura», prima del Cisternone «Tre creature per il buio», prima di Mamurra «Una squadra per Mamurra»: si fanno avendo 2, 3 e 4 creature (`team` in `story/goals.ts`), con un capitolo di Cicerone ciascuna.
 - **Aggiungere una tappa:** una voce in `STOPS`, nell'ordine del giro. Il test `the tour of Formia` controlla la prima tappa e il conteggio.

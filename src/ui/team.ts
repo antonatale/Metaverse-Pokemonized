@@ -9,7 +9,7 @@ import { beaterOf, moveBits, moveIcon } from '../battle';
 import { newsOf } from '../story/newspaper';
 import { cardHtml, cardClass, cardColour, type MoveCard } from './move-card';
 import { TC } from './common';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
+import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, coffeeCap, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
 import { coin, ico } from './icons';
 import { bagIcon } from './spells';
 import { M } from '../story/maps';
@@ -135,7 +135,7 @@ export function useItem(it: ItemId, back?: () => void) {
     var n = 1, draw = function () {
       var max = has(it), what = coffee ? (n === 1 ? 'un caffè' : n + ' caffè') : (n === 1 ? 'un cartoccio di alici' : n + ' cartocci di alici');
       var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="us-t"><div class="sheet-h"><h2 id="us-t">' + (coffee ? 'Caffè' : 'Alici') + ' a ' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="us-x">Annulla</button></div>' +
-        '<div class="use-row"><span class="ware-ico">' + icon + '</span><span><b>Quanti?</b><small>Ne hai ' + max + '. ' + (coffee ? 'Ognuno dà ' + COFFEE_XP + ' punti esperienza.' : 'Ognuno la avvicina a te: un cuore si riempie prima.') + '</small></span>' + stepper(it, n, max) + '</div>' +
+        '<div class="use-row"><span class="ware-ico">' + icon + '</span><span><b>Quanti?</b><small>Ne hai ' + max + '. ' + (coffee ? 'Ognuno dà ' + COFFEE_XP + ' punti esperienza, fino al livello ' + coffeeCap() + '; oltre, scalda solo il cuore.' : 'Ognuno la avvicina a te: un cuore si riempie prima.') + '</small></span>' + stepper(it, n, max) + '</div>' +
         '<button class="btn primary" type="button" id="us-go">Dai ' + what + (coffee ? ' · +' + n * COFFEE_XP + ' punti' : '') + '</button></div>');
       $('us-x').addEventListener('click', function () { closeSheet(); if (back) back(); });
       var q = o.querySelector('[data-qty]')!;
@@ -157,7 +157,7 @@ export function useItem(it: ItemId, back?: () => void) {
     draw();
   };
   if (keys.length <= 1) give(keys[0] || 'antonio');
-  else if (coffee) pickFrom('A chi dai il caffè?', 'Ognuno dà ' + COFFEE_XP + ' punti esperienza a chi lo beve; a una creatura piace, e le si affeziona.', keys, give);
+  else if (coffee) pickFrom('A chi dai il caffè?', 'Ognuno dà ' + COFFEE_XP + ' punti esperienza a chi lo beve, fino al livello ' + coffeeCap() + ' (per crescere oltre si lotta); a una creatura piace, e le si affeziona.', keys, give);
   else pickFrom('A chi dai le alici?', 'Alle creature il pesce piace tanto: chi le mangia si affeziona a te.', keys, give);
 }
 /** the newspaper of the edicola, read there and then: where something seldom met has been seen today */

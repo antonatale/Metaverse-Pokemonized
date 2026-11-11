@@ -291,8 +291,10 @@ export function buy(it: ItemId, n?: number): boolean {
 export function affordable(it: ItemId): number { return Math.floor(money() / priceFor(it)); }
 /** the things in the bag that are used outside a battle, from the menu: the coffee */
 export const USE_ITEMS: ItemId[] = ['caffe', 'alici', 'manuale'];
-/** what a coffee gives whoever drinks it */
-export const COFFEE_XP = 60;
+/** what a coffee gives whoever drinks it; it does not buy levels: no experience past COFFEE_CAP (R8) */
+export const COFFEE_XP = 30;
+/** the level past which a coffee only warms the heart: the level of the next covo (6, then 3 more for each pin) */
+export function coffeeCap(): number { return 6 + 3 * st.badges.length; }
 /** a cartoccio of alici for a creature: its bond with Antonio grows (a heart is 20) */
 export const ALICI_BOND = 8;
 export function feedAlici(key: string, n?: number): number {
@@ -317,7 +319,7 @@ export function drinkCoffee(key: string, n?: number): Growth | null {
   if (k < 1) return null;
   st.bag!.caffe = has('caffe') - k;
   addBond(key, 3 * k);
-  return gainXp(key, COFFEE_XP * k);
+  return gainXp(key, level(key).lv < coffeeCap() ? COFFEE_XP * k : 0);
 }
 /** what goes into a battle, and what is left of it after */
 /** what can go into a battle: the nets (data/nets.ts) and the tiella */

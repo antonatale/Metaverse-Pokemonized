@@ -6,7 +6,7 @@ Una revisione di tutto il progetto, chiesta da Antonio: cosa è fatto peggio (ar
 
 **Come è fatta:** ho letto codice e documenti, lanciato controlli e simulatori, e giocato con un browser automatico: l'apertura, la prima lotta, i menu a quattro risoluzioni da PC, tutte le 98 animazioni delle mosse, e un giocatore automatico che segue la freccia della storia da zero. I numeri di questo documento sono misurati, salvo dove dico «da verificare». Come rifarli è in fondo.
 
-**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R6, R7, R13, R14, R15, R17; in parte R18 e R19. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R5, R8, R10, R16, R20.
+**Stato all'11 novembre:** fatte A0, R1, R2, R3, R4, R6, R7, R13, R14, R15, R17; in parte R8, R10, R18 e R19. Tutto in `main`. Decisioni di Antonio: D1 covi con le creature, D2 il repo lo rende privato lui, D3 PC principale e telefono che funziona. Le prossime: R5, R8, R10, R16, R20.
 
 **Come usarla:** ogni task ha una sigla (R1, R2…). A un modello basta dire: «Leggi `REVISIONE.md` e fai la task R7». Le task fatte prima di questa revisione sono in `docs/storia-task.md`; quelle di qui hanno la nota **Fatto** sotto.
 
@@ -228,6 +228,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - *La crescita:* provare +4% a livello e PS +3%, con il simulatore, e tenere solo se la storia regge.
 - *Fatto quando:* il giocatore «prudente» di R5 arriva al treno con tutti e diciotto gli abbinamenti, senza una tappa sotto il 50% e senza comprare caffè.
 
+**Fatto in parte (11 novembre):** il caffè non compra più livelli: 30 punti invece di 60, e nessuno oltre il livello del prossimo covo (`coffeeCap` in `story/growth.ts`); il legame lo dà sempre. Non fatto: la tabella tappa → livello, la terza mossa delle iniziali, la crescita a +4%: aspettano R5, che misura la partita intera.
+
 **R9. Esperimento: i tipi che si sentono (Opus, xhigh).** Su un ramo a parte: vantaggio ×1,5 e svantaggio ×0,67, con PS più alti e danni più bassi finché i duelli durano 8–10 turni e il tipo decide il 70–85% delle volte. Consegna: i numeri di `sim:fun` e `sim-story` prima e dopo, e una build da giocare. Decide Antonio (D4). Se non regge, si scrive perché e si chiude.
 
 **R10. Le tappe che insegnano il gioco (Sonnet, xhigh).** Senza toccare la mappa:
@@ -235,6 +237,8 @@ Ordine consigliato. Con pochi token, le otto che contano sono **R1, R3, R4, R5, 
 - prima del Cisternone e prima di Mamurra, Cicerone dice quante creature servono, e la tappa non parte finché la squadra non le ha;
 - la prima volta che una creatura è in svantaggio di tipo, Cicerone insegna a cambiare;
 - nel Cisternone la selvatica di livello 20 esce solo dopo la prima pietra.
+
+**Fatto in parte (11 novembre):** tre tappe nuove nel giro (`team` in `story/goals.ts`, con il loro capitolo di Cicerone): «La tua seconda creatura» subito dopo la prima, «Tre creature per il buio» prima del Cisternone, «Una squadra per Mamurra» (quattro) prima di Mamurra; la freccia porta al guardaparco, accanto all'erba e agli scogli di Gianola. La Pipistrega del Cisternone esce solo dopo la Pietra delle Mura (`after` su una voce di `data/encounters.ts`). Non fatto: il consiglio di Cicerone sul cambio alla prima creatura in svantaggio. Test: `tests/unit/teaching.test.ts`.
 
 **R11. Tre percorsi con erba e allenatori (Opus, high).** La strada per tre tappe della trama passa da un tratto con erba alta, due allenatori e una cosa da trovare: il sentiero della pineta verso la Tomba di Cicerone, il parco di Gianola verso la villa, gli uliveti verso i monti. Si fa con `tools/formia/network.ts` e `build.ts`; se le caselle cambiano serve il nuovo `formiaN` nei salvataggi. *Fatto quando:* il giocatore «solo freccia» incontra almeno dieci selvatiche e sei allenatori prima di Mamurra.
 

@@ -5,7 +5,8 @@ import type { SpeciesId } from './creatures';
    Walking through a hiding place, about one step in RATE meets one, from the table of that place, by day or by
    night. The patches are painted on the map by tools/formia/build.ts around the spots of HIDING in formia-places.ts;
    a patch's id is the id of its table here. */
-export interface Meet { sp: SpeciesId; lv: [number, number]; w: number }
+/** `after`: a flag of the story (story/plot.ts flag) before which this one does not come out */
+export interface Meet { sp: SpeciesId; lv: [number, number]; w: number; after?: string }
 export interface Hiding {
   id: string; name: string; on: 'erba' | 'scogli' | 'acqua' | 'mura' | 'grotta'; day: Meet[]; night?: Meet[];
   /** how many levels each stage of the story (a stone found, Mamurra beaten) lifts the place's band; 1 if missing */
@@ -20,7 +21,7 @@ export const HIDINGS: Record<string, Hiding> = {
      the place is a challenge). Nothing in the game says which is which: the diary only says where it was seen */
   /* the first place inside: the bats of the dark, the snails of the damp walls, and one who is seldom met */
   cisterna: { id: 'cisterna', name: 'Il Cisternone', on: 'grotta', follow: { off: 0, slack: 4 },
-    day: [{ sp: 'pipistrillo', lv: [8, 11], w: 5 }, { sp: 'lumacotta', lv: [8, 11], w: 3 }, { sp: 'pipistrega', lv: [20, 22], w: 1 }] },
+    day: [{ sp: 'pipistrillo', lv: [8, 11], w: 5 }, { sp: 'lumacotta', lv: [8, 11], w: 3 }, { sp: 'pipistrega', lv: [20, 22], w: 1, after: 'pietra-mura' }] },
   gramsci: { id: 'gramsci', name: 'Parco Gramsci', on: 'erba',
     day: [{ sp: 'cicalina', lv: [2, 4], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }],
     night: [{ sp: 'civettina', lv: [3, 5], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }, { sp: 'lucciolina', lv: [3, 5], w: 3 }] },
