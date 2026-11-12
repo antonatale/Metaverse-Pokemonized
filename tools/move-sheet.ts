@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { Clip, launch, openGame, storySave } from './promo/game';
+import { Clip, launch, openGame, storySave } from './game';
 import { CMOVES, SPECIES, type SpeciesId } from '../src/data/creatures';
 import type { TypeName } from '../src/data/types';
 

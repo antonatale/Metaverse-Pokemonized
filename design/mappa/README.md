@@ -1,9 +1,5 @@
-# Proposta geografica non integrata
+# Riferimenti per la mappa
 
-Materiale recuperato dalla precedente `Claude outputs/copia-codex-11-novembre` e da `output/playwright`. Conservato perché è lavoro non ancora confluito nel gioco, non un resoconto di attività concluse.
+`riferimenti/`: due viste satellitari (via Amendola con Parco la Fontana, il Bruno Zauli) per confrontare a occhio la mappa del gioco. Non sono importate dall'applicazione.
 
-- `proposta.patch`: modifiche geografiche proposte; contiene anche aggiornamenti a dati e fonti.
-- `file-nuovi.tgz`: i file nuovi associati, con percorsi relativi alla repository.
-- `riferimenti/`: fotografie e schermate usate per riconoscibilità e confronto.
-
-Non applicato durante la pulizia. Prima dell'integrazione Opus deve controllare la base della patch e i conflitti con la mappa a tre piani già attiva. Il runtime attuale e la fonte dei dati restano in `src/` e `tools/formia/`.
+La proposta geografica dell'11 novembre non è più qui: la mappa attiva è la Formia grande del 12 novembre (`docs/mappa.md`), che ne ha recuperato fonti e coordinate.

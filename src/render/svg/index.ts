@@ -32,7 +32,7 @@ function buildChar(c: Look): string {
   return s;
 }
 
-/** someone who is not one of the six (the trailer's rival): the parts install() puts in the <defs> for the friends */
+/** someone who is not one of the six (Tullio, tools/tullio.ts): the parts install() puts in the <defs> for the friends */
 export function defsOf(c: Look): string { return buildChar(c); }
 /** a friend's picture, with an expression; `look` draws someone else, whose parts are in the page (defsOf) */
 export function person(id: string, expr?: string, cls?: string, vb?: string, look?: Look): string {

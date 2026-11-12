@@ -34,8 +34,8 @@ La prima volta: `npx playwright install chromium`. `SHOTS=1 npm run test:e2e` sa
 
 Non modificare `src/` durante le prove. Orologio finto e scene con animazioni reali possono interferire con il timeout di `safeShow`; non scambiare automaticamente un salto di scena nel test per un blocco reale. I test lunghi usano Grafica Bassa. Con macchina occupata ridurre i worker prima di modificare i test. Se fallisce solo l'avvio dell'audio, verificare che il contesto audio del browser avanzi: alcuni Chromium headless lo lasciano fermo.
 
-## Trailer e file generati
+## File generati
 
-Aggiornare il trailer solo su richiesta: `npm run promo` registra il gioco, sintetizza musica e monta due MP4. Serve macOS e la prima rigenerazione ricrea gli intermedi eliminati dalla pulizia. Le scene stanno in `tools/promo/capture.ts`, `trailer.ts` e `timeline.ts`; l'encoder è `encode.swift`.
+`dist/`, `dist-google-fonts/`, `test-results/`, `output/`, `.playwright-cli/` e `node_modules/` sono ignorati da Git. Non aggiungere schermate di test o copie dell'HTML a ogni commit. Il trailer e i suoi strumenti sono stati tolti il 12 novembre (erano della versione precedente): `tools/game.ts` resta come guida del gioco fotogramma per fotogramma per `move-sheet.ts`, `tools/tullio.ts` come aspetto di Tullio per i ritratti futuri.
 
-`promo/` conserva solo i due video finali; clip, log e copie temporanee sono rigenerabili. `dist/`, `dist-google-fonts/`, `test-results/`, `output/`, `.playwright-cli/` e `node_modules/` sono ignorati da Git. Non aggiungere schermate di test o copie dell'HTML a ogni commit. I riferimenti grafici necessari a una proposta vanno invece nella sua cartella `design/`.
+Nel contenitore senza il browser di Playwright le partite girano con il Chrome di sistema (`launchOptions.executablePath` in una config locale non committata) e quattro worker: 43 partite in circa 25 minuti.

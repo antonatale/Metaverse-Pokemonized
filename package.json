@@ -16,7 +16,6 @@
     "build:google-fonts": "tsc --noEmit && vite build --mode google-fonts",
     "test:e2e": "playwright test",
     "test:e2e:dist": "vite build && GAME_URL=file://$PWD/dist/index.html playwright test tests/e2e/playthrough.spec.ts",
-    "promo": "tsx tools/promo/make.ts",
     "playtest": "node tools/playtest/report.mjs",
     "perf": "vite build && node tools/perf/make.mjs"
   },

@@ -1,4 +1,4 @@
-import type { Look } from '../../src/render/svg/types';
+import type { Look } from '../src/render/svg/types';
 
 /* Tullio, the guardaparco's grandson and Antonio's rival (src/story/rival.ts), drawn like the six friends for the
    trailer: red hair in a quiff, green eyes, the green hoodie of his grandfather's park, a cocky smile. In the game he

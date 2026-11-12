@@ -2,7 +2,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from '@playwri
 import fs from 'node:fs';
 import path from 'node:path';
 
-/* The game, driven frame by frame for the trailer: a fake clock moves timers and requestAnimationFrame, and every
+/* The game, driven frame by frame (tools/move-sheet.ts): a fake clock moves timers and requestAnimationFrame, and every
    CSS or Web Animation is paused and moved by hand by the same amount, so a clip is the same at any machine speed.
    The dev server must be running (npm run dev). */
 
@@ -100,7 +100,7 @@ export async function openGame(browser: Browser, o: GameOpts = {}): Promise<Game
 
 /** a story save, already past the start, at a tile of Formia */
 export function storySave(o: Record<string, unknown> = {}, hour?: 'notte' | 'giorno' | 'tramonto'): Record<string, string> {
-  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cap-starter': true };
+  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cap-starter': true };
   const s = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, money: 120, bag: { retino2: 3, tiella: 2 },
     ...o, seen: { ...seen, ...((o.seen as object) || {}) } };
   const out: Record<string, string> = { 'lotte-tra-amici:storia:v1': JSON.stringify(s) };
