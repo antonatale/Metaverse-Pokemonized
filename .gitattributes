@@ -1,0 +1,5 @@
+# Generated visual references should be reviewed as images, not giant text diffs.
+design/personaggi/grafica/**/*.svg -diff linguist-generated=true
+design/**/*.png binary
+design/**/prototipo/*.patch -diff
+design/mappa/*.patch -diff

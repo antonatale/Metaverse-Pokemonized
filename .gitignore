@@ -5,3 +5,8 @@ playwright-report/
 .DS_Store
 dist-google-fonts/
 /promo/
+
+# Local verification, exports and obsolete handoff copies
+.playwright-cli/
+/output/
+/Claude outputs/

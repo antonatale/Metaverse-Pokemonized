@@ -1,8 +1,5 @@
 # Fonti dei fatti di Formia
 
-> Spostato intero da `CLAUDE.md` il 10 novembre 2026 (task R1 di `REVISIONE.md`). Dove una frase è superata dal codice di oggi c'è una nota **Oggi:**.
-
-## Fonti dei fatti di Formia
 
 I testi di cartelli, targhe, persone, quiz e note dei quartieri dicono cose vere. Se ne aggiungi, controllale.
 - **Torre di Castellone:** ottagonale, alta 25 m, fatta costruire nel 1377 da Onorato I Caetani sulla base in opera poligonale dell'arce romana. Le mura avevano 12 torri, distrutte dai bombardamenti del 1943. Il borgo nacque contro le incursioni saracene. Fonte: italia.it, «Torre di Castellone».

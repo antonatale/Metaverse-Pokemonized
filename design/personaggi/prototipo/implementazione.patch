@@ -1,0 +1,436 @@
+diff --git a/src/data/characters.ts b/src/data/characters.ts
+index 15b3488..0b5cb68 100644
+--- a/src/data/characters.ts
++++ b/src/data/characters.ts
+@@ -99,12 +99,12 @@ export const CHARS: Record<CharId, Character> = {
+   costanzo: {
+     id: 'costanzo', name: 'Costanzo', full: 'Costanzo', nick: 'Er Politico', type: 'Chiacchiera', tagline: 'Comizi tutto il giorno',
+     stats: { hp: 105, atk: 100, def: 86, spe: 95 },
+-    passive: { name: 'Non ti fa parlare', text: 'Quando colpisce, 20% di probabilità che l\'avversario non riesca a dire una parola e perda il turno.' },
++    passive: { name: 'Non ti fa parlare', text: 'Quando colpisce, 25% di probabilità che l\'avversario non riesca a dire una parola e perda il turno.' },
+     weakness: { name: 'La fissa', text: 'Se cambia attacco rispetto all\'ultimo che ha usato, perde il filo e fa il 20% in meno. Se insiste con lo stesso attacco, ogni terza volta è un colpo critico sicuro.' },
+     moves: [
+-      { id: 'comizio', name: 'Comizio', kind: 'atk', power: 50, text: 'Sale sul palco e parte il comizio. Danno medio.' },
++      { id: 'comizio', name: 'Comizio', kind: 'atk', power: 50, text: 'Sale sul palco e spiega perché ha ragione. Non ha ancora finito: danno medio.' },
+       { id: 'personaggismo', name: 'Personaggismo', kind: 'buff', text: 'Inforca gli occhiali di destra ed entra nel personaggio: per 3 turni diventa del tipo che batte l\'avversario.' },
+-      { id: 'bidet', name: 'Difesa del Bidet', kind: 'heal', uses: 3, text: 'Comizio in difesa del bidet: recupera 25 PS ed elimina gli effetti negativi.' },
++      { id: 'bidet', name: 'Difesa del Bidet', kind: 'heal', uses: 3, text: 'Dopo una lunghissima pausa in bagno, riparte il comizio in difesa del bidet: recupera 25 PS ed elimina gli effetti negativi.' },
+       { id: 'daje', name: 'Daje Roma Daje', kind: 'atk', power: 70, acc: 0.8, text: 'Coro da curva: danno alto, ma va a segno 8 volte su 10.' }
+     ],
+     lines: { entry: 'GIÀ LO SAI.', crit: 'Daje Roma daje!', win: 'GIÀ LO SAI. Daje Roma daje!', ko: 'Mi appello al popolo…', fissa: 'GIÀ LO SAI!', persona: 'Adesso parlo da statista.' }
+diff --git a/src/data/choices.ts b/src/data/choices.ts
+index 8e428e1..ec9d824 100644
+--- a/src/data/choices.ts
++++ b/src/data/choices.ts
+@@ -10,6 +10,16 @@ export interface Choice {
+   options: ChoiceOption[];
+ }
+ export const CHOICES: Record<string, Choice> = {
++  /* An optional evening at Morgana: the disagreement stays, but the player decides how the group handles it. */
++  compagnia: { id: 'compagnia', ask: [
++    { who: 'costanzo', say: ['GIÀ LO SAI. Sono arrivato tardi, ma il punto è un altro.', 'Claudia, secondo me hai portato il gruppo sulla cattiva strada con la cannabis. È una questione di legalità e moralità. Ora ti spiego perché ho ragione.'] },
++    { who: 'Claudia · Diabolica', say: ['E da allora, per te, sono Diabolica. Ho capito il tuo punto, Costanzo. Puoi sentire anche il mio?', 'La Trinità è il nome che diamo al nostro trio: io sono il Padre, Antonio il Figlio e Valentin lo Spirito. Non un comizio con tre posti a sedere.'] },
++    { who: 'Valentin · vocale per Antonio', say: ['Broccolio… dite a Costanzo che essere l\'anima della festa non vuol dire non pensare.', 'Lo Spirito parla poco, ma c\'è. Anche quando non siamo d\'accordo.'] },
++    { who: 'Claudia · Diabolica', say: ['Valentin ha mandato tre frasi e ha detto più di tutti noi.', 'Per stasera come facciamo, {hero}?'] }
++  ], options: [
++    { id: 'ascolto', label: 'Parlate uno alla volta', who: 'costanzo', say: ['Va bene. Finisco questa frase e ascolto Claudia.', 'Una frase sola. Con tre subordinate, ma una.'] },
++    { id: 'distanza', label: 'Per stasera, tavoli separati', who: 'Claudia · Diabolica', say: ['Va bene: una serata senza trasformare ogni divergenza in un processo.', 'Il confronto lo riprendiamo un\'altra sera. Intanto ci vediamo al quiz.'] }
++  ] },
+   /* Tullio, at the first two meetings: be a friend, or rub it in. Both ways it goes somewhere: see tullioMood */
+   tullio1: { id: 'tullio1', ask: [{ who: 'Tullio', say: ['Però ti ho quasi battuto, eh? Ammettilo.'] }], options: [
+     { id: 'amico', label: 'Bella lotta, Tullio', say: ['…Davvero? Cioè, lo sapevo. Bella lotta anche a te.'] },
+diff --git a/src/data/covi.ts b/src/data/covi.ts
+index 40788a0..b610a49 100644
+--- a/src/data/covi.ts
++++ b/src/data/covi.ts
+@@ -38,11 +38,11 @@ export const COVI: Record<string, Covo> = {
+     intro: ['GIÀ LO SAI.', 'Questa è la mia piazza. Se vuoi parlare, prima devi battermi.'],
+     win: ['Daje Roma daje… va bene, hai vinto tu.', 'La spilla è tua. Il comizio però resta mio: GIÀ LO SAI.'],
+     lose: ['Il popolo ha deciso. Ripassa quando vuoi.'],
+-    after: ['Il prossimo comizio lo dedico a te. GIÀ LO SAI.'],
++    after: ['Il prossimo comizio lo dedico a te. GIÀ LO SAI.', 'Poi passo da Morgana: con Claudia ho ancora un dibattito su legalità, moralità e cannabis. Lei dice che parlo solo io. Ora ti spiego perché non è vero.'],
+     vs: {
+-      antonio: ['Antonio, tu hai i paper. Io ho la piazza.', 'Vediamo chi convince di più. GIÀ LO SAI.'],
++      antonio: ['Antonio, tu hai i paper. Io ho la piazza.', 'Vediamo chi convince di più. GIÀ LO SAI.', 'E dopo parliamo di Claudia: secondo me vi ha portato sulla cattiva strada con la cannabis.'],
+       andrea: ['Andrea! Anche tu a Milano, eh? Lì facciamo squadra.', 'Qui però no: i tuoi calcoli contro il mio comizio.'],
+-      valentin: ['Valentin, qui non si fa festa: si fa politica.', 'Vinci, e stasera ti lascio il palco per un Weee.'],
++      valentin: ['Valentin, qui non si fa festa: si fa politica.', 'Vinci, e stasera ti lascio il palco per un Weee.', 'Tu dici Spirito della Trinità. Io dico che sul King del Verde dobbiamo discutere.'],
+       forchetta: ['Forchetta, il più formiano di tutti. Il voto di Mola è tuo, lo so.', 'Ma piazza della Vittoria è mia.'],
+       zendavid: ['Zendavid, togli le cuffie: il comizio si ascolta.', 'Le battute le lascio a te. Le parole a me.']
+     }
+@@ -68,9 +68,9 @@ export const COVI: Record<string, Covo> = {
+     intro: ['Weee! Qui all\'Eclipse la festa è mia.', 'Vuoi la spilla? Prima balli con me. Cioè, lotti.'],
+     win: ['Weee… cambio di programma: hai vinto tu.', 'La spilla è tua. La festa stasera continua lo stesso, sei invitato.'],
+     lose: ['WEEEEE! Si fa festa da me. Torna quando vuoi.'],
+-    after: ['Weee! Stasera all\'Eclipse c\'è posto anche per te.'],
++    after: ['Weee! Stasera all\'Eclipse c\'è posto anche per te.', 'Claudia è il Padre, Antonio il Figlio, io lo Spirito della Trinità. La festa la tengo viva, ma ogni tanto serve anche silenzio.'],
+     vs: {
+-      antonio: ['Antonio! Il cervellone all\'Eclipse!', 'Qui le formule non valgono: il caos batte il cervello. Weee!'],
++      antonio: ['Antonio! Broccolio! Il cervellone all\'Eclipse!', 'Qui le formule non valgono: il caos batte il cervello. Weee!'],
+       costanzo: ['Costanzo! Un comizio in spiaggia? Weee!', 'Se vinci, il microfono stasera è tuo.'],
+       andrea: ['Andrea! I tuoi calcoli col caos non tornano mai.', 'Cambio di programma: si lotta!'],
+       forchetta: ['Forchetta… tu sei troppo calmo per me.', 'Proviamo lo stesso: magari stavolta vince la festa.'],
+diff --git a/src/data/maps/homes.ts b/src/data/maps/homes.ts
+index 0ec44dc..3574ff4 100644
+--- a/src/data/maps/homes.ts
++++ b/src/data/maps/homes.ts
+@@ -28,22 +28,22 @@ function home(id: string, name: string, t: [string[], string[], string[], string
+ 
+ export const HOME_MAPS: Record<string, MapDef> = {
+   'casa-valentin': home('casa-valentin', 'Casa di Valentin', [
+-    ['Gli occhiali verdi del King del Verde, in prima fila sullo scaffale.'],
+-    ['Un biglietto aereo per Copenhagen, piegato in quattro.'],
++    ['Gli occhiali verdi del King del Verde, in prima fila sullo scaffale.', 'Accanto, il tabacco dei drummini e un foglietto: «Claudia: Padre. Antonio: Figlio. Valentin: Spirito».'],
++    ['Un biglietto aereo per Copenhagen, piegato in quattro.', 'Due titoli sul telefono: «Inseguimento 1» e «Inseguimento 2». Valentin li racconta come leggende: nessuno lo aveva fermato o inseguito, temeva soltanto un controllo.'],
+     ['Il letto.', 'Prima della festa, un pisolino.'],
+     ['Dalla finestra si vede l\'ospedale Dono Svizzero, e accanto piazza Risorgimento.'],
+     ['In frigo: tutto quello che serve per una festa. Weee.'],
+-    ['La cassa per la musica. Il volume è già al massimo.'],
+-    ['Il divano. Dopo le feste ci dormono in tre.']
++    ['La cassa per la musica. Il volume è già al massimo.', 'Sul telefono scorrono reel AI e Italian brainrot. Un vocale per Antonio comincia: «Broccolio…».', 'Nella chat con Claudia si parla di cannabis. La risposta di Costanzo occupa tutto lo schermo.'],
++    ['Il divano. Dopo le feste ci dormono in tre.', 'Tra una festa e l\'altra, qui Valentin sta in silenzio e riflette. È quello che parla meno, ma ha più cose da dire.']
+   ]),
+   'casa-costanzo': home('casa-costanzo', 'Casa di Costanzo', [
+-    ['Una pila di giornali, con le pagine della politica sottolineate.'],
+-    ['Il discorso di domani. Comincia con: GIÀ LO SAI.'],
+-    ['Il letto.', 'Anche nel sonno, prepara il prossimo comizio.'],
++    ['Una pila di giornali, con le pagine della politica sottolineate.', 'Fra i ritagli su legalità e moralità spuntano appunti sui capelli, la stempia e la paura della calvizie.'],
++    ['Il discorso di domani. Comincia con: GIÀ LO SAI.', 'Titolo: «Perché ho ragione». La conclusione rimanda a un altro quaderno.'],
++    ['Il letto.', 'Anche nel sonno, prepara il prossimo comizio.', 'La sveglia suona, ma Costanzo è ancora in bagno. Il bidet ha tempi parlamentari.'],
+     ['Dalla finestra si vede il campanile di San Giovanni.'],
+     ['In frigo: la carbonara di ieri. Alla romana.'],
+     ['In tv c\'è la Roma. Daje Roma daje.'],
+-    ['Il divano, con la sciarpa giallorossa sul bracciolo.']
++    ['Il divano, con la sciarpa giallorossa sul bracciolo.', 'Sul muro un promemoria: «Una volta ci ho camminato contro. Non era un passaggio segreto».']
+   ]),
+   'casa-forchetta': home('casa-forchetta', 'Casa di Forchetta', [
+     ['Le coppe dei tornei di tennis.', 'Poteva andare peggio.'],
+diff --git a/src/data/maps/morgana.ts b/src/data/maps/morgana.ts
+index f506723..e76cb9c 100644
+--- a/src/data/maps/morgana.ts
++++ b/src/data/maps/morgana.ts
+@@ -5,7 +5,7 @@ import { FORMIA_AT } from './formia-ground';
+ const out = FORMIA_AT.morgana.door!;
+ 
+ /* Inside the Birreria Morgana: the counter with the taps (the host behind it runs the quiz), the little stage with
+-   the microphone, wooden tables. When Costanzo has joined the squad, he holds court at a table. */
++   the microphone, wooden tables. After his covo Costanzo holds court at a table; Claudia has an optional story scene. */
+ export const morgana: MapDef = {
+   name: 'Birreria Morgana',
+   city: 'formia',
+@@ -30,7 +30,19 @@ export const morgana: MapDef = {
+   warps: [{ x: 5, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }],
+   npcs: [
+     { id: 'oste', name: 'Al bancone', seed: 82, x: 4, y: 1, dir: 'down', activity: 'quiz', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] },
+-    { id: 'costanzo-morgana', person: 'costanzo', name: 'costanzo', x: 3, y: 5, dir: 'up', beaten: 'piazza', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] },
++    { id: 'costanzo-morgana', person: 'costanzo', name: 'costanzo', x: 3, y: 5, dir: 'up', beaten: 'piazza', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'], reacts: [
++      { after: 'sc-compagnia-ascolto', say: ['Claudia ha parlato. Ho ascoltato. Ora avrei una breve replica.', 'Breve rispetto al mio programma elettorale. Daje Roma daje.'] },
++      { after: 'sc-compagnia-distanza', say: ['Per stasera, tavoli separati. Il dissenso resta: con Claudia parliamo un\'altra volta.', 'Intanto qui si guarda la Roma. Daje Roma daje.'] }
++    ] },
++    { id: 'claudia-morgana', name: 'Claudia · Diabolica', look: 'claudia', x: 7, y: 5, dir: 'left', lines: [
++      'Sono Claudia. Diabolica, quando Costanzo parla di me.',
++      'Nella nostra Trinità io sono il Padre, Antonio il Figlio e Valentin lo Spirito. È lui che tiene insieme la festa e le riflessioni del gruppo.',
++      'Costanzo pensa che io abbia portato gli altri sulla cattiva strada con la cannabis. La nostra rivalità comincia da lì.',
++      'Ha il comizio in piazza. Quando arriva qui, il confronto continua.'
++    ], reacts: [
++      { after: 'sc-compagnia-ascolto', say: ['Il tavolo è ancora uno. Costanzo sta preparando la replica, ma almeno ci siamo ascoltati.', 'La Trinità resta quella: Padre, Figlio e Spirito. Anche con opinioni diverse.'] },
++      { after: 'sc-compagnia-distanza', say: ['Per stasera, tavoli separati. Non serve fingere che sia tutto risolto.', 'Valentin ha mandato un altro vocale: due parole, e nessuno si sente lasciato fuori.'] }
++    ] },
+     { id: 'avventore', name: 'Avventore', seed: 84, x: 8, y: 6, dir: 'left', lines: ['La domanda su Mamurra la sbagliano tutti.', 'Io no. Io l\'ho sbagliata solo tre volte.'] }
+   ],
+   start: [5, 7, 'up']
+diff --git a/src/data/people.ts b/src/data/people.ts
+index b2a0696..8f8c233 100644
+--- a/src/data/people.ts
++++ b/src/data/people.ts
+@@ -41,8 +41,8 @@ export const PATHS: Record<FriendId, PersonPath> = {
+       atk('elezioni', 'Elezioni Anticipate', 110, 'Scioglie tutto e si va al voto: danno enorme, va a segno 8 volte su 10.', { acc: 0.8, show: { a: 'banner', text: 'SI VOTA!', style: 'roma' } })
+     ],
+     forms: [
+-      { at: 14, title: 'L\'Onorevole', text: 'Giacca, cravatta e la stessa voce di prima. Più forte.' },
+-      { at: 26, title: 'Er Presidente', text: 'La fascia tricolore: adesso i comizi li fanno gli altri, per lui.' }
++      { at: 14, title: 'L\'Onorevole', text: 'Dal papillon alla cravatta: la voce è sempre la stessa. La relazione su legalità e moralità è solo alla premessa.' },
++      { at: 26, title: 'Er Presidente', text: 'La fascia tricolore: adesso i comizi li fanno gli altri, per lui. Con Claudia il dibattito resta aperto.' }
+     ]
+   },
+   andrea: {
+@@ -65,8 +65,8 @@ export const PATHS: Record<FriendId, PersonPath> = {
+       atk('festona', 'La Festa dell\'Anno', 110, 'Vengono tutti: danno enorme, e si riprende un quarto del danno. Va a segno 85 volte su 100.', { acc: 0.85, drain: 0.25, show: { a: 'confetti' } })
+     ],
+     forms: [
+-      { at: 14, title: 'L\'Animale', text: 'Giacca maculata, e nessuno sa dove l\'ha trovata. Nemmeno lui.' },
+-      { at: 26, title: 'Il King del Verde', text: 'Tutto verde, dalla giacca agli occhiali. La festa adesso è sua.' }
++      { at: 14, title: 'L\'Animale', text: 'Giacca maculata, e nessuno sa dove l\'ha trovata. Nemmeno lui. Parla poco: quando parla, la festa ascolta.' },
++      { at: 26, title: 'Il King del Verde', text: 'Tutto verde, dalla giacca agli occhiali. Lo Spirito della Trinità tiene insieme la festa e il gruppo.' }
+     ]
+   },
+   forchetta: {
+diff --git a/src/render/canvas/walkers.ts b/src/render/canvas/walkers.ts
+index 1130c36..8f1279c 100644
+--- a/src/render/canvas/walkers.ts
++++ b/src/render/canvas/walkers.ts
+@@ -20,6 +20,8 @@ export interface PersonLook {
+   earring?: string;
+   brows?: string;
+   smirk?: boolean;
++  bow?: boolean;
++  pin?: string;
+ }
+ type HairLook = PersonLook['hair'];
+ 
+@@ -95,6 +97,11 @@ function torsoDetail(c: Ctx, S: PersonLook, d: Dir, bx: number, bw: number) {
+   else if (st === 'tee') { c.strokeStyle = S.top2; c.lineWidth = 1.2; c.beginPath(); c.moveTo(13, 19.5); c.quadraticCurveTo(16, 22, 19, 19.5); c.stroke(); }
+   else if (st === 'jacket') { c.fillStyle = S.top2; c.beginPath(); c.moveTo(14, 19.5); c.lineTo(18, 19.5); c.lineTo(17.4, 31); c.lineTo(14.6, 31); c.closePath(); c.fill(); }
+   else if (st === 'knit') { c.strokeStyle = S.top2; c.lineWidth = 2.2; c.beginPath(); c.moveTo(22, 20); c.lineTo(10, 31); c.stroke(); }
++  if (S.bow) {
++    c.fillStyle = '#20232e'; c.beginPath(); c.moveTo(16, 24); c.lineTo(12.8, 22.5); c.lineTo(12.8, 25.5); c.lineTo(16, 24.5); c.lineTo(19.2, 25.5); c.lineTo(19.2, 22.5); c.closePath(); c.fill();
++    circle(c, 14, 24, 0.4); c.fillStyle = '#c68f96'; c.fill(); circle(c, 18, 24, 0.4); c.fill();
++  }
++  if (S.pin) { circle(c, 21, 25.5, 0.8); c.fillStyle = S.pin; c.fill(); }
+ }
+ function neckPhones(c: Ctx, d: Dir) {
+   var ink = STICKER_INK;
+@@ -250,7 +257,7 @@ function glasses(c: Ctx, S: PersonLook, d: Dir) {
+ export const PEOPLE: Record<FriendId, PersonLook> = {
+   antonio: { skin: '#ddae93', hair: { style: 'bigcurls', color: '#1d1512', hi: '#9a8a7c' }, top: '#414c72', top2: '#2a3252', style: 'hoodie', pants: '#2b2f3a', shoes: '#f3f3f3',
+     chain: '#e0b44c', earring: '#f2c14e', brows: '#2b201a', smirk: true },
+-  costanzo: { skin: '#e6bea5', hair: { style: 'wavy', color: '#2a1d16', hi: '#9a7c68' }, top: '#25272f', top2: '#14151a', style: 'turtleneck', pants: '#1c1d22', shoes: '#f0f0f0', glasses: 'thin' },
++  costanzo: { skin: '#e6bea5', hair: { style: 'wavy', color: '#54423a', hi: '#b09a89' }, top: '#254453', top2: '#f4f1ea', style: 'jacket', pants: '#142c39', shoes: '#1c1d22', bow: true, pin: '#e4503f' },
+   andrea: { skin: '#e3b99d', hair: { style: 'quiff', color: '#1d1613', hi: '#7a6b60' }, top: '#25262c', top2: '#3a3c45', style: 'tee', pants: '#26324a', shoes: '#e9e9e9' },
+   valentin: { skin: '#edc4ab', hair: { style: 'mane', color: '#7b4d33', hi: '#e6b98c' }, top: '#ddd6c6', top2: '#1c1c21', style: 'jacket', pants: '#3b3f4b', shoes: '#f3f3f3', glasses: 'green' },
+   forchetta: { skin: '#e4bca1', hair: { style: 'longcurls', color: '#4f3423', hi: '#c29670' }, top: '#5d5a3e', top2: '#20263a', style: 'stripes', stripes: ['#283046', '#d6c9a8', '#6e6c43', '#8b8f93'], pants: '#22252d', shoes: '#efefef' },
+@@ -259,7 +266,7 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
+ /* what they wear in the story as they grow (data/people.ts): over the look of the first form */
+ export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<PersonLook>]> = {
+   antonio: [{ top: '#e9ebee', top2: '#414c72', style: 'jacket' }, { top: '#2a3252', top2: '#f4f1ea', style: 'jacket', pants: '#1a2040' }],
+-  costanzo: [{ top: '#2f3a56', top2: '#f4f1ea', style: 'jacket' }, { top: '#1d1f26', top2: '#c0392b', style: 'jacket' }],
++  costanzo: [{ top: '#2f3a56', top2: '#f4f1ea', style: 'jacket', bow: false }, { top: '#1d1f26', top2: '#c0392b', style: 'jacket', bow: false }],
+   andrea: [{ top: '#d0702c', top2: '#9a4f1c' }, { top: '#d0702c', top2: '#25262c', style: 'jacket' }],
+   valentin: [{ top: '#c9a25a', top2: '#1c1c21' }, { top: '#2f8f4e', top2: '#f4f1ea' }],
+   forchetta: [{ top: '#f2f0ea', top2: '#2f8f4e', style: 'tee', stripes: undefined }, { top: '#1f5fa8', top2: '#1f5fa8', stripes: ['#1f5fa8', '#f4f1ea', '#1f5fa8', '#f4f1ea'] }],
+@@ -268,6 +275,8 @@ export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<Person
+ /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
+    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
+ export const LOOKS: Record<string, PersonLook> = {
++  /* A first story appearance; the outfit is fictional, pending Claudia's own visual reference. */
++  claudia: { skin: '#e3b99d', hair: { style: 'wavy', color: '#3a2927', hi: '#8b635a' }, top: '#69446f', top2: '#25232f', style: 'jacket', pants: '#292834', shoes: '#1c1d22' },
+   nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
+   /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
+   mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' },
+diff --git a/src/render/svg/looks.ts b/src/render/svg/looks.ts
+index 04d4888..65618e3 100644
+--- a/src/render/svg/looks.ts
++++ b/src/render/svg/looks.ts
+@@ -33,13 +33,13 @@ export const CH: Record<FriendId, Look> = {
+     iris: { base: '#6a4a33', dark: '#2c1d14', light: '#9b7654' },
+     brow: { color: '#2a1d16', hi: '#5a4335', w: 0.88 },
+     hair: {
+-      style: 'curls', p: 2.9, hiStyle: 'wave', elong: 1.55, flowY: 60, seed: 777, cx: 130, cy: 124, rx: 73, ry: 78, out: '#120c09', fills: ['#2a1d16', '#33241b', '#251912', '#3a291f'], hi: '#9a7c68',
+-      front: [[184, 118], [174, 112], [162, 108], [150, 106], [138, 106], [126, 108], [114, 111], [103, 115], [94, 120], [86, 126]], frontDefault: 999,
++      style: 'curls', p: 2.9, hiStyle: 'wave', elong: 1.55, flowY: 60, seed: 777, cx: 130, cy: 124, rx: 73, ry: 78, out: '#30251f', fills: ['#54423a', '#5d4940', '#4a3932', '#655046'], hi: '#b09a89',
++      front: [[184, 128], [174, 118], [162, 108], [150, 99], [138, 91], [130, 86], [122, 91], [110, 101], [98, 113], [86, 128]], frontDefault: 999,
+       rEdge: [8.5, 11], rIn: [7.5, 10], rFront: [7, 9], count: 140, minD: 9, avoid: { cx: 130, cy: 168, rx: 51, ry: 63 },
+-      frizz: 16, frizzColor: '#3a291f', glow0: 0.2, glow1: 0.45, a0: 0.56, aSpan: 1.88, edgeN: 34,
+-      fshadow: 'M84 118C100 108 116 106 132 108C150 108 168 112 186 122L182 132C166 122 150 118 132 119C114 119 100 122 84 130Z'
++      frizz: 16, frizzColor: '#655046', glow0: 0.2, glow1: 0.45, a0: 0.56, aSpan: 1.88, edgeN: 34,
++      fshadow: 'M84 124C104 108 120 90 130 88C142 92 160 110 186 128L182 136C158 118 142 102 130 100C118 104 102 120 84 136Z'
+     },
+-    outfit: { style: 'turtleneck', base: '#25272f', dark: '#14151a', light: '#3d404b', line: '#07080b' },
++    outfit: { style: 'jacket', base: '#254453', dark: '#142c39', light: '#3e5e6d', line: '#12222c', tee: '#f4f1ea', fold: '#1a3543', bow: { base: '#20232e', dot: '#c68f96' }, pin: '#e4503f' },
+     ko: 'eyes',
+     ex: {
+       smirk: { m: 'talk', bl: { outer: 0.6, mid: 0.8 }, br: { outer: 1.4, mid: 1.6 }, e: { open: 0.95, look: [2.4, -0.2] } },
+diff --git a/src/render/svg/outfit.ts b/src/render/svg/outfit.ts
+index 09f79f0..43d0cca 100644
+--- a/src/render/svg/outfit.ts
++++ b/src/render/svg/outfit.ts
+@@ -89,6 +89,13 @@ export function outfit(c: Look): string {
+     /* crossbody bag strap (photo at the castle) */
+     f += '<path d="M180 247L194 255L78 312L62 304Z" fill="' + O.strap + '"/><path d="M186 251L70 308" stroke="#3b3b42" stroke-width=".9" stroke-dasharray="2 2"/>';
+   }
++  if (O.bow) {
++    f += '<path d="M105 235L130 247L155 235L146 258L130 249L114 258Z" fill="' + O.tee + '" stroke="' + O.line + '" stroke-width="1.1"/>';
++    f += '<path d="M127 249L111 243L111 260L127 254ZM133 249L149 243L149 260L133 254Z" fill="' + O.bow.base + '" stroke="' + O.line + '" stroke-width="1.5" stroke-linejoin="round"/>';
++    f += [[115, 247], [115, 256], [122, 251], [145, 247], [145, 256], [138, 251]].map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1.4" fill="' + O.bow!.dot + '"/>'; }).join('');
++    f += '<rect x="126" y="247" width="8" height="10" rx="2" fill="' + O.bow.base + '" stroke="' + O.line + '" stroke-width="1.2"/>';
++  }
++  if (O.pin) f += '<circle cx="179" cy="260" r="3.8" fill="' + O.pin + '" stroke="' + O.line + '" stroke-width="1.2"/>';
+   s += '<g id="' + P + 'Front">' + f + '</g>';
+   return s;
+ }
+diff --git a/src/render/svg/types.ts b/src/render/svg/types.ts
+index 42702b1..7df5e22 100644
+--- a/src/render/svg/types.ts
++++ b/src/render/svg/types.ts
+@@ -83,6 +83,10 @@ export interface Outfit {
+   strap?: string;
+   /** what is worn on the chest, over the clothes: a tie, a sash, a medal (render/svg/forms.ts) */
+   over?: string;
++  /** formal shirt and dotted bow tie, from Costanzo's reference photo */
++  bow?: { base: string; dot: string };
++  /** small lapel pin */
++  pin?: string;
+ }
+ export interface Glasses {
+   style: 'round' | 'shadesGreen' | 'politico';
+diff --git a/src/story/choices.ts b/src/story/choices.ts
+index 99b5d91..8fad07c 100644
+--- a/src/story/choices.ts
++++ b/src/story/choices.ts
+@@ -13,6 +13,11 @@ export function chosen(id: string): string | null {
+ }
+ export function decide(id: string, option: string) { st.seen[optionFlag(id, option)] = true; }
+ 
++/** The optional evening needs Costanzo after his covo, or Costanzo himself as the player. Old saves can visit too. */
++export function companyOpen(hero: string): boolean {
++  return (hero === 'costanzo' || flag('piazza')) && !chosen('compagnia');
++}
++
+ /** where Tullio stands: a friend after two kind words, against Antonio after two jokes, and as he always was otherwise */
+ export type Mood = 'ally' | 'bitter' | '';
+ export function tullioMood(): Mood {
+diff --git a/src/story/epilogue.ts b/src/story/epilogue.ts
+index a6fdf44..4c16257 100644
+--- a/src/story/epilogue.ts
++++ b/src/story/epilogue.ts
+@@ -24,6 +24,9 @@ export function epilogue(): string[] {
+   if (mood === 'ally') out.push(flag('tr-rivale-3') ? 'Tullio è venuto a salutarti alla stazione, con una tiella per il viaggio. Non l\'ha fatta lui, ma conta il pensiero.' : 'Tullio si allena ancora con te. Non dirlo al nonno.');
+   else if (mood === 'bitter') out.push('Tullio non ti saluta più. Al parco, da lontano, qualcuno ti guarda partire.');
+   else if (flag('tr-rivale-3')) out.push('Tullio voleva essere il più forte di Formia. Ha dovuto dire che lo sei tu.');
++  const company = chosen('compagnia');
++  if (company === 'ascolto') out.push('Da Morgana hai tenuto insieme il tavolo: Claudia e Costanzo restano in disaccordo, ma si sono ascoltati. Valentin ha trovato le parole per entrambi.');
++  else if (company === 'distanza') out.push('Da Morgana hai lasciato spazio al dissenso: Claudia e Costanzo, per una sera, a tavoli separati. Il vocale di Valentin ha tenuto il filo del gruppo.');
+   const friends = st.squad.filter(function (f) { return f !== firstHuman(); }).map(function (f) { return CHARS[f].name; });
+   if (friends.length) out.push('Nella tua compagnia sono entrati ' + list(friends) + '.');
+   const found = foundItems().length, all = allItems().length;
+diff --git a/src/ui/plot.ts b/src/ui/plot.ts
+index 4f237f9..4110312 100644
+--- a/src/ui/plot.ts
++++ b/src/ui/plot.ts
+@@ -7,8 +7,8 @@ import { CHOICES } from '../data/choices';
+ import { HELD } from '../data/passives';
+ import { SPECIES } from '../data/creatures';
+ import { NET_IDS } from '../data/nets';
+-import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
+-import { addCreature, creatureOf, has, nameOf, own, prizeText } from '../story/growth';
++import { chosen, companyOpen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
++import { addCreature, creatureOf, firstHuman, has, nameOf, own, prizeText } from '../story/growth';
+ import type { Mission } from '../data/missions';
+ import { CHARS } from '../data/characters';
+ import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly, myMissions } from '../story/missions';
+@@ -25,6 +25,14 @@ import { travel } from '../story/movement';
+ export function plotTalk(n: Npc, again: () => void): boolean {
+   if (n.id === 'archivista' && flag('tr-mamurr-scavi') && !flag('trama-archivio')) { archive(n.name || ''); return true; }
+   if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura') && !flag('porta-cisterna')) { riddle(n.name || ''); return true; }
++  /* Costanzo joins the evening after his covo, or is already here as the protagonist. No new save fields. */
++  if (n.id === 'claudia-morgana' && companyOpen(firstHuman())) {
++    say(['Costanzo è arrivato. In ritardo, ma ha già trovato un argomento.', 'Ci sediamo un momento?'], n.name, [
++      { label: 'Sediamoci', fn: function () { askChoice('compagnia'); } },
++      { label: 'Più tardi', fn: null }
++    ]);
++    return true;
++  }
+   return missionTalk(n, again);
+ }
+ /* ---------- the missions of each friend (data/missions.ts): they ask for one of them, and only that one can do it ---------- */
+diff --git a/tests/fixtures/canvas-golden.json b/tests/fixtures/canvas-golden.json
+index c00b8f7..572675b 100644
+--- a/tests/fixtures/canvas-golden.json
++++ b/tests/fixtures/canvas-golden.json
+@@ -199,7 +199,7 @@
+   "item charger @1": "94717c4392ad65f960796baf 42",
+   "item passport @1": "6eaa7228fac4aa64777e8dfc 34",
+   "walker antonio @1": "3705aef6f9f1550e4443cf7f 2982",
+-  "walker costanzo @1": "4be34ddff71c10bc7bb81ae8 1917",
++  "walker costanzo @1": "57461f64cd4e48fc624cf9fe 1884",
+   "walker andrea @1": "1df821d474802e2071108ba5 1728",
+   "walker valentin @1": "582fe7c3c72d340dccf447db 3336",
+   "walker forchetta @1": "b521c3f0411de3f88013a2bb 2751",
+@@ -425,7 +425,7 @@
+   "item charger @2": "b295a5a1194bac545f50e19a 42",
+   "item passport @2": "fb2edc551cfc695abe68d054 34",
+   "walker antonio @2": "ca2ee27a84522d88af83a188 2982",
+-  "walker costanzo @2": "314a95dd9ec40c74bcc0b035 1917",
++  "walker costanzo @2": "9e0bf04a72ad73fb6b84c96b 1884",
+   "walker andrea @2": "9ad58e0298570f1db8c56a56 1728",
+   "walker valentin @2": "1210b1908b8ab1b4231724d7 3336",
+   "walker forchetta @2": "8cdc8d940d9c3d9edb82129b 2751",
+@@ -457,7 +457,7 @@
+   "townsperson 2 @2": "5463fdc1d77932a74a82ae6f 1659",
+   "townsperson 3 @2": "00065b2934e0774fba6db23f 1572",
+   "townsperson 99 @2": "4e3e0b8bd2bcf491e1be3812 1689",
+-  "people": "de7028c1103310862fa723ea 0",
++  "people": "29aa032ac1bf0855db87853d 0",
+   "townsfolk": "81c8025049fa221adce85dba 0",
+   "badges": "9eaf747c7c962eb67de6e57f 0",
+   "item icons": "7c1e896289b76efeed41b69b 0"
+diff --git a/tests/fixtures/engine-golden.json b/tests/fixtures/engine-golden.json
+index 90f9f0a..92597e8 100644
+--- a/tests/fixtures/engine-golden.json
++++ b/tests/fixtures/engine-golden.json
+@@ -1,6 +1,6 @@
+ {
+  "note": "Generated by tools/golden.mjs from the code in src/ (first recorded from the original single-file game). Do not edit by hand.",
+- "facts": "2e4f9b0b6f20bd6101c479b2",
++ "facts": "d489d22dd4b300417d910aa0",
+  "battles": {
+   "cpu antonio antonio 0": "214c678ac9f00c7db3e466b3",
+   "cpu antonio antonio 1": "908f5ffd269c1f7522edeb72",
+diff --git a/tests/fixtures/sprites-golden.json b/tests/fixtures/sprites-golden.json
+index 5dd6bce..783697e 100644
+--- a/tests/fixtures/sprites-golden.json
++++ b/tests/fixtures/sprites-golden.json
+@@ -1,7 +1,7 @@
+ {
+  "note": "Generated by tools/golden.mjs from the code in src/ (first recorded from the original single-file game): sha256 and length of each string.",
+  "strings": {
+-  "defs": "59084a9526fd6424e698cc3d 625714",
++  "defs": "6b118d8d7e8c5c2059aa2fae 624291",
+   "CSS": "e157b6f3ac95deea39f35ac3 1016",
+   "EXPRS": "63ff839296dc4f6ee2751426 49",
+   "CHARS": "38c6e0325d57fcf09c1bc9a7 65",
+diff --git a/tests/unit/company.test.ts b/tests/unit/company.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/unit/company.test.ts
+@@ -0,0 +1,40 @@
++import { beforeEach, describe, expect, it } from 'vitest';
++import { ROSTER } from '../../src/data/characters';
++import { morgana } from '../../src/data/maps/morgana';
++import { st } from '../../src/save/story-progress';
++import { companyOpen, decide } from '../../src/story/choices';
++import { epilogue } from '../../src/story/epilogue';
++import { linesNow } from '../../src/story/plot';
++
++beforeEach(() => {
++  st.seen = {}; st.beaten = {}; st.squad = ['antonio']; st.found = {}; st.mons = []; st.dex = {};
++});
++
++describe('the optional evening at Morgana', () => {
++  it('is available to all protagonists after the piazza, and Costanzo never needs to beat his own covo', () => {
++    for (const hero of ROSTER) expect(companyOpen(hero), hero).toBe(hero === 'costanzo');
++    st.beaten.piazza = true;
++    for (const hero of ROSTER) expect(companyOpen(hero), hero).toBe(true);
++  });
++
++  it('does not tell an evening that has not happened, including in an old completed story', () => {
++    st.beaten = { piazza: true, 'tr-mamurra': true };
++    expect(companyOpen('antonio')).toBe(true);
++    expect(epilogue().join(' ')).not.toContain('Da Morgana');
++  });
++
++  it.each([
++    ['ascolto', 'si sono ascoltati', 'tavoli separati'],
++    ['distanza', 'tavoli separati', 'si sono ascoltati']
++  ])('remembers %s after a save round trip, changes both speakers and tells that ending', (option, yes, no) => {
++    st.beaten.piazza = true;
++    const people = morgana.npcs!.filter(n => n.id === 'claudia-morgana' || n.id === 'costanzo-morgana');
++    const before = people.map(n => linesNow(n).join(' '));
++    decide('compagnia', option);
++    st.seen = JSON.parse(JSON.stringify(st.seen));
++    for (const hero of ROSTER) expect(companyOpen(hero), 'must not replay for ' + hero).toBe(false);
++    people.forEach((n, i) => expect(linesNow(n).join(' '), n.id).not.toBe(before[i]));
++    expect(epilogue().join(' ')).toContain(yes);
++    expect(epilogue().join(' ')).not.toContain(no);
++  });
++});
