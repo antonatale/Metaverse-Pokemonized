@@ -149,6 +149,16 @@ function bigCurls(c: Ctx, H: HairLook, d: Dir) {
 function hairFront(c: Ctx, S: PersonLook, d: Dir) {
   var H = S.hair, ink = STICKER_INK, back = d === 'up', side = d === 'left', st = H.style;
   if (st === 'bigcurls') { bigCurls(c, H, d); return; }
+  /* no hair: only the light on the head; or what is left of it, grey, around the ears */
+  if (st === 'bald' || st === 'crown') {
+    if (st === 'crown') {
+      c.save(); circle(c, 16, 12, 9.6); c.clip(); c.fillStyle = H.color;
+      if (back) { c.fillRect(5, 12, 22, 12); } else { c.fillRect(5, 9, side ? 0 : 3.4, 9); c.fillRect(side ? 21 : 23.6, 9, 6, 9); }
+      c.restore();
+    }
+    if (!back) { c.strokeStyle = '#ffffff'; c.globalAlpha = 0.7; c.lineWidth = 1.6; c.beginPath(); c.arc(16, 12, 6.6, Math.PI * 1.2, Math.PI * 1.45); c.stroke(); c.globalAlpha = 1; }
+    return;
+  }
   c.save();
   if (st === 'buzz') {
     c.beginPath(); c.arc(16, 12, 9.6, Math.PI * 1.05, Math.PI * 1.95); if (back) { c.arc(16, 12, 9.6, 0, Math.PI); }
@@ -268,6 +278,9 @@ export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<Person
 /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
 export const LOOKS: Record<string, PersonLook> = {
+  /* at the tobacconist of Largo Paone: uncle Lele, who is bald, and the grandfather */
+  lele: { skin: '#d9a585', hair: { style: 'bald', color: '#2a201b' }, top: '#3d5a80', top2: '#ffffff', style: 'tee', pants: '#2b2f3a', shoes: '#efefef', beard: '#4a3a30' },
+  nonno: { skin: '#e3b99d', hair: { style: 'crown', color: '#c9ccd6' }, top: '#8a9a5b', top2: '#ffffff', style: 'jacket', pants: '#56627a', shoes: '#3b2f2a', glasses: 'round' },
   nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
   /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
   mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' },

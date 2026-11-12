@@ -22,7 +22,7 @@ export interface StoryProgress {
   squad: FriendId[];
   /** covi beaten */
   beaten: Record<string, boolean>;
-  /** one-off things already seen: intro, formia2 … formia7 (the save was moved to a redrawn Formia) */
+  /** one-off things already seen: intro, formia2 … formia8 (the save was moved to a redrawn Formia) */
   seen: Record<string, boolean>;
   /** lost things picked up */
   found: Record<string, boolean>;
@@ -41,6 +41,10 @@ export interface StoryProgress {
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them;
       the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character,
       and home: true for one that waits at home instead of travelling with him (a team is six at most) */
+  /** the scooter (story/maps.ts, moto): where it stands when it is not where the story first leaves it, and
+      whether he is on it */
+  moto?: { map: string; x: number; y: number; dir: Dir };
+  sella?: boolean;
   /** what has been done in the places with a puzzle: by map, what is switched on, the steps taken, the last rest */
   places?: Record<string, { flags: Record<string, boolean>; tick: number; rest: [number, number] | null }>;
   /** the moves each person knows, once it has started learning (data/people.ts): missing in an old save */
@@ -68,6 +72,8 @@ export function blank(first?: FriendId): StoryProgress {
   var m = MAPS.formia, at = (first && m.starts && m.starts[first]) || m.start;
   var s: StoryProgress = { v: 1, map: 'formia', x: at[0], y: at[1], dir: at[2], badges: [], squad: [first || 'antonio'], beaten: {}, seen: {}, found: {}, lv: {}, skills: {}, money: 0, bag: {}, mons: [] };
   if (first && first !== 'antonio') { s.first = first; s.seen.protagonisti = true; }
+  /* a story begun today has nothing to be brought up to date */
+  MIGRATIONS.forEach(function (m) { s.seen[m.id] = true; });
   return s;
 }
 /** a story as saved in a slot, brought up to date; null for an empty slot (or one that cannot be read) */
@@ -106,7 +112,9 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
   /* the first of the company used to be only who went first in a covo: now it is who is played, chosen anew */
   { id: 'protagonisti', what: 'chi si gioca', run: function (v) { if (v.first) delete v.first; } },
   /* Formia on three levels (VISIONE.md, V3 and V4): the terraces, the trails, the countryside closed behind its walls */
-  { id: 'formia7', what: 'Formia a tre piani', run: backHome }
+  { id: 'formia7', what: 'Formia a tre piani', run: backHome },
+  /* the big Formia (VISIONE.md, 11 November 2026): two and a half times the tiles, every street somewhere else */
+  { id: 'formia8', what: 'Formia grande', run: function (v) { backHome(v); delete v.moto; delete v.sella; } }
 ];
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {

@@ -71,7 +71,7 @@ export function prepare(id: string): PreparedMap {
   (m.warps || []).forEach(function (w) { m.at[key(w.x, w.y)] = { kind: 'warp', w: w }; });
   m.people = (m.npcs || []).map(function (n) { return { n: n, x: n.x, y: n.y, dir: n.dir || 'down' }; });
   /* Antonio's flat keeps the creatures that are not travelling with him: one on each of these tiles, if there */
-  if (id === 'casa' || id.indexOf('casa-') === 0) HOME_SPOTS.forEach(function (c, i) {
+  if (id === 'casa' || id.indexOf('casa-') === 0) (m.homeSpots || HOME_SPOTS).forEach(function (c, i) {
     m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
   });
   m.items = m.items || []; m.areas = m.areas || [];
@@ -157,6 +157,29 @@ export function hidingAt(x: number, y: number): Hiding | null {
 export const wildGone: Record<string, number> = {};
 export function wildHere(id: string): boolean { var t = wildGone[id]; return !t || Date.now() - t > 120000; }
 export function personAt(m: PreparedMap, x: number, y: number): Person | null { for (var i = 0; i < m.people.length; i++) { var p = m.people[i]; if (p.x === x && p.y === y && present(p)) return p; } return null; }
+/* ---------- the scooter (a blue Liberty with its top case): one, and it stays where it is left ----------
+   Until it is ridden for the first time it stands by the home of whoever is played. Parked, it is in the way like
+   anything else; ridden, it goes wherever a wheel goes: not up steps, not on sand, not through tall grass or rock
+   pools, not down a ledge, not through a door. */
+export interface Moto { map: string; x: number; y: number; dir: Dir }
+export function moto(): Moto {
+  if (st.moto) return st.moto;
+  var s = FORMIA_SPOT['motorino-' + firstHuman()] || FORMIA_SPOT.motorino;
+  return { map: 'formia', x: s[0], y: s[1], dir: 'left' };
+}
+/** the scooter is parked on this tile */
+export function motoAt(m: PreparedMap, x: number, y: number): boolean {
+  if (st.sella || m.inside) return false;
+  var p = moto();
+  return p.map === m.id && p.x === x && p.y === y;
+}
+/** a tile the scooter can go on (it must be free too: see blocked) */
+export function rideable(m: PreparedMap, x: number, y: number): boolean {
+  var c = m.cell(x, y), a = m.at[key(x, y)];
+  if (c.g === 'steps' || c.g === 'sand' || c.g === 'sea' || c.g === 'mura' || c.g === 'pier') return false;
+  if (c.deco === 'tall' || c.deco === 'pools' || c.deco === 'ledge' || c.deco === 'ford') return false;
+  return !(a && (a.kind === 'door' || a.kind === 'warp'));
+}
 /** swimming with a sea creature, or climbing the walls with one of the walls: then water, or walls, can be walked */
 export const moveMode = { swim: false, climb: false };
 export function isShallow(m: PreparedMap, x: number, y: number): boolean { return !!m.shallow && x >= 0 && y >= 0 && x < m.w && y < m.h && m.shallow[y * m.w + x] === 1; }
@@ -165,6 +188,7 @@ export function isWall(m: PreparedMap, x: number, y: number): boolean { return !
 export function blocked(m: PreparedMap, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
   if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isShallow(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;
+  if (motoAt(m, x, y)) return true;
   if (m.place && shutAt(m.place, (st.places && st.places[m.id] && st.places[m.id].flags) || {}, x, y)) return true;
   return !!personAt(m, x, y) || !!itemAt(m, x, y);
 }

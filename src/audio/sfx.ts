@@ -6,6 +6,11 @@ type Fx = (c: BaseAudioContext, out: AudioNode, t: number) => void;
 const arp = (c: BaseAudioContext, out: AudioNode, t: number, notes: string[], step: number, o: Parameters<typeof tone>[5] = {}) =>
   notes.forEach(function (n, i) { tone(c, out, hz(n), t + i * step, step * 1.4, o); });
 
+/** one beat of a small four-stroke: a low saw that rises a little, and the breath of the exhaust */
+function putt(c: BaseAudioContext, out: AudioNode, t: number, f: number, len: number) {
+  tone(c, out, f, t, len, { type: 'sawtooth', to: f * 1.12, gain: 0.07, cutoff: 700 + f * 4, attack: 0.008, sustain: 0.85, release: 0.04, vibrato: 22 });
+  hiss(c, out, t, len, { type: 'lowpass', freq: 420 + f * 2, gain: 0.1, attack: 0.01 });
+}
 const FX: Record<string, Fx> = {
   /* ---------- interface ---------- */
   click(c, out, t) { tone(c, out, 1320, t, 0.018, { type: 'square', gain: 0.13, cutoff: 3000, decay: 0.01, sustain: 0.2, release: 0.02 }); },
@@ -92,6 +97,14 @@ const FX: Record<string, Fx> = {
   /* a trainer has seen Antonio: the "!" over his head, a sharp sting */
   spot(c, out, t) { tone(c, out, hz('E6'), t, 0.06, { type: 'square', gain: 0.1, cutoff: 5000, decay: 0.02, sustain: 0.5 }); tone(c, out, hz('B6'), t + 0.07, 0.16, { type: 'square', gain: 0.1, cutoff: 5000, decay: 0.03, sustain: 0.6 }); },
   scooter(c, out, t) { tone(c, out, 70, t, 0.9, { type: 'sawtooth', to: 150, gain: 0.09, cutoff: 900, attack: 0.05, sustain: 0.8, release: 0.2, vibrato: 30 }); hiss(c, out, t, 0.8, { type: 'lowpass', freq: 600, gain: 0.2, attack: 0.1 }); },
+  /* the scooter under way, one puff of the engine for each tile: higher and tighter with the gear */
+  moto0(c, out, t) { putt(c, out, t, 62, 0.15); },
+  moto1(c, out, t) { putt(c, out, t, 74, 0.12); },
+  moto2(c, out, t) { putt(c, out, t, 88, 0.1); },
+  moto3(c, out, t) { putt(c, out, t, 104, 0.085); },
+  moto4(c, out, t) { putt(c, out, t, 122, 0.07); },
+  /* its horn: two notes, a little out of tune, as on every Liberty */
+  horn(c, out, t) { [0, 0.16].forEach(function (d) { tone(c, out, 415, t + d, 0.11, { type: 'square', gain: 0.07, cutoff: 1900, attack: 0.005, sustain: 0.9, release: 0.03 }); tone(c, out, 523, t + d, 0.11, { type: 'square', gain: 0.05, cutoff: 1900, attack: 0.005, sustain: 0.9, release: 0.03 }); }); },
   step(c, out, t) { hiss(c, out, t, 0.05, { type: 'lowpass', freq: 900 + wobble() * 300, gain: 0.5 }); },
   door(c, out, t) { hiss(c, out, t, 0.25, { freq: 350, to: 1400, q: 0.7, gain: 0.3 }); tone(c, out, 200, t + 0.05, 0.08, { type: 'triangle', gain: 0.1 }); },
   pickup(c, out, t) { arp(c, out, t, ['E6', 'G6', 'C7'], 0.07, { type: 'square', gain: 0.06, cutoff: 6000, decay: 0.03, sustain: 0.6 }); },

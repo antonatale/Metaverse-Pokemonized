@@ -4,6 +4,8 @@
 
 **Responsabilità:** Codex cura idee, specifiche e grafiche. Antonio vuole migliorare la qualità di tutti prima dell'attuazione; l'integrazione sarà affidata a Opus quando Antonio la richiederà. Non applicare automaticamente la patch.
 
+**Attenzione (12 novembre):** `prototipo/implementazione.patch` parte da `fa6acef`. Dopo la Formia grande `src/data/maps/homes.ts` è riscritto e `walkers.ts` ha aspetti nuovi: lì la patch non entra più pulita, i testi delle case e gli aspetti vanno portati a mano.
+
 ## Cosa aprire
 
 - [Galleria offline](galleria.html): le tre forme attuali di tutti e sei, la proposta fotografica di Costanzo e l'anteprima della scena di Morgana.

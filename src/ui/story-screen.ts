@@ -12,11 +12,10 @@ import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress, onSaveFail } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, type Person } from '../story/maps';
-import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP, walkAlong, walkingAlong } from '../story/movement';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, motoAt, moto, type Person } from '../story/maps';
+import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP, walkAlong, walkingAlong, mount, dismount, onRideStop } from '../story/movement';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
-import { RIDES } from '../data/maps/formia';
 import type { Sign } from '../data/maps/types';
 import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt, tileAt, screenOf } from '../render/world-view';
 import { reduced, esc, each, $ } from './dom';
@@ -234,7 +233,8 @@ function renderBars() {
 export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
   var hint = root.querySelector('.whint');
-  if (hint) hint.textContent = 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
+  if (hint) hint.textContent = st.sella ? 'In sella: frecce o WASD per guidare · Invio per suonare, da fermo per scendere · M menu'
+    : 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
   $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
@@ -367,8 +367,11 @@ function closeDialog(next?: (() => void) | null) {
 var between = false;
 function interact() {
   if (dialog) { advance(); return; }
-  if (!running || mover || busy) return;
+  if (!running || busy) return;
+  /* on the scooter, under way: the horn */
+  if (mover) { if (st.sella) sfx('horn'); return; }
   var v = DV[st.dir], x = st.x + v[0], y = st.y + v[1];
+  if (motoAt(M, x, y)) { rideOn(); return; }
   var p = personAt(M, x, y);
   if (!p && M.cell(x, y).reach) p = personAt(M, x + v[0], y + v[1]);   /* across a net or a counter */
   if (p && (p.path || p.mv)) return;   /* someone walking by */
@@ -376,8 +379,9 @@ function interact() {
   var it = itemAt(M, x, y);
   if (it) { pickUp(it); return; }
   var a = M.at[key(x, y)];
-  if (a && a.kind === 'sign') { if (a.s.ride) ride(a.s); else if (a.s.sleep) sleep(a.s); else if (a.s.view) lookOut(a.s); else if (!plotSign(a.s)) say(a.s.text); }
-  else if (a && a.kind === 'door') useDoor(a.b);
+  if (a && a.kind === 'sign') { if (a.s.sleep) sleep(a.s); else if (a.s.view) lookOut(a.s); else if (!plotSign(a.s)) say(a.s.text); }
+  else if (a && a.kind === 'door') { if (st.sella && a.b.to) rideOff(); else useDoor(a.b); }
+  else if (st.sella) rideOff();
   else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
 }
 /* Antonio turns to his creature: it says its cry, and how it is doing */
@@ -410,22 +414,30 @@ function sleep(s: Sign) {
     { label: 'Non ho sonno', fn: null }
   ]);
 }
-/* ---------- the scooter: from one of its parking spots to another ---------- */
-function ride(s: Sign) {
-  var here = RIDES.find(function (r) { return r.at[0] === s.x && r.at[1] === s.y; });
-  var opts: DialogOpt[] = RIDES.filter(function (r) { return r !== here; }).map(function (r) {
-    return { label: r.name, fn: function () {
-      /* off next to the scooter where it is parked there */
-      var to = ([[0, 1], [1, 0], [-1, 0], [0, -1]] as [number, number][]).map(function (d) { return [r.at[0] + d[0], r.at[1] + d[1]] as [number, number]; })
-        .find(function (p) { return !blocked(M, p[0], p[1]) && !M.at[key(p[0], p[1])]; });
-      if (!to) return;
-      sfx('scooter');
-      travel(M.id, to[0], to[1], 'down');
-    } };
-  });
-  opts.push({ label: 'Resto qui', fn: null });
-  say(['Il motorino. Dove andiamo?'], null, opts);
+/* ---------- the scooter: a blue Liberty with its top case, parked where he left it ---------- */
+/** up on it: the creature jumps on behind */
+function rideOn() {
+  if (!mount()) return;
+  var first = !st.seen.sella;
+  st.seen.sella = true; save(); renderHud();
+  if (first) notify('In sella! Sui rettilinei prende velocità. Invio per suonare, o per scendere quando sei fermo.');
 }
+/** off it, if there is room to stand */
+function rideOff() {
+  if (dismount()) { save(); renderHud(); }
+  else notify('Qui non c\'è posto per scendere.');
+}
+/** why the scooter did not go on: said once in a while, not at every bump */
+var rideSaid = 0;
+onRideStop(function (x, y) {
+  var c = M.cell(x, y), a = M.at[key(x, y)], now = performance.now();
+  var why = a && a.kind === 'door' ? 'Prima parcheggia: premi Invio per scendere dal motorino.'
+    : c.g === 'steps' ? 'Le scale no: il motorino resta giù.'
+    : c.g === 'sand' ? 'Sulla sabbia il motorino si pianta. Lascialo sul lungomare.'
+    : c.deco === 'tall' || c.deco === 'pools' ? 'Lì dentro col motorino non si passa.'
+    : c.deco === 'ledge' ? 'Dal gradone si salta a piedi, non in motorino.' : '';
+  if (why && now - rideSaid > 4000) { rideSaid = now; notify(why); }
+});
 function pickUp(it: LostItem) {
   sfx('pickup');
   st.found[it.id] = true; save();
@@ -1284,6 +1296,7 @@ export const WORLD = {
     /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */
     wild: function (sp: SpeciesId, lv: number) { var m = [{ sp: sp, lv: [lv, lv] as [number, number], w: 1 }]; meet({ id: 'gianola', name: 'Gianola', on: 'scogli', day: m, night: m }); },
     overview: overview,
+    moto: function () { return { at: moto(), sella: !!st.sella }; },
     pos: function () { return { map: st.map, x: st.x, y: st.y, dir: st.dir, running: running, moving: !!mover, busy: busy, dialog: !!dialog, opts: !!(dialog && dialog.showingOpts), text: dialog ? dlgTxt.textContent : '', swim: moveMode.swim, climb: moveMode.climb, sky: !!skyFrom }; }
   }
 };

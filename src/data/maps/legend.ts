@@ -42,6 +42,8 @@ export const LEGEND: Record<string, Ground> = {
      never climbs back (story/movement.ts); a macera, the dry-stone wall of the olive terraces of the Aurunci */
   '^': { g: 'scarp', solid: true }, '[': { g: 'scarp', deco: 'wall', solid: true }, 'j': { g: 'scarp', deco: 'ledge', solid: true },
   'a': { g: 'grass', deco: 'macera', solid: true },
+  /* the Bruno Zauli: the tartan of the athletics track, where one runs for real */
+  '7': { g: 'grass', deco: 'tartan' },
   /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
   'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' }
 };

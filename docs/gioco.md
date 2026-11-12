@@ -33,7 +33,9 @@ Il protagonista dispone dell'albero abilità a tre rami: esplorazione, allenamen
 
 ## Mondo, interfaccia e suono
 
-Formia deriva da dati OpenStreetMap adattati alla giocabilità. Ci sono interni, tre sentieri, salti a senso unico, belvedere, enigmi, incontri in erba e scogli, pesca, motorino e attività con gli amici. I poteri delle creature consentono nuoto, scalata e vista dall'alto. L'ora vera o scelta dal menu cambia luce, musica e alcuni incontri.
+Formia deriva da dati OpenStreetMap adattati alla giocabilità. Ci sono interni, tre sentieri, salti a senso unico, belvedere, enigmi, incontri in erba e scogli, pesca e attività con gli amici. Largo Paone ha il Tabacchi Altieri e Telaro, Mola ha Barber May: si entra in tutti e due i negozi. Le case dei sei hanno piante e oggetti diversi.
+
+**Il motorino** è un Liberty blu con il bauletto, uno solo, parcheggiato accanto alla casa di chi si gioca. Invio davanti al motorino per salire, Invio per scendere (resta dove lo si lascia: `st.moto`, `st.sella`). Sui rettilinei sale di marcia (cinque, `GEARS` in `story/movement.ts`), in curva ne perde due; Invio in corsa suona. La creatura sta sulla sella dietro. Non va su scale, sabbia, erba alta, salti e non entra nelle porte (`rideable` in `story/maps.ts`). Disegno in `render/canvas/moto.ts`. A piedi la creatura che segue è disegnata a 44 px (`FOLLOWER`). I poteri delle creature consentono nuoto, scalata e vista dall'alto. L'ora vera o scelta dal menu cambia luce, musica e alcuni incontri.
 
 Stile quaderno a penna ed evidenziatori. Ritratti e creature sono SVG generati da codice; terreno e omini sono canvas 2D. Grafica Alta aggiunge ombre, luce, vento, risacca e animali; Bassa usa la mappa semplice. Movimento ridotto ferma gli effetti ambientali. Tastiera e clic muovono il personaggio; M apre il menu, C richiama Cicerone, F attiva lo schermo intero. Ci sono comandi touch e tre velocità di lotta. L'audio è sintetizzato con Web Audio e parte al primo gesto dell'utente; non contiene file musicali da scaricare.
 
@@ -41,4 +43,4 @@ Stile quaderno a penna ed evidenziatori. Ritratti e creature sono SVG generati d
 
 Tre storie locali: `lotte-tra-amici:storia:v1`, `:v1:2`, `:v1:3`; la selezione è `lotte-tra-amici:slot:v1`. Esportazione/importazione e copia di riserva sono implementate. La storia ricorda anche flag, scelte, attività, catture e luoghi visitati.
 
-`save/story-progress.ts` contiene le migrazioni ordinate; l'ultima della mappa è `formia7`. I vecchi salvataggi con più amici continuano a essere leggibili: le funzioni di compatibilità non vanno eliminate solo perché il percorso nuovo parte da un protagonista. Su un'altra origine o browser occorre importare il salvataggio. Ogni nuovo campo resta facoltativo.
+`save/story-progress.ts` contiene le migrazioni ordinate; l'ultima della mappa è `formia8`; una storia nuova nasce con tutte le migrazioni già viste. I vecchi salvataggi con più amici continuano a essere leggibili: le funzioni di compatibilità non vanno eliminate solo perché il percorso nuovo parte da un protagonista. Su un'altra origine o browser occorre importare il salvataggio. Ogni nuovo campo resta facoltativo.

@@ -164,6 +164,8 @@ export interface MapDef {
   city?: string;
   inside?: boolean;
   rows: string[];
+  /** a home: where the creatures that are not travelling wait, in this plan (story/maps.ts has the ones of Antonio's) */
+  homeSpots?: [number, number, Dir][];
   buildings?: Building[];
   objects?: MapObject[];
   groundObjects?: GroundObject[];

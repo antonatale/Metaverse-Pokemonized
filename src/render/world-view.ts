@@ -2,10 +2,14 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
 import type { FriendId } from '../data/characters';
-import { mover, parity, STEP } from '../story/movement';
+import { mover, parity, STEP, gear } from '../story/movement';
+import { motoParked, motoRider, MOTO_W, MOTO_H } from './canvas/moto';
+import type { PersonLook } from './canvas/walkers';
+import type { Dir } from '../data/maps/types';
+import { mk } from './canvas/draw';
 import { run } from '../story/run';
 import { placeNow } from '../story/place-run';
 import { drawThings } from './canvas/place';
@@ -28,7 +32,7 @@ let CACHE_MAX = 12;   /* pieces kept: more while a winged creature shows Formia 
 function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
 type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
-interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number;
+interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number; z?: number;
   /** a walker's little hop at each step (px), and how much it breathes standing still (its height, around 1) */
   hop?: number; breath?: number }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null;
@@ -110,6 +114,39 @@ function walkerFor(n: Pick<Npc, 'person' | 'seed' | 'look'>, s: number): Walker 
   var form = n.person ? formNow(n.person) : 0, id = (n.person || n.look || ('npc' + n.seed)) + (form ? 'f' + form : '') + '@' + s;
   return walkers[id] || (walkers[id] = walker(n.person ? Object.assign({}, PEOPLE[n.person], form ? PEOPLE_FORMS[n.person][form - 1] : null) : n.look ? LOOKS[n.look] : townsperson(n.seed!), s));
 }
+/** how whoever is played looks now: for the leg and the arm on the scooter */
+function lookFor(id: FriendId): PersonLook { var form = formNow(id); return Object.assign({}, PEOPLE[id], form ? PEOPLE_FORMS[id][form - 1] : null); }
+/* ---------- the scooter (render/canvas/moto.ts): parked where it was left, or under whoever is played ---------- */
+var parkedCv: Record<string, HTMLCanvasElement> = {}, riderCv: HTMLCanvasElement | null = null, riderS = 0, turned = { dir: '' as string, at: 0 };
+function parkedMoto(s: number): Drawn | null {
+  var p = moto();
+  if (st.sella || M.inside || p.map !== M.id) return null;
+  var id = p.dir + '@' + s, cvs = parkedCv[id] || (parkedCv[id] = motoParked(P || palette(), s, p.dir));
+  return { yb: (p.y + 1) * T - 0.4, x: p.x * T - (MOTO_W - T) / 2, spr: { cv: cvs, w: MOTO_W, h: MOTO_H, up: MOTO_H - T } };
+}
+function rider(now: number, s: number, pp: { x: number; y: number }): Drawn {
+  if (!riderCv || riderS !== s) { riderCv = mk(MOTO_W * s, MOTO_H * s); riderS = s; }
+  if (turned.dir !== st.dir) turned = { dir: st.dir, at: now };
+  /* it leans into a bend for a moment (seen from in front or behind), and trembles with the engine under way */
+  var since = now - turned.at, upDown = st.dir === 'up' || st.dir === 'down';
+  var lean = reduced || !mover || since > 260 || !upDown ? 0 : 0.09 * Math.sin(since / 260 * Math.PI) * (hash(Math.round(turned.at), 3, 7) < 0.5 ? -1 : 1);
+  var bob = reduced || !mover ? 0 : Math.sin(now / 38) * (0.35 + gear * 0.1);
+  var uid = leadCreature();
+  motoRider(riderCv, P || palette(), s, st.dir as Dir, { walker: walkerFor(hero(), s) as Record<Dir, HTMLCanvasElement[]>, look: lookFor(hero().person), pet: uid ? creatureImage(idOf(uid) as SpeciesId) : null, bob: bob, lean: lean });
+  return { yb: pp.y + T + 0.5, x: pp.x - (MOTO_W - T) / 2, spr: { cv: riderCv, w: MOTO_W, h: MOTO_H, up: MOTO_H - T } };
+}
+/** the puffs of the exhaust behind the scooter under way: three of them, each growing and fading as it falls behind */
+function exhaust(c: CanvasRenderingContext2D, now: number, pp: { x: number; y: number }) {
+  if (reduced || !mover || !st.sella) return;
+  var v = DV[st.dir], bx = pp.x + T / 2 - v[0] * 20 + (v[0] ? 0 : 5), by = pp.y + T - 7 - v[1] * 14 - (v[1] > 0 ? 8 : 0);
+  c.fillStyle = (P || palette()).chrome;
+  for (var i = 0; i < 3; i++) {
+    var t = (now / (340 - gear * 30) + i / 3) % 1;
+    c.globalAlpha = (1 - t) * 0.5;
+    c.beginPath(); c.arc(bx - v[0] * t * 16 + Math.sin((t + i) * 5) * 1.5, by - v[1] * t * 12 - t * 5, 1.6 + t * 3.4, 0, Math.PI * 2); c.fill();
+  }
+  c.globalAlpha = 1;
+}
 /* the wild creatures on the map: their battle picture, as an image (it loads once, and until then they are not drawn) */
 var monImg: Partial<Record<SpeciesId, { img: HTMLImageElement; ok: boolean }>> = {};
 function creatureImage(sp: SpeciesId): HTMLImageElement | null {
@@ -157,15 +194,23 @@ function placeBehind() {
 }
 /** where Antonio's creature is standing on the map he is on, for talking to it */
 export function followerAt(): [number, number] | null { return fol && fol.map === M.id && leadCreature() ? [fol.x, fol.y] : null; }
+/** how big the creature that follows is drawn, in px (a wild one, or one at home, is 52) */
+const FOLLOWER = 44;
 function follower(now: number): Drawn | null {
   var uid = leadCreature(), img = uid ? creatureImage(idOf(uid) as SpeciesId) : null;
   if (!img) return null;
   if (!fol || fol.map !== M.id || (!mover && Math.abs(fol.x - st.x) + Math.abs(fol.y - st.y) > 2)) placeBehind();
   var f = fol!;
-  if (mover && mover.t0 !== folStep) { folStep = mover.t0; f.fx = f.x; f.fy = f.y; f.x = mover.fx; f.y = mover.fy; f.t0 = mover.t0; }
+  if (mover && mover.t0 !== folStep) {
+    folStep = mover.t0;
+    /* stepping off the scooter leaves it on the tile behind him: the creature jumps down beside it */
+    var pm = moto();
+    if (pm.map === M.id && pm.x === mover.fx && pm.y === mover.fy) { placeBehind(); f = fol!; }
+    else { f.fx = f.x; f.fy = f.y; f.x = mover.fx; f.y = mover.fy; f.t0 = mover.t0; }
+  }
   var t = Math.min(1, (now - f.t0) / STEP), hop = reduced || t >= 1 ? 0 : Math.sin(t * Math.PI) * 3;
-  /* just behind Antonio when they are on the same row */
-  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img, glow: MAGIC[SPECIES[idOf(uid!) as SpeciesId].type].col };
+  /* just behind Antonio when they are on the same row; a little smaller than a wild one, so that it does not hide him */
+  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img, z: FOLLOWER, glow: MAGIC[SPECIES[idOf(uid!) as SpeciesId].type].col };
 }
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
@@ -189,7 +234,7 @@ function exclaim(c: CanvasRenderingContext2D, x: number, y: number, t: number) {
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
-    if (e.img) { var z = e.size || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
+    if (e.img) { var z = e.size || e.z || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
     if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
     var img = e.w![e.d!][e.f || 0], ih = img.height / s, br = e.breath || 1;
     if (e.alpha) c.globalAlpha = e.alpha;
@@ -449,7 +494,7 @@ function casters(items: SceneItem[], people: Drawn[], now: number, rs?: number):
   });
   people.forEach(function (e) {
     if (e.alpha) return;
-    if (e.img) { var z = e.size || 52; out.push({ x: e.x + 16 - z / 2, yb: e.yb - 5, w: z, h: z, img: e.img, foot: 5 }); return; }
+    if (e.img) { var z = e.size || e.z || 52; out.push({ x: e.x + 16 - z / 2, yb: e.yb - 5, w: z, h: z, img: e.img, foot: 5 }); return; }
     if (e.spr) { out.push({ x: e.x, yb: e.yb - 3, w: e.spr.cv.width / RS, h: e.spr.cv.height / RS, img: e.spr.cv, foot: 3 }); return; }
     var img = e.w![e.d!][e.f || 0];
     out.push({ x: e.x, yb: e.yb - 3, w: img.width / RS, h: img.height / RS, img: img, foot: 3 });
@@ -532,9 +577,14 @@ function drawFrame(now: number, sk: number) {
     if (p.alert) alerts.push([wx + T / 2, wy - 14, now - p.alert]);
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
-  people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step,
+  var riding = !!st.sella && !M.inside;
+  if (riding) people.push(rider(now, RS, pp));
+  else people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step,
     hop: mover && !reduced && !moveMode.swim ? (mover.jump ? Math.sin(pp.t * Math.PI) * 13 : stepHop(pp.t)) : 0, breath: mover || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820) });
-  var fw = follower(now);
+  var pk = parkedMoto(RS);
+  if (pk) people.push(pk);
+  /* on the scooter the creature rides behind him */
+  var fw = riding ? null : follower(now);
   if (fw) people.push(fw);
   var gh = ghost(now, pp);
   if (gh) people.push(gh);
@@ -546,6 +596,7 @@ function drawFrame(now: number, sk: number) {
     ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS);
     pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, false);
   }
+  if (riding) exhaust(ctx, now, pp);
   drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   /* in the tall grass the blades hide Antonio's feet, and his creature's */
   [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {

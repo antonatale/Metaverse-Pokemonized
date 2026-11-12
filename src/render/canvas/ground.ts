@@ -408,6 +408,7 @@ export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
 const DECO: Record<string, DecoFn> = {
   /* a retaining wall and a ledge are faces of a terrace: they are drawn with the relief */
   wall: function () { /* see scarp */ },
+  tartan: function () { /* see GROUND_OBJ.track */ },
   ledge: function () { /* see scarp */ },
   /* a macera, the dry-stone wall that holds an olive terrace: along the slope, or down it where the walls above and
      below say so */
@@ -592,6 +593,61 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.fillStyle = '#ffd166'; c.font = '700 13px ui-monospace, Menlo, monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(o.text || '15 – 0', X + W / 2, Y + H / 2 + 1);
   },
+  /* the things that say whose home it is (data/maps/homes.ts): o.text is which */
+  'home-prop': function (c, o, P) {
+    var w = o.w * T, h = o.h * T, k;
+    c.save(); c.translate(o.x * T + w / 2, o.y * T + h / 2); c.lineCap = 'round'; c.lineJoin = 'round';
+    ell(c, 0, h / 2 - 5, Math.min(w, h * 2) / 2 - 5, 3.5); c.fillStyle = P.shadow; c.fill();
+    if (o.text === 'speaker') {
+      rr(c, -10, -15, 20, 28, 3); fillStroke(c, P.case, P.ink, 1.6);
+      circle(c, 0, 4, 6.5); fillStroke(c, P.tyre, P.ink, 1.2); circle(c, 0, 4, 2.2); fillStroke(c, P.case2, P.ink, 0.8);
+      circle(c, 0, -8, 3); fillStroke(c, P.tyre, P.ink, 1);
+    } else if (o.text === 'decks') {
+      rr(c, -w / 2 + 4, -12, w - 8, 24, 3); fillStroke(c, P.case, P.ink, 1.6);
+      [-1, 1].forEach(function (d) { circle(c, d * (w / 2 - 20), 0, 9.5); fillStroke(c, P.tyre, P.ink, 1.2); circle(c, d * (w / 2 - 20), 0, 3); fillStroke(c, P.tail, P.ink, 0.8); });
+      rr(c, -9, -8, 18, 16, 2); fillStroke(c, P.case2, P.ink, 1.1);
+      for (k = 0; k < 3; k++) { c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(-5 + k * 5, -5); c.lineTo(-5 + k * 5, 5); c.stroke(); circle(c, -5 + k * 5, -3 + k * 3, 1.6); fillStroke(c, P.beam, P.ink, 0.7); }
+    } else if (o.text === 'barber-chair') {
+      /* a barber's chair from the front: the chrome foot, the red seat and back, the armrests, the headrest */
+      c.strokeStyle = P.ink; c.lineWidth = 3.2; c.beginPath(); c.moveTo(0, 6); c.lineTo(0, 11); c.stroke();
+      ell(c, 0, 12, 8, 2.6); fillStroke(c, P.chrome, P.ink, 1.2);
+      rr(c, -8, -9, 16, 13, 3); fillStroke(c, P.tail, P.ink, 1.5);
+      rr(c, -9.5, 2, 19, 5.5, 2.5); fillStroke(c, P.tail, P.ink, 1.5);
+      [-1, 1].forEach(function (d) { rr(c, d * 10.5 - 2, -3, 4, 8, 1.8); fillStroke(c, P.chrome, P.ink, 1.1); });
+      rr(c, -4.5, -14, 9, 5.5, 2); fillStroke(c, P.case, P.ink, 1.2);
+    } else if (o.text === 'mirror') {
+      rr(c, -11, -14, 22, 20, 3); fillStroke(c, P.wood2, P.ink, 1.5);
+      rr(c, -8.5, -11.5, 17, 15, 2); fillStroke(c, P.far, P.ink, 1);
+      c.strokeStyle = P.glint; c.lineWidth = 1.6; c.globalAlpha = 0.8; c.beginPath(); c.moveTo(-5, 0); c.lineTo(2, -9); c.moveTo(0, 1); c.lineTo(5, -5); c.stroke(); c.globalAlpha = 1;
+      rr(c, -10, 8, 20, 4, 1.5); fillStroke(c, P.wood, P.ink, 1.1);
+    } else if (o.text === 'glasses') {
+      [-1, 1].forEach(function (d) { rr(c, d * 7.5 - 6, -5, 12, 9, 3); fillStroke(c, P['shutter-a'], P.ink, 1.8); });
+      c.strokeStyle = P.ink; c.lineWidth = 1.8; c.beginPath(); c.moveTo(-1.5, -1); c.lineTo(1.5, -1); c.stroke();
+    } else if (o.text === 'roma') {
+      rr(c, -w / 2 + 6, -9, w - 12, 18, 2); fillStroke(c, P['roof-a'], P.ink, 1.5);
+      c.fillStyle = P.beam; c.fillRect(-w / 2 + 7, -3, w - 14, 6);
+      c.strokeStyle = P.ink; c.lineWidth = 1; for (k = 0; k < 5; k++) { c.beginPath(); c.moveTo(w / 2 - 6, -7 + k * 3.5); c.lineTo(w / 2 - 2, -7 + k * 3.5); c.stroke(); }
+    } else if (o.text === 'trophies') {
+      [-1, 0, 1].forEach(function (d) {
+        var x = d * (w / 3 - 2), big = d === 0 ? 1.25 : 1;
+        c.beginPath(); c.moveTo(x - 5 * big, -9 * big); c.lineTo(x + 5 * big, -9 * big); c.quadraticCurveTo(x + 4 * big, 1, x, 2); c.quadraticCurveTo(x - 4 * big, 1, x - 5 * big, -9 * big); c.closePath(); fillStroke(c, P.beam, P.ink, 1.3);
+        c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x, 2); c.lineTo(x, 7); c.stroke();
+        rr(c, x - 4.5, 7, 9, 3.5, 1); fillStroke(c, P.wood2, P.ink, 1);
+      });
+    } else if (o.text === 'racket') {
+      ell(c, 0, -h / 2 + 16, 9, 12.5); fillStroke(c, P.blinker, P.ink, 1.7);
+      c.strokeStyle = P.line; c.lineWidth = 0.9; for (k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(k * 4.5, -h / 2 + 6); c.lineTo(k * 4.5, -h / 2 + 26); c.moveTo(-7, -h / 2 + 16 + k * 5); c.lineTo(7, -h / 2 + 16 + k * 5); c.stroke(); }
+      c.strokeStyle = P.ink; c.lineWidth = 3.4; c.beginPath(); c.moveTo(0, -h / 2 + 29); c.lineTo(0, h / 2 - 8); c.stroke();
+    } else if (o.text === 'weights') {
+      c.strokeStyle = P.ink; c.lineWidth = 4; c.beginPath(); c.moveTo(-w / 2 + 12, 0); c.lineTo(w / 2 - 12, 0); c.stroke();
+      c.strokeStyle = P.chrome; c.lineWidth = 2; c.beginPath(); c.moveTo(-w / 2 + 14, 0); c.lineTo(w / 2 - 14, 0); c.stroke();
+      [-1, 1].forEach(function (d) { rr(c, d * (w / 2 - 12) - 5, -11, 10, 22, 3); fillStroke(c, P.case, P.ink, 1.5); rr(c, d * (w / 2 - 20) - 3, -8, 6, 16, 2); fillStroke(c, P.case2, P.ink, 1.2); });
+    } else {
+      /* papers: a few sheets, askew */
+      [-0.2, 0.12].forEach(function (a, i) { c.save(); c.rotate(a); rr(c, -11 + i * 3, -9 + i * 2, 20, 16, 1); fillStroke(c, P.paper, P.ink, 1.1); c.strokeStyle = P.ink; c.globalAlpha = 0.5; c.lineWidth = 0.8; for (k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-8 + i * 3, -5 + i * 2 + k * 4); c.lineTo(6 + i * 3, -5 + i * 2 + k * 4); c.stroke(); } c.restore(); });
+    }
+    c.restore();
+  },
   banner: function (c, o, P) {
     var X = o.x * T + 2, Y = o.y * T + 2, W = o.w * T - 4, H = T - 12;
     c.beginPath(); c.moveTo(X, Y); c.lineTo(X + W, Y); c.lineTo(X + W, Y + H); c.lineTo(X + W / 2, Y + H + 4); c.lineTo(X, Y + H); c.closePath();
@@ -599,8 +655,13 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.fillStyle = '#1b1f2e'; c.font = '16px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(o.text, X + W / 2, Y + H / 2 + 1);
   },
+  /* a rug: o.color is a colour, or the name of one of the map's palette; an inner border, a fringe at both ends */
   rug: function (c, o, P) {
-    rr(c, o.x * T + 4, o.y * T + 4, o.w * T - 8, o.h * T - 8, 6); fillStroke(c, o.color || P['roof-b'], P.ink, 1.6);
+    var X = o.x * T + 4, Y = o.y * T + 5, W = o.w * T - 8, H = o.h * T - 10, k;
+    rr(c, X, Y, W, H, 5); fillStroke(c, (P as unknown as Record<string, string>)[o.color || ''] || o.color || P['roof-b'], P.ink, 1.6);
+    rr(c, X + 5, Y + 5, W - 10, H - 10, 2); c.strokeStyle = P.line; c.lineWidth = 1.2; c.globalAlpha = 0.75; c.stroke(); c.globalAlpha = 1;
+    c.strokeStyle = P.ink; c.lineWidth = 1;
+    for (k = 0; X + 4 + k * 5 < X + W - 2; k++) { c.beginPath(); c.moveTo(X + 4 + k * 5, Y - 3); c.lineTo(X + 4 + k * 5, Y); c.moveTo(X + 4 + k * 5, Y + H); c.lineTo(X + 4 + k * 5, Y + H + 3); c.stroke(); }
   },
   /* a range of mountains (the Aurunci behind Formia), two rows of peaks */
   peaks: function (c, o, P) {
@@ -639,18 +700,41 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
       poly(c, [[vx + 8, vy - 17], [vx + 11.5, vy - 23], [vx + 15, vy - 17]]); fillStroke(c, P['roof-a'], P.ink, 1.1);
     }
   },
-  /* the athletics track of the Olympic training centre */
+  /* the athletics track of the Olympic training centre, its long side down the map: six lanes of tartan two tiles
+     wide (the generator makes the ground under them walkable: legend '7'), the finish line and the lane numbers on
+     the home straight, the pitch in the middle */
   track: function (c, o, P) {
-    var X = o.x * T + 4, Y = o.y * T + 4, W = o.w * T - 8, H = o.h * T - 8, rad = H / 2, lane = 13;
-    rr(c, X, Y, W, H, rad); rr(c, X + lane * 2, Y + lane * 2, W - lane * 4, H - lane * 4, rad - lane * 2, true);
-    c.fillStyle = P.track; c.fill('evenodd');
-    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.stroke();
-    c.strokeStyle = P.line; c.lineWidth = 1.2; c.globalAlpha = 0.9;
-    rr(c, X + lane, Y + lane, W - lane * 2, H - lane * 2, rad - lane); c.stroke();
+    var X = o.x * T + 3, Y = o.y * T + 3, W = o.w * T - 6, H = o.h * T - 6, R = W / 2, ring = T * 2 - 7, n = 6, k, d;
+    rr(c, X, Y, W, H, R); rr(c, X + ring, Y + ring, W - ring * 2, H - ring * 2, R - ring, true);
+    c.fillStyle = P.tartan; c.fill('evenodd');
+    /* the tartan is a shade darker along its inner edge, where everybody runs */
+    d = ring - ring / n; c.save();
+    rr(c, X + d, Y + d, W - d * 2, H - d * 2, R - d); rr(c, X + ring, Y + ring, W - ring * 2, H - ring * 2, R - ring, true);
+    c.fillStyle = P.tartan2; c.globalAlpha = 0.5; c.fill('evenodd'); c.restore();
+    c.strokeStyle = P.line; c.lineWidth = 1.2; c.globalAlpha = 0.92;
+    for (k = 1; k < n; k++) { d = ring * k / n; rr(c, X + d, Y + d, W - d * 2, H - d * 2, R - d); c.stroke(); }
+    c.globalAlpha = 1;
+    c.strokeStyle = P.ink; c.lineWidth = 1.8;
+    rr(c, X, Y, W, H, R); c.stroke(); rr(c, X + ring, Y + ring, W - ring * 2, H - ring * 2, R - ring); c.stroke();
+    /* the finish, on the straight by the stand; a start line up the straight */
+    var fy = Y + H - R - 6, sy = Y + R + 6;
+    c.strokeStyle = P.line; c.lineWidth = 3.2; c.beginPath(); c.moveTo(X + 1.5, fy); c.lineTo(X + ring - 1.5, fy); c.stroke();
+    c.lineWidth = 1.6; c.beginPath(); c.moveTo(X + 1.5, sy); c.lineTo(X + ring - 1.5, sy); c.stroke();
+    c.fillStyle = P.line; c.font = '700 8px ui-monospace, Menlo, monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (k = 0; k < n; k++) c.fillText(String(n - k), X + ring * (k + 0.5) / n, fy - 8);
+    /* the pitch: mown in stripes, its lines, the goals */
+    var px = X + ring + 9, pw = W - ring * 2 - 18, py = Y + R - 16, ph = H - R * 2 + 32;
+    c.save(); rr(c, px, py, pw, ph, 2); c.clip();
+    c.fillStyle = P.grass2; c.globalAlpha = 0.28;
+    for (k = 0; k * 22 < ph; k += 2) c.fillRect(px, py + k * 22, pw, 22);
+    c.restore();
+    c.strokeStyle = P.line; c.lineWidth = 1.6; c.globalAlpha = 0.9;
+    c.strokeRect(px, py, pw, ph);
+    c.beginPath(); c.moveTo(px, py + ph / 2); c.lineTo(px + pw, py + ph / 2); c.stroke();
+    circle(c, px + pw / 2, py + ph / 2, 13); c.stroke();
+    c.strokeRect(px + pw * 0.22, py, pw * 0.56, 20); c.strokeRect(px + pw * 0.22, py + ph - 20, pw * 0.56, 20);
     c.globalAlpha = 1; c.lineWidth = 2.2;
-    c.beginPath(); c.moveTo(X + W / 2, Y + 2); c.lineTo(X + W / 2, Y + lane * 2 - 2); c.stroke();
-    c.fillStyle = P.ink; c.font = '12px "Patrick Hand", "Comic Sans MS", cursive'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.globalAlpha = 0.55; c.fillText('100 m', X + W / 2, Y + H - lane); c.globalAlpha = 1;
+    c.strokeRect(px + pw * 0.38, py - 4, pw * 0.24, 4); c.strokeRect(px + pw * 0.38, py + ph, pw * 0.24, 4);
   },
   /* a hill village seen from far (Maranola, up in the Aurunci): houses in tiers and a bell tower */
   village: function (c, o, P) {

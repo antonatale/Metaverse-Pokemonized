@@ -1,7 +1,7 @@
 import type { Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
 import { stepTime } from '../data/growth';
-import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall } from './maps';
+import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall, moto, motoAt, rideable } from './maps';
 import { placeArrived, placeEntered } from './place-run';
 import type { Arrival } from './place';
 import { reduced } from '../ui/dom';
@@ -19,6 +19,39 @@ export interface Mover { fx: number; fy: number; tx: number; ty: number; t0: num
 export const JUMP = 340;
 /** the spot of a terrace one jumps down from (the legend's 'j'), walking south: never the other way */
 export function ledgeAt(x: number, y: number): boolean { return M.cell(x, y).deco === 'ledge'; }
+
+/* ---------- on the scooter ----------
+   It picks up speed along a straight: each step in the same direction is a gear up, a bend takes two off, a stop
+   starts again from the first. The top gear is about two and a half times a walk. */
+export const GEARS = [150, 120, 98, 82, 68];
+/** the gear he is riding in (0 on foot, and when the scooter has just set off) */
+export let gear = 0;
+let rideDir: Dir | null = null, lastEnd = 0;
+/** the story screen says why the scooter does not go there (a door, the steps, the sand) */
+let rideHook: ((x: number, y: number) => void) | null = null;
+export function onRideStop(f: (x: number, y: number) => void) { rideHook = f; }
+/** onto the scooter parked on the tile in front of him */
+export function mount(): boolean {
+  var v = DV[st.dir], x = st.x + v[0], y = st.y + v[1];
+  if (st.sella || mover || !motoAt(M, x, y)) return false;
+  st.dir = moto().dir; st.sella = true; gear = 0; rideDir = null;
+  mover = { fx: st.x, fy: st.y, tx: x, ty: y, t0: performance.now(), dur: 200 };
+  sfx('scooter');
+  return true;
+}
+/** off the scooter, which stays where it is: he steps onto the free tile in front of him, or beside, or behind */
+export function dismount(): boolean {
+  if (!st.sella || mover) return false;
+  var order: Dir[] = st.dir === 'up' || st.dir === 'down' ? [st.dir, 'left', 'right', st.dir === 'up' ? 'down' : 'up'] : [st.dir, 'down', 'up', st.dir === 'left' ? 'right' : 'left'];
+  var d = order.filter(function (o) { var w = DV[o], c = M.cell(st.x + w[0], st.y + w[1]); return !blocked(M, st.x + w[0], st.y + w[1]) && c.deco !== 'ledge' && !M.at[key(st.x + w[0], st.y + w[1])]; })[0];
+  if (!d) return false;
+  st.moto = { map: M.id, x: st.x, y: st.y, dir: st.dir === 'right' ? 'right' : st.dir === 'left' ? 'left' : st.moto ? st.moto.dir : 'left' };
+  st.sella = false; gear = 0;
+  mover = { fx: st.x, fy: st.y, tx: st.x + DV[d][0], ty: st.y + DV[d][1], t0: performance.now() };
+  st.dir = d;
+  sfx('step');
+  return true;
+}
 
 let held: Dir | null = null, pressedAt = 0, lastBump = '', walking = false;
 /** the step in progress, and which foot */
@@ -50,12 +83,18 @@ export function stepNow(d: Dir) { held = null; walking = false; st.dir = d; tryS
 function tryStep(d: Dir, now: number): boolean {
   var v = DV[d], nx = st.x + v[0], ny = st.y + v[1], k = key(nx, ny);
   /* down from a terrace: over its edge and onto the ground below, in one jump */
-  if (d === 'down' && ledgeAt(nx, ny) && !moveMode.swim && !moveMode.climb && !blocked(M, nx, ny + 1)) {
+  if (d === 'down' && ledgeAt(nx, ny) && !st.sella && !moveMode.swim && !moveMode.climb && !blocked(M, nx, ny + 1)) {
     lastBump = '';
     mover = { fx: st.x, fy: st.y, tx: nx, ty: ny + 1, t0: now, dur: JUMP, jump: true };
     sfx('whoosh');
     parity ^= 1;
     return true;
+  }
+  if (st.sella && (blocked(M, nx, ny) || !rideable(M, nx, ny))) {
+    /* the scooter stops: something in the way, or ground it cannot take */
+    gear = 0;
+    if (lastBump !== k) { lastBump = k; if (rideHook && !personAtBump(nx, ny)) { held = null; walking = false; rideHook(nx, ny); } }
+    return false;
   }
   if (blocked(M, nx, ny)) {
     var a = M.at[k];
@@ -67,15 +106,22 @@ function tryStep(d: Dir, now: number): boolean {
   }
   lastBump = '';
   mover = { fx: st.x, fy: st.y, tx: nx, ty: ny, t0: now };
-  sfx('step');
+  if (st.sella) {
+    var rolling = now - lastEnd < 90;
+    gear = !rolling ? 0 : d === rideDir ? Math.min(GEARS.length - 1, gear + 1) : Math.max(0, gear - 2);
+    rideDir = d; mover.dur = GEARS[gear];
+    sfx('moto' + gear);
+  } else sfx('step');
   parity ^= 1;
   return true;
 }
+/** someone stands there: the scooter just waits (no word about where it cannot go) */
+function personAtBump(x: number, y: number): boolean { return M.people.some(function (p) { return p.x === x && p.y === y; }); }
 export function update(now: number) {
   if (mover) {
     if (now - mover.t0 < (mover.dur || STEP)) return;
     if (mover.jump) sfx('step');
-    st.x = mover.tx; st.y = mover.ty; mover = null;
+    st.x = mover.tx; st.y = mover.ty; mover = null; lastEnd = now;
     walking = !!held;
     if (arrived()) return;
   }
@@ -118,6 +164,9 @@ function warp(to: string, x: number, y: number, dir?: Dir) {
   busy = true; held = null; walking = false;
   root.classList.add('fade');
   sfx('door');
+  /* the scooter does not follow him to another map: it stays parked where he was */
+  if (st.sella && to !== M.id) { st.moto = { map: M.id, x: st.x, y: st.y, dir: st.dir === 'right' ? 'right' : 'left' }; st.sella = false; }
+  gear = 0;
   setTimeout(function () {
     moveMode.swim = false; moveMode.climb = false;
     st.map = to; st.x = x; st.y = y; if (dir) st.dir = dir;

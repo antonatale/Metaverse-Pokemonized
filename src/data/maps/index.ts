@@ -7,9 +7,10 @@ import { torino, milano } from './stations';
 import { morgana } from './morgana';
 import { cisterna } from './cisterna';
 import { telepilo } from './telepilo';
+import { altieri, barberMay } from './botteghe';
 
 export type { MapDef } from './types';
 export { LEGEND } from './legend';
 
 /** every map of the story, by id */
-export const MAPS: Record<string, MapDef> = { formia, circolo, casa, morgana, cisterna, telepilo, torino, milano, ...HOME_MAPS };
+export const MAPS: Record<string, MapDef> = { formia, circolo, casa, morgana, cisterna, telepilo, torino, milano, altieri, 'barber-may': barberMay, ...HOME_MAPS };

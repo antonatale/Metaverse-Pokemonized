@@ -7,7 +7,7 @@ import { play, until, toPrompt, battleOver, walk, goStory, type Run } from './ha
 declare global {
   interface Window {
     WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null;
-        way(): string[]; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; xp(key: string, n: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
+        way(): string[]; moto(): { at: { map: string; x: number; y: number; dir: string }; sella: boolean }; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; xp(key: string, n: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -74,7 +74,7 @@ async function talkThrough(p: Page, max = 12) {
 }
 
 /* the title: the intro (asked for with ?intro=1: the playtests skip it), the name, the way in and the three stories */
-const SAVED = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+const SAVED = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai'], squad: ['antonio', 'costanzo'], beaten: {}, found: {}, seen: { intro: true, starter: true },
   mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { antonio: { lv: 9, xp: 0 } }, money: 40, bag: {} };
 /* a story taken away as a code and brought back into another slot (save/transfer.ts); a bad code says why */
 test('a story exported and imported', async ({ browser }) => {
@@ -97,7 +97,7 @@ test('a story exported and imported', async ({ browser }) => {
   expect(get('code')).toBe('TELEPILO1:');
   expect(String(get('bad'))).toMatch(/Non è un codice di Telepilo/);
   expect(String(get('slot3'))).toMatch(/Gioca/);
-  expect(get('stored')).toEqual({ badges: ['gialosai'], money: 40, x: 137 });
+  expect(get('stored')).toEqual({ badges: ['gialosai'], money: 40, x: 215 });
 });
 
 for (const dark of [false, true]) {
@@ -152,7 +152,7 @@ test('the intro, and three stories at once', async ({ browser }) => {
   expect(get('title')).toBe(true);
   expect(get('second'), 'a new story, from nothing, Andrea alone in his company').toEqual({ badges: 0, mons: 0, money: 0, squad: ['andrea'], first: 'andrea' });
   expect(String(get('go'))).toContain('Storia 2');
-  expect(get('first')).toMatchObject({ badges: 1, x: 137, y: 20, money: 40 });
+  expect(get('first')).toMatchObject({ badges: 1, x: 215, y: 42, money: 40 });
   expect(get('after-delete')).toBe(2);
   expect(get('keys')).toEqual([true, null, '1']);
 });
@@ -229,7 +229,7 @@ for (const dark of [false, true]) {
 
 /* the claude.ai artifact's hot reload: an open battle survives an update of the page */
 test('hot reload keeps an open battle', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cic-wild': true },
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cic-wild': true },
     mons: [{ uid: 'c1', sp: 'polpastro', moves: ['spruzzo', 'catilinaria'] }], lv: { c1: { lv: 30, xp: 0 } }, money: 0, bag: {} };
   await play(browser, 'hot', { seed: 21, hot: true, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -278,7 +278,7 @@ test('old saves', async ({ browser }) => {
 
 /* the Lido Oriente is a place: its name on arriving, its beach, its bagnino, and a canoe out to the buoy and back */
 test('a canoe at the Lido Oriente', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
     mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'oriente', { seed: 6, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -310,7 +310,7 @@ test('a canoe at the Lido Oriente', async ({ browser }) => {
 /* the shops of the town, each its own: the pharmacy's balm, the fishmonger's alici, a manual of the bookshop, the
    newspaper read at the newsstand, the market of Largo Paone; then from the menu the alici to a creature and the manual */
 test('the shops of the town', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
     mons: [{ uid: 'c1', sp: 'cicalina', bond: 10 }], lv: { c1: { lv: 5, xp: 0 } }, money: 300, bag: {} };
   type St = { bag: Record<string, number>; money: number; books?: number; mons: { bond?: number }[] };
   const r = await play(browser, 'shops', { seed: 3, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
@@ -357,7 +357,7 @@ test('the shops of the town', async ({ browser }) => {
 
 /* Andrea, with the pins of the other five, takes his train: Milano Centrale, the hall closed by the clouds, and back */
 test('Andrea takes the train to Milano', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'statoarte'], squad: ['andrea'], first: 'andrea',
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'statoarte'], squad: ['andrea'], first: 'andrea',
     beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, palamendola: true }, found: {}, seen: { intro: true, starter: true, protagonisti: true }, mons: [], lv: {}, money: 0, bag: {} };
   const r = await play(browser, 'train', { seed: 2, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -379,7 +379,7 @@ test('Andrea takes the train to Milano', async ({ browser }) => {
 
 /* the bar of Mola: three coffees in one go, into the bag; from the menu, «Usa» asks whom once, and how many */
 test('three coffees, given from the bag', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
     mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 20, bag: {} };
   const r = await play(browser, 'coffee', { seed: 4, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -534,7 +534,7 @@ test('activities around Formia', async ({ browser }) => {
   expect(st.best.quiz).toBeGreaterThanOrEqual(0);
 });
 
-/* Antonio's flat in Parco la Fontana, and the scooter that takes him around town */
+/* Antonio's flat in Parco la Fontana, and the scooter he rides around town */
 test('home and the scooter', async ({ browser }) => {
   const r = await play(browser, 'home', { seed: 10 }, async (r) => {
     const p = r.page;
@@ -568,18 +568,27 @@ test('home and the scooter', async ({ browser }) => {
     await walk(p, ['down']);
     await p.clock.runFor(600);
     r.keep('out', await p.evaluate(() => window.WORLD._debug.pos().map));
-    await goTo(p, 'sign', 'Il motorino di Antonio');
-    await p.keyboard.press('Enter'); await p.clock.runFor(300);
-    await choose(p, 'Eclipse beach');
-    await p.clock.runFor(800);
-    r.keep('rode to', await p.evaluate(() => window.WORLD._debug.area()));
-    await r.shot('eclipse');
-    /* he gets off just below the scooter parked here: face it, and ride home */
-    await p.keyboard.down('ArrowUp'); await p.keyboard.up('ArrowUp'); await p.clock.runFor(200);
-    await p.keyboard.press('Enter'); await p.clock.runFor(300);
-    await choose(p, 'Casa');
-    await p.clock.runFor(800);
-    r.keep('back', await p.evaluate(() => window.WORLD._debug.area()));
+    /* the scooter is parked by the gate: up on it, the creature behind; along the Appia it picks up speed */
+    const parked = await p.evaluate(() => window.WORLD._debug.moto());
+    await walk(p, (await p.evaluate(([x, y]) => window.WORLD._debug.route(x + 1, y), [parked.at.x, parked.at.y])) || []);
+    await p.keyboard.down('ArrowLeft'); await p.keyboard.up('ArrowLeft'); await p.clock.runFor(200);
+    await p.keyboard.press('Enter'); await p.clock.runFor(500);
+    await talkThrough(p);
+    r.keep('mounted', await p.evaluate(() => window.WORLD._debug.moto().sella));
+    await r.shot('in-sella');
+    await p.keyboard.down('ArrowDown'); await p.clock.runFor(700); await p.keyboard.up('ArrowDown'); await p.clock.runFor(300);
+    const from = await p.evaluate(() => window.WORLD._debug.pos());
+    await p.keyboard.down('ArrowLeft'); await p.clock.runFor(1500); await p.keyboard.up('ArrowLeft'); await p.clock.runFor(300);
+    const to = await p.evaluate(() => window.WORLD._debug.pos());
+    r.keep('rode', from.x - to.x);
+    await r.shot('appia');
+    /* Enter with nothing in front of him: off it, and it stays there */
+    await p.keyboard.press('Enter'); await p.clock.runFor(500);
+    r.keep('parked', await p.evaluate(() => { const m = window.WORLD._debug.moto(), q = window.WORLD._debug.pos(); return { sella: m.sella, far: Math.abs(m.at.x - q.x) + Math.abs(m.at.y - q.y) }; }));
+    /* and after a reload it is still where he left it */
+    await p.reload(); await goStory(p); await p.clock.runFor(1200);
+    r.keep('kept', await p.evaluate(() => window.WORLD._debug.moto().at.x));
+    r.keep('left at', to.x);
   });
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
   expect(get('inside')).toBe('casa');
@@ -587,8 +596,11 @@ test('home and the scooter', async ({ browser }) => {
   expect(get('slept')).toBe('notte');
   expect(get('woke')).toBe('giorno');
   expect(get('out')).toBe('formia');
-  expect(get('rode to')).toBe('Eclipse beach');
-  expect(get('back')).toBe('Parco la Fontana');
+  expect(get('mounted')).toBe(true);
+  /* a second and a half on a straight: at a walk it would be nine tiles */
+  expect(get('rode') as number).toBeGreaterThan(13);
+  expect(get('parked')).toEqual({ sella: false, far: 1 });
+  expect(get('kept')).toBe(get('left at'));
 });
 
 /* the tour of Formia: the next stop is always in the corner, with an arrow, and in the menu */
@@ -860,8 +872,8 @@ test('abilities, states and things to carry', async ({ browser }) => {
 /* a trainer not beaten yet sees Antonio step in front of him: a "!", he walks up, challenges him with no saying
    later, and once beaten walks back to his place */
 test('a trainer who sees Antonio', async ({ browser }) => {
-  const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
+  const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
@@ -894,8 +906,8 @@ test('a trainer who sees Antonio', async ({ browser }) => {
 /* a trainer far stronger than the player's team only looks at him: no challenge on sight, a word from Cicero instead,
    and the challenge is still there talking to him. In the battle, the sheet lists the moves the creature knows */
 test('a trainer too strong to challenge on sight', async ({ browser }) => {
-  const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
+  const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('before', await p.evaluate(() => window.WORLD._debug.who('studente')));
@@ -927,8 +939,8 @@ test('a trainer too strong to challenge on sight', async ({ browser }) => {
    the game's clock, with the animations on; the same turn at Normale takes longer */
 for (const vel of ['normale', 'veloce'] as const) {
   test('a turn at speed ' + vel, async ({ browser }) => {
-    const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 110, y: 28, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
-      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
+    const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
       const p = r.page;
       await goStory(p); await p.clock.runFor(1500);
       await p.evaluate(() => window.WORLD._debug.wild('cicalina', 9)); await p.clock.runFor(300);
@@ -964,15 +976,16 @@ for (const vel of ['normale', 'veloce'] as const) {
 }
 
 /* R17: a click on the map walks there; a click on someone walks next to him and talks */
+/* he starts beside the student's column, out of his sight: the student is a trainer and would walk up to him */
 test('walking with a click', async ({ browser }) => {
-  const r = await play(browser, 'click', { seed: 3, reduced: false, storage: inTown({ x: 110, y: 28, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
-    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
+  const r = await play(browser, 'click', { seed: 3, reduced: false, storage: inTown({ x: 134, y: 56, dir: 'down', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-power': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     type W = { WORLD: { _debug: { route(x: number, y: number): string[] | null; screenOf(x: number, y: number): [number, number]; pos(): { x: number; y: number; dialog: boolean } } } };
     const to = await p.evaluate(() => {
       const d = (window as unknown as W).WORLD._debug;
-      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 110 + dx, y = 28 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
+      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 134 + dx, y = 56 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
       return null;
     });
     r.keep('to', to);
@@ -1062,7 +1075,8 @@ test('the stones of Telepilo', async ({ browser }) => {
     r.keep('stone', await p.locator('.award h2').innerText());
     await p.click('#st-ok'); await p.clock.runFor(300);
     await talkThrough(p);
-    await p.evaluate(() => window.WORLD._debug.travel('formia', 137, 20, 'down')); await p.clock.runFor(500);
+    /* the tomb is at the far west of the big map: start from the Appia below it, not from home */
+    await p.evaluate(() => window.WORLD._debug.travel('formia', 30, 92, 'left')); await p.clock.runFor(500);
     await goTo(p, 'sign', 'Tomba di Cicerone');
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     await talkThrough(p);
@@ -1090,7 +1104,7 @@ test('the stones of Telepilo', async ({ browser }) => {
 /* a legend: the riddle of the niches, the walk under the walls with the validator's own way, the fight in three parts, and
    the net that holds only at the end */
 test('Lamo, in three parts', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 48, y: 36, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 89, y: 63, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true, 'sc-pietre-sigillo': true },
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: { oro: 6 } };
   const r = await play(browser, 'legend', { seed: 21, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
@@ -1155,7 +1169,7 @@ test('Lamo, in three parts', async ({ browser }) => {
 /* the magic of a place, and what a creature with a bond can do with it: the dots, the button, the choice taken back, the
    show, and a creature that has taken the type of the place */
 test('the magic of a place, and Risonanza', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true },
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true },
     mons: [{ uid: 'c1', sp: 'ramarrino', bond: 70 }, { uid: 'c2', sp: 'polpino', bond: 20 }], lv: { c1: { lv: 12, xp: 0 }, c2: { lv: 12, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'surge', { seed: 31, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1199,7 +1213,7 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
 
 /* the choices of the story, in the game: the stones after Mamurra, and what they do from there on */
 test('keeping the stones', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
     seen: { 'cic-change': true,  intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio', bond: 70 }, { uid: 'c2', sp: 'muraglione', bond: 70 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'stones-kept', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
@@ -1298,7 +1312,7 @@ test('Lamo on his knees: a pact for three tielle', async ({ browser }) => {
 
 /* a question left without an answer is not lost: Mamurra is gone, but he asks again as soon as the player is back */
 test('a question left unanswered', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'pending', { seed: 15, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1326,7 +1340,7 @@ test('a question left unanswered', async ({ browser }) => {
 
 /* the people grow: Antonio starts with little, changes clothes at level 14, and has to choose what to forget */
 test('the people grow', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio', 'costanzo'], beaten: {}, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio', 'costanzo'], beaten: {}, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'cicalina', bond: 20 }], lv: { c1: { lv: 20, xp: 0 }, antonio: { lv: 13, xp: 0 }, costanzo: { lv: 25, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'people', { seed: 16, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1380,7 +1394,7 @@ test('the people grow', async ({ browser }) => {
 /* everyone is a protagonist: from the menu Antonio becomes Costanzo, with Costanzo's creatures, and a mission waits for him */
 /* a story played as Costanzo (chosen at «chi sei?»: here from a save): the menu is his, and so is his mission */
 test('playing as a friend', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['costanzo'], first: 'costanzo', beaten: {}, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['costanzo'], first: 'costanzo', beaten: {}, found: {},
     seen: { intro: true, starter: true, protagonisti: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c2', sp: 'cicalina', bond: 40, owner: 'costanzo' }], lv: { c2: { lv: 12, xp: 0 }, costanzo: { lv: 10, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'friend', { seed: 17, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1427,7 +1441,7 @@ test('playing as a friend', async ({ browser }) => {
 
 /* the end of the story so far: at the train, the game told back */
 test('looking back, before the train', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true, 'sc-pietre-sigillo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
   const r = await play(browser, 'epilogue', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1450,12 +1464,12 @@ test('looking back, before the train', async ({ browser }) => {
 });
 
 /* a save already in town, with Formia as it is now (positions kept) */
-const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 137, y: 20, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
-  seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
+const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+  seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
 
 /* fishing off the pier with the fisherman of Mola: three casts, a pull right after each bite */
 test('fishing off the pier', async ({ browser }) => {
-  const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 88, y: 41, dir: 'right' }) }, async (r) => {
+  const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 133, y: 65, dir: 'right' }) }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
@@ -1522,7 +1536,7 @@ test('the creatures\' powers', async ({ browser }) => {
   type P = { x: number; y: number; dialog: boolean; text: string; swim: boolean; climb: boolean; sky: boolean };
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
-  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 148, y: 60, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
+  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 246, y: 98, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowDown'); await p.clock.runFor(400);
@@ -1536,11 +1550,11 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => run.data.find((x) => x.name === n)!.value;
   expect(String(get(swim, 'ask'))).toContain('a nuoto');
-  expect(get(swim, 'in the water')).toMatchObject({ x: 148, y: 61, swim: true });
+  expect(get(swim, 'in the water')).toMatchObject({ x: 246, y: 99, swim: true });
   expect(String((get(swim, 'in the water') as P).text)).toContain('vasca romana');
   expect((get(swim, 'state') as { money: number; seen: Record<string, boolean> }).money).toBe(60);
 
-  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 45, y: 34, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
+  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 88, y: 62, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowUp'); await p.clock.runFor(400);
@@ -1551,9 +1565,9 @@ test('the creatures\' powers', async ({ browser }) => {
     await r.shot('walls');
   });
   expect(String(get(climb, 'ask'))).toContain('mura');
-  expect(get(climb, 'on the walls')).toMatchObject({ x: 45, y: 33, climb: true });
+  expect(get(climb, 'on the walls')).toMatchObject({ x: 88, y: 61, climb: true });
 
-  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 88, y: 41, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet } }) }, async (r) => {
+  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 133, y: 65, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('hint', await p.textContent('.whint'));
@@ -1568,7 +1582,7 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   expect(String(get(fly, 'hint'))).toContain('V per guardare dall\'alto');
   expect(get(fly, 'up')).toMatchObject({ sky: true });
-  expect(get(fly, 'still')).toMatchObject({ x: 88, y: 41 });
+  expect(get(fly, 'still')).toMatchObject({ x: 133, y: 65 });
   expect(get(fly, 'down')).toMatchObject({ sky: false });
 });
 
@@ -1577,18 +1591,18 @@ test('opened again in the sea', async ({ browser }) => {
   type P = { x: number; y: number; swim: boolean };
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
-  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, ...quiet };
-  const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 148, y: 61, dir: 'down', mons, seen }) }, async (r) => {
+  const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet };
+  const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 246, y: 99, dir: 'down', mons, seen }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('pos', await pos(p));
     await r.shot('opened');
   })).data.find((x) => x.name === 'pos')!.value as P;
   /* a sea creature in the team: it carries him on, where he was */
-  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 148, y: 61, swim: true });
+  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 246, y: 99, swim: true });
   /* none: back to the shore, next to where he was */
   const ashore = await open('sea-none', [{ uid: 'c1', sp: 'ramarrino' }]);
   expect(ashore.swim).toBe(false);
-  expect(Math.abs(ashore.x - 148) + Math.abs(ashore.y - 61)).toBeGreaterThan(0);
-  expect(Math.abs(ashore.x - 148) + Math.abs(ashore.y - 61)).toBeLessThan(6);
+  expect(Math.abs(ashore.x - 246) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
+  expect(Math.abs(ashore.x - 246) + Math.abs(ashore.y - 99)).toBeLessThan(6);
 });

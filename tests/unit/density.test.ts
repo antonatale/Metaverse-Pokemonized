@@ -11,7 +11,7 @@ describe('how much there is to do in Formia', () => {
     expect(d.empty.length).toBeLessThanOrEqual(8);
   });
   it('has no more desert than today: walkable tiles far from anything to do', () => {
-    expect(d.desert / d.land).toBeLessThanOrEqual(0.18);
+    expect(d.desert / d.land).toBeLessThanOrEqual(0.12);
   });
 });
 

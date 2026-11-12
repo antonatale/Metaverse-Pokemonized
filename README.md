@@ -17,7 +17,7 @@ Apri http://localhost:5173. `npm run build` produce `dist/index.html`; `npm test
 - [Gioco attuale](docs/gioco.md): meccaniche, protagonisti, trama e salvataggi.
 - [Architettura](docs/architettura.md): dove trovare il codice da modificare.
 - [Mappa](docs/mappa.md): generazione, rilievo, disegno e controlli geografici.
-- [Sviluppo e verifiche](docs/sviluppo.md): comandi, simulatori, build e trailer.
+- [Sviluppo e verifiche](docs/sviluppo.md): comandi, simulatori e build.
 - [Lavoro ancora aperto](docs/roadmap.md): unica lista delle migliorie future.
 - [Fonti su Formia](docs/fonti-formia.md): provenienza dei fatti e attribuzione OpenStreetMap.
 
@@ -27,4 +27,4 @@ Apri http://localhost:5173. `npm run build` produce `dist/index.html`; `npm test
 
 Il gioco attivo conserva i personaggi precedenti. Antonio vuole completare la qualità di tutti prima dell'integrazione, che affiderà a Opus. Codex cura idee, specifiche e grafiche.
 
-Un'altra proposta geografica non integrata è conservata in [design/mappa](design/mappa/README.md).
+La mappa è la Formia grande del 12 novembre: 320×128 caselle sulle strade vere, con un Liberty blu che si guida. Due viste satellitari di confronto in [design/mappa](design/mappa/README.md).
