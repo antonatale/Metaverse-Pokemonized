@@ -2,7 +2,7 @@ import { TUNE } from '../data/tuning';
 import { ITEMS } from '../data/items';
 import type { BattleState, BenchLabel, Chip, MoveLabel, Side, Snap } from './types';
 import type { Move } from '../data/characters';
-import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn, switches, senders, switchSlot } from './state';
+import { ch, mv, available, beaterOf, hasMod, personaOn, zenOn, switches, senders, switchSlot, sideType, eff } from './state';
 import { SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
 import { movePower, moveType, magicEff, typesOf, effLevel } from './damage';
 import { isSpecies } from '../data/creatures';
@@ -117,6 +117,16 @@ export function moveIcon(m: Move): string {
   const fx = m.fx || {};
   return m.kind === 'atk' ? (m.priority ? 'wing' : 'spark') : fx.heal ? 'heart' : fx.self ? 'up' : fx.conf ? 'swirl' : fx.status ? STATUS[fx.status].icon : 'down';
 }
+/* a friend's move on its card, in a few words: what it does besides its power (the ones that change say it from the
+   label of the moment) */
+const CARD: Record<string, string> = {
+  diagnosi: 'Difesa avv. −20%, ne svela i numeri', simtoreal: 'Il robot può cadere (30%)', comizio: 'GIÀ LO SAI', bidet: 'Cura 25 PS, toglie i cali', daje: 'Coro da curva',
+  analisi: 'Non sbaglia · critico 25%', volpino: 'Attacca per primo, dall\'alto', cucinato: 'Più è cotto, più picchia', weee: 'Confonde il 20% delle volte',
+  manipolazione: 'Ripete l\'ultima mossa · +10 PS', copenhagen: 'Sparisce un turno, poi colpisce', king: 'Danni −30% · +10 PS', servizio: 'Ace: critico 25%',
+  pitstop: 'Cura 20 PS · Difesa +25%', criptico: 'Confonde per 2 turni', formia: 'Si riprende il 40% del danno', abbaia: 'Attacco avv. −25%',
+  battuta: 'Fa ridere il 45% delle volte', trinita: 'Tre colpi, ognuno può fare critico', cattiva: 'Sbaglia mossa il 30% delle volte'
+};
+const BAGGY: Record<string, boolean> = { retino: true, retino2: true, argento: true, oro: true, nassa: true, lampara: true, tiella: true, balsamo: true };
 export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
   const me = s.sides[i], m = mv(me, id)!, lock = me.lock && me.lock.move === id;
   const av = available(s, i), out: MoveLabel = { id: id, name: m.name, kind: m.kind, locked: av.indexOf(id) < 0, sub: '', icon: null, dots: null };
@@ -147,6 +157,10 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     case 'criptico': out.icon = 'swirl'; out.sub = 'Confonde per 2 turni'; break;
     case 'formia': out.icon = 'heart'; out.sub = 'Recupera il 40% del danno'; break;
     case 'abbaia': out.icon = 'paw'; out.sub = 'Attacco avversario −25%'; break;
+    case 'ascolta': out.icon = 'mic'; out.sub = me.hurtAt === s.turn ? 'Risponde: +50%' : 'Danno medio · +50% se colpita'; break;
+    case 'tavoli': { const f0 = s.sides[1 - i], lm = f0.lastMove && f0.lastMove !== 'copenhagenRet' ? mv(f0, f0.lastMove) : null; out.icon = 'shield'; out.sub = lm ? 'Blocca ' + lm.name : 'Niente da bloccare'; break; }
+    case 'trinita': out.icon = 'spark'; out.sub = 'Tre colpi'; break;
+    case 'cattiva': out.icon = 'swirl'; out.sub = 'Lo fa sbagliare strada'; break;
     /* the chance is 0.45 (the balance was simulated with it): if this is ever fixed, fix the label, not the chance */
     case 'battuta': out.icon = 'mic'; out.sub = '40% di far ridere'; break;
     case 'zen': out.icon = 'music'; out.sub = zenOn(s, me) ? 'Cuffie già in testa' : 'Cuffie, cura 20'; break;
@@ -181,5 +195,16 @@ export function moveLabel(s: BattleState, i: number, id: string): MoveLabel {
     }
   }
   if (m.uses) out.left = m.uses - (me.uses[id] || 0);
+  /* a person's move on a card, as a creature's: the person's type of the moment, the power and aim of a blow, how well
+     it does on the one in front, and in a few words what else it does */
+  if (!isSpecies(me.id) && !BAGGY[id] && !ITEMS[id]) {
+    const foe = s.sides[1 - i], pt = sideType(s, me, foe);
+    out.ptype = pt;
+    if (m.kind === 'atk') {
+      const pw = movePower(me, m);
+      if (pw) { out.power = pw; out.acc = m.acc || 1; out.eff = eff(pt, sideType(s, foe, me)); if (id === 'trinita') out.hits = 3; }
+    }
+    if (out.more == null) out.more = CARD[id] || out.sub.replace(/^(Danno (medio|alto|basso)|Fortissimo|Forte|Potenza \d+)( · |, )?/, '');
+  }
   return out;
 }

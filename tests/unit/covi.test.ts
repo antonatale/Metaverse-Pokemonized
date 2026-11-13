@@ -8,24 +8,25 @@ import { cityCovi, covoLevel } from '../../src/story/maps';
 import { myStops } from '../../src/story/goals';
 import { chapterOf, typeWord } from '../../src/story/mentor';
 
-/* The six covi (data/covi.ts): one per friend, in Formia; whoever is played meets the other five, in any order, and
-   each pin makes the next covo stronger; then the train of his city. */
-const play = (who: FriendId) => { resetProgress(); st.squad = [who]; st.first = who; st.seen.protagonisti = true; };
+/* The seven covi (data/covi.ts): one per friend, in Formia; whoever is played meets the other six, in any order (the
+   rival's last), and each pin makes the next covo stronger; then the train of their city. */
+/* the rival is picked at random when a story begins: here it is set, so that the order of the covi is known */
+const play = (who: FriendId, rival?: FriendId) => { resetProgress(); st.squad = [who]; st.first = who; st.seen.protagonisti = true; st.rivalFriend = rival || (who === 'claudia' ? 'costanzo' : 'claudia'); };
 
-describe('the six covi', () => {
+describe('the seven covi', () => {
   beforeEach(() => play('antonio'));
   it('are one per friend, each with its pin, its leader standing on the map', () => {
     const leaders = Object.values(COVI).map((c) => c.leader).sort();
     expect(leaders).toEqual(ROSTER.slice().sort());
-    expect(new Set(Object.values(COVI).map((c) => c.badge.id)).size).toBe(6);
+    expect(new Set(Object.values(COVI).map((c) => c.badge.id)).size).toBe(7);
     const all = Object.values(MAPS).flatMap((m) => m.npcs || []);
     for (const id of Object.keys(COVI)) expect(all.filter((n) => n.covo === id), id).toHaveLength(1);
   });
-  it('whoever is played meets the other five, and never his own', () => {
+  it('whoever is played meets the other six, and never their own', () => {
     for (const who of ROSTER) {
       play(who);
       const mine = cityCovi('formia');
-      expect(mine, who).toHaveLength(5);
+      expect(mine, who).toHaveLength(6);
       expect(mine.map((c) => c.leader), who).not.toContain(who);
       expect(myStops().some((s) => s.who === who), who + ' has no stop about himself').toBe(false);
     }
@@ -41,7 +42,7 @@ describe('the six covi', () => {
   });
   it('each one starts at his own door: Antonio at Parco la Fontana, the others at theirs (Zendavid in Scauri)', () => {
     const starts = MAPS.formia.starts || {};
-    expect(Object.keys(starts).sort()).toEqual(['andrea', 'costanzo', 'forchetta', 'valentin', 'zendavid']);
+    expect(Object.keys(starts).sort()).toEqual(['andrea', 'claudia', 'costanzo', 'forchetta', 'valentin', 'zendavid']);
     const b = (MAPS.formia.buildings || []).map((x) => x.id);
     for (const id of Object.keys(starts)) expect(b, id).toContain('casa-' + id);
     const area = (x: number, y: number) => (MAPS.formia.areas || []).find((a) => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h)!.name;
@@ -53,18 +54,25 @@ describe('the six covi', () => {
     expect(covi()[0]).toBe('covo-palamendola');
     play('andrea');
     expect(['covo-pineta', 'covo-piazza'], 'west, near Castellone').toContain(covi()[0]);
-    expect(covi()[covi().length - 1], 'the farthest, by Parco la Fontana').toBe('covo-palamendola');
+    expect(covi()[covi().length - 2], 'the farthest, by Parco la Fontana').toBe('covo-palamendola');
     expect(covi()).not.toContain('covo-padel');
   });
+  it('the rival\'s covo is the last pin of Formia, whoever the rival is', () => {
+    const covi = () => myStops().filter((s) => s.id.indexOf('covo-') === 0).map((s) => s.id);
+    play('zendavid', 'antonio');
+    expect(covi()[covi().length - 1]).toBe('covo-palamendola');
+    play('antonio', 'zendavid');
+    expect(covi()[covi().length - 1]).toBe('covo-pineta');
+  });
   it('lead to Torino or Milano, as each one\'s life does', () => {
-    expect(SECOND_CITY).toEqual({ antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'milano', andrea: 'milano' });
+    expect(SECOND_CITY).toEqual({ antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'milano', andrea: 'milano', claudia: 'torino' });
     expect(gateFor('torino', 'andrea').station).toBe('Milano Centrale');
     expect(gateFor('torino', 'forchetta').station).toBe('Torino Porta Nuova');
     play('costanzo');
     expect(myStops()[myStops().length - 1].text).toBe('Il treno per Milano');
   });
 
-  it('each leader has his own words for each of the other five, and none for himself', () => {
+  it('each leader has words for each of the other six, and none for themself', () => {
     Object.keys(COVI).forEach((k) => {
       const cv = COVI[k];
       ROSTER.filter((id) => id !== cv.leader).forEach((id) => {

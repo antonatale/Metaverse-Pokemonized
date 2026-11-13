@@ -4,6 +4,6 @@
 export { installUnlock as installAudio, isOn, setOn, onReady } from './context';
 export { music } from './music';
 export { worldMusic, settle, TUNE_WAIT, type TuneWait } from './zones';
-export { sfx } from './sfx';
+export { sfx, voiceBlip } from './sfx';
 export { cry, cryEventOf } from './cries';
 export { cueBattle, typeBlip } from './cues';

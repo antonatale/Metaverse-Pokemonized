@@ -16,6 +16,22 @@ const FX: Record<string, Fx> = {
   click(c, out, t) { tone(c, out, 1320, t, 0.018, { type: 'square', gain: 0.13, cutoff: 3000, decay: 0.01, sustain: 0.2, release: 0.02 }); },
   blip(c, out, t) { tone(c, out, 640 + wobble() * 120, t, 0.02, { type: 'square', gain: 0.08, cutoff: 1800, decay: 0.01, sustain: 0.3, release: 0.015 }); },
   blipVoice(c, out, t) { tone(c, out, 420 + wobble() * 90, t, 0.024, { type: 'triangle', gain: 0.14, decay: 0.01, sustain: 0.4, release: 0.02 }); },
+  /* the scroll of a dialogue unrolls; a page of it turns */
+  scroll(c, out, t) { hiss(c, out, t, 0.22, { type: 'bandpass', freq: 900, to: 3200, q: 0.7, gain: 0.07, attack: 0.03 }); tone(c, out, 220, t + 0.02, 0.06, { type: 'triangle', to: 330, gain: 0.05, release: 0.04 }); },
+  page(c, out, t) { hiss(c, out, t, 0.07, { type: 'highpass', freq: 2600, gain: 0.05 }); },
+  pop(c, out, t) { tone(c, out, 520, t, 0.05, { type: 'sine', to: 880, gain: 0.1, decay: 0.03, sustain: 0.3, release: 0.04 }); },
+  /* the phone: it buzzes in the pocket, a message comes in, one goes out */
+  buzz(c, out, t) { for (var i = 0; i < 2; i++) tone(c, out, 62, t + i * 0.32, 0.22, { type: 'sawtooth', gain: 0.16, cutoff: 260, attack: 0.01, sustain: 0.9, release: 0.03, vibrato: 60 }); },
+  msgIn(c, out, t) { tone(c, out, hz('E6'), t, 0.07, { type: 'sine', gain: 0.1, release: 0.05 }); tone(c, out, hz('B6'), t + 0.075, 0.12, { type: 'sine', gain: 0.09, release: 0.12 }); },
+  msgOut(c, out, t) { tone(c, out, 700, t, 0.09, { type: 'sine', to: 1250, gain: 0.08, decay: 0.03, sustain: 0.4, release: 0.05 }); },
+  typing(c, out, t) { tone(c, out, 1900 + wobble() * 500, t, 0.012, { type: 'square', gain: 0.025, cutoff: 3500, decay: 0.006, sustain: 0.2, release: 0.01 }); },
+  /* Faro's hydro pump: the breath drawn in, the jet, and the board landing in the sea */
+  jet(c, out, t) {
+    tone(c, out, 180, t, 0.35, { type: 'sine', to: 520, gain: 0.08, attack: 0.2, release: 0.05 });
+    hiss(c, out, t + 0.32, 0.9, { type: 'bandpass', freq: 1400, to: 600, q: 0.6, gain: 0.26, attack: 0.03 });
+    hiss(c, out, t + 0.32, 0.8, { type: 'lowpass', freq: 500, gain: 0.2, attack: 0.02 });
+  },
+  splash(c, out, t) { hiss(c, out, t, 0.5, { type: 'lowpass', freq: 2400, to: 300, gain: 0.3, attack: 0.005 }); tone(c, out, 140, t, 0.18, { type: 'sine', to: 60, gain: 0.18, release: 0.08 }); },
 
   /* ---------- battle ---------- */
   lunge(c, out, t) { hiss(c, out, t, 0.14, { freq: 500, to: 1800, q: 0.8, gain: 0.9 }); },
@@ -121,5 +137,12 @@ export function sfx(name: string, delay = 0) {
   f(c, sfxBus, c.currentTime + 0.005 + delay);
 }
 export const SFX_NAMES = Object.keys(FX);
+/** a syllable of someone speaking, in his own voice: the pitch, the timbre, a wobble for a ghost; louder on a shout */
+export function voiceBlip(f: number, wave: OscillatorType, vib: number, loud: number) {
+  const c = live();
+  if (!c) return;
+  const t = c.currentTime + 0.005, w = 0.9 + wobble() * 0.22;
+  tone(c, sfxBus, f * w, t, 0.045, { type: wave, to: f * w * (0.94 + wobble() * 0.1), gain: 0.075 * loud, cutoff: 1500 + f * 2, attack: 0.004, decay: 0.025, sustain: 0.35, release: 0.03, vibrato: vib });
+}
 /** an effect on any context and output (the audio test renders them offline) */
 export function renderSfx(c: BaseAudioContext, out: AudioNode, name: string, t: number) { FX[name](c, out, t); }

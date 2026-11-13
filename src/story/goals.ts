@@ -8,6 +8,7 @@ import type { PlaceDef } from '../data/maps/types';
 import { st } from '../save/story-progress';
 import { activity, timesDone } from './activities';
 import { flag } from './plot';
+import { rivalFriend } from './rival-who';
 
 /* The thread through the story: one next stop at a time, so Antonio always knows where to go next.
    The stops follow a tour of Formia from home westwards: the Bruno Zauli next door, Mola, the piazza and the
@@ -71,17 +72,18 @@ const tomb = (MAPS.formia.signs || []).find((g) => g.text.join(' ').indexOf('Tom
 export const STOPS: Stop[] = [
   (function (): Stop {
     const [x, y] = npcAt('formia', 'guardaparco');
-    return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'Il guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
+    return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'La guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
       map: 'formia', x, y, done: () => !!st.seen.starter };
   })(),
   /* R10: the stops that teach the game: a second creature from the grass, then a team for the dark and for Mamurra */
-  team('seconda-creatura', 2, 'La tua seconda creatura', 'L\'erba alta del Parco di Gianola', 'Il guardaparco dice: con i retini che ti ho dato, cammina nell\'erba alta o tra gli scogli di Gianola. Indebolisci una creatura e lancia il retino.'),
+  team('seconda-creatura', 2, 'La tua seconda creatura', 'L\'erba alta del Parco di Gianola', 'La guardaparco dice: con i retini che ti ho dato, cammina nell\'erba alta o tra gli scogli di Gianola. Indebolisci una creatura e lancia il retino.'),
   covo('palamendola', 'formia', 'Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta per una sfida. Ha appena letto un paper.'),
   plot('trama-scavi', 'Chi scava tra le rovine di Gianola?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa romana, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
   covo('padel', 'formia', 'Andrea ti aspetta ai campi da padel del Bruno Zauli: ha calcolato che oggi vince lui.'),
   covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
   plot('trama-archivio', 'L\'Archivio della Torre di Mola', 'Torre di Mola', 'Le leggende di Formia le conosce l\'archivista della Torre di Mola: chiedi a lei delle Pietre di Telepilo.', 'archivista', 'trama-archivio'),
   doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),
+  covo('morgana', 'morgana', 'Da Morgana, a Mola, Claudia ti aspetta al suo tavolo. Uno alla volta, si parla.'),
   doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
   covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
   team('squadra-cisterna', 3, 'Tre creature per il buio', 'L\'erba alta e gli scogli', 'Nel Cisternone si lotta al buio: Cicerone dice di non scendere con meno di tre creature. Cattura nell\'erba alta o tra gli scogli.'),
@@ -112,12 +114,15 @@ export function myStops(): Stop[] {
   const me = firstHuman() as FriendId, G0 = GATES[SECOND_CITY[me] || 'torino'];
   const list = STOPS.filter((s) => s.who !== me && (!s.only || s.only === me)).map((s) => s.id === 'torino' ? { ...s, text: G0.label, tip: 'Hai fatto tutto il giro di Formia! In stazione il capotreno sa qualcosa del treno per ' + G0.station + '.' } : s);
   /* the covi come in order of distance from home (the plot keeps its place): whoever lives in Scauri starts from the
-     east, whoever lives in Castellone from the centre */
+     east, whoever lives in Castellone from the centre; the rival's comes last */
   const home = (MAPS.formia.starts && MAPS.formia.starts[me]) || MAPS.formia.start;
   const at = (s: Stop): number[] => { if (s.map === 'formia') return [s.x, s.y]; const b = (MAPS.formia.buildings || []).find((q) => q.to === s.map); return b ? b.door : [s.x, s.y]; };
   const far = (s: Stop) => { const p = at(s); return Math.hypot(p[0] - home[0], p[1] - home[1]); };
   const slots = list.map((s, k) => (s.id.indexOf('covo-') === 0 ? k : -1)).filter((k) => k >= 0);
   const covi = slots.map((k) => list[k]).sort((a, b) => far(a) - far(b));
+  /* the rival's covo is the last pin of Formia, wherever it is */
+  const rv = rivalFriend(), last = covi.findIndex((s) => s.who === rv);
+  if (rv && last >= 0) covi.push(covi.splice(last, 1)[0]);
   slots.forEach((k, n) => { list[k] = covi[n]; });
   return list;
 }

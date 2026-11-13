@@ -20,6 +20,9 @@ export interface PersonLook {
   earring?: string;
   brows?: string;
   smirk?: boolean;
+  /** a moustache (Nicola's, ginger), and a big open laugh */
+  mustache?: string;
+  laugh?: boolean;
 }
 type HairLook = PersonLook['hair'];
 
@@ -60,6 +63,8 @@ function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
   c.translate(0, bob);
   /* mane-style hair sits behind the body */
   if (S.hair.style === 'mane') { hairBack(c, S, d); }
+  /* long hair falls down the back, behind the body */
+  if (S.hair.style === 'long') longBack(c, S, d);
   /* body */
   var bx = side ? 10.5 : 8.5, bw = side ? 11 : 15;
   rr(c, bx, 19, bw, 12.5, 4.5); fillStroke(c, S.top, ink, 1.6);
@@ -108,6 +113,16 @@ function bumps(c: Ctx, cx: number, cy: number, r: number, n: number, br: number,
     var a = a0 + (a1 - a0) * k / n;
     circle(c, cx + Math.cos(a) * r, cy + Math.sin(a) * r, br); c.fill();
   }
+}
+/** long hair, the part behind: down to the shoulder blades */
+function longBack(c: Ctx, S: PersonLook, d: Dir) {
+  var H = S.hair, ink = STICKER_INK;
+  c.beginPath();
+  if (d === 'up') { c.moveTo(6.5, 12); c.quadraticCurveTo(5.6, 25, 9, 29.5); c.lineTo(23, 29.5); c.quadraticCurveTo(26.4, 25, 25.5, 12); }
+  else if (d === 'left') { c.moveTo(17, 10); c.quadraticCurveTo(27, 13, 26, 27); c.quadraticCurveTo(22, 29, 18.5, 27); }
+  else { c.moveTo(6.5, 12); c.quadraticCurveTo(5, 21, 7.4, 26.5); c.lineTo(24.6, 26.5); c.quadraticCurveTo(27, 21, 25.5, 12); }
+  c.closePath(); fillStroke(c, H.color, ink, 1.5);
+  if (H.hi) { c.strokeStyle = H.hi; c.lineWidth = 0.9; c.globalAlpha = 0.7; c.beginPath(); c.moveTo(d === 'left' ? 22 : 10, 15); c.quadraticCurveTo(d === 'left' ? 25 : 9, 21, d === 'left' ? 23 : 10.5, 26); c.stroke(); c.globalAlpha = 1; }
 }
 function hairBack(c: Ctx, S: PersonLook, _d: Dir) {
   var H = S.hair, ink = STICKER_INK;
@@ -174,7 +189,8 @@ function hairFront(c: Ctx, S: PersonLook, d: Dir) {
   if (back) {
     circle(c, 16, 11.4, 9.9); c.fillStyle = H.color; c.fill(); c.strokeStyle = ink; c.lineWidth = 1.6; c.stroke();
     if (st === 'curls' || st === 'longcurls') bumps(c, 16, 11, 9.6, 14, 2.6, Math.PI * 0.9, Math.PI * 2.1, H.color);
-    if (st === 'longcurls' || st === 'wavy') { rr(c, 7.5, 12, 17, 9, 4); c.fillStyle = H.color; c.fill(); }
+    if (st === 'longcurls' || st === 'wavy' || st === 'long') { rr(c, 7.5, 12, 17, 9, 4); c.fillStyle = H.color; c.fill(); }
+    if (st === 'messy') messyTufts(c, H, 0);
     hiSwirls(c, H, 16, 8);
     c.restore(); return;
   }
@@ -182,25 +198,41 @@ function hairFront(c: Ctx, S: PersonLook, d: Dir) {
     c.beginPath(); c.arc(16, 12, 10.2, Math.PI * 0.75, Math.PI * 2.02); c.closePath(); c.fillStyle = H.color; c.fill();
     c.beginPath(); c.moveTo(15, 3); c.quadraticCurveTo(26, 4, 25.6, 16); c.lineTo(18, 14); c.closePath(); c.fill();
     if (st === 'curls' || st === 'longcurls') { bumps(c, 16, 11, 10, 10, 2.5, Math.PI * 0.95, Math.PI * 2.05, H.color); bumps(c, 23, 12, 3.4, 3, 2.4, -1.2, 1.3, H.color); }
-    if (st === 'longcurls' || st === 'wavy') { rr(c, 17, 11, 9, 11, 4); c.fill(); }
+    if (st === 'longcurls' || st === 'wavy' || st === 'long') { rr(c, 17, 11, 9, 11, 4); c.fill(); }
     if (st === 'quiff') { c.beginPath(); c.moveTo(7, 6); c.quadraticCurveTo(9, -1, 18, 1); c.lineTo(16, 6); c.closePath(); c.fill(); }
+    if (st === 'messy') messyTufts(c, H, 1);
     c.beginPath(); c.arc(16, 12, 10.2, Math.PI * 0.95, Math.PI * 1.9); c.strokeStyle = ink; c.lineWidth = 1.4; c.stroke();
     hiSwirls(c, H, 17, 6);
     c.restore(); return;
   }
   /* front */
   c.beginPath(); c.arc(16, 12, 10.1, Math.PI * 1.0, Math.PI * 2.0);
-  var fy = st === 'quiff' ? 7 : st === 'wavy' ? 9 : 8;
+  var fy = st === 'quiff' ? 7 : st === 'wavy' || st === 'long' ? 9 : 8;
   c.lineTo(25.8, 13); c.quadraticCurveTo(21, fy, 16, fy + 0.6); c.quadraticCurveTo(11, fy, 6.2, 13); c.closePath();
   c.fillStyle = H.color; c.fill();
   if (st === 'curls' || st === 'longcurls') bumps(c, 16, 10.5, 9.4, 12, 2.5, Math.PI * 0.95, Math.PI * 2.05, H.color);
   if (st === 'curls') { bumps(c, 9.5, 9, 0.1, 0, 2.4, 0, 0, H.color); bumps(c, 14, 8.6, 0.1, 0, 2.3, 0, 0, H.color); bumps(c, 19, 8.8, 0.1, 0, 2.3, 0, 0, H.color); }
   if (st === 'longcurls') { rr(c, 4.8, 9, 4.6, 12, 2.3); c.fill(); rr(c, 22.6, 9, 4.6, 12, 2.3); c.fill(); bumps(c, 16, 8.4, 4, 4, 2.4, 0.4, 2.7, H.color); }
   if (st === 'wavy') { rr(c, 4.6, 8, 5, 13, 2.5); c.fill(); rr(c, 22.4, 8, 5, 13, 2.5); c.fill(); c.beginPath(); c.moveTo(9, 6); c.quadraticCurveTo(17, 4, 24, 11); c.quadraticCurveTo(17, 8, 9, 10); c.closePath(); c.fill(); }
+  /* long: parted in the middle, falling either side of the face onto the shoulders */
+  if (st === 'long') { rr(c, 4.4, 8, 5, 18, 2.5); c.fill(); rr(c, 22.6, 8, 5, 18, 2.5); c.fill(); c.beginPath(); c.moveTo(16, 3); c.quadraticCurveTo(10, 5, 6.5, 12); c.lineTo(9, 12); c.quadraticCurveTo(12, 7, 16, 6); c.quadraticCurveTo(20, 7, 23, 12); c.lineTo(25.5, 12); c.quadraticCurveTo(22, 5, 16, 3); c.closePath(); c.fill(); }
   if (st === 'quiff') { c.beginPath(); c.moveTo(8, 6); c.quadraticCurveTo(12, -2, 22, 0); c.quadraticCurveTo(25, 3, 24, 7); c.closePath(); c.fill(); }
+  /* short and tousled: tufts sticking up every way, a lock on the forehead (Nicola) */
+  if (st === 'messy') messyTufts(c, H, 0);
   c.beginPath(); c.arc(16, 12, 10.1, Math.PI * 1.0, Math.PI * 2.0); c.strokeStyle = ink; c.lineWidth = 1.4; c.stroke();
+  if (st === 'messy') { c.fillStyle = H.color; c.beginPath(); c.moveTo(13, 7); c.quadraticCurveTo(12, 10.5, 9.6, 11.2); c.quadraticCurveTo(12.6, 10.6, 15.6, 7.6); c.closePath(); c.fill(); }
   hiSwirls(c, H, 16, 5);
   c.restore();
+}
+/** the tufts of tousled hair, on top of the head: from the front (side 0) or from the side (1) */
+function messyTufts(c: Ctx, H: HairLook, side: number) {
+  var ink = STICKER_INK, tufts = side ? [[9, 4, -0.5], [13, 1.6, -0.2], [18, 1.2, 0.3], [22.5, 3.4, 0.7]] : [[8.2, 5.4, -0.7], [11.6, 2.4, -0.35], [15.6, 1.2, 0], [19.8, 2.2, 0.35], [23.4, 5, 0.7]];
+  tufts.forEach(function (q) {
+    c.save(); c.translate(q[0], q[1] + 2.4); c.rotate(q[2]);
+    c.beginPath(); c.moveTo(-2.6, 1.6); c.quadraticCurveTo(-1, -2.6, 0.4, -3.8); c.quadraticCurveTo(1, -1.2, 2.6, 1.6); c.closePath();
+    c.fillStyle = H.color; c.fill(); c.strokeStyle = ink; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-2.4, 0.4); c.quadraticCurveTo(-1, -2.6, 0.4, -3.8); c.quadraticCurveTo(1, -1.2, 2.4, 0.4); c.stroke();
+    c.restore();
+  });
 }
 function hiSwirls(c: Ctx, H: HairLook, cx: number, cy: number) {
   if (!H.hi) return;
@@ -215,7 +247,9 @@ function face(c: Ctx, S: PersonLook, d: Dir) {
     c.beginPath(); c.moveTo(6.6, 14.6); c.quadraticCurveTo(5, 16.4, 6.8, 17.2); c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
     circle(c, 11.6, 17.4, 1.8); c.fillStyle = 'rgba(234,120,110,.35)'; c.fill();
     if (S.brows) { c.strokeStyle = S.brows; c.lineWidth = 1.5; c.beginPath(); c.moveTo(7.8, 11.8); c.lineTo(11, 11.3); c.stroke(); }
-    if (S.smirk) { c.strokeStyle = ink; c.lineWidth = 1.1; c.beginPath(); c.moveTo(6.9, 18.6); c.quadraticCurveTo(8.2, 19.2, 9.6, 18.1); c.stroke(); }
+    if (S.laugh) { c.beginPath(); c.moveTo(6.4, 18); c.quadraticCurveTo(7.6, 21.6, 9.8, 18.2); c.closePath(); fillStroke(c, '#7a1e2c', ink, 0.9); }
+    else if (S.smirk) { c.strokeStyle = ink; c.lineWidth = 1.1; c.beginPath(); c.moveTo(6.9, 18.6); c.quadraticCurveTo(8.2, 19.2, 9.6, 18.1); c.stroke(); }
+    if (S.mustache) { c.beginPath(); c.moveTo(5.6, 17.4); c.quadraticCurveTo(7.6, 15.6, 10.4, 16.8); c.quadraticCurveTo(8, 17.8, 5.6, 17.4); c.closePath(); fillStroke(c, S.mustache, ink, 0.8); }
     glasses(c, S, d);
     return;
   }
@@ -223,10 +257,20 @@ function face(c: Ctx, S: PersonLook, d: Dir) {
   circle(c, 19.6, 14.4, 1.35); c.fill();
   circle(c, 10.2, 17.4, 1.9); c.fillStyle = 'rgba(234,120,110,.35)'; c.fill();
   circle(c, 21.8, 17.4, 1.9); c.fill();
-  c.beginPath();
-  /* a crooked smile, one side up; or the plain one */
-  if (S.smirk) { c.moveTo(14.2, 18.9); c.quadraticCurveTo(16.4, 19.7, 18.5, 18); } else { c.moveTo(14.6, 18.6); c.quadraticCurveTo(16, 19.6, 17.4, 18.6); }
-  c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
+  if (S.laugh) {
+    /* laughing, mouth open: Nicola */
+    c.beginPath(); c.moveTo(12.9, 18.2); c.quadraticCurveTo(16, 23.4, 19.1, 18.2); c.closePath(); fillStroke(c, '#7a1e2c', ink, 1);
+    c.fillStyle = '#ffffff'; c.fillRect(13.8, 18.3, 4.4, 1.2);
+  } else {
+    c.beginPath();
+    /* a crooked smile, one side up; or the plain one */
+    if (S.smirk) { c.moveTo(14.2, 18.9); c.quadraticCurveTo(16.4, 19.7, 18.5, 18); } else { c.moveTo(14.6, 18.6); c.quadraticCurveTo(16, 19.6, 17.4, 18.6); }
+    c.strokeStyle = ink; c.lineWidth = 1.1; c.stroke();
+  }
+  if (S.mustache) {
+    c.beginPath(); c.moveTo(16, 16.5); c.quadraticCurveTo(13.2, 15.6, 11.6, 18.2); c.quadraticCurveTo(13.6, 17.6, 16, 18); c.quadraticCurveTo(18.4, 17.6, 20.4, 18.2); c.quadraticCurveTo(18.8, 15.6, 16, 16.5); c.closePath();
+    fillStroke(c, S.mustache, ink, 0.9);
+  }
   if (S.brows) { c.strokeStyle = S.brows; c.lineWidth = 1.5; c.beginPath(); c.moveTo(10.7, 11.9); c.lineTo(13.9, 11.5); c.moveTo(18.1, 11.1); c.lineTo(21.3, 11.5); c.stroke(); }
   if (S.earring) { circle(c, 6.9, 16, 1.2); fillStroke(c, S.earring, ink, 0.8); }
   glasses(c, S, d);
@@ -264,7 +308,10 @@ export const PEOPLE: Record<FriendId, PersonLook> = {
   andrea: { skin: '#e3b99d', hair: { style: 'quiff', color: '#1d1613', hi: '#7a6b60' }, top: '#25262c', top2: '#3a3c45', style: 'tee', pants: '#26324a', shoes: '#e9e9e9' },
   valentin: { skin: '#edc4ab', hair: { style: 'mane', color: '#7b4d33', hi: '#e6b98c' }, top: '#ddd6c6', top2: '#1c1c21', style: 'jacket', pants: '#3b3f4b', shoes: '#f3f3f3', glasses: 'green' },
   forchetta: { skin: '#e4bca1', hair: { style: 'longcurls', color: '#4f3423', hi: '#c29670' }, top: '#5d5a3e', top2: '#20263a', style: 'stripes', stripes: ['#283046', '#d6c9a8', '#6e6c43', '#8b8f93'], pants: '#22252d', shoes: '#efefef' },
-  zendavid: { skin: '#deb294', hair: { style: 'buzz', color: '#2a201b' }, top: '#837c74', top2: '#19191d', style: 'knit', pants: '#56627a', shoes: '#e9e9e9', glasses: 'round', beard: '#2a1f1a', phones: true }
+  zendavid: { skin: '#deb294', hair: { style: 'buzz', color: '#2a201b' }, top: '#837c74', top2: '#19191d', style: 'knit', pants: '#56627a', shoes: '#e9e9e9', glasses: 'round', beard: '#2a1f1a', phones: true },
+  /* long dark hair down her back, a burgundy top under a black jacket, the little gold earrings */
+  /* from her photo: black bob with a fringe, a black top, silver hoops */
+  claudia: { skin: '#dca684', hair: { style: 'long', color: '#1b1514', hi: '#5a4845' }, top: '#17161b', top2: '#2e2c35', style: 'tee', pants: '#2c3446', shoes: '#1c1d22', earring: '#cfd4da' }
 };
 /* what they wear in the story as they grow (data/people.ts): over the look of the first form */
 export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<PersonLook>]> = {
@@ -273,7 +320,8 @@ export const PEOPLE_FORMS: Record<FriendId, [Partial<PersonLook>, Partial<Person
   andrea: [{ top: '#d0702c', top2: '#9a4f1c' }, { top: '#d0702c', top2: '#25262c', style: 'jacket' }],
   valentin: [{ top: '#c9a25a', top2: '#1c1c21' }, { top: '#2f8f4e', top2: '#f4f1ea' }],
   forchetta: [{ top: '#f2f0ea', top2: '#2f8f4e', style: 'tee', stripes: undefined }, { top: '#1f5fa8', top2: '#1f5fa8', stripes: ['#1f5fa8', '#f4f1ea', '#1f5fa8', '#f4f1ea'] }],
-  zendavid: [{ top: '#1f2027', top2: '#e8a33d', style: 'jacket' }, { top: '#efe9db', top2: '#b08a3e', style: 'tee' }]
+  zendavid: [{ top: '#1f2027', top2: '#e8a33d', style: 'jacket' }, { top: '#efe9db', top2: '#b08a3e', style: 'tee' }],
+  claudia: [{ top: '#c0392b', top2: '#1f1d24', style: 'jacket' }, { top: '#f4efe2', top2: '#d9b63a', style: 'jacket' }]
 };
 /* people of Formia who are not in the squad but are somebody: Nicola Spadea, windsurf champion and instructor
    at Vindicio, tanned, sun-bleached hair, sunglasses, lycra and boardshorts, barefoot on the sand */
@@ -281,7 +329,11 @@ export const LOOKS: Record<string, PersonLook> = {
   /* at the tobacconist of Largo Paone: uncle Lele, who is bald, and the grandfather */
   lele: { skin: '#d9a585', hair: { style: 'bald', color: '#2a201b' }, top: '#3d5a80', top2: '#ffffff', style: 'tee', pants: '#2b2f3a', shoes: '#efefef', beard: '#4a3a30' },
   nonno: { skin: '#e3b99d', hair: { style: 'crown', color: '#c9ccd6' }, top: '#8a9a5b', top2: '#ffffff', style: 'jacket', pants: '#56627a', shoes: '#3b2f2a', glasses: 'round' },
-  nicola: { skin: '#c48f6c', hair: { style: 'quiff', color: '#3a2a20', hi: '#d9b17a' }, top: '#1fa3b5', top2: '#ffffff', style: 'tee', pants: '#ff8a3c', shoes: '#c48f6c', glasses: 'sun' },
+  /* Nicola Spadea, from his photo: short brown hair all tousled, a ginger moustache and stubble, a dark tee; board
+     shorts and bare feet, because he is always just back from the sea; and he is always laughing */
+  nicola: { skin: '#eab99a', hair: { style: 'messy', color: '#6b4a32', hi: '#a8794f' }, top: '#24262e', top2: '#3d4250', style: 'tee', pants: '#1f7fb5', shoes: '#eab99a', beard: '#b8683a', mustache: '#c0703a', laugh: true },
+  /* the guardaparco of Gianola: a woman in the green of the regional park, long chestnut hair, khaki trousers, boots */
+  guardaparco: { skin: '#e2b391', hair: { style: 'long', color: '#5a3a24', hi: '#a8794f' }, top: '#4f7a3c', top2: '#d9c99a', style: 'jacket', pants: '#9c8458', shoes: '#5a3d2a', earring: '#e0b44c' },
   /* Mamurra's men: grey suits, gold ties, dark glasses, as if Formia were theirs */
   mamurriano: { skin: '#e3b99d', hair: { style: 'quiff', color: '#2a201b', hi: '#6b5a4e' }, top: '#5b6170', top2: '#d9a441', style: 'jacket', pants: '#3b3f4b', shoes: '#1c1d22', glasses: 'sun' },
   /* Tullio, the rival: red hair, the green of his grandfather's park, a cocky smile */
@@ -298,4 +350,17 @@ export function townsperson(seed: number): PersonLook {
     top: tops[Math.floor(R(4) * tops.length)], top2: '#1c2340', style: R(5) < 0.5 ? 'tee' : 'hoodie', pants: ['#2b2f3a', '#56627a', '#7a5a3c', '#3b3f4b'][Math.floor(R(6) * 4)], shoes: '#efefef',
     glasses: R(8) < 0.2 ? 'round' : null
   };
+}
+
+/** the face of a person of Formia from above, big, for the scroll of the dialogue: the head and shoulders of the
+    walker facing down, as a picture (kept: one per look) */
+var shots: Record<string, string> = {};
+export function headShot(key: string): string {
+  if (shots[key] != null) return shots[key];
+  var L = LOOKS[key];
+  if (!L || typeof document === 'undefined') return (shots[key] = '');
+  var s = 4, src = walker(L, s).down[0], out = mk(T * s, 30 * s), c = out.getContext('2d')!;
+  c.drawImage(src, 0, 0, T * s, 30 * s, 0, 0, T * s, 30 * s);
+  try { shots[key] = out.toDataURL(); } catch (e) { shots[key] = ''; }
+  return shots[key];
 }

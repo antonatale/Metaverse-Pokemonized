@@ -160,6 +160,8 @@ export function available(s: BattleState, i: number): string[] {
     return true;
   });
   if (side.encore && side.encore.until >= s.turn && all.indexOf(side.encore.move) >= 0) return [side.encore.move];
+  /* Tavoli Separati: that move is at the other table for now (if it was the only one left, it stays) */
+  if (side.banned && side.banned.until >= s.turn && all.length > 1) { const k = all.indexOf(side.banned.move); if (k >= 0) all.splice(k, 1); }
   /* the player's bag, in story battles: the nets only against a wild creature */
   if (i === 0 && s.bag) BAG_IDS.forEach(function (b) { if ((s.bag![b] || 0) > 0 && (b === 'tiella' ? side.hp < side.max || !!side.status : b === 'balsamo' ? ailing(s, side) : s.wild && !netShut(s))) all.push(b); });
   return all;
@@ -168,7 +170,7 @@ export function available(s: BattleState, i: number): string[] {
 /** a legend's fight: a net holds only in its last part */
 export function netShut(s: BattleState): boolean { const x = s.sides[1]; return !!x.stages && x.stage! < x.stages.length - 1; }
 
-/** matchups depend on the characters' types; Costanzo's Personaggismo swaps his */
+/** matchups depend on the characters' types; Costanzo's Personaggiame swaps his */
 export function sideType(s: BattleState, side: Side, foe: Side): TypeName {
   if (personaOn(s, side)) return beaterOf(ch(foe).type) || ch(side).type;
   return ch(side).type;

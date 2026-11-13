@@ -132,3 +132,96 @@ div.pick { cursor: default; }
 .tt-city.on circle { fill: #ffd66b; }
 .tt-who { margin: -2px 0 0; font: 15px/1.2 var(--font-display); color: #bfe3ff; letter-spacing: .04em; }
 .tt-to { margin: 0; font: 18px/1.2 var(--font-display); color: #ffe9b8; }
+
+/* Nicola's van under way: the button that skips the drive (ui/nicola.ts) */
+.van-skip { position: absolute; z-index: 30; right: 14px; bottom: 96px; box-shadow: 0 4px 0 #1c2340; }
+/* what Nicola tells while he drives (ui/nicola.ts): a line at a time, low in the middle */
+.van-talk { position: absolute; z-index: 29; left: 50%; bottom: 150px; transform: translateX(-50%); width: min(620px, calc(100% - 32px)); padding: 10px 16px 12px;
+  border: 3px solid #1c2340; border-radius: 16px; background: #fffaf0; box-shadow: 0 5px 0 #1c2340; font: 17px/1.35 var(--font-hand, Georgia, serif); color: #1c2340; }
+.van-talk > b { display: block; margin-bottom: 2px; font: 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: #1f7fb5; }
+.van-talk.in { animation: van-talk .35s ease-out; }
+@keyframes van-talk { from { opacity: 0; transform: translate(-50%, 10px); } }
+.van-talk span b { font-weight: 800; }
+.van-talk .r-shout { font-size: 1.05em; }
+/* at sea, a little higher: clear of the pad and of the arrow over Nicola */
+.van-talk.sail-talk { bottom: 120px; font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .van-talk.in { animation: none; } }
+
+/* ---------- the scroll of the dialogue, read aloud (ui/rich.ts) ---------- */
+/* the face of whoever speaks, in a round frame in his colour, where Cicero's ghost floats */
+.wdialog.pic .wghost { bottom: auto; top: 50%; transform: translateY(-50%); width: 74px; height: 74px; }
+.wpic { display: block; width: 74px; height: 74px; border-radius: 50%; overflow: hidden; border: 3px solid var(--tc, #7a5a32);
+  background: radial-gradient(circle at 50% 38%, #fffaf0, #ecd9ab 70%); box-shadow: 2px 2px 0 #7a5a32, inset 0 0 8px rgba(122, 84, 40, .35); }
+.wpic svg { display: block; width: 100%; height: 100%; }
+.wpic img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: scale(1.35); transform-origin: 50% 35%; }
+/* names in bold: the friends in their colour, places, creatures and people of Formia in a deep red; stressed words; shouts */
+.wdialog .txt b { font-weight: 800; }
+.r-who { color: color-mix(in srgb, var(--tc) 58%, #2a1a08); }
+.r-name { color: #8a2f17; }
+.r-em { color: #241405; background: linear-gradient(transparent 62%, rgba(255, 196, 64, .55) 62%); }
+.r-shout { display: inline-block; color: #b3261e; font-size: 1.08em; letter-spacing: .02em; animation: shout .5s cubic-bezier(.2, .9, .3, 1.4) both; }
+@keyframes shout { 0% { transform: scale(1.7) rotate(-4deg); } 45% { transform: scale(.94) rotate(2deg); } 72% { transform: scale(1.05) rotate(-1deg); } 100% { transform: none; } }
+/* the scroll unrolls from the middle; a line with a shout shakes it */
+.wdialog.unroll { animation: unroll .3s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes unroll { from { transform: scaleX(.15); opacity: 0; } 60% { opacity: 1; } to { transform: none; } }
+.wdialog.loud .txt { animation: loud .42s .05s ease-out; }
+@keyframes loud { 20% { transform: translateX(-4px) rotate(-.6deg); } 40% { transform: translateX(4px) rotate(.6deg); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
+@media (prefers-reduced-motion: reduce) { .r-shout, .wdialog.unroll, .wdialog.loud .txt { animation: none; } }
+
+/* ---------- the phone: «il caminetto», the group chat of the friends (ui/chat.ts) ---------- */
+.overlay.phone-ov { align-items: center; background: rgba(10, 14, 30, .62); backdrop-filter: blur(2px); }
+.phone { position: relative; width: min(372px, calc(100vw - 24px)); height: min(720px, calc(100dvh - 24px)); padding: 11px; border-radius: 52px;
+  background: linear-gradient(145deg, #3a3d46, #121318 40%, #24262d); box-shadow: 0 0 0 2px #5b5f6b, 0 24px 60px rgba(0, 0, 0, .55), inset 0 0 3px rgba(255, 255, 255, .25);
+  animation: phoneUp .45s cubic-bezier(.2, .9, .25, 1.1); }
+.phone::before { content: ""; position: absolute; right: -4px; top: 150px; width: 4px; height: 72px; border-radius: 0 3px 3px 0; background: #2b2d34; }
+@keyframes phoneUp { from { transform: translateY(70%) rotate(4deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.ph-screen { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 42px; background: #efe7dc; font-family: var(--font-body); color: #1b1d24; }
+.ph-status { display: flex; align-items: center; justify-content: space-between; height: 38px; padding: 0 26px 0 30px; font: 700 14px/1 var(--font-body); color: #111; background: #f6f6f6; }
+.ph-island { width: 98px; height: 27px; border-radius: 16px; background: #050507; }
+.ph-sig { display: flex; align-items: flex-end; gap: 2px; font-size: 11.5px; }
+.ph-sig i { display: block; width: 3px; border-radius: 1px; background: #111; }
+.ph-sig i:nth-child(1) { height: 4px; } .ph-sig i:nth-child(2) { height: 6px; } .ph-sig i:nth-child(3) { height: 8px; } .ph-sig i:nth-child(4) { height: 10px; }
+.ph-bat { display: inline-block; width: 22px; height: 11px; margin-left: 3px; border: 1.5px solid #111; border-radius: 3px; background: linear-gradient(90deg, #111 72%, transparent 72%); background-clip: content-box; padding: 1px; }
+.ph-head { display: flex; align-items: center; gap: 9px; padding: 6px 12px 9px 6px; background: #f6f6f6; border-bottom: 1px solid #ddd; }
+.ph-back { border: 0; background: none; font: 400 34px/1 var(--font-body); color: #1a7f64; padding: 0 6px; cursor: pointer; }
+.ph-av { width: 40px; height: 40px; flex: none; }
+.ph-av svg { width: 100%; height: 100%; display: block; }
+.ph-title { display: flex; flex-direction: column; min-width: 0; }
+.ph-title b { font: 700 17px/1.2 var(--font-body); }
+.ph-title small { font-size: 12.5px; color: #6b7080; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph-chat { flex: 1; overflow-y: auto; padding: 10px 10px 14px; display: flex; flex-direction: column; gap: 3px; cursor: pointer;
+  background-color: #efe7dc; background-image: radial-gradient(rgba(150, 110, 70, .12) 1.4px, transparent 1.6px), radial-gradient(rgba(150, 110, 70, .08) 1px, transparent 1.2px);
+  background-size: 26px 26px, 13px 13px; background-position: 0 0, 6px 9px; }
+.ph-day { display: flex; justify-content: center; margin: 10px 0 6px; }
+.ph-day span { padding: 4px 11px; border-radius: 8px; background: #e1f0fb; color: #3c5566; font: 600 12px/1.3 var(--font-body); box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
+.ph-msg { display: flex; align-items: flex-end; gap: 6px; max-width: 86%; animation: msgIn .22s ease-out; }
+.ph-msg.first { margin-top: 6px; }
+.ph-msg.out { align-self: flex-end; }
+@keyframes msgIn { from { transform: translateY(8px) scale(.96); opacity: 0; } }
+.ph-face { flex: none; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; }
+.ph-msg.first .ph-face { border: 2px solid var(--tc); background: radial-gradient(circle at 50% 40%, #fffaf0, #e8dcc6); }
+.ph-face svg { width: 100%; height: 100%; display: block; }
+.ph-b { position: relative; padding: 6px 9px 6px 10px; border-radius: 4px 14px 14px 14px; background: #fff; box-shadow: 0 1px 0 rgba(0, 0, 0, .13); min-width: 0; }
+.ph-msg:not(.first) .ph-b { border-radius: 14px; }
+.ph-msg.out .ph-b { background: #d9fdd3; border-radius: 14px 4px 14px 14px; }
+.ph-name { display: block; margin-bottom: 1px; font: 700 13.5px/1.25 var(--font-body); color: color-mix(in srgb, var(--tc) 72%, #1b1d24); }
+.ph-b p { margin: 0; font-size: 16px; line-height: 1.38; overflow-wrap: anywhere; }
+.ph-b small { float: right; margin: 6px 0 -3px 10px; font-size: 11px; color: #8a8f99; }
+.ph-tick { font-style: normal; color: #34b7f1; letter-spacing: -3px; }
+.ph-msg.typing .ph-b { display: flex; gap: 4px; padding: 11px 13px; }
+.ph-msg.typing .ph-b i { width: 7px; height: 7px; border-radius: 50%; background: #9aa0aa; animation: phDot 1s infinite ease-in-out; }
+.ph-msg.typing .ph-b i:nth-child(2) { animation-delay: .15s; } .ph-msg.typing .ph-b i:nth-child(3) { animation-delay: .3s; }
+@keyframes phDot { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.ph-empty { margin: auto; padding: 20px; text-align: center; color: #6b7080; }
+.ph-foot { padding: 6px 10px 18px; background: #f6f6f6; border-top: 1px solid #ddd; }
+.ph-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+.ph-chip { flex: 1 1 auto; padding: 7px 11px; border: 1.5px solid #1a7f64; border-radius: 18px; background: #fff; color: #145c49; font: 600 14px/1.2 var(--font-body); cursor: pointer; }
+.ph-chip:disabled { opacity: .45; cursor: default; }
+.ph-chip.ph-away { flex-basis: 100%; border-color: #1b1d24; background: #1b1d24; color: #fff; }
+.ph-chip.ph-away.go { animation: phPulse 1s ease-in-out infinite; }
+@keyframes phPulse { 50% { transform: scale(1.03); } }
+.ph-input { display: flex; align-items: center; gap: 8px; }
+.ph-input span { flex: 1; padding: 8px 14px; border: 1px solid #d6d6d6; border-radius: 20px; background: #fff; color: #9aa0aa; font-size: 15px; }
+.ph-input i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #1a7f64; color: #fff; font-style: normal; font-size: 15px; }
+.wphone svg { display: block; }
+@media (prefers-reduced-motion: reduce) { .phone, .ph-msg, .ph-chip.ph-away.go, .ph-msg.typing .ph-b i { animation: none; } }

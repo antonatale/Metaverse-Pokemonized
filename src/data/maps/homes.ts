@@ -113,6 +113,33 @@ export const HOME_MAPS: Record<string, MapDef> = {
     art: [rug(6, 4, 4, 3, 'far2'), prop('trophies', 'Altre coppe. Lo scaffale non bastava.', 2, 1, 2, 1), prop('racket', 'La racchetta da tennis, con il grip appena rifatto.', 2, 5, 1, 2)],
     pets: [[2, 2, 'down'], [4, 2, 'left'], [7, 3, 'down'], [9, 4, 'left'], [3, 6, 'down'], [9, 7, 'up']]
   }),
+  /* the big table in the middle, where everybody talks (one at a time) */
+  'casa-claudia': home({
+    id: 'casa-claudia', name: 'Casa di Claudia',
+    rows: [
+      'xxxxxxxxxxxx',
+      'x5FFFF2FFFFx',
+      'xFFFFFFFkkkx',
+      'x1FFFFFFFFFx',
+      'xFFFxxFFFFFx',
+      'xFFFxxFF4FFx',
+      'xFFFFFFFFFFx',
+      'x3FFFFFFFFFx',
+      'xxxxxDDxxxxx'
+    ],
+    at: [[1, 1], [6, 1], [1, 3], [8, 0], [9, 2], [1, 7], [8, 5]],
+    text: [
+      ['Libri, tanti. Un segnalibro a metà di ognuno: li legge tutti insieme.'],
+      ['Sul tavolo, un foglio con tre nomi: «Padre, Figlio, Spirito».', 'Sotto, a matita: «Il Figlio deve ancora rispondere al vocale dello Spirito».'],
+      ['Il letto.', 'Un pisolino prima di Morgana.'],
+      ['Dalla finestra si vede la scuola Mattej, dall\'altra parte di via Palazzo, e il parchetto con gli alberi e le altalene.', 'All\'uscita della scuola, qui sotto, è tutto un vociare.'],
+      ['In frigo: una tiella di polpo da dividere. Qui si divide sempre.'],
+      ['Il giradischi, con un vinile ancora sul piatto.'],
+      ['Il divano, con due cuscini: uno per parte. Tavoli separati anche qui.']
+    ],
+    art: [rug(6, 4, 4, 3, 'shutter-b'), prop('table', 'Il tavolo grande. Ci si siede in sei, e si parla uno alla volta.', 6, 5, 2, 1), prop('plant', 'Una pianta che cresce storta verso la finestra. Nessuno la raddrizza.', 10, 7)],
+    pets: [[2, 2, 'down'], [4, 2, 'left'], [7, 3, 'down'], [9, 4, 'left'], [3, 6, 'down'], [9, 7, 'up']]
+  }),
   /* half of it is a gym */
   'casa-andrea': home({
     id: 'casa-andrea', name: 'Casa di Andrea',

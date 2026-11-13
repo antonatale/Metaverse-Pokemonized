@@ -21,6 +21,8 @@ import { WORLD } from './story-screen';
 import { castSpell, castSelf, arrive, throwNet, bagIcon, fadeOut, statShow } from './spells';
 import { cardClass, paintCard, EFF_WORD, type MoveCard } from './move-card';
 import { personScene, personSelf, personOrder } from './person-scenes';
+import { friendScene, hasFriendScene } from './friend-moves';
+import { colOf } from './spell-kit';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
 
@@ -175,7 +177,7 @@ function moveButton(b: HTMLButtonElement, i: number, m: Move) {
   }
   /* a move: a card in the colour of its magic (ui/move-card.ts, the same as on the sheet for learning a move) */
   var d: MoveCard = { name: m.name, type: creatureSide ? L.mtype || null : undefined, creature: creatureSide, tc: TC[E.sideType(S, i)], icon: L.icon, kind: m.kind,
-    power: L.power, acc: L.acc, more: L.more != null ? L.more : L.sub, left: L.left, uses: m.uses, eff: lvl, dots: L.dots };
+    power: L.power, acc: L.acc, more: L.more != null ? L.more : L.sub, left: L.left, uses: m.uses, eff: lvl, dots: L.dots, ptype: L.ptype, hits: L.hits };
   b.className = 'mv ' + cardClass(d) + (L.locked ? ' locked' : '');
   paintCard(b, d);
 }
@@ -195,7 +197,7 @@ function renderPad(i: number) {
   row.hidden = !(shelf || sw || res);
   if (row.hidden) { row.innerHTML = ''; return; }
   row.innerHTML = (shelf ? '<span class="bag-h">' + ico('ball') + 'Borsa</span>' + (bag.length ? bag.map(function (m) { return '<button class="mv bag" type="button"></button>'; }).join('') :
-    '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto al guardaparco.</span>') : '') +
+    '<span class="bag-none">Nessun retino nella borsa: li vende il retaio di Gianola, accanto alla guardaparco.</span>') : '') +
     (sw ? '<button class="mv swap" type="button" id="sw-btn"' + (padOn ? '' : ' disabled') + '><b>Cambia</b><small>' + esc(E.changeText(S, i).button) + '</small></button>' : '') +
     (res ? '<button class="mv swap res' + (resArmed ? ' armed' : '') + '" type="button" id="res-btn" aria-pressed="' + resArmed + '"' + (padOn ? '' : ' disabled') + '><b>Risonanza</b><small>' + esc(resArmed ? E.resonanceText(S).armed : E.resonanceText(S).button) + '</small></button>' : '');
   each(row.querySelectorAll<HTMLButtonElement>('.mv.bag'), function (b, k) { moveButton(b, i, bag[k]); });
@@ -301,12 +303,40 @@ function outcomeHeld(evs: BattleEvent[], n: number): boolean {
 }
 /** a spell comes right after this line (an expression in between does not count) */
 function spellNext(evs: BattleEvent[], n: number): boolean {
-  for (var k = n; k < evs.length && k < n + 3; k++) { var e = evs[k]; if (e.k === 'expr') continue; return e.k === 'anim' && (e.a === 'magic' || e.a === 'magicUp'); }
+  for (var k = n; k < evs.length && k < n + 3; k++) { var e = evs[k]; if (e.k === 'expr') continue; return e.k === 'anim' && (e.a === 'magic' || e.a === 'magicUp' || (e.a === 'act' && hasFriendScene(e.move || ''))); }
   return false;
 }
 /** the side that has just cast a spell: its lunge after a miss is already in the show */
 let lastSpell = -1;
+/* a friend's move with a scene of its own (ui/friend-moves.ts): while it lasts, the little signs it already draws are
+   not shown again (the robot, the fox, the ball, the bubbles, the lunge); what it leaves for each blow (La Trinità) */
+var acting: { who: number; id: string; beforeHit?: (n: number) => Promise<void>; hits: number } | null = null;
+const ACT_SIGNS = ['reveal', 'robot', 'banner', 'speech', 'glint', 'pump', 'confetti', 'glowGreen', 'ball', 'cryptic', 'bark', 'notes', 'fox', 'phOn', 'lunge'];
+function actEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], next: number): Promise<unknown> {
+  var i = ev.who, j = 1 - i, id = ev.move || '', m = moveOf(i, id);
+  acting = null;
+  if (reduced || !S || isSpecies(S.sides[i].id) || !m || !hasFriendScene(id)) return Promise.resolve();
+  /* what comes next in this move: a hit or a miss, the signs, the words */
+  var o = outcomeOf(evs, next, j), signs: string[] = [], texts: string[] = [];
+  for (var k = next; k < evs.length; k++) {
+    var e = evs[k];
+    if (e.k === 'sync' || (e.k === 'anim' && (e.a === 'act' || e.a === 'magic' || e.a === 'magicUp'))) break;
+    if (e.k === 'anim') signs.push(e.a);
+    else if (e.k === 'say' || e.k === 'line') texts.push(e.text);
+    if (o.outcome === 'none' && e.k === 'hp' && e.who === j && e.dmg) o = { outcome: 'hit', crit: !!e.crit, lvl: E.effLevel(e.eff == null ? 1 : e.eff) };
+  }
+  var t = E.sideType(S, i) as TypeName, L = E.moveLabel(S, i, id);
+  var shown = friendScene({ from: i, to: j, id: id, name: m.name, kind: m.kind, power: L.power || m.power || 0, t: t, col: colOf(t), outcome: o.outcome, crit: o.crit, lvl: o.lvl, signs: signs, texts: texts });
+  acting = { who: i, id: id, beforeHit: shown.beforeHit, hits: 0 };
+  return shown.done;
+}
 function animEvent(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], next: number): Promise<unknown> {
+  if (ev.a === 'act') return actEvent(ev, evs, next);
+  if (acting && ((ev.who === acting.who && ACT_SIGNS.indexOf(ev.a) >= 0) || (ev.a === 'reveal' && ev.who !== acting.who))) {
+    /* the headphones stay on the drawing; the rest the scene has shown already */
+    if (ev.a === 'phOn') { var hp = battle.querySelector('#w-' + ev.who + ' .spr-p'); if (hp) hp.setAttribute('data-ph', 'on'); }
+    return Promise.resolve();
+  }
   /* a person's move: its scene (ui/person-scenes.ts), then the little sign it always had (not the ones the scene is) */
   var ps = personScene(ev) || (S && S.sides[ev.who] && !isSpecies(S.sides[ev.who].id) ? personSelf(ev, fighter(S.sides[ev.who].id).type) : null);
   if (!ps) return animSign(ev, evs, next);
@@ -416,7 +446,10 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
     case 'line': return say(ev.text, ev.who);
     case 'expr': setExpr(ev.who, ev.v); return Promise.resolve();
     case 'anim': return safeShow(function () { return animEvent(ev, evs, next); }, ev.a);
-    case 'hp': return hpEvent(ev);
+    case 'hp':
+      /* a blow of a friend's scene that hits more than once: each one is drawn as it lands */
+      if (acting && acting.beforeHit && ev.who !== acting.who && ev.dmg) { var bh = acting.beforeHit; return bh(acting.hits++).then(function () { return hpEvent(ev); }); }
+      return hpEvent(ev);
     case 'sync': renderSync(ev); return Promise.resolve();
     case 'swap': swapEvent(ev); return Promise.resolve();
     default: return Promise.resolve();
@@ -431,6 +464,7 @@ function play(evs: BattleEvent[], my: number): Promise<unknown> {
     if (n >= evs.length) return Promise.resolve();
     var ev = evs[n++];
     if (ev.k !== 'anim') lastSpell = ev.k === 'say' || ev.k === 'expr' ? lastSpell : -1;
+    if (ev.k === 'sync' || ev.k === 'swap') acting = null;
     return stepEvent(ev, evs, n).then(next);
   }
   return next();

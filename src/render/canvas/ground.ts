@@ -29,6 +29,13 @@ function noise1(u: number, row: number, k: number): number {
   var i = Math.floor(u), f = u - i, a = hash(i, row, k), b = hash(i + 1, row, k);
   return a + (b - a) * f * f * (3 - 2 * f);
 }
+/** a slow noise over the whole map, 0–1, on cells of s tiles: where the grass grows thick, where it flowers */
+function noise2(x: number, y: number, s: number, k: number): number {
+  var u = x / s, v = y / s, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+  fu = fu * fu * (3 - 2 * fu); fv = fv * fv * (3 - 2 * fv);
+  var a = hash(i, j, k), b = hash(i + 1, j, k), c0 = hash(i, j + 1, k), d = hash(i + 1, j + 1, k);
+  return (a + (b - a) * fu) * (1 - fv) + (c0 + (d - c0) * fu) * fv;
+}
 /** a little wave, "~", centred on x, y */
 function wave(c: Ctx, x: number, y: number, w: number) {
   c.beginPath(); c.moveTo(x - w, y); c.quadraticCurveTo(x - w / 2, y - 3, x, y); c.quadraticCurveTo(x + w / 2, y + 3, x + w, y); c.stroke();
@@ -45,27 +52,60 @@ function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
   var L = map.cell(x, y), X = x * T, Y = y * T, r = hash(x, y, 1), g = GROUP[L.g], k, dx, dy, q, u;
   c.save(); c.beginPath(); c.rect(X, Y, T, T); c.clip();
   if (L.g === 'grass' || L.g === 'hill') {
-    /* darker patches, shared with the tiles around */
-    c.fillStyle = L.g === 'grass' ? P.grass2 : P.hill2; c.globalAlpha = 0.14;
+    /* the meadow is never one flat green: patches darker and lighter, shared with the tiles around so that no square
+       shows, larger where the map's slow noise says the grass grows thicker */
+    var dark = L.g === 'grass' ? P.grass2 : P.hill2, light = L.g === 'grass' ? P['grass-hi'] : P.grass;
     for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) {
       q = x + dx; u = y + dy;
-      if (!same(map, q, u, g) || hash(q, u, 3) > 0.45) continue;
-      ell(c, q * T + 6 + hash(q, u, 4) * 20, u * T + 6 + hash(q, u, 5) * 20, 12 + hash(q, u, 6) * 12, 9 + hash(q, u, 7) * 9); c.fill();
+      if (!same(map, q, u, g)) continue;
+      var hq = hash(q, u, 3), thick = noise2(q, u, 5, 71);
+      if (hq < 0.3 + thick * 0.25) {
+        c.fillStyle = dark; c.globalAlpha = 0.16 + thick * 0.14;
+        ell(c, q * T + 4 + hash(q, u, 4) * 24, u * T + 4 + hash(q, u, 5) * 24, 15 + hash(q, u, 6) * 14, 10 + hash(q, u, 7) * 10); c.fill();
+      } else if (hq > 0.78 - (1 - thick) * 0.2) {
+        c.fillStyle = light; c.globalAlpha = 0.5;
+        ell(c, q * T + 4 + hash(q, u, 74) * 24, u * T + 4 + hash(q, u, 75) * 24, 10 + hash(q, u, 76) * 10, 6 + hash(q, u, 77) * 6); c.fill();
+      }
     }
     c.globalAlpha = 1;
   }
   if (L.g === 'grass') {
-    c.strokeStyle = P.grass2; c.lineWidth = 1.4;
-    for (k = 0; k < 3; k++) {
-      var gx = X + 5 + hash(x, y, 10 + k) * 22, gy = Y + 8 + hash(x, y, 20 + k) * 18;
-      c.beginPath(); c.moveTo(gx - 3, gy + 2); c.lineTo(gx - 1, gy - 2); c.moveTo(gx, gy + 2); c.lineTo(gx + 1, gy - 3); c.moveTo(gx + 3, gy + 2); c.lineTo(gx + 3.5, gy - 1.5); c.stroke();
+    /* tufts of blades, each curved its own way: deep green, with a light one catching the sun; more of them where the
+       meadow is thick. Their foot is in the tile, their tips may run over its edge into the next */
+    /* the grain of the lawn: a stipple of darker green */
+    c.fillStyle = P.grass2; c.globalAlpha = 0.55;
+    for (k = 0; k < 7; k++) { c.fillRect(X + 1 + hash(x, y, 200 + k) * 30, Y + 1 + hash(x, y, 210 + k) * 30, 1.2, 1.2); }
+    c.globalAlpha = 1;
+    var dense = noise2(x, y, 4, 72), tufts = 2 + Math.floor(dense * 3.4 + hash(x, y, 13) * 1.2);
+    for (k = 0; k < tufts; k++) {
+      var gx = X + 4 + hash(x, y, 10 + k) * 24, gy = Y + 9 + hash(x, y, 20 + k) * 20, blades = 3 + Math.floor(hash(x, y, 30 + k) * 3), lean = (hash(x, y, 40 + k) - 0.5) * 3;
+      c.globalAlpha = 0.35; c.fillStyle = P.grass2; ell(c, gx, gy + 0.6, 3.6, 1.2); c.fill(); c.globalAlpha = 1;
+      for (var bl = 0; bl < blades; bl++) {
+        var off = (bl - (blades - 1) / 2) * 1.7, len = 4 + hash(x + bl, y, 50 + k) * 4.5 - Math.abs(off) * 0.4, tip = off * 1.3 + lean;
+        c.strokeStyle = bl === 1 && hash(x, y, 60 + k) < 0.5 ? P['grass-hi'] : P.grass3; c.lineWidth = bl === 1 ? 1.5 : 1.25;
+        c.beginPath(); c.moveTo(gx + off * 0.5, gy); c.quadraticCurveTo(gx + off * 0.7, gy - len * 0.6, gx + tip, gy - len); c.stroke();
+      }
     }
-    /* now and then a little flower in the grass */
-    if (hash(x, y, 8) < 0.07) {
-      var fx = X + 7 + hash(x, y, 9) * 18, fy = Y + 7 + hash(x, y, 11) * 18;
-      c.fillStyle = hash(x, y, 12) < 0.5 ? P['flower-a'] : P['flower-b'];
-      for (k = 0; k < 4; k++) { circle(c, fx + Math.cos(k * 1.571) * 2, fy + Math.sin(k * 1.571) * 2, 1.6); c.fill(); }
-      circle(c, fx, fy, 1.1); c.fillStyle = P.foam; c.fill();
+    /* a clover, a pebble */
+    if (hash(x, y, 14) < 0.1) {
+      var cx0 = X + 6 + hash(x, y, 15) * 20, cy0 = Y + 6 + hash(x, y, 16) * 20;
+      c.fillStyle = P.grass3; for (k = 0; k < 3; k++) { circle(c, cx0 + Math.cos(k * 2.094 - 1.57) * 1.9, cy0 + Math.sin(k * 2.094 - 1.57) * 1.9, 1.7); c.fill(); }
+    } else if (hash(x, y, 17) < 0.07) {
+      c.fillStyle = P.stone2; ell(c, X + 6 + hash(x, y, 18) * 20, Y + 8 + hash(x, y, 19) * 18, 2.2, 1.5); c.fill();
+    }
+    /* the flowers come in meadows, where the slow noise says so; only now and then one alone elsewhere */
+    var bloom = noise2(x, y, 7, 73), nf = bloom > 0.64 ? 1 + Math.floor((bloom - 0.64) * 9 * hash(x, y, 21)) : hash(x, y, 8) < 0.04 ? 1 : 0;
+    for (k = 0; k < Math.min(3, nf); k++) {
+      var fx = X + 5 + hash(x, y, 9 + k * 7) * 22, fy = Y + 5 + hash(x, y, 11 + k * 7) * 22, kind = hash(x, y, 12 + k * 7);
+      if (kind < 0.55) {
+        /* a daisy */
+        c.fillStyle = '#ffffff'; for (q = 0; q < 6; q++) { ell(c, fx + Math.cos(q * 1.047) * 2.1, fy + Math.sin(q * 1.047) * 2.1, 1.3, 1.3); c.fill(); }
+        circle(c, fx, fy, 1.1); c.fillStyle = '#ffd166'; c.fill();
+      } else {
+        c.fillStyle = kind < 0.8 ? P['flower-b'] : P['flower-a'];
+        for (q = 0; q < 4; q++) { circle(c, fx + Math.cos(q * 1.571) * 1.8, fy + Math.sin(q * 1.571) * 1.8, 1.4); c.fill(); }
+        circle(c, fx, fy, 0.9); c.fillStyle = P.foam; c.fill();
+      }
     }
   } else if (L.g === 'path') {
     c.strokeStyle = P.path2; c.lineWidth = 1.2;
@@ -437,14 +477,47 @@ const DECO: Record<string, DecoFn> = {
       fillStroke(c, k % 3 ? P.hedge : P.leaf2, P.ink, 1.2);
     }
   },
-  /* rock pools between low rocks on the beach: sea urchins and little crabs hide in them */
+  /* the scogli of the beach, where the wild creatures of the sea hide: slabs of grey limestone, flat on top and dark
+     on their south side, with the pools of sea water between them, an urchin, a starfish, now and then a little crab */
   pools: function (c, X, Y, P, x, y) {
-    var r = hash(x, y, 150) * 6;
-    ell(c, X + 13 + r, Y + 17, 8, 5); fillStroke(c, P.sea, P.ink, 1.2);
-    c.fillStyle = P.sea2; ell(c, X + 12 + r, Y + 16, 4, 1.4); c.fill();
-    [[4, 7, 3.6], [26, 9, 3], [24, 26, 4], [6, 26, 2.8]].forEach(function (q) { ell(c, X + q[0], Y + q[1], q[2], q[2] * 0.75); fillStroke(c, P.rock, P.ink, 1.1); });
-    c.strokeStyle = P.leaf2; c.lineWidth = 1.6;
-    c.beginPath(); c.moveTo(X + 17 + r, Y + 21); c.quadraticCurveTo(X + 14 + r, Y + 18, X + 18 + r, Y + 13); c.stroke();
+    var h = function (k: number) { return hash(x, y, 400 + k); };
+    /* the pool first, low between the rocks */
+    var px = X + 10 + h(1) * 12, py = Y + 13 + h(2) * 8, pr = 6 + h(3) * 3;
+    ell(c, px, py, pr + 1.5, pr * 0.62 + 1.5); fillStroke(c, P.sand2, P.ink, 1.1);
+    ell(c, px, py, pr, pr * 0.62); c.fillStyle = P.sea; c.fill();
+    c.fillStyle = P.sea2; ell(c, px - 1, py + 1, pr * 0.6, pr * 0.3); c.fill();
+    c.strokeStyle = P.foam; c.lineWidth = 1; c.beginPath(); c.ellipse(px, py, pr - 1.2, pr * 0.62 - 1.2, 0, Math.PI * 1.1, Math.PI * 1.7); c.stroke();
+    var life = h(4);
+    if (life < 0.35) {
+      /* an urchin */
+      c.strokeStyle = P.ink; c.lineWidth = 0.9;
+      for (var k = 0; k < 8; k++) { var a = k * 0.785; c.beginPath(); c.moveTo(px + 1, py); c.lineTo(px + 1 + Math.cos(a) * 3.4, py + Math.sin(a) * 2.6); c.stroke(); }
+      circle(c, px + 1, py, 1.9); fillStroke(c, '#3b2d4d', P.ink, 0.8);
+    } else if (life < 0.6) {
+      /* a starfish */
+      c.beginPath();
+      for (k = 0; k < 10; k++) { var ra = k % 2 ? 1.3 : 3.4, aa = -1.571 + k * 0.628; c.lineTo(px + Math.cos(aa) * ra, py + Math.sin(aa) * ra * 0.8); }
+      c.closePath(); fillStroke(c, '#ff8a5c', P.ink, 0.9);
+    } else if (life < 0.7) {
+      /* a little crab, sideways */
+      ell(c, px, py, 2.6, 1.8); fillStroke(c, '#e5533d', P.ink, 0.9);
+      c.strokeStyle = P.ink; c.lineWidth = 0.8; c.beginPath(); c.moveTo(px - 2.4, py - 1); c.lineTo(px - 4, py - 3); c.moveTo(px + 2.4, py - 1); c.lineTo(px + 4, py - 3); c.stroke();
+    }
+    /* the slabs round it: flat tops, the shadow of their south face, cracks; seaweed where the water reaches */
+    var slabs = [[5 + h(5) * 3, 7 + h(6) * 3, 7 + h(7) * 2.5], [26 + h(8) * 2, 9 + h(9) * 4, 6.5 + h(10) * 2.5], [18 + h(11) * 5, 27 + h(12) * 2, 7 + h(13) * 2]].concat(h(14) < 0.5 ? [[4 + h(15) * 3, 25, 4.5 + h(16) * 1.5]] : []);
+    slabs.forEach(function (sl, q) {
+      var sx = X + sl[0], sy = Y + sl[1], sr = sl[2];
+      var outline = function () {
+        c.beginPath();
+        for (var v = 0; v < 7; v++) { var av = v / 7 * Math.PI * 2, rv = sr * (0.8 + hash(x * 7 + q, y * 3 + v, 410) * 0.35); c.lineTo(sx + Math.cos(av) * rv * 1.25, sy + Math.sin(av) * rv * 0.85); }
+        c.closePath();
+      };
+      c.fillStyle = P.rock2; c.save(); c.translate(0, 2.2); outline(); c.restore(); c.fill();
+      outline(); fillStroke(c, P.rock, P.ink, 1.2);
+      c.fillStyle = '#ffffff'; c.globalAlpha = 0.3; ell(c, sx - sr * 0.3, sy - sr * 0.3, sr * 0.55, sr * 0.3); c.fill(); c.globalAlpha = 1;
+      c.strokeStyle = P.rock3; c.lineWidth = 0.9; c.beginPath(); c.moveTo(sx - sr * 0.2, sy - sr * 0.5); c.lineTo(sx + sr * 0.1, sy + sr * 0.1); c.lineTo(sx + sr * 0.5, sy + sr * 0.3); c.stroke();
+      if (hash(x, y, 420 + q) < 0.4) { c.strokeStyle = P.weed; c.lineWidth = 1.4; c.beginPath(); c.moveTo(sx - sr * 0.6, sy + sr * 0.75); c.quadraticCurveTo(sx - sr * 0.3, sy + sr * 0.3, sx - sr * 0.8, sy + sr * 0.1); c.stroke(); }
+    });
   },
   flowers: function (c, X, Y, P, x, y) {
     for (var k = 0; k < 3; k++) {
@@ -452,6 +525,52 @@ const DECO: Record<string, DecoFn> = {
       for (var a = 0; a < 5; a++) { circle(c, fx + Math.cos(a * 1.256) * 2.4, fy + Math.sin(a * 1.256) * 2.4, 1.7); c.fillStyle = col; c.fill(); }
       circle(c, fx, fy, 1.2); c.fillStyle = '#fff3a0'; c.fill();
     }
+  },
+  /* the railing of Parco la Fontana: iron bars with spear tips on a low stone kerb, joined to the next piece of it
+     (seen edge on where it runs down the map) */
+  fence: function (c, X, Y, P, x, y, map) {
+    var is = function (a: number, b: number) { var d = map.cell(a, b).deco; return d === 'fence' || d === 'gate'; };
+    var down = is(x, y - 1) || is(x, y + 1), across = is(x - 1, y) || is(x + 1, y) || !down, k: number;
+    /* a piece alone, between two palazzi, runs across from one to the other */
+    if (down) {
+      var y0 = is(x, y - 1) ? Y : Y + 8, y1 = is(x, y + 1) ? Y + T : Y + 24;
+      rr(c, X + 12, y0, 8, y1 - y0, 1.5); fillStroke(c, P.stone, P.ink, 1.2);
+      c.strokeStyle = P.ink; c.lineWidth = 1.6;
+      for (k = y0 + 3; k < y1; k += 6) { c.beginPath(); c.moveTo(X + 16, k + 2); c.lineTo(X + 16, k - 6); c.stroke(); }
+      c.lineWidth = 1; c.beginPath(); c.moveTo(X + 16, y0 - 4); c.lineTo(X + 16, y1 - 4); c.stroke();
+    }
+    if (across) {
+      var x0 = is(x - 1, y) || !down ? X : X + 12, x1 = is(x + 1, y) || !down ? X + T : X + 20;
+      c.strokeStyle = P.ink; c.lineWidth = 1.4;
+      for (k = x0 + 2; k < x1; k += 4) { c.beginPath(); c.moveTo(k, Y + 21); c.lineTo(k, Y + 6); c.stroke(); poly(c, [[k - 1.6, Y + 6.5], [k, Y + 3], [k + 1.6, Y + 6.5]]); c.fillStyle = P.ink; c.fill(); }
+      c.lineWidth = 1.2; c.beginPath(); c.moveTo(x0, Y + 9); c.lineTo(x1, Y + 9); c.moveTo(x0, Y + 17); c.lineTo(x1, Y + 17); c.stroke();
+      rr(c, x0, Y + 20, x1 - x0, 6, 1.5); fillStroke(c, P.stone, P.ink, 1.2);
+    }
+  },
+  /* a locked gate of the park: two leaves of bars between stone pillars, the chain and the padlock in the middle */
+  gate: function (c, X, Y, P, x, y, map) {
+    var is = function (a: number, b: number) { var d = map.cell(a, b).deco; return d === 'fence' || d === 'gate'; };
+    var down = (is(x, y - 1) || is(x, y + 1)) && !(is(x - 1, y) || is(x + 1, y)), k: number;
+    if (down) {
+      [Y + 1, Y + T - 9].forEach(function (py) { rr(c, X + 10, py, 12, 8, 1.5); fillStroke(c, P.stone, P.ink, 1.3); });
+      c.strokeStyle = P.ink; c.lineWidth = 1.3;
+      for (k = Y + 11; k < Y + T - 10; k += 3) { c.beginPath(); c.moveTo(X + 13, k); c.lineTo(X + 19, k); c.stroke(); }
+      c.beginPath(); c.moveTo(X + 16, Y + 9); c.lineTo(X + 16, Y + T - 9); c.stroke();
+    } else {
+      [X, X + T - 6].forEach(function (px) { rr(c, px, Y + 2, 6, 24, 1.5); fillStroke(c, P.stone, P.ink, 1.3); rr(c, px - 1, Y + 1, 8, 4, 1); fillStroke(c, P.stone2, P.ink, 1); });
+      c.strokeStyle = P.ink; c.lineWidth = 1.4;
+      for (k = X + 8; k < X + T - 7; k += 3.2) { c.beginPath(); c.moveTo(k, Y + 24); c.lineTo(k, Y + 7); c.stroke(); }
+      c.beginPath(); c.moveTo(X + 6, Y + 8); c.quadraticCurveTo(X + T / 2, Y + 3, X + T - 6, Y + 8); c.moveTo(X + 6, Y + 18); c.lineTo(X + T - 6, Y + 18); c.stroke();
+    }
+    /* the chain and the padlock */
+    c.strokeStyle = P.chrome; c.lineWidth = 1.6; c.beginPath(); c.moveTo(X + 11, Y + 13); c.quadraticCurveTo(X + 16, Y + 18, X + 21, Y + 13); c.stroke();
+    rr(c, X + 13, Y + 15, 6, 6, 1.2); fillStroke(c, '#ffd166', P.ink, 1);
+  },
+  /* the back door of Antonio's flat: a door in the wall on the left, the mat in front of it */
+  backdoor: function (c, X, Y, P) {
+    rr(c, X + 1, Y + 1, 7, T - 4, 1.5); fillStroke(c, P.wood2, P.ink, 1.4);
+    circle(c, X + 6, Y + T / 2, 1.1); c.fillStyle = P.ink; c.fill();
+    rr(c, X + 9, Y + 9, T - 14, 13, 3); fillStroke(c, P['roof-a'], P.ink, 1.2);
   },
   hedge: function (c, X, Y, P) {
     rr(c, X + 1, Y + 3, T - 2, T - 5, 9); fillStroke(c, P.hedge, P.ink, 1.6);
@@ -526,15 +645,67 @@ const DECO: Record<string, DecoFn> = {
   mat: function (c, X, Y, P) {
     rr(c, X + 4, Y + 10, T - 8, 14, 3); fillStroke(c, P['roof-a'], P.ink, 1.4);
   },
-  rocks: function (c, X, Y, P, x, y) {
-    var n = 2 + Math.floor(hash(x, y, 130) * 2);
-    for (var k = 0; k < n; k++) {
-      var rx = X + 7 + hash(x, y, 131 + k) * 18, ry = Y + 10 + hash(x, y, 141 + k) * 14, s1 = 4 + hash(x, y, 151 + k) * 4;
-      c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.arc(rx, ry + 1, s1 + 3, 0.25, Math.PI - 0.25); c.stroke();
-      c.beginPath(); c.moveTo(rx - s1, ry + 2); c.quadraticCurveTo(rx - s1, ry - s1, rx, ry - s1); c.quadraticCurveTo(rx + s1 + 1, ry - s1 + 1, rx + s1, ry + 2); c.closePath();
-      fillStroke(c, P.rock, P.ink, 1.4);
-      c.strokeStyle = P.rock2; c.lineWidth = 1; c.beginPath(); c.moveTo(rx - s1 * 0.3, ry - s1 * 0.6); c.lineTo(rx + s1 * 0.2, ry); c.stroke();
+  /* the scogli: a mass of grey limestone that joins the next one into a reef, cut by cracks, its south face in shadow,
+     the wet dark band and the seaweed at the waterline, barnacles, and the white of the foam all round where the sea
+     touches it */
+  rocks: function (c, X, Y, P, x, y, map) {
+    var is = function (a: number, b: number) { return a >= 0 && b >= 0 && a < map.w && b < map.h && map.cell(a, b).deco === 'rocks'; };
+    var n = is(x, y - 1), so = is(x, y + 1), w = is(x - 1, y), e = is(x + 1, y), h = function (k: number) { return hash(x, y, 300 + k); };
+    var l = X + (w ? -3 : 3 + h(1) * 4), r = X + T + (e ? 3 : -3 - h(2) * 4), t = Y + (n ? -4 : 5 + h(3) * 4), b = Y + T + (so ? 2 : -4 - h(4) * 3);
+    /* the outline: along each side, jagged where the sea is, straight where the reef goes on */
+    var pts: number[][] = [], side = function (x0: number, y0: number, x1: number, y1: number, wet: boolean, k: number) {
+      for (var q = 0; q < 4; q++) {
+        var f = q / 4, px = x0 + (x1 - x0) * f, py = y0 + (y1 - y0) * f, jit = wet && q ? (h(k + q) - 0.5) * 6 : 0;
+        pts.push([px + (y1 - y0 ? jit : 0), py + (x1 - x0 ? jit : 0)]);
+      }
+    };
+    side(l, t, r, t, !n, 10); side(r, t, r, b, !e, 20); side(r, b, l, b, !so, 30); side(l, b, l, t, !w, 40);
+    var path = function () {
+      c.beginPath();
+      var m0 = [(pts[0][0] + pts[pts.length - 1][0]) / 2, (pts[0][1] + pts[pts.length - 1][1]) / 2];
+      c.moveTo(m0[0], m0[1]);
+      for (var q = 0; q < pts.length; q++) { var p0 = pts[q], p1 = pts[(q + 1) % pts.length]; c.quadraticCurveTo(p0[0], p0[1], (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2); }
+      c.closePath();
+    };
+    /* the foam where the sea breaks on it, and a few drops of spray */
+    if (!(n && so && w && e)) {
+      path(); c.strokeStyle = P.foam; c.globalAlpha = 0.75; c.lineWidth = 6; c.stroke(); c.globalAlpha = 1;
+      c.fillStyle = P.foam;
+      for (var k = 0; k < 3; k++) if (h(50 + k) < 0.6) { circle(c, X + 3 + h(55 + k) * 26, so ? Y + 2 + h(58 + k) * 6 : Y + T - 2 - h(58 + k) * 3, 1 + h(61 + k)); c.fill(); }
     }
+    path(); fillStroke(c, P.rock, P.ink, 1.5);
+    c.save(); path(); c.clip();
+    /* the south face in shadow, the wet band and the seaweed at the waterline */
+    if (!so) {
+      c.fillStyle = P.rock2; c.fillRect(X - 4, b - 9, T + 8, 12);
+      c.fillStyle = P.rock3; c.globalAlpha = 0.55; c.fillRect(X - 4, b - 3.5, T + 8, 5); c.globalAlpha = 1;
+      c.strokeStyle = P.weed; c.lineWidth = 1.6;
+      for (k = 0; k < 4; k++) { var wx = l + 3 + h(70 + k) * (r - l - 6); c.beginPath(); c.moveTo(wx, b + 1); c.quadraticCurveTo(wx + 2, b - 3, wx - 1, b - 5 - h(75 + k) * 2); c.stroke(); }
+    }
+    /* lighter facets on top, as the sun takes the stone */
+    c.fillStyle = '#ffffff'; c.globalAlpha = 0.28;
+    poly(c, [[l + 4 + h(80) * 6, t + 3], [l + 14 + h(81) * 6, t + 2], [l + 16 + h(82) * 4, t + 10 + h(83) * 4], [l + 5, t + 11]]); c.fill();
+    if (h(84) < 0.6) { poly(c, [[r - 12, t + 6 + h(85) * 4], [r - 4, t + 5], [r - 5, t + 13], [r - 13, t + 14]]); c.fill(); }
+    c.globalAlpha = 1;
+    /* cracks, the pits of the limestone, barnacles */
+    c.strokeStyle = P.rock3; c.lineWidth = 1;
+    c.beginPath(); var cx0 = l + 6 + h(90) * (r - l - 12), cy0 = t + 3;
+    c.moveTo(cx0, cy0); c.lineTo(cx0 + (h(91) - 0.5) * 6, cy0 + 7); c.lineTo(cx0 + (h(92) - 0.5) * 10, cy0 + 14); c.stroke();
+    if (h(93) < 0.5) { c.beginPath(); c.moveTo(r - 3, t + 12 + h(94) * 5); c.lineTo(r - 9 - h(95) * 4, t + 16 + h(96) * 3); c.stroke(); }
+    c.fillStyle = P.rock3; c.globalAlpha = 0.45;
+    for (k = 0; k < 4; k++) { circle(c, l + 4 + h(100 + k) * (r - l - 8), t + 4 + h(105 + k) * (b - t - 14), 0.9 + h(110 + k) * 0.8); c.fill(); }
+    c.globalAlpha = 1;
+    if (!so) { c.fillStyle = P.stone; for (k = 0; k < 3; k++) { circle(c, l + 5 + h(120 + k) * (r - l - 10), b - 6 - h(125 + k) * 2, 1.1); c.fill(); } }
+    c.restore();
+  },
+  /* a parking bay of Largo Paone: the white lines between the bays, and across their far end */
+  stall: function (c, X, Y, P, x, y, map) {
+    var st = function (a: number, b: number) { return map.cell(a, b).deco === 'stall'; };
+    c.fillStyle = P.line; c.globalAlpha = 0.85;
+    c.fillRect(X, Y + (st(x, y - 1) ? 0 : 2), 1.6, T - (st(x, y - 1) ? 0 : 2) - (st(x, y + 1) ? 0 : 2));
+    if (!st(x + 1, y)) c.fillRect(X + T - 1.6, Y + 2, 1.6, T - 4);
+    if (st(x, y - 1)) c.fillRect(X, Y - 0.8, T, 1.6);
+    c.globalAlpha = 1;
   },
   zebra: function (c, X, Y, P) {
     c.fillStyle = P.line;
@@ -642,6 +813,16 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
       c.strokeStyle = P.ink; c.lineWidth = 4; c.beginPath(); c.moveTo(-w / 2 + 12, 0); c.lineTo(w / 2 - 12, 0); c.stroke();
       c.strokeStyle = P.chrome; c.lineWidth = 2; c.beginPath(); c.moveTo(-w / 2 + 14, 0); c.lineTo(w / 2 - 14, 0); c.stroke();
       [-1, 1].forEach(function (d) { rr(c, d * (w / 2 - 12) - 5, -11, 10, 22, 3); fillStroke(c, P.case, P.ink, 1.5); rr(c, d * (w / 2 - 20) - 3, -8, 6, 16, 2); fillStroke(c, P.case2, P.ink, 1.2); });
+    } else if (o.text === 'table') {
+      /* a long table, three glasses and a vinyl sleeve: the Trinità sits here */
+      rr(c, -w / 2 + 3, -10, w - 6, 18, 4); fillStroke(c, P.wood, P.ink, 1.6);
+      c.strokeStyle = P.wood2; c.lineWidth = 1; c.beginPath(); c.moveTo(-w / 2 + 7, -4); c.lineTo(w / 2 - 7, -4); c.moveTo(-w / 2 + 7, 2); c.lineTo(w / 2 - 7, 2); c.stroke();
+      [-1, 0, 1].forEach(function (d) { var x = d * (w / 2 - 14); rr(c, x - 3, -9, 6, 8, 1.5); fillStroke(c, P.far, P.ink, 1); c.fillStyle = P.beam; c.globalAlpha = 0.8; c.fillRect(x - 2, -5, 4, 3); c.globalAlpha = 1; });
+      rr(c, -6, -1, 12, 8, 1); fillStroke(c, P.tail, P.ink, 1); circle(c, 0, 3, 2.4); fillStroke(c, P.tyre, P.ink, 0.8);
+    } else if (o.text === 'plant') {
+      rr(c, -6, 2, 12, 10, 2); fillStroke(c, P['roof-a'], P.ink, 1.4);
+      c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(0, 3); c.quadraticCurveTo(2, -6, 7, -12); c.stroke();
+      [[-4, -3, -0.6], [5, -7, 0.5], [2, -12, -0.3], [8, -13, 0.9], [-1, -8, -1]].forEach(function (l) { c.save(); c.translate(l[0], l[1]); c.rotate(l[2]); ell(c, 0, 0, 5, 2.6); fillStroke(c, P.grass2 || '#5f9a4f', P.ink, 1); c.restore(); });
     } else {
       /* papers: a few sheets, askew */
       [-0.2, 0.12].forEach(function (a, i) { c.save(); c.rotate(a); rr(c, -11 + i * 3, -9 + i * 2, 20, 16, 1); fillStroke(c, P.paper, P.ink, 1.1); c.strokeStyle = P.ink; c.globalAlpha = 0.5; c.lineWidth = 0.8; for (k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-8 + i * 3, -5 + i * 2 + k * 4); c.lineTo(6 + i * 3, -5 + i * 2 + k * 4); c.stroke(); } c.restore(); });

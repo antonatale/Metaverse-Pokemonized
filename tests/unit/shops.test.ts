@@ -15,7 +15,8 @@ describe('the shops of the town', () => {
       for (const it of sh.sells) expect(WARES[it], id + ': ' + it).toBeTruthy();
     }
     const town = (MAPS.formia.buildings || []).filter((b) => b.shop);
-    const kinds = town.map((b) => b.kind);
+    /* a shop in a palazzo of a cortina shows its face on the ground floor (its look) */
+    const kinds = town.map((b) => (b.kind === 'cortina' ? 'cortina:' + b.look : b.kind));
     expect(new Set(kinds).size, 'one face each').toBe(kinds.length);
     expect(town.map((b) => b.shop).sort()).toEqual(['bar', 'edicola', 'farmacia', 'forno', 'libreria', 'mercato', 'pescheria']);
     expect((MAPS.formia.buildings || []).filter((b) => b.kind === 'shop'), 'no shop front left without a shop').toEqual([]);

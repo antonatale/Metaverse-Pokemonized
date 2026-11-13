@@ -1,6 +1,6 @@
 # Telepilo · Creature di Formia
 
-Gioco di lotte a turni nella Formia reale: scegli uno di sei amici, alleva creature originali, affronta i cinque covi degli altri e segui Cicerone sulle tracce delle Pietre di Telepilo.
+Gioco di lotte a turni nella Formia reale: scegli uno di sette amici, alleva creature originali, affronta i sei covi degli altri e segui Cicerone sulle tracce delle Pietre di Telepilo.
 
 Richiede Node.js 22+. TypeScript e Vite, senza framework; distribuzione in un unico HTML autonomo.
 

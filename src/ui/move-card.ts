@@ -30,6 +30,10 @@ export interface MoveCard {
   eff?: number;
   /** Antonio's trip: one dot per stage reached */
   dots?: boolean[] | null;
+  /** a person's move: the person's type, as a creature's card says the type of its magic */
+  ptype?: string;
+  /** a move of more blows: how many */
+  hits?: number;
 }
 export const EFF_WORD: Record<string, string> = { '2': 'Doppio vantaggio', '1': 'Superefficace', '-1': 'Poco efficace', '-2': 'Per niente efficace' };
 const KIND: Record<string, string> = { buff: 'Su di sé', heal: 'Cura', status: 'Sull\'avversario' };
@@ -48,9 +52,10 @@ export function cardHtml(d: MoveCard): string {
   const lvl = d.eff || 0, tag = lvl ? '<i class="eff ' + (lvl > 0 ? 'up' : 'down') + '">' + EFF_WORD[lvl] + '</i>' : '';
   const foot: string[] = [];
   if (d.creature) foot.push('<i class="mv-type">' + (d.type ? d.type : 'Senza tipo') + '</i>');
-  if (d.kind === 'atk' && d.power) foot.push('<i>Potenza ' + d.power + '</i>');
+  else if (d.ptype) foot.push('<i class="mv-type">' + esc(d.ptype) + '</i>');
+  if (d.kind === 'atk' && d.power) foot.push('<i>Potenza ' + d.power + (d.hits ? '×' + d.hits : '') + '</i>');
   if (d.kind === 'atk' && d.acc && d.power) foot.push('<i>' + (d.acc >= 1 ? 'Sempre' : Math.round(d.acc * 100) + '%') + '</i>');
-  if (d.kind !== 'atk' && KIND[d.kind] && d.creature) foot.push('<i>' + KIND[d.kind] + '</i>');
+  if (d.kind !== 'atk' && KIND[d.kind] && (d.creature || d.ptype)) foot.push('<i>' + KIND[d.kind] + '</i>');
   if (d.uses) foot.push('<i class="mv-uses">' + (d.left != null ? d.left : d.uses) + '/' + d.uses + '</i>');
   const dots = d.dots ? '<span class="stage">' + d.dots.map(function (on) { return '<i class="' + (on ? 'on' : '') + '"></i>'; }).join('') + '</span>' : '';
   return '<span class="mv-rune">' + rune + '</span><span class="mv-top"><b>' + esc(d.name) + '</b>' + tag + '</span>' +

@@ -64,14 +64,22 @@ export interface CurlsHair extends HairBase {
 }
 /** wavy medium-length locks (no friend wears it at the moment) */
 export interface WavyHair extends HairBase { style: 'wavy'; seed: number; out: string; fills: string[]; hi: string }
+/** long hair parted in the middle, in soft waves down onto the shoulders (Claudia) */
+export interface LongHair extends HairBase {
+  style: 'long'; seed: number; out: string; fills: string[]; hi: string;
+  /** cut at the shoulders, the ends turned a little out (Claudia) */
+  bob?: boolean;
+  /** a full fringe straight across the forehead, down to the brows, in place of the parting (Claudia) */
+  bangs?: boolean;
+}
 /** short faded sides, top brushed up and to the side (Andrea) */
 export interface QuiffHair extends HairBase { style: 'quiff'; seed: number; out: string; body: string[]; hi: string }
 /** buzz cut (Zendavid) */
 export interface BuzzHair extends HairBase { style: 'buzz'; base: string }
-export type Hair = CurlsHair | WavyHair | QuiffHair | BuzzHair;
+export type Hair = CurlsHair | WavyHair | LongHair | QuiffHair | BuzzHair;
 
 export interface Outfit {
-  style: 'hoodie' | 'turtleneck' | 'tee' | 'jacket' | 'stripes' | 'knit';
+  style: 'hoodie' | 'turtleneck' | 'tee' | 'jacket' | 'stripes' | 'knit' | 'strapless';
   base: string; dark: string; light: string; line: string;
   deep?: string;
   broad?: boolean;
@@ -98,7 +106,8 @@ export interface Look {
   P: string;
   name: string;
   face: FaceShape;
-  /** viewBox of the head-and-shoulders thumbnail */
+  /** viewBox of the head-and-shoulders thumbnail: a square from over the hair (and what a form wears on it) down to the
+      collar, so that no small portrait cuts the head or the chin */
   thumb: string;
   skin: Skin;
   lips: Lips;
@@ -120,4 +129,12 @@ export interface Look {
   earDx?: number;
   nose?: 'strong';
   underEye?: number;
+  /** a line of liner and lashes on the upper lids */
+  lashes?: boolean;
+  /** a little ring in the septum (Claudia) */
+  septum?: boolean;
+  /** big hoops at both ears, hanging in front of the hair */
+  hoops?: { r: number; metal: 'gold' | 'silver' };
+  /** a chunky pendant on cords, on the collarbones */
+  pendant?: boolean;
 }

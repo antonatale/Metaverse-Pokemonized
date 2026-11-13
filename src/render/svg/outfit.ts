@@ -8,7 +8,7 @@ function torsoD(broad: boolean | undefined, dip: number): string {
   if (broad) return 'M-8 304L-8 277C6 259 36 249 70 244C86 242 96 239 ' + xl + ' ' + y0 + cut + 'C164 239 174 242 190 244C224 249 254 259 268 277L268 304Z';
   return 'M-4 304L-4 283C8 266 38 255 72 250C86 248 96 244 ' + xl + ' ' + y0 + cut + 'C164 244 174 248 188 250C222 255 252 266 264 283L264 304Z';
 }
-const DIP: Record<string, number> = { hoodie: 0, turtleneck: 0, tee: 14, knit: 11, stripes: 9, jacket: 0 };
+const DIP: Record<string, number> = { hoodie: 0, turtleneck: 0, tee: 14, knit: 11, stripes: 9, jacket: 0, strapless: 0 };
 
 export function outfit(c: Look): string {
   var O = c.outfit, P = c.P, S = c.skin, s = '', st = O.style;
@@ -27,6 +27,15 @@ export function outfit(c: Look): string {
   if (st === 'knit') body += '<g clip-path="url(#' + P + 'TorsoClip)"><rect x="-10" y="230" width="280" height="80" fill="#000" filter="url(#fKnit)" opacity=".22"/></g>';
   body += '<path d="M22 278C38 268 56 262 76 260M238 278C222 268 204 262 184 260M40 302C46 290 52 284 60 280M220 302C214 290 208 284 200 280" fill="none" stroke="' + (O.fold || O.dark) + '" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>';
   if (st === 'jacket') body += '<path d="M104 238C112 254 148 254 156 238L170 304L90 304Z" fill="' + O.tee + '"/>';
+  /* a strapless top: bare shoulders and collarbones, the top straight across the chest */
+  if (st === 'strapless') {
+    s += '<linearGradient id="' + P + 'ShoulderG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + S.base + '"/><stop offset="1" stop-color="' + S.shade + '"/></linearGradient>';
+    body = '<path d="' + torso + '" fill="url(#' + P + 'ShoulderG)" stroke="' + S.line + '" stroke-width="1.4"/>' +
+      '<path d="M84 258C96 262 110 262 122 258M176 258C164 262 150 262 138 258" fill="none" stroke="' + S.deep + '" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>' +
+      '<path d="M40 268C52 262 66 258 80 256M220 268C208 262 194 258 180 256" fill="none" stroke="' + S.light + '" stroke-width="3" opacity=".5" filter="url(#fB2)"/>' +
+      '<g clip-path="url(#' + P + 'TorsoClip)"><path d="M-10 282C40 278 90 276 130 276C170 276 220 278 270 282L270 310L-10 310Z" fill="url(#' + P + 'ClothG)" stroke="' + O.line + '" stroke-width="1.6"/>' +
+      '<path d="M20 284C60 280 96 279 130 279C164 279 200 280 240 284" fill="none" stroke="' + O.light + '" stroke-width="1.6" opacity=".5"/></g>';
+  }
   if (O.over) body += '<g clip-path="url(#' + P + 'TorsoClip)">' + O.over + '</g>';
   s += '<g id="' + P + 'Body">' + body + '</g>';
 
@@ -88,6 +97,12 @@ export function outfit(c: Look): string {
     f += '<path d="M102 240C108 249 120 252 130 252C140 252 152 249 158 240" fill="none" stroke="' + O.light + '" stroke-width="7" stroke-dasharray=".9 1.8" opacity=".5"/>';
     /* crossbody bag strap (photo at the castle) */
     f += '<path d="M180 247L194 255L78 312L62 304Z" fill="' + O.strap + '"/><path d="M186 251L70 308" stroke="#3b3b42" stroke-width=".9" stroke-dasharray="2 2"/>';
+  }
+  /* a chunky pendant on dark cords, over whatever is worn: a silver plate with a black stone */
+  if (c.pendant) {
+    f += '<path d="M104 228C110 246 120 256 130 262M156 228C150 246 140 256 130 262M106 230C112 247 121 257 130 263M154 230C148 247 139 257 130 263" fill="none" stroke="#1a1a1f" stroke-width="1.3" opacity=".9"/>';
+    f += '<path d="M120 262L140 262L142 280L130 284L118 280Z" fill="url(#gSilver)" stroke="#4d535c" stroke-width="1.2" stroke-linejoin="round"/>';
+    f += '<path d="M124 266L136 266L137 277L130 279.6L123 277Z" fill="#17161b" stroke="#6f7680" stroke-width=".8"/><path d="M126 268.4L131 268" stroke="#ffffff" stroke-width="1" opacity=".7" stroke-linecap="round"/>';
   }
   s += '<g id="' + P + 'Front">' + f + '</g>';
   return s;

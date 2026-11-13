@@ -193,7 +193,7 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
 export function cardFor(key: string, id: string): MoveCard {
   var m = anyMove(id), mon = creatureOf(key), bits = moveBits(m).join(', ');
   return { name: m.name, creature: !!mon, type: mon ? (m.plain ? null : m.mtype || SPECIES[mon.sp].type) : undefined, tc: mon ? undefined : TC[fighter(idOf(key)).type],
-    icon: moveIcon(m), kind: m.kind, power: m.power, acc: m.acc || 1, more: bits || (mon ? '' : m.text), uses: m.uses };
+    icon: moveIcon(m), kind: m.kind, power: m.power, acc: m.acc || 1, more: bits || (mon ? '' : m.text), uses: m.uses, ptype: mon ? undefined : fighter(idOf(key)).type };
 }
 /** a new move and four already known: the sheet shows them as in a battle, and a touch says which one to forget */
 function askLearn(key: string, list: string[], then: () => void) {
@@ -337,14 +337,14 @@ export function teamHtml(): string {
     /* the creatures: up to six travel with him, the others wait at home; they fight creatures */
     '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature di ' + esc(nameOf(firstHuman())) + '</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
     (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
-    (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola il guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
+    (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola la guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
     (home || M.id.indexOf('casa') === 0 ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
       (M.id.indexOf('casa') === 0 ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
     '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + bagList().map(function (it) {
       return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span>' +
         (USE_ITEMS.indexOf(it) >= 0 && has(it) ? '<button class="btn small" type="button" data-use="' + it + '">Usa</button>' : '') + '</li>';
-    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto al guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone, il caffè il bar di Mola; il balsamo lo vende la farmacia, le alici la pescheria di Mola, i manuali la libreria, e il sabato a Largo Paone c\'è il mercato. Nei negozi scegli quanti prenderne.</p></div>';
+    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto alla guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone, il caffè il bar di Mola; il balsamo lo vende la farmacia, le alici la pescheria di Mola, i manuali la libreria, e il sabato a Largo Paone c\'è il mercato. Nei negozi scegli quanti prenderne.</p></div>';
 }
 /** what the bag shows: what goes into a battle, the coffee, and what a creature can carry, when there is some */
 function bagList(): ItemId[] {
@@ -525,9 +525,9 @@ export function dexHtml(): string {
 }
 /** the guardaparco's next prize for the diary, in a line */
 function prizeHint(): string {
-  if (dexPrizesDue().length) return ' Il guardaparco di Gianola ha un premio per te: vai a trovarlo.';
+  if (dexPrizesDue().length) return ' La guardaparco di Gianola ha un premio per te: vai a trovarla.';
   var nx = nextDexPrize();
-  return nx ? ' Il guardaparco di Gianola premia chi riempie il diario: con ' + (nx.p.all ? 'tutte le creature' : nx.at + ' creature avute') + ' ti dà ' + esc(prizeText(nx.p)) + '.' : '';
+  return nx ? ' La guardaparco di Gianola premia chi riempie il diario: con ' + (nx.p.all ? 'tutte le creature' : nx.at + ' creature avute') + ' ti dà ' + esc(prizeText(nx.p)) + '.' : '';
 }
 export function openSpecies(id: SpeciesId, back: () => void) {
   var sp = SPECIES[id], d = dexOf(id), mine = (st.mons || []).filter(function (m) { return m.sp === id; }).length;

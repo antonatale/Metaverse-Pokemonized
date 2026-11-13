@@ -1,8 +1,8 @@
 import type { MapDef } from './types';
-import { FORMIA_AT } from './formia-ground';
+import { FORMIA_AT, FORMIA_SPOT } from './formia-ground';
 
-/* back out in the courtyard of Parco la Fontana */
-const out = FORMIA_AT.casa.door!;
+/* back out in the courtyard of Parco la Fontana; or, through the back door, on the walk of the closed park */
+const out = FORMIA_AT.casa.door!, park = FORMIA_SPOT['porta-parco'];
 
 /* Antonio's flat in Parco la Fontana: his room on the left (bed, desk, the robot on the shelf),
    the living room and the kitchen on the right, the window on the gulf. */
@@ -15,7 +15,7 @@ export const casa: MapDef = {
     'x5F2x6FFkkkx',
     'x1FFxFFFFFFx',
     'xFFFxFFFFFFx',
-    'xFFFFFFFF4Fx',
+    'xFFFFFFFF4FD',
     'x6FFFFFF3FFx',
     'xFFFFFFFFFFx',
     'xxxxxDDxxxxx'
@@ -29,6 +29,8 @@ export const casa: MapDef = {
     { x: 8, y: 5, quiet: true, text: ['La PlayStation.', 'Forchetta vuole sempre la rivincita.'] },
     { x: 9, y: 4, quiet: true, text: ['Il divano. Ci si sta in quattro, se nessuno si muove.'] }
   ],
-  warps: [{ x: 5, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }],
+  /* the front door to the garden and the gate on via Amendola; the back door to the park, where the fountain is */
+  warps: [{ x: 5, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' },
+    { x: 11, y: 4, to: 'formia', tx: park[0], ty: park[1] + 1, tdir: 'down' }],
   start: [5, 6, 'up']
 };

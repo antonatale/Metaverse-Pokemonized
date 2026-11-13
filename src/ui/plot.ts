@@ -8,7 +8,8 @@ import { HELD } from '../data/passives';
 import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
-import { addCreature, creatureOf, has, nameOf, own, prizeText } from '../story/growth';
+import { rivalSpeaker } from '../story/rival-who';
+import { addCreature, creatureOf, has, nameOf, own, prizeText, heroText } from '../story/growth';
 import type { Mission } from '../data/missions';
 import { CHARS } from '../data/characters';
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly, myMissions } from '../story/missions';
@@ -88,22 +89,22 @@ export function plotSign(s: Sign): boolean {
   tomb();
   return true;
 }
-/** what comes before a battle, with someone of the plot: Tullio, at Mamurra's villa, is what the player has made of him */
+/** what comes before a battle, with someone of the plot: the rival, at Mamurra's villa, is what the player has made of them */
 export function plotBefore(id: string): string[] {
   var m = tullioMood();
   if (id !== 'mamurra' || !m) return [];
-  return m === 'ally' ? ['Da dietro una colonna spunta Tullio: «{hero}! Mentre parlava gli ho incrinato la Ricchezza. Il resto tocca a te.»']
-    : ['Da dietro una colonna spunta Tullio, con il suo sorrisetto: «Gli ho detto io come lotti. Così impari a prendermi in giro.»', 'La Ricchezza di Mamurra è più spessa del previsto.'];
+  return m === 'ally' ? ['Da dietro una colonna spunta {rv}: «{hero}! Mentre parlava gli ho incrinato la Ricchezza. Il resto tocca a te.»']
+    : ['Da dietro una colonna spunta {rv}, con un sorrisetto: «Gli ho detto io come lotti. Così impari a prendermi in giro.»', 'La Ricchezza di Mamurra è più spessa del previsto.'];
 }
 /** a question of the story, once: who speaks speaks, the last one asks, the player answers and the answer stays */
 export function askChoice(id: string, then?: () => void) {
   if (chosen(id)) { if (then) then(); return; }
   var c = CHOICES[id], k = 0;
   var next = function () {
-    var part = c.ask[k++];
-    if (k < c.ask.length) { say(part.say, part.who, null, next); return; }
-    say(part.say, part.who, c.options.map(function (o) {
-      return { label: o.label, fn: function () { decide(id, o.id); save(); renderHud(); say(o.say, o.who || part.who, null, then); } };
+    var part = c.ask[k++], who = part.who === '{rv}' ? rivalSpeaker() : part.who;
+    if (k < c.ask.length) { say(part.say, who, null, next); return; }
+    say(part.say, who, c.options.map(function (o) {
+      return { label: heroText(o.label), fn: function () { decide(id, o.id); save(); renderHud(); say(o.say, o.who || who, null, then); } };
     }));
   };
   next();

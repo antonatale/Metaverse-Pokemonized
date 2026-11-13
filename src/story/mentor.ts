@@ -25,17 +25,17 @@ export const CICERO = 'Cicerone';
 export const OPENING: string[] = [
   'Salve, {hero}! Non spaventarti: sono un fantasma, ma di quelli simpatici. Marco Tullio Cicerone, la tua guida: a Formia avevo la villa, e sull\'Appia c\'è la mia tomba.',
   'Mi faccio vedere perché a Formia sta per succedere qualcosa. Nelle pietre, nel mare e negli ulivi dormono creature che non trovi in nessun libro. E di notte, tra le rovine di Gianola, qualcuno scava.',
-  'Frecce o WASD per camminare, o un clic dove vuoi andare; Invio per parlare, M per il menu, C per chiamare me, F per lo schermo intero. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dal guardaparco. Andiamo!'
+  'Frecce o WASD per camminare, o un clic dove vuoi andare; Invio per parlare, M per il menu, T per il telefono, C per chiamare me, F per lo schermo intero. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dalla guardaparco. Ma senti… ti vibra il *telefono*!'
 ];
 
 /** each chapter of the journey: what Cicero says when it becomes the next one, and when it is done */
 type Chapter = { title: string; intro: string[]; done: string[] };
 export const CHAPTERS: Record<string, Chapter> = {
   starter: { title: 'La prima creatura',
-    intro: ['Prima regola del viaggio: non si parte mai da soli.', 'Al Parco di Gianola, sotto le rovine di una villa romana, il guardaparco custodisce tre creature appena nate. Vai a sceglierne una: segui la freccia, verso est.'],
+    intro: ['Prima regola del viaggio: non si parte mai da soli.', 'Al Parco di Gianola, sotto le rovine di una villa romana, la guardaparco custodisce tre creature appena nate. Vai a sceglierne una: segui la freccia, verso est.'],
     done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'Le selvatiche non si vedono: si nascondono nell\'erba alta (Parco Gramsci, pineta, uliveti, monti) e nelle pozze tra gli scogli (Gianola, la Scogliera). Passaci in mezzo e salteranno fuori: battile per allenarti, o catturale con un retino.'] },
   'seconda-creatura': { title: 'La seconda creatura',
-    intro: ['Una creatura sola non basta: quando è a terra, tocca a te. Cammina nell\'erba alta o tra gli scogli di Gianola, indebolisci una selvatica e lancia uno dei retini del guardaparco.', 'In lotta, con due creature, puoi cambiare: chi entra prende il colpo, ma è in guardia.'],
+    intro: ['Una creatura sola non basta: quando è a terra, tocca a te. Cammina nell\'erba alta o tra gli scogli di Gianola, indebolisci una selvatica e lancia uno dei retini della guardaparco.', 'In lotta, con due creature, puoi cambiare: chi entra prende il colpo, ma è in guardia.'],
     done: ['Due creature! Mandale contro chi ha il tipo che battono: una batte, l\'altra regge.'] },
   'squadra-cisterna': { title: 'Una squadra per il buio',
     intro: ['Nel Cisternone si scende al buio, e là sotto vive gente strana. Non con meno di tre creature: catturane un\'altra.'],
@@ -67,7 +67,7 @@ export const CHAPTERS: Record<string, Chapter> = {
   'trama-mamurra': { title: 'Il fantasma di Mamurra',
     intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
     done: ['Mamurra è caduto. Formia ti deve un favore.'] },
-  /* the six covi (data/covi.ts): whoever is played meets the other five, in any order; each pin makes the next one harder */
+  /* the seven covi (data/covi.ts): whoever is played meets the other six, in any order; each pin makes the next one harder */
   'covo-palamendola': { title: 'Il covo di Antonio',
     intro: ['Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta: ha appena letto il paper della settimana.', 'È di tipo Cervello: il Caos gli manda all\'aria i piani.'],
     done: ['Stato dell\'arte. Ogni spilla rende più forti i covi che restano: allenati.'] },
@@ -77,6 +77,9 @@ export const CHAPTERS: Record<string, Chapter> = {
   'covo-circolo': { title: 'Il covo di Forchetta',
     intro: ['Forchetta ti aspetta nei campi coperti del Bruno Zauli. Fuori non gioca mai.', 'È di tipo Calma: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
     done: ['Spilla «Poteva andare peggio». Ogni spilla rende più forti i covi che restano.'] },
+  'covo-morgana': { title: 'Il covo di Claudia',
+    intro: ['Da Morgana, a Mola, Claudia ha il suo tavolo: lì si parla uno alla volta, e chi interrompe cambia tavolo.', 'È di tipo Calma: il Cuore la batte. Ma il primo colpo che le dai vale la metà: Il Padre la protegge.'],
+    done: ['Spilla «Tavoli separati». Anche il Padre, alla fine, ha ascoltato.'] },
   quiz: { title: 'Una sera da Morgana',
     intro: ['Stasera da Morgana, a Mola, c\'è il quiz su Formia. Domande sulla mia città: le so tutte, ma non ti suggerisco. Quasi.'],
     done: ['Ora sai qualcosa in più di Formia. Io ci ho passato le estati migliori, nella mia villa.'] },
@@ -186,7 +189,7 @@ export function advice(): string[] {
     var c = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
     out.push(c >= pf.lv ? 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': puoi farcela.' : 'Le sue creature arrivano al livello ' + pf.lv + ', le tue al ' + c + ': allenati nell\'erba alta, prima.');
   }
-  if (!st.seen.starter && s.id !== 'starter') out.push('E non dimenticare: al Parco di Gianola il guardaparco ha una creatura per te.');
+  if (!st.seen.starter && s.id !== 'starter') out.push('E non dimenticare: al Parco di Gianola la guardaparco ha una creatura per te.');
   return out;
 }
 /** the chapter the story has just moved to, with a word on the one just finished (for the bubble in the corner), once */

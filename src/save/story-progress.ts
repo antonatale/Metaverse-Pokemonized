@@ -1,6 +1,7 @@
 import { MAPS } from '../data/maps';
 import type { Dir } from '../data/maps/types';
-import type { FriendId } from '../data/characters';
+import { LEGEND } from '../data/maps/legend';
+import { ROSTER, type FriendId } from '../data/characters';
 import type { SpeciesId } from '../data/creatures';
 
 /* Saved progress of the story, on this device only. Same key and same format as the old single-file game,
@@ -58,8 +59,16 @@ export interface StoryProgress {
   leads?: Record<string, string>;
   /** the first of his company: the person shown in the corner of the map and sent in first in a covo (Antonio when missing) */
   first?: FriendId;
-  /** the creature his rival Tullio picked after him (story/rival.ts; worked out from Antonio's when missing) */
+  /** the creature the rival picked after him (story/rival.ts; worked out from the player's when missing) */
   rival?: SpeciesId;
+  /** Nicola's van, where it is parked (story/van.ts); and who walks with the player besides the creature (Nicola) */
+  van?: { map: string; x: number; y: number; dir: Dir };
+  companion?: 'nicola';
+  /** the rival of this story: one of the friends, picked when it begins (story/rival-who.ts); Tullio when missing in a
+      story that had met him */
+  rivalFriend?: FriendId;
+  /** the chats of «il caminetto» (data/chat.ts): when each came, and what the player answered */
+  chats?: Record<string, { at: number; reply?: string }>;
   /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
   books?: number;
   /** when it was last saved (ms since 1970), for the title screen: missing in an old save */
@@ -114,8 +123,27 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
   /* Formia on three levels (VISIONE.md, V3 and V4): the terraces, the trails, the countryside closed behind its walls */
   { id: 'formia7', what: 'Formia a tre piani', run: backHome },
   /* the big Formia (VISIONE.md, 11 November 2026): two and a half times the tiles, every street somewhere else */
-  { id: 'formia8', what: 'Formia grande', run: function (v) { backHome(v); delete v.moto; delete v.sella; } }
+  { id: 'formia8', what: 'Formia grande', run: function (v) { backHome(v); delete v.moto; delete v.sella; } },
+  /* the cortine of Largo Paone and Mola, the new Torre di Mola, the closed park (12 November 2026): whoever stood where
+     a palazzo stands now goes home; everyone else stays where he was */
+  { id: 'formia9', what: 'le cortine di Mola e Largo Paone', run: function (v) { if (walled(v.x, v.y)) { backHome(v); delete v.moto; delete v.sella; } } },
+  /* Largo Paone and Mola as they are (the second revision of 12 November 2026): the parking with its cars, the inner
+     harbour under the tower with its boats, Telaro on via Tullia, piazza Risorgimento; the same rule as formia9, and a
+     scooter parked where a palazzo or a car stands now goes back to its place */
+  { id: 'formia10', what: 'Largo Paone, Mola e piazza Risorgimento', run: function (v) {
+    if (walled(v.x, v.y, /[-9|+8BiT]/)) { backHome(v); delete v.moto; delete v.sella; }
+    else if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT]/)) delete v.moto;
+  } }
 ];
+/** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a
+    gate, a tree, the anchor or a bench (the sea and the walls are not: the game already knows what to do there) */
+function walled(x: number, y: number, solid?: RegExp): boolean {
+  var m = MAPS.formia, row = m.rows[y], ch = row ? row[x] : undefined;
+  if (ch == null) return true;
+  if ((solid || /[|+8BiT]/).test(ch) && (LEGEND[ch] || LEGEND['.']).solid) return true;
+  var on = function (b: { x: number; y: number; w: number; h: number }) { return x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h; };
+  return (m.buildings || []).some(on) || (m.objects || []).some(on);
+}
 function fix(v: StoryProgress | null): StoryProgress | null {
   if (v && v.v === 1 && MAPS[v.map] && v.squad && v.badges) {
     v.found = v.found || {}; v.done = v.done || {}; v.best = v.best || {};
@@ -169,6 +197,9 @@ export function useSlot(n: number) {
 export function startAs(n: number, first: FriendId) {
   slot = Math.max(1, Math.min(SLOTS, Math.floor(n)));
   st = blank(first);
+  /* the rival of this story: one of the others, at random */
+  const others = ROSTER.filter(function (f) { return f !== first; });
+  st.rivalFriend = others[Math.floor(Math.random() * others.length) % others.length];
   try { window.localStorage.setItem(SLOT_KEY, String(slot)); } catch (e) { /* ignore */ }
   save();
 }

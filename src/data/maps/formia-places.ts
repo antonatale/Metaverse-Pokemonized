@@ -16,7 +16,7 @@ export interface PlaceSpec {
   doorAt?: number;
   /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it; a yard is a
       lawn closed by a hedge, with a gate on its west side) */
-  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'track' | 'court' | 'round';
+  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'track' | 'court' | 'round' | 'parking' | 'pinetina';
   /** tiles kept free of houses and trees around it */
   room?: number;
   /** how far it may move from where it really is, in tiles */
@@ -26,6 +26,10 @@ export interface PlaceSpec {
   /** a top-left tile picked by hand on the playable map, instead of the free spot nearest to `at`:
       the centre, where the buildings, the square and the streets are composed together (see tools/formia/network.ts) */
   tile?: [number, number];
+  /** a palazzo of a cortina (kind 'cortina'): what its ground floor is (pub, barber, tobacconist, winebar, bar, alto
+      for the tall one of Largo Paone; a home when missing), and how far it rises over its footprint, in tiles */
+  look?: string;
+  up?: number;
 }
 /** something on one tile: a sign, a person, a lost thing, a scooter; at a real place or next to one */
 export interface SpotSpec {
@@ -52,8 +56,8 @@ export const PLACES: PlaceSpec[] = [
   { id: 'palazzina-2', kind: 'condo', w: 4, h: 3, at: [41.2633, 13.6417], door: true, tile: [225, 37] },
   { id: 'palazzina-3', kind: 'condo', w: 4, h: 3, at: [41.2632, 13.6421], door: true, tile: [230, 37] },
   { id: 'palazzina-4', kind: 'condo', w: 4, h: 3, at: [41.2628, 13.6424], door: true, tile: [235, 37] },
-  { id: 'palazzina-5', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6412], door: true, tile: [220, 42] },
-  { id: 'palazzina-6', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6420], door: true, tile: [235, 42] },
+  { id: 'palazzina-5', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6412], door: true, tile: [220, 41] },
+  { id: 'palazzina-6', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6420], door: true, tile: [235, 41] },
   { id: 'parco-giardino', kind: 'area', fill: 'round', w: 7, h: 5, at: [41.2627, 13.6417], tile: [226, 41] },
   /* ---------- the Bruno Zauli olympic centre, and its covered tennis courts (Forchetta's covo) ---------- */
   { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true, tile: [189, 42] },
@@ -62,24 +66,38 @@ export const PLACES: PlaceSpec[] = [
   { id: 'pista', kind: 'area', fill: 'track', w: 7, h: 13, at: [41.2655, 13.6300], tile: [179, 33] },
   { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250], tile: [165, 41] },
   /* ---------- Mola ---------- */
-  { id: 'torre-mola', kind: 'tower', w: 2, h: 3, at: [41.2589, 13.6140], tile: [137, 62] },
-  { id: 'morgana', kind: 'pub', w: 5, h: 3, at: [41.25819, 13.61234], door: true, tile: [133, 56] },
+  /* the Torre di Mola: round, crenellated, 27 metres high and 15 across, over the little harbour; at its foot the
+     square with the anchor, where the children climb (the lane of via Abate Tosti ends here) */
+  { id: 'torre-mola', kind: 'castello', w: 4, h: 3, at: [41.2589, 13.6140], tile: [144, 60] },
+  /* the castle round it, on the little harbour inside the lungomare: its walls and the stone portal (Street View, via
+     Abate Tosti 37); in front of it the square of the anchor */
+  { id: 'castello-mura', kind: 'castlewall', w: 4, h: 4, at: [41.2587, 13.6140], door: true, doorAt: 1, tile: [144, 63] },
+  { id: 'ancora-piazzetta', kind: 'area', fill: 'piazza', w: 3, h: 6, at: [41.2589, 13.6137], tile: [141, 61] },
+  /* via Abate Tosti: Morgana at the end toward Largo Paone (number 105), Forchetta's home, the barber toward the
+     tower; across the lane the bar by the tower. All of them palazzi of the cortina, the shop on the ground floor */
+  { id: 'morgana', kind: 'cortina', look: 'pub', up: 0.1, w: 3, h: 4, at: [41.25819, 13.61234], door: true, tile: [134, 66] },
   /* Piazza San Giovanni: the collegiate church of Saints Lorenzo and Giovanni Battista, and across the square the
      Vitruvio Pollione school; by them the remains of the Roman aqueduct */
-  { id: 'chiesa-mola', kind: 'collegiata', w: 6, h: 3, at: [41.2598, 13.6162], door: true, tile: [131, 47] },
-  { id: 'piazza-sangiovanni', kind: 'area', fill: 'piazza', w: 9, h: 4, at: [41.2596, 13.6165], tile: [130, 50] },
-  { id: 'scuola', kind: 'school', w: 6, h: 2, at: [41.2609, 13.6181], door: true, tile: [141, 44] },
-  { id: 'acquedotto', kind: 'aqueduct', w: 3, h: 2, at: [41.2590, 13.6150], tile: [127, 51] },
+  { id: 'chiesa-mola', kind: 'collegiata', w: 6, h: 3, at: [41.2596, 13.6123], door: true, tile: [126, 51] },
+  { id: 'piazza-sangiovanni', kind: 'area', fill: 'piazza', w: 6, h: 3, at: [41.2592, 13.6124], tile: [126, 54] },
+  { id: 'scuola', kind: 'school', w: 6, h: 3, at: [41.2596, 13.6134], door: true, tile: [134, 53] },
+  { id: 'acquedotto', kind: 'aqueduct', w: 3, h: 2, at: [41.2599, 13.6129], tile: [134, 50] },
+  /* up via Emanuele Filiberto, the other school of Mola, the Edmondo De Amicis, across from Piazza Risorgimento */
+  { id: 'scuola-deamicis', kind: 'school', look: 'deamicis', w: 6, h: 3, at: [41.26105, 13.61432], door: true, tile: [144, 50] },
   /* the Gelateria Lavezzi, in Piazza Marconi by the Comune: gelato since 1870 */
   { id: 'gelati', kind: 'gelateria', w: 4, h: 3, at: [41.25581, 13.60496], door: true, tile: [97, 72] },
-  { id: 'bar', kind: 'bar', w: 4, h: 3, at: [41.2584, 13.6110], door: true, tile: [140, 62] },
-  { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true, tile: [124, 74] },
-  { id: 'traghetto', kind: 'ferry', w: 5, h: 3, at: [41.2554, 13.6118], on: 'sea', reach: 6 },
+  { id: 'bar', kind: 'cortina', look: 'bar', up: 0.55, w: 2, h: 5, at: [41.2584, 13.6110], door: true, tile: [135, 60] },
+  /* the port below Largo Paone: the ticket office, the bar of the port, Zi' Anna on the side of the sea (Largo Paone lato
+     mare); the ferry for Ponza and Ventotene at its quay */
+  { id: 'biglietti', kind: 'kiosk', w: 2, h: 2, at: [41.2565, 13.6106], door: true, tile: [124, 82] },
+  { id: 'bar-porto', kind: 'kiosk', w: 3, h: 2, at: [41.25646, 13.61107], door: true, tile: [127, 82] },
+  { id: 'zianna', kind: 'cortina', look: 'trattoria', up: 0.3, w: 4, h: 2, at: [41.2568, 13.6121], door: true, tile: [131, 82] },
+  { id: 'traghetto', kind: 'ferry', w: 5, h: 3, at: [41.2554, 13.6118], on: 'sea', reach: 10 },
   /* ---------- the centre: station, town hall, Piazza della Vittoria ---------- */
   { id: 'stazione', kind: 'station', w: 9, h: 3, at: [41.25875, 13.60613], door: true, tile: [99, 61] },
   { id: 'piazza', kind: 'area', fill: 'piazza', w: 10, h: 6, at: [41.2551, 13.6062], tile: [99, 78] },
   { id: 'comune', kind: 'palazzo', w: 8, h: 3, at: [41.2562, 13.6050], door: true, tile: [102, 72] },
-  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 5, h: 8, at: [41.2560, 13.6084], tile: [113, 69] },
+  { id: 'villa-comunale', kind: 'area', fill: 'garden', w: 4, h: 6, at: [41.2560, 13.6084], tile: [112, 73] },
   { id: 'forno', kind: 'bakery', w: 4, h: 3, at: [41.2567, 13.6070], door: true, tile: [104, 66] },
   /* ---------- Castellone ---------- */
   { id: 'erasmo', kind: 'church', w: 4, h: 3, at: [41.25573, 13.59883], door: true, tile: [87, 65] },
@@ -103,7 +121,12 @@ export const PLACES: PlaceSpec[] = [
      Forchetta in via Abate Tosti, in Mola; Andrea in Castellone, by piazza Pasquale Mattei */
   { id: 'casa-valentin', kind: 'house', w: 3, h: 2, at: [41.2613, 13.6172], door: true, tile: [147, 42] },
   { id: 'casa-costanzo', kind: 'condo', w: 4, h: 3, at: [41.2600, 13.6121], door: true, tile: [132, 43] },
-  { id: 'casa-forchetta', kind: 'borgo', w: 3, h: 2, at: [41.2592, 13.6146], door: true, tile: [133, 63] },
+  { id: 'casa-forchetta', kind: 'cortina', up: 0.55, w: 2, h: 5, at: [41.2592, 13.6146], door: true, tile: [139, 60] },
+  /* Claudia: San Giulio, in via Palazzo, across from the Mattej school and the little park with the swings in front of
+     it; between the Zauli and piazza Risorgimento, on the street inside, not on the Appia (Antonio, 13 November) */
+  { id: 'casa-claudia', kind: 'condo', w: 4, h: 3, at: [41.2641, 13.6213], door: true, tile: [159, 37] },
+  { id: 'scuola-mattej', kind: 'school', w: 6, h: 3, at: [41.2652, 13.6191], door: true, tile: [155, 32] },
+  { id: 'parchetto-mattej', kind: 'area', fill: 'garden', w: 5, h: 4, at: [41.2641, 13.6198], tile: [153, 37] },
   { id: 'casa-andrea', kind: 'borgo', w: 3, h: 2, at: [41.2541, 13.6016], door: true, tile: [87, 79] },
   /* Scauri, east of Gianola: the station of Minturno-Scauri (OpenStreetMap: 41.25785, 13.72077), and Zendavid's home at
      the beginning of the village, near it */
@@ -111,13 +134,26 @@ export const PLACES: PlaceSpec[] = [
   { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], tile: [228, 42] },
   /* ---------- the revision of 11 November 2026: what Antonio asked for (sources in docs/fonti-formia.md) ---------- */
   /* Largo Paone, where everyone meets: the square between Via Vitruvio and the lungomare, the tobacconist on it */
-  { id: 'largo-paone', kind: 'area', fill: 'piazza', w: 8, h: 4, at: [41.25764, 13.61074], tile: [121, 68] },
-  { id: 'altieri', kind: 'tobacconist', w: 3, h: 2, at: [41.25798, 13.61060], door: true, tile: [123, 63] },
-  { id: 'telaro', kind: 'winebar', w: 3, h: 2, at: [41.25825, 13.61203], door: true, tile: [127, 62] },
-  { id: 'barber-may', kind: 'barber', w: 3, h: 2, at: [41.2590165, 13.6134919], door: true, tile: [139, 57] },
+  /* Largo Paone (OpenStreetMap, the satellite view, Street View and Antonio's photo from above the tobacconist): the
+     roundabout by Piazza Tommaso Testa; the tall palazzo on the left, by via Vitruvio; the row of Piazza Tommaso Testa
+     with Zanzibar and the tobacconist, the wide pavement in front with the Fontana delle Cinque Cannelle; then the huge
+     car park where the Saturday market is, the pines of the lungomare, the port with the ferries */
+  { id: 'palazzo-alto', kind: 'cortina', look: 'alto', up: 6.6, w: 4, h: 4, at: [41.2575, 13.6100], door: true, tile: [112, 68] },
+  { id: 'zanzibar', kind: 'cortina', look: 'bar', up: 0.7, w: 3, h: 4, at: [41.25826, 13.61033], door: true, doorAt: 2, tile: [122, 60] },
+  { id: 'altieri', kind: 'cortina', look: 'tobacconist', up: 0.7, w: 3, h: 4, at: [41.25798, 13.61060], door: true, tile: [125, 60] },
+  { id: 'cannelle', kind: 'cannelle', w: 2, h: 2, at: [41.25810, 13.61013], tile: [122, 64] },
+  { id: 'piazza-testa', kind: 'area', fill: 'piazza', w: 8, h: 2, at: [41.2582, 13.6110], tile: [124, 64] },
+  { id: 'mercato', kind: 'market', w: 3, h: 1, at: [41.2578, 13.6105], door: true, tile: [121, 68] },
+  { id: 'largo-paone', kind: 'area', fill: 'parking', w: 12, h: 10, at: [41.25764, 13.61074], tile: [120, 69] },
+  /* via Tullia and via Abate Tosti: Telaro on the corner, then the bar, the barber and Forchetta's home toward the
+     tower; across the lane Morgana and the fishmonger, their fronts on the Pinetina, its pines and its cars */
+  { id: 'telaro', kind: 'cortina', look: 'winebar', up: 0.55, w: 2, h: 5, at: [41.25825, 13.61203], door: true, tile: [133, 60] },
+  { id: 'barber-may', kind: 'cortina', look: 'barber', up: 0.55, w: 2, h: 5, at: [41.2590165, 13.6134919], door: true, tile: [137, 60] },
+  { id: 'pinetina', kind: 'area', fill: 'pinetina', w: 16, h: 10, at: [41.2582, 13.6126], tile: [132, 70] },
   /* Piazza Risorgimento, where Via Ferrucci leaves for the hospital and the mountains */
-  { id: 'risorgimento', kind: 'area', fill: 'piazza', w: 5, h: 3, at: [41.26052, 13.61599], tile: [144, 51] },
-  { id: 'ospedale', kind: 'hospital', w: 6, h: 3, at: [41.26181, 13.61810], door: true, tile: [153, 41] },
+  { id: 'risorgimento', kind: 'area', fill: 'piazza', w: 7, h: 3, at: [41.26052, 13.61599], tile: [144, 56] },
+  /* the Dono Svizzero: via Ferrucci climbs along its left side */
+  { id: 'ospedale', kind: 'hospital', w: 6, h: 4, at: [41.26181, 13.61810], door: true, tile: [153, 47] },
   /* Piazza Mattej, at the foot of Castellone */
   { id: 'mattej', kind: 'area', fill: 'piazza', w: 6, h: 4, at: [41.25348, 13.60090], tile: [86, 84] },
   /* the gate of the park of Gianola, where the road ends */
@@ -168,14 +204,17 @@ export const SPOTS: SpotSpec[] = [
   { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
   { id: 'start-valentin', near: { place: 'casa-valentin', dx: 1, dy: 2 }, walk: true },
   { id: 'start-costanzo', near: { place: 'casa-costanzo', dx: 1, dy: 2 }, walk: true },
-  { id: 'start-forchetta', near: { place: 'casa-forchetta', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-forchetta', near: { place: 'casa-forchetta', dx: 0, dy: 5 }, walk: true },
+  { id: 'start-claudia', near: { place: 'casa-claudia', dx: 1, dy: 3 }, walk: true },
   { id: 'start-andrea', near: { place: 'casa-andrea', dx: 1, dy: 2 }, walk: true },
   { id: 'start-zendavid', near: { place: 'casa-zendavid', dx: 1, dy: 2 }, walk: true },
   /* the scooter, before its first ride: by the home of whoever is played (story/maps.ts, moto) */
   { id: 'motorino', near: { place: 'casa', dx: -3, dy: 5 } },
   { id: 'motorino-valentin', near: { place: 'casa-valentin', dx: 3, dy: 3 } },
   { id: 'motorino-costanzo', near: { place: 'casa-costanzo', dx: 5, dy: 3 } },
-  { id: 'motorino-forchetta', near: { place: 'casa-forchetta', dx: -1, dy: 2 } },
+  /* not in the lane: at its mouth, on the paving by Largo Paone */
+  { id: 'motorino-forchetta', tile: [140, 68] },
+  { id: 'motorino-claudia', near: { place: 'casa-claudia', dx: 3, dy: 3 } },
   { id: 'motorino-andrea', near: { place: 'casa-andrea', dx: 3, dy: 2 } },
   { id: 'motorino-zendavid', near: { place: 'casa-zendavid', dx: 3, dy: 2 } },
   { id: 'sign-casa', near: { place: 'casa', dx: -2, dy: 3 } },
@@ -185,6 +224,11 @@ export const SPOTS: SpotSpec[] = [
   { id: 'folla3', near: { place: 'piazza', dx: 7, dy: 3 } }, { id: 'folla4', near: { place: 'piazza', dx: 1, dy: 2 } },
   /* Nicola Spadea, windsurf champion, by his boards on the shore; the bar of the lido gives out the sunbeds */
   { id: 'nicola', near: { place: 'eclipse-spiaggia', dx: 2, dy: 5 }, on: 'sand' },
+  /* Nicola's Delfaro, in the water in front of the Eclipse, and where the windsurf is put in the sea at the start */
+  { id: 'faro-nicola', tile: [51, 115], on: 'sea' },
+  { id: 'riva-eclipse', tile: [50, 112], on: 'sand' },
+  { id: 'tavola-vecchia', tile: [54, 114], on: 'sea' },
+  { id: 'start-windsurf', tile: [48, 114], on: 'sea' },
   /* the bagnino of the Lido Oriente, on the sand in front of it, by the canoes */
   { id: 'bagnino-oriente', near: { place: 'oriente', dx: 0, dy: -1 }, on: 'sand' },
   { id: 'barista', near: { place: 'eclipse', dx: 7, dy: 1 }, on: 'any' },
@@ -194,12 +238,14 @@ export const SPOTS: SpotSpec[] = [
   /* Antonio's covo: at the door of the Palamendola, next to his home */
   { id: 'antonio-covo', near: { place: 'palamendola', dx: 7, dy: 1 } },
   { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
-  { id: 'vicina', near: { place: 'casa', dx: 6, dy: 3 } },
+  { id: 'vicina', near: { place: 'casa', dx: -1, dy: 3 } },
+  /* the back door of Antonio's flat, on the walk of Parco la Fontana: the only way into the closed park */
+  { id: 'porta-parco', tile: [219, 39], walk: true },
   { id: 'capotreno', near: { place: 'stazione', dx: 9, dy: 2 } },
   { id: 'turista', near: { place: 'tomba', dx: 4, dy: 2 } },
   { id: 'anziano', near: { place: 'torre-castellone', dx: 2, dy: 2 } },
   { id: 'fornaia', near: { place: 'forno', dx: 1, dy: 3 } },
-  { id: 'tifoso', near: { place: 'bar', dx: 2, dy: 3 } },
+  { id: 'tifoso', near: { place: 'ancora-piazzetta', dx: 2, dy: 4 } },
   { id: 'gelataio', near: { place: 'gelati', dx: 1, dy: 3 } },
   { id: 'marinaio', near: { place: 'biglietti', dx: 3, dy: 1 } },
   { id: 'velocista', near: { place: 'pista', dx: 6, dy: 2 } },
@@ -210,7 +256,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'guardaparco', near: { place: 'mamurra', dx: 3, dy: 1 } },
   /* the net seller, by the park: the first creature comes from the guardaparco, the nets from him */
   { id: 'retaio', near: { place: 'mamurra', dx: 1, dy: 1 } },
-  { id: 'pescatore', near: { place: 'torre-mola', dx: -2, dy: 3 } },
+  { id: 'pescatore', tile: [146, 82] },
   /* signs */
   { id: 'sign-stazione', near: { place: 'stazione', dx: -2, dy: 3 } },
   { id: 'sign-comune', near: { place: 'comune', dx: 9, dy: 2 } },
@@ -218,8 +264,11 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-erasmo', near: { place: 'erasmo', dx: -1, dy: 3 } },
   { id: 'sign-castellone', near: { place: 'torre-castellone', dx: 4, dy: 1 } },   /* one further on: it closed the way out of the Cisternone */
   { id: 'sign-cisternone', near: { place: 'cisternone', dx: -1, dy: 1 } },   /* 41.25569, 13.60104: the way out comes up below it */
-  { id: 'sign-mola', near: { place: 'torre-mola', dx: 3, dy: 2 } },
-  { id: 'sign-morgana', near: { place: 'morgana', dx: -1, dy: 3 } },
+  { id: 'sign-mola', near: { place: 'ancora-piazzetta', dx: 0, dy: 5 } },
+  /* at the mouth of the lane, on the side of Largo Paone */
+  { id: 'sign-morgana', tile: [132, 70] },
+  /* on the quay, at the mouth of the little harbour under the tower */
+  { id: 'sign-darsena', tile: [148, 84] },
   { id: 'sign-porto', near: { place: 'biglietti', dx: -1, dy: 2 } },
   { id: 'sign-tomba', near: { place: 'tomba', dx: -1, dy: 3 } },
   { id: 'sign-vindicio', near: { place: 'eclipse-spiaggia', dx: -1, dy: 0 }, on: 'any' },
@@ -228,18 +277,33 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-gianola', near: { place: 'mamurra', dx: -2, dy: 2 } },
   { id: 'sign-caposele', at: [41.2512, 13.5975] },
   { id: 'sign-porticciolo', tile: [248, 98] },
+  /* out at sea (reached swimming with a sea creature, or on Nicola's board): buoys to read, bottles adrift with a message,
+     people of the sea who challenge Antonio */
+  { id: 'boa-300', tile: [86, 104], on: 'sea' },
+  { id: 'boa-secche', tile: [196, 74], on: 'sea' },
+  { id: 'boa-golfo', tile: [150, 116], on: 'sea' },
+  { id: 'bottiglia-1', tile: [98, 114], on: 'sea' },
+  { id: 'bottiglia-2', tile: [134, 104], on: 'sea' },
+  { id: 'bottiglia-3', tile: [176, 92], on: 'sea' },
+  { id: 'bottiglia-4', tile: [212, 84], on: 'sea' },
+  { id: 'bottiglia-5', tile: [236, 108], on: 'sea' },
+  { id: 'bottiglia-6', tile: [120, 124], on: 'sea' },
+  { id: 'mare-sup', tile: [112, 100], on: 'sea' },
+  { id: 'mare-sub', tile: [188, 82], on: 'sea' },
+  { id: 'mare-gozzo', tile: [222, 98], on: 'sea' },
   /* Castellone: who lives inside the Roman theatre, a devotee of Sant'Erasmo; in the centre, the guide of the museum */
   { id: 'teatro', near: { place: 'erasmo', dx: 5, dy: 3 } },
   { id: 'devota', near: { place: 'erasmo', dx: -2, dy: 3 } },
   { id: 'guida', near: { place: 'comune', dx: -2, dy: 1 } },
   /* street-name plates at the corners of the real streets the map's streets stand for */
   { id: 'targa-vitruvio', near: { place: 'comune', dx: -3, dy: -1 } },
-  { id: 'targa-abate-tosti', near: { place: 'morgana', dx: 6, dy: -2 } },
+  { id: 'targa-abate-tosti', tile: [131, 64] },
   { id: 'targa-appia', tile: [30, 91] },   /* on the upper side of the Appia: below it runs the retaining wall */
   { id: 'targa-vindicio', near: { place: 'tomba', dx: -1, dy: 5 } },
   { id: 'targa-tito-scipione', near: { place: 'pineta', dx: -9, dy: 9 } },
   { id: 'targa-amendola', near: { place: 'casa', dx: -3, dy: 2 } },
-  { id: 'targa-appia-napoli', near: { place: 'palamendola', dx: 5, dy: 5 } },
+  /* on the Appia, across from the gate of Parco la Fontana (the park itself is closed) */
+  { id: 'targa-appia-napoli', tile: [219, 48] },
   { id: 'targa-gianola', near: { place: 'oriente', dx: 6, dy: -10 }, on: 'any' },
   /* the Villaggio Don Bosco, the school and the church of Mola, Lavezzi */
   { id: 'sign-donbosco', near: { place: 'donbosco', dx: -2, dy: 2 } },
@@ -247,6 +311,11 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-sangiovanni', near: { place: 'piazza-sangiovanni', dx: 1, dy: 1 } },
   { id: 'studente', near: { place: 'piazza-sangiovanni', dx: 1, dy: 3 } },
   { id: 'targa-sgb', near: { place: 'donbosco', dx: -2, dy: 0 } },
+  /* the plates of the friends' streets: the name of the street on a plate at the corner, «Casa di …» on the house */
+  { id: 'targa-palazzo', tile: [166, 35] },
+  { id: 'targa-ferrucci', near: { place: 'casa-valentin', dx: 3, dy: -1 } },
+  { id: 'targa-solaro', near: { place: 'casa-costanzo', dx: -1, dy: 3 } },
+  { id: 'targa-mattei', near: { place: 'casa-andrea', dx: -1, dy: 2 } },
   /* Antonio's lost things */
   { id: 'caricabatterie', near: { place: 'stazione', dx: 6, dy: 4 } },
   { id: 'appunti', near: { place: 'erasmo', dx: 3, dy: 3 } },
@@ -302,7 +371,7 @@ export const SPOTS: SpotSpec[] = [
   /* the plot (story/plot.ts): Mamurra's men where the stones of Telepilo are, the archivist in the Torre di Mola,
      the ghost of Mamurra at his villa */
   { id: 'mamurr-scavi', near: { place: 'mamurra', dx: -1, dy: 3 } },
-  { id: 'archivista', near: { place: 'torre-mola', dx: -1, dy: 3 } },
+  { id: 'archivista', near: { place: 'ancora-piazzetta', dx: 2, dy: 0 } },
   { id: 'mamurr-cisterna', near: { place: 'cisternone', dx: 1, dy: 2 } },
   { id: 'mamurr-peschiere', at: [41.2510, 13.5981] },
   { id: 'mamurra', near: { place: 'mamurra', dx: 0, dy: 3 } },

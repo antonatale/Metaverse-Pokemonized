@@ -12,12 +12,15 @@ import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress, onSaveFail } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isShallow, isWall, motoAt, moto, type Person } from '../story/maps';
+import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isSea, isWall, motoAt, moto, type Person } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP, walkAlong, walkingAlong, mount, dismount, onRideStop } from '../story/movement';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
+import { rivalFriend } from '../story/rival-who';
 import type { Sign } from '../data/maps/types';
-import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt, tileAt, screenOf } from '../render/world-view';
+import { resize, invalidate, drawWorld, preview, overview, townMap, followerAt, companionAt, tileAt, screenOf } from '../render/world-view';
+import { groupChat, playChat, openPhone } from './chat';
+import { vanStart, windsurfLanded, leadFrame, companionTalk, nicolaTalk, onTheWay, NICOLA } from './nicola';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity, startActivity } from './activities';
@@ -47,8 +50,11 @@ import { onReward } from '../story/activities';
 import type { Growth } from '../story/growth';
 import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt } from '../story/maps';
+import { BOTTLES } from '../data/maps/formia';
 import { soundButton } from './sound';
-import { music, worldMusic, settle, sfx, typeBlip, type TuneWait } from '../audio';
+import { music, worldMusic, settle, sfx, type TuneWait } from '../audio';
+import { runs, plainText, typer, voiceOf, speak, pauseAfter } from './rich';
+import { headShot } from '../render/canvas/walkers';
 import { startBattle, goHome } from './battle-screen';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
@@ -69,7 +75,7 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="wframe" aria-hidden="true"></div>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn wphone" type="button" id="wphone" aria-label="Telefono: il caminetto (T)" title="Il caminetto (T)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
@@ -78,7 +84,7 @@ function build() {
       return '<button type="button" data-d="' + d + '" aria-label="' + DLABEL[d] + '"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ARROW[d] + '"/></svg></button>';
     }).join('') +
     '</div><button class="abtn" type="button" id="wa" aria-label="Parla, leggi o conferma">A</button></div>' +
-    '<p class="whint">Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero</p>';
+    '<p class="whint">Frecce, WASD o un clic per camminare · Invio per parlare · M menu · T telefono · C Cicerone · F schermo intero</p>';
   cv = $('wcv') as HTMLCanvasElement; ctx = cv.getContext('2d')!;
   cv.addEventListener('click', clickMap);
   dlg = $('wdialog'); dlgWho = $('wwho'); dlgTxt = $('wtxt'); dlgOpts = $('wopts');
@@ -111,6 +117,7 @@ function build() {
   dlg.addEventListener('click', function (e) { if ((e.target as Element).closest && (e.target as Element).closest('.wopts')) return; if (dialog) advance(); });
   cv.addEventListener('click', function () { if (dialog) advance(); });
   $('wmenu').addEventListener('click', function () { openMenu(); });
+  $('wphone').addEventListener('click', function () { if (running && !dialog && !busy) openPhone(); });
   $('wcic').addEventListener('click', function () { mentorTalk(); });
   $('wgoal').addEventListener('click', function () { openMenu('viaggio'); });
   window.addEventListener('resize', resize);
@@ -134,20 +141,20 @@ function neighbourhood(name: string, note: string) {
   var now = performance.now();
   if (toastSeen[name] && now - toastSeen[name] < 60000) return;
   toastSeen[name] = now;
-  var el = $('wtoast');
-  el.innerHTML = '<b>' + esc(name) + '</b> ' + esc(note);
+  var el = $('wtoast'), nic = onTheWay(name);
+  el.innerHTML = '<b>' + esc(name) + '</b> ' + esc(note) + (nic ? '<br>' + nic : '');
   el.hidden = false; el.classList.remove('out');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, 5200);
+  toastTimer = setTimeout(function () { el.classList.add('out'); toastTimer = setTimeout(function () { el.hidden = true; }, 600); }, nic ? 8200 : 5200);
 }
 /* what an activity brought Antonio, in the same corner, for a few seconds */
 /** the guardaparco has something for whoever has filled the diary some more */
-export function dexNotice() { if (dexPrizesDue().length) notify('Il guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
+export function dexNotice() { if (dexPrizesDue().length) notify('La guardaparco di Gianola ha un premio per il tuo <b>diario delle creature</b>'); }
 /* saving can fail (a private window, a full memory): the player is told once, and how not to lose the story */
 onSaveFail(function () {
   if (root && !root.hidden) notify('<b>La storia non si salva</b> su questo dispositivo (finestra privata o memoria piena). Dal titolo, in Salvataggi, puoi copiarla con «Esporta».');
 });
-function notify(html: string) {
+export function notify(html: string) {
   var el = $('wtoast');
   el.innerHTML = html;
   el.hidden = false; el.classList.remove('out');
@@ -234,7 +241,7 @@ export function renderHud() {
   lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
   var hint = root.querySelector('.whint');
   if (hint) hint.textContent = st.sella ? 'In sella: frecce o WASD per guidare · Invio per suonare, da fermo per scendere · M menu'
-    : 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
+    : 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · T telefono · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
   $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
   $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
@@ -256,6 +263,7 @@ export function installStoryKeys() {
       e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) interact();
     } else if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); openMenu(); }
     else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); e.stopImmediatePropagation(); mentorTalk(); }
+    else if (e.key === 't' || e.key === 'T') { e.preventDefault(); e.stopImmediatePropagation(); if (!dialog && !busy) openPhone(); }
     else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); e.stopImmediatePropagation(); flyUp(); }
     else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); e.stopImmediatePropagation(); fullScreen(); }
   });
@@ -312,11 +320,12 @@ export function say(lines: string | string[], who?: string | null, opts?: Dialog
   show();
 }
 function show() {
-  var d = dialog!, line = heroText(d.lines[d.i]);
+  var d = dialog!, line = heroText(d.lines[d.i]), opening = dlg.hidden;
   dlg.hidden = false;
-  var ghost = d.who === CICERO || d.who === MAMURRA;
-  dlg.classList.toggle('mentor', ghost); $('wghost').hidden = !ghost;
+  var ghost = d.who === CICERO || d.who === MAMURRA, pic = ghost ? '' : portraitOf(d.who);
+  dlg.classList.toggle('mentor', ghost || !!pic); dlg.classList.toggle('pic', !!pic); $('wghost').hidden = !ghost && !pic;
   if (ghost) $('wghost').innerHTML = d.who === CICERO ? cicero('', 'talk') : mamurra();
+  else if (pic) { $('wghost').innerHTML = pic; $('wghost').style.setProperty('--tc', C[d.who as CharId] ? tc(d.who!) : 'var(--t-none)'); }
   if (d.who === CICERO) cicAppear(Infinity);
   if (d.who) {
     var friend = !!C[d.who as CharId];
@@ -326,10 +335,16 @@ function show() {
   } else dlgWho.hidden = true;
   dlgOpts.hidden = true; dlgOpts.innerHTML = ''; d.showingOpts = false;
   dlg.classList.remove('wait');
-  var full = d.who ? '«' + line + '»' : line, n = 0;
+  /* the scroll unrolls when it opens, and a page turns at each new line */
+  if (!reduced) { dlg.classList.remove('unroll', 'loud'); void dlg.offsetWidth; if (opening) dlg.classList.add('unroll'); }
+  sfx(opening ? 'scroll' : 'page');
+  /* the line in pieces: names in bold and in colour, *stressed* words, SHOUTS (ui/rich.ts); a voice for each speaker */
+  var rs = runs(d.who ? '«' + line + '»' : line), full = plainText(rs), n = 0, v = voiceOf(d.who), kinds = '', type = typer(dlgTxt, rs);
+  rs.forEach(function (r) { kinds += (r.k === 'shout' ? 's' : '.').repeat(r.t.length); });
+  if (!reduced && kinds.indexOf('s') >= 0) dlg.classList.add('loud');
   clearTimeout(typeTimer);
   d.finish = function () {
-    d.typing = false; dlgTxt.textContent = full;
+    d.typing = false; type(full.length);
     if (d.i === d.lines.length - 1 && d.opts) {
       d.showingOpts = true; dlgOpts.hidden = false;
       dlgOpts.innerHTML = d.opts.map(function (o, k) { return '<button class="btn' + (k === 0 ? ' primary' : '') + '" type="button" data-k="' + k + '">' + esc(o.label) + '</button>'; }).join('');
@@ -337,15 +352,26 @@ function show() {
         b.addEventListener('click', function () { if (dialog === d) closeDialog(d.opts![+b.getAttribute('data-k')!].fn); });
       });
       var first = dlgOpts.querySelector('button'); if (first) first.focus();
+      sfx('pop');
     } else dlg.classList.add('wait');
   };
   if (reduced) { d.finish(); return; }
-  d.typing = true; dlgTxt.textContent = '';
+  d.typing = true;
   (function step() {
     if (dialog !== d || !d.typing) return;
-    n += 2; dlgTxt.textContent = full.slice(0, n); typeBlip(!!d.who);
-    if (n >= full.length) d.finish(); else typeTimer = setTimeout(step, 20);
+    var wait = 0;
+    for (var k = 0; k < 2 && n < full.length; k++) { var ch = full.charAt(n); n++; speak(v, ch, kinds.charAt(n - 1) === 's'); wait = Math.max(wait, pauseAfter(ch, full.charAt(n))); }
+    type(n);
+    if (n >= full.length) d.finish(); else typeTimer = setTimeout(step, 24 + wait);
   })();
+}
+/** the face of whoever speaks, in a round frame: a friend's portrait, or the face of a person of Formia from above */
+function portraitOf(who: string | null | undefined): string {
+  if (!who) return '';
+  if (C[who as CharId] && who !== 'esame') return '<span class="wpic">' + face(who) + '</span>';
+  var look = who === NICOLA ? 'nicola' : who === 'Guardaparco' ? 'guardaparco' : who === 'Tullio' ? 'tullio' : '';
+  var src = look ? headShot(look) : '';
+  return src ? '<span class="wpic"><img src="' + src + '" alt=""></span>' : '';
 }
 function advance() {
   var d = dialog;
@@ -382,7 +408,11 @@ function interact() {
   if (a && a.kind === 'sign') { if (a.s.sleep) sleep(a.s); else if (a.s.view) lookOut(a.s); else if (!plotSign(a.s)) say(a.s.text); }
   else if (a && a.kind === 'door') { if (st.sella && a.b.to) rideOff(); else useDoor(a.b); }
   else if (st.sella) rideOff();
-  else { var fp = followerAt(); if (fp && fp[0] === x && fp[1] === y) followerTalk(); }
+  else {
+    var fp = followerAt(), np = companionAt();
+    if (fp && fp[0] === x && fp[1] === y) followerTalk();
+    else if (np && np[0] === x && np[1] === y) companionTalk();
+  }
 }
 /* Antonio turns to his creature: it says its cry, and how it is doing */
 var patted = 0;
@@ -456,7 +486,7 @@ function talkTo(p: Person, past?: boolean) {
   else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
   else if (n.trainer) trainerTalk(n.trainer, n.name || '', n.lines || []);
-  /* whoever is played gets his first creature here: each of the six begins his own story (title, «chi sei?») */
+  /* whoever is played gets his first creature here: each of the seven begins a story of their own (title, «chi sei?») */
   else if (n.starter && !hasStarter()) starterTalk(n.name || '');
   else if (n.starter && !st.seen['dono-retini']) netsGift(n.name || '');
   else if (n.starter && dexPrizesDue().length) dexPrizeTalk(n.name || '');
@@ -468,6 +498,7 @@ function talkTo(p: Person, past?: boolean) {
     say(n.lines || [SHOPS[n.shop].hello], n.name, shopOpts);
   }
   else if (n.gate) gateTalk(n.gate, n.name);
+  else if (n.id === 'nicola') nicolaTalk(n);
   else if (n.activity) offerActivity(n);
   else if (n.hint) say(linesNow(n).concat(nextStop().tip), n.name);
   else { var now = linesNow(n); say(now.length ? now : ['…'], n.name); }
@@ -511,7 +542,11 @@ function leaderTalk(id: string, n?: Npc) {
   var opts: { label: string; fn: (() => void) | null }[] = [{ label: 'Sfida!', fn: function () { challenge(id); } }];
   /* the catchphrase, then what he has to say to this one in particular (or the plain intro) */
   var mine = cv0.vs[firstHuman() as FriendId];
-  say(mine ? [cv0.intro[0]].concat(mine) : cv0.intro, cv0.leader, opts.concat(doIt).concat([{ label: 'Più tardi', fn: null }]));
+  /* the rival's covo is the last pin of Formia: it has been waiting for this since the park */
+  var rv = rivalFriend() === cv0.leader, ready = cityCovi(cv0.city).every(function (c) { return c === cv0 || hasBadge(c); });
+  if (rv && !ready) { say([cv0.intro[0], 'Da me si viene per ultimi, {hero}: prima prendi le altre spille di Formia. Ti aspetto qui, come al parco.'], cv0.leader); return; }
+  var last = rv ? ['L\'ultima spilla di Formia è la mia, {hero}. Dal giorno del parco sapevo che saremmo finiti qui.'] : [];
+  say(mine ? [cv0.intro[0]].concat(last, mine) : last.concat(cv0.intro), cv0.leader, opts.concat(doIt).concat([{ label: 'Più tardi', fn: null }]));
 }
 /* ---------- the creatures' powers: swimming, climbing the walls, the view from above ---------- */
 const MEET_LINE: Record<string, string> = { grotta: 'Qualcosa si muove nel buio…', erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
@@ -525,10 +560,19 @@ onPlace(function (a) {
 });
 onEdge(function (kind, d) {
   var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
-  if (!who || dialog || busy || run) return false;
+  if (dialog || busy || run) return false;
+  /* no creature that swims, but Nicola's windsurf: the whole gulf, with the wind */
+  if (!who && kind === 'swim' && st.seen.tavola) {
+    say(['Il windsurf di Nicola è lì, pronto. Il vento c\'è.'], null, [
+      { label: 'Vai al largo col windsurf', fn: function () { moveMode.swim = true; moveMode.board = true; stepNow(d); } },
+      { label: 'No', fn: null }
+    ]);
+    return true;
+  }
+  if (!who) return false;
   var name = nameOf(who);
   say([kind === 'swim' ? name + ' guarda il mare e ti fa segno: può portarti a nuoto.' : name + ' si arrampica sulle pietre delle mura e ti fa segno di seguirlo.'], null, [
-    { label: kind === 'swim' ? 'Nuota con ' + name : 'Arrampicati con ' + name, fn: function () { moveMode[kind] = true; stepNow(d); } },
+    { label: kind === 'swim' ? 'Nuota con ' + name : 'Arrampicati con ' + name, fn: function () { moveMode[kind] = true; moveMode.board = false; stepNow(d); } },
     { label: 'No', fn: null }
   ]);
   return true;
@@ -538,11 +582,12 @@ onEdge(function (kind, d) {
     can do it carries him on; with none, he goes back to the nearest place he can stand, instead of staying stuck */
 function standOn() {
   if (mover || busy || st.x < 0 || st.y < 0 || st.x >= M.w || st.y >= M.h || M.solid[st.y * M.w + st.x] !== 1) return;
-  var sea = isShallow(M, st.x, st.y), wall = isWall(M, st.x, st.y);
+  var sea = isSea(M, st.x, st.y), wall = isWall(M, st.x, st.y);
   if ((sea && moveMode.swim) || (wall && moveMode.climb)) return;
-  if (sea && powerOf('nuoto')) { moveMode.swim = true; return; }
+  if (sea && powerOf('nuoto')) { moveMode.swim = true; moveMode.board = false; return; }
+  if (sea && st.seen.tavola) { moveMode.swim = true; moveMode.board = true; return; }
   if (wall && powerOf('scalata')) { moveMode.climb = true; return; }
-  moveMode.swim = false; moveMode.climb = false;
+  moveMode.swim = false; moveMode.climb = false; moveMode.board = false;
   var q: [number, number][] = [[st.x, st.y]], seen: Record<string, number> = {};
   seen[key(st.x, st.y)] = 1;
   while (q.length) {
@@ -561,6 +606,15 @@ function standOn() {
 }
 /** swimming over one of the Roman tanks of Gianola: an amphora at the bottom, once */
 function treasure(): boolean {
+  /* a bottle adrift in the gulf, with a message: picked up swimming over it */
+  var b = moveMode.swim && M.id === 'formia' ? BOTTLES.find(function (q) { return q.x === st.x && q.y === st.y && !st.seen[q.id]; }) : null;
+  if (b) {
+    st.seen[b.id] = true; earn(b.prize); save(); renderHud();
+    sfx('found'); halt();
+    var left = BOTTLES.filter(function (q) { return !st.seen[q.id]; }).length;
+    say(['Una bottiglia che galleggia! La tiri su.'].concat(b.text, ['(+' + b.prize + ' sesterzi' + (left ? ': ne restano ' + left + ' nel golfo' : '') + '.)']));
+    return true;
+  }
   var t = moveMode.swim ? treasureAt(M) : null;
   if (!t || st.x !== t[0] || st.y !== t[1] || st.seen.anfora) return false;
   st.seen.anfora = true; earn(60); save(); renderHud();
@@ -646,7 +700,7 @@ function tourneyAfter(won: boolean, key: string) {
    magic of the place. */
 function challenge(id: string) {
   var cv0 = COVI[id], left = teamMons().map(function (m) { return m.uid; });
-  if (!left.length) { say(['Senza una creatura non si entra in un covo: qui si lotta con la propria squadra.', 'Il guardaparco di Gianola te ne affida una.'], cv0.leader); return; }
+  if (!left.length) { say(['Senza una creatura non si entra in un covo: qui si lotta con la propria squadra.', 'La guardaparco di Gianola te ne affida una.'], cv0.leader); return; }
   var lv = covoLevel(id), crew = crewAt(id, lv, covoPins(id)), leader = Object.assign({ id: cv0.leader, last: true }, foeSide(cv0.leader, lv)) as Member;
   var foes = crew.map(function (c) { return foeMember({ sp: c.sp, lv: c.lv }); }).concat([leader]);
   mentorTip('covo');
@@ -708,7 +762,7 @@ function fightOn() {
       benchA: left.concat([firstHuman()]).filter(function (x) { return x !== k; }).map(memberOf), benchB: f.foes.slice(1).map(foeMember),
       smart: [0, f.kind === 'trainer' ? TRAINERS[f.id].smart || 0 : 0], field: PLACE_MAGIC[place], shield: f.kind === 'trainer' ? shieldNow(f.id) : undefined, surgeStart: stonesKept() ? 1 : 0, hero: nameOf(firstHuman()),
       story: f.kind === 'wild' ? { wild: f.id, sp: foe.sp, key: k, foeLv: foe.lv, gold: foe.gold, scene: place } : { trainer: f.id, sp: foe.sp, key: k, foeLv: foe.lv, scene: place },
-      wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? TRAINERS[f.id].title : undefined, dark: !!M.dark });
+      wild: f.kind === 'wild', trainer: f.kind === 'trainer' ? trainerNow(f.id).title : undefined, dark: !!M.dark });
   };
   /* a legend may start with other types than those of its kind */
   var ty = foe.stages && foe.stages[0].types;
@@ -761,6 +815,7 @@ var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
 var walked = 0, sniffed = 0;
 export function stepped(): boolean {
+  windsurfLanded();
   if (treasure()) return true;
   if (!teamMons().length) return false;
   if (spotted()) return true;
@@ -771,7 +826,7 @@ export function stepped(): boolean {
   var h = hidingAt(st.x, st.y);
   if (!h) return false;
   if (calm > 0) { calm--; return false; }
-  if (Math.random() >= meetChance(RATE, st.skills || {})) return false;
+  if (Math.random() >= meetChance(RATE, st.skills || {}) * (h.rate || 1)) return false;
   calm = CALM;
   meet(h);
   return true;
@@ -828,7 +883,7 @@ function lines(t: string[], id: string): string[] { return t.map(function (l) { 
 function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
   var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id];
-  if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola il guardaparco ne affida una a chi se lo merita.']), who); return; }
+  if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola la guardaparco ne affida una a chi se lo merita.']), who); return; }
   var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { trainerFight(id, who); } }];
   if (!came) opts.push({ label: 'Più tardi', fn: null });
   say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat([foesLine(id)]), who, opts);
@@ -917,7 +972,9 @@ function walkPeople(now: number) {
     if (p.leaving) { home(a); return; }
     if (!present(p)) { p.leaving = true; walk(p, walkAway(p.x, p.y, 6), function () { home(a); }); return; }
     if (p.x === p.n.x && p.y === p.n.y) { home(a); return; }
-    walk(p, walkPath(p.x, p.y, p.n.x, p.n.y, false) || [], function () { home(a); });
+    /* too far from his place to walk it in sight: he walks off, and is back there */
+    var way = walkPath(p.x, p.y, p.n.x, p.n.y, false);
+    walk(p, way || walkAway(p.x, p.y, 6), function () { home(a); });
   });
 }
 /** back on his own tile, facing his own way */
@@ -945,10 +1002,42 @@ function dexPrizeTalk(who: string) {
   save(); renderHud(); sfx('badge');
   say(lines, who);
 }
-function starterTalk(who: string) {
-  say(['Ciao {hero}! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
+/** the guardaparco has seen the player land at Gianola behind Nicola: she comes down to the beach, and has a creature
+    for them */
+export function keeperComes() {
+  if (hasStarter() || M.id !== 'formia') return;
+  var p = M.people.find(function (q) { return !!q.n.starter && present(q); });
+  if (!p) return;
+  var k = p;
+  bringNear(k);
+  approach(k, function () { starterTalk(k.n.name || '', ['Eccoti, {hero}! Vi ho visti arrivare dal mare, tu e la vela rossa di Nicola: che entrata!']); });
+}
+/** someone far off who is coming to the player: first put out of the way, a few steps off along the paths, on the side
+    of his own place, so that he walks the rest in sight */
+function bringNear(p: Person) {
+  if (Math.abs(p.x - st.x) + Math.abs(p.y - st.y) <= 11) return;
+  var seen: Record<string, number> = {}, q: [number, number, number][] = [[st.x, st.y, 0]], best: [number, number] | null = null, bd = Infinity;
+  seen[key(st.x, st.y)] = 1;
+  while (q.length) {
+    var c = q.shift()!;
+    if (c[2] >= 7) {
+      var d = Math.hypot(c[0] - p.n.x, c[1] - p.n.y);
+      if (d < bd) { bd = d; best = [c[0], c[1]]; }
+      if (c[2] >= 9) continue;
+    }
+    (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (dd) {
+      var nx = c[0] + DV[dd][0], ny = c[1] + DV[dd][1], k2 = key(nx, ny);
+      if (seen[k2] || blocked(M, nx, ny) || M.at[k2]) return;
+      seen[k2] = 1; q.push([nx, ny, c[2] + 1]);
+    });
+  }
+  if (!best) return;
+  p.x = best[0]; p.y = best[1]; p.mv = undefined;
+}
+function starterTalk(who: string, first?: string[]) {
+  say((first || []).concat(['Ciao {hero}! Lo sai cosa si racconta a Formia? Che era la città dei giganti Lestrigoni e del loro re Lamo, dove approdarono le navi di Ulisse.',
     'Quando i giganti se ne andarono, la loro magia restò nelle pietre, nel mare e negli ulivi. Da quella magia nascono le creature di Formia.',
-    'Al parco ne sono nate tre. Una la affiderei a te: cresce con te, lotta con te, e un giorno cambia forma.'], who, [
+    'Al parco ne sono nate tre. Una la affiderei a te: cresce con te, lotta con te, e un giorno cambia forma.']), who, [
     { label: 'Fammeli vedere', fn: function () {
       chooseStarter(function (uid) {
         var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];
@@ -956,7 +1045,7 @@ function starterTalk(who: string) {
         say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who, null, function () {
           /* and his grandson, who has just picked the one that beats it, wants to try it straight away */
           var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
-          if (r) { var n = r.n; approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+          if (r) { var n = r.n; bringNear(r); approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
         });
       });
     } },
@@ -1135,10 +1224,11 @@ function frame(now: number) {
   update(now);
   if (clickTo) arriveClick();
   walkPeople(now);
+  leadFrame(now);
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; standOn(); renderBars(); tellRewards(); chapterTip(); tune();
+    barAt = now; standOn(); renderBars(); tellRewards(); chapterTip(); groupChat(quiet() && !M.inside); tune();
     /* the first time a creature can do something on the map, Cicero says what */
     if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }
@@ -1152,10 +1242,14 @@ function hide() { stop(); cancelRun(); if (dialog) closeDialog(function () {}); 
 /* the story starts: the ghost of Cicero appears and explains the journey, how to play, and the first step */
 function intro() {
   st.seen.intro = true; st.seen['cap-starter'] = true; save();
-  /* the story of whoever is played: where he lives, the five covi of the others, and where his train goes */
+  /* the story of whoever is played: where they live, the covi of the others, and where their train goes */
   var me = firstHuman() as FriendId, G0 = gateFor('torino', me), lines = OPENING.slice();
-  lines.splice(2, 0, LIVES[me] + ' A Formia ci sono sei covi, uno per ognuno di voi amici: batti gli altri cinque, e poi il treno ti porterà a ' + G0.station + '.');
-  say(lines, CICERO);
+  lines.splice(2, 0, LIVES[me] + ' A Formia ci sono sette covi, uno per ognuno di voi amici: batti gli altri sei, e poi il treno ti porterà a ' + G0.station + '.');
+  /* the rival is picked now, but who it is stays a surprise until the park (story/rival-who.ts) */
+  if (rivalFriend()) lines.splice(3, 0, 'Ah, un\'ultima cosa: a Formia avrai anche un *rivale*. Chi? Lo scoprirai presto. Ti dico solo che lo conosci meglio di quanto pensi.');
+  /* Cicero first, at home; then Nicola comes up the street with the van (ui/nicola.ts) */
+  /* then the phone buzzes: the friends in «il caminetto» have heard about the creatures (ui/chat.ts); then the van */
+  say(lines, CICERO, null, function () { playChat('inizio', function () { vanStart(); }); });
 }
 /* ---------- Cicero, when he is needed ---------- */
 /* He is not always there: he appears (on the map, beside Antonio, and in the corner) when he has something to say,

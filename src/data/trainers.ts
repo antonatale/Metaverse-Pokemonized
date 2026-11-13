@@ -162,41 +162,66 @@ export const TRAINERS: Record<string, Trainer> = {
   /* the rival: Tullio, the guardaparco's grandson. He picks his creature after Antonio, the one that beats his, and
      meets him three times: at the park, on the Appia, and after Mamurra, for the title of the strongest in Formia */
   'rivale-1': {
-    id: 'rivale-1', title: 'Tullio, il nipote del guardaparco', prize: 30, rival: 1, team: [],
-    intro: ['Ehi, aspetta! Sono Tullio, il nipote del guardaparco. Il nonno mi ha fatto scegliere dopo di te.', 'Ho preso {rival}. {why}', 'Le nostre creature sono appena nate: vediamo subito chi è più forte!'],
+    id: 'rivale-1', title: 'Tullio, il nipote della guardaparco', prize: 30, rival: 1, team: [],
+    intro: ['Ehi, aspetta! Sono Tullio, il nipote della guardaparco. La nonna mi ha fatto scegliere dopo di te.', 'Ho preso {rival}. {why}', 'Le nostre creature sono appena nate: vediamo subito chi è più forte!'],
     win: ['Cosa?! Avevo scelto quella giusta, eppure…', 'Va bene, stavolta hai vinto tu. Ma mi alleno, e la prossima volta ti batto!'],
-    lose: ['Visto? Il nonno aveva ragione. Allena il tuo {mine} e riprova quando vuoi: io sto qui.'],
+    lose: ['Visto? La nonna aveva ragione. Allena il tuo {mine} e riprova quando vuoi: io sto qui.'],
     after: ['Rivincita? Il mio {rival} non vede l\'ora.']
   },
   'rivale-2': {
-    id: 'rivale-2', title: 'Tullio, il nipote del guardaparco', prize: 80, smart: 1, rival: 2, team: [],
+    id: 'rivale-2', title: 'Tullio, il nipote della guardaparco', prize: 80, smart: 1, rival: 2, team: [],
     intro: ['{hero}! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
-    win: ['Di nuovo! Ma come fai?', 'Il nonno dice che le creature crescono con chi gli vuole bene. Forse ha ragione lui.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
+    win: ['Di nuovo! Ma come fai?', 'La nonna dice che le creature crescono con chi gli vuole bene. Forse ha ragione lei.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
     lose: ['Stavolta tocca a me! Le tue creature sono stanche: falle riposare e torna.'],
     after: ['Rivincita? Stavolta vinco io.']
   },
   'rivale-3': {
-    id: 'rivale-3', title: 'Tullio, il nipote del guardaparco', prize: 250, smart: 2, rival: 3, team: [],
-    intro: ['{hero}. Hai battuto il fantasma di Mamurra: il nonno non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
-    win: ['…Sei tu il più forte di Formia.', 'Il nonno aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, {hero}.', 'Quando vuoi la rivincita, sono qui al parco.'],
+    id: 'rivale-3', title: 'Tullio, il nipote della guardaparco', prize: 250, smart: 2, rival: 3, team: [],
+    intro: ['{hero}. Hai battuto il fantasma di Mamurra: la nonna non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
+    win: ['…Sei tu il più forte di Formia.', 'La nonna aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, {hero}.', 'Quando vuoi la rivincita, sono qui al parco.'],
     lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
     after: ['Rivincita? Vediamo chi è il più forte di Formia, oggi.'],
     moods: {
       ally: {
-        intro: ['{hero}! Hai visto come si è crepata la Ricchezza? Un pezzo è merito mio, eh.', 'Però adesso, tra noi due, il più forte di Formia chi è? Il nonno guarda, e io non ti regalo niente.'],
+        intro: ['{hero}! Hai visto come si è crepata la Ricchezza? Un pezzo è merito mio, eh.', 'Però adesso, tra noi due, il più forte di Formia chi è? La nonna guarda, e io non ti regalo niente.'],
         win: ['…Sei tu il più forte di Formia. E mi va bene così.', 'Quando vuoi allenarti, sai dove trovarmi.'],
         lose: ['Ho vinto io! Te l\'avevo detto che mi allenavo. Torna quando vuoi, amico.'],
         after: ['Ci alleniamo? Stavolta ti batto, e te lo dico prima.'],
-        gift: { items: { oro: 2 }, say: 'Tieni: i retini d\'oro del nonno. Li userai meglio di me.' }
+        gift: { items: { oro: 2 }, say: 'Tieni: i retini d\'oro della nonna. Li userai meglio di me.' }
       },
       bitter: {
-        intro: ['Hai salvato Formia, eh? Bravo. Il nonno non parla d\'altro.', 'Lo sai chi ha detto a Mamurra come lotti? E lo sai cosa ho imparato io, nel frattempo?', 'Adesso ridi, se ci riesci.'],
-        win: ['…', 'Il nonno ha sempre saputo scegliere. A me non ha scelto.', 'Vattene, {hero}. Qui sto bene da solo.'],
+        intro: ['Hai salvato Formia, eh? Bravo. La nonna non parla d\'altro.', 'Lo sai chi ha detto a Mamurra come lotti? E lo sai cosa ho imparato io, nel frattempo?', 'Adesso ridi, se ci riesci.'],
+        win: ['…', 'La nonna ha sempre saputo scegliere. A me non ha scelto.', 'Vattene, {hero}. Qui sto bene da solo.'],
         lose: ['Tutto qui?', 'Te lo ricordi? L\'hai detto tu.'],
         after: ['Che vuoi ancora?'],
         prize: 500
       }
     }
+  },
+  /* out at sea, for whoever gets that far (swimming with a sea creature, or on Nicola's board) */
+  sup: {
+    id: 'sup', title: 'La ragazza col SUP', prize: 70, smart: 1,
+    team: [{ sp: 'cefalino', lv: 14 }, { sp: 'medusella', lv: 15 }, { sp: 'delfi', lv: 16 }],
+    intro: ['Ehi! Fin qui a nuoto? Rispetto.', 'Io vengo al largo col SUP ogni mattina, prima che si alzi il vento. I miei amici del mare vengono con me.', 'Lotta sull\'acqua: chi cade, paga il cornetto.'],
+    win: ['In acqua sei più forte che a terra, eh.', 'Il cornetto te lo offro al bar dell\'Eclipse.'],
+    lose: ['Splash! Torna quando hai preso confidenza col mare.'],
+    after: ['Guarda laggiù: quando l\'acqua fa così, sotto passano i Delfì.']
+  },
+  sub: {
+    id: 'sub', title: 'Il sub delle secche', prize: 90, smart: 1,
+    team: [{ sp: 'murenaccia', lv: 17 }, { sp: 'riccione', lv: 18 }, { sp: 'astromarina', lv: 19 }],
+    intro: ['Shhh. Sotto di noi ci sono le secche: venti metri d\'acqua, posidonia e anfore rotte.', 'Ci vengo a vedere le murene. Ma una mi ha seguito su, e adesso lotta con me.', 'Pronto? Trattieni il fiato.'],
+    win: ['Bolle… Hai il fiato lungo, tu.', 'La boa gialla segna le secche: lì sotto vive il più grosso dei Delfaro, dicono.'],
+    lose: ['Riemergi, riposati, e riprova.'],
+    after: ['Sotto la boa delle secche passano i Delfaro, di sera. Io li ho visti due volte.']
+  },
+  pescatoreLargo: {
+    id: 'pescatoreLargo', title: 'Il pescatore del gozzo', prize: 120, smart: 2,
+    team: [{ sp: 'granchione', lv: 20 }, { sp: 'cefaldrago', lv: 22 }, { sp: 'delfaro', lv: 23 }],
+    intro: ['Uè, guagliò! Tu nuoti fin quaggiù e io col gozzo ci metto mezz\'ora.', 'Sessant\'anni che pesco nel golfo, da Mola a Gianola. Le creature del mare mi conoscono tutte.', 'Facciamo così: se vinci tu, ti do il pesce di oggi. Se vinco io, mi tiri su le reti.'],
+    win: ['Mannaggia! Sessant\'anni di mare e un ragazzino mi batte.', 'Tieni, il pesce di oggi lo vendi al porto. E salutami il golfo.'],
+    lose: ['Le reti stanno là. Ah, ah!'],
+    after: ['Di sera, dal gozzo, si vede Formia tutta accesa: dal porto a Gianola. Non ti stanchi mai di guardarla.']
   },
   /* the missions of the friends (data/missions.ts): they are not on the map as trainers, the one who asks is */
   tennista: {

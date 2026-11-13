@@ -1,11 +1,11 @@
 import type { FriendId } from '../../data/characters';
 import type { Look } from './types';
 
-/* ================= the six friends ================= */
+/* ================= the seven friends ================= */
 /* Drawn from their photos once, now only these numbers. The order is the order of the shared <defs>. */
 export const CH: Record<FriendId, Look> = {
   antonio: {
-    P: 'an', name: 'Antonio', face: 'square', thumb: '44 16 172 172',
+    P: 'an', name: 'Antonio', face: 'square', thumb: '6 13 248 248',
     skin: { base: '#ddae93', light: '#f1cfb6', shade: '#c1937b', deep: '#9b6b59', line: '#6e4638' },
     lips: { base: '#b8716d', dark: '#8c4b4c', light: '#d39690', inside: '#55222a' },
     iris: { base: '#6c776f', dark: '#29302b', light: '#a1ab9c' },
@@ -27,7 +27,7 @@ export const CH: Record<FriendId, Look> = {
     }
   },
   costanzo: {
-    P: 'co', name: 'Costanzo', face: 'oval', earDx: 1, thumb: '30 10 200 200',
+    P: 'co', name: 'Costanzo', face: 'oval', earDx: 1, thumb: '16 32 228 228',
     skin: { base: '#e6bea5', light: '#f6d9c6', shade: '#ca9e86', deep: '#a5755f', line: '#764a3b' },
     lips: { base: '#c47c78', dark: '#965256', light: '#e0a29d', inside: '#5a2329' },
     iris: { base: '#6a4a33', dark: '#2c1d14', light: '#9b7654' },
@@ -47,7 +47,7 @@ export const CH: Record<FriendId, Look> = {
     }
   },
   andrea: {
-    P: 'av', name: 'Andrea', face: 'strong', earDx: 1, nose: 'strong', thumb: '44 16 172 172',
+    P: 'av', name: 'Andrea', face: 'strong', earDx: 1, nose: 'strong', thumb: '10 19 240 240',
     skin: { base: '#e3b99d', light: '#f4d4be', shade: '#c69a81', deep: '#9f705b', line: '#714637' },
     lips: { base: '#c27773', dark: '#924f52', light: '#dea09a', inside: '#58222a' },
     iris: { base: '#7c8a7f', dark: '#36413a', light: '#b7c2b4' },
@@ -61,7 +61,7 @@ export const CH: Record<FriendId, Look> = {
     }
   },
   valentin: {
-    P: 'va', name: 'Valentin', face: 'round', earDx: -2, thumb: '20 4 220 220', underEye: 0.3,
+    P: 'va', name: 'Valentin', face: 'round', earDx: -2, thumb: '-5 -8 270 270', underEye: 0.3,
     skin: { base: '#edc4ab', light: '#f9dfcf', shade: '#d4a18a', deep: '#af7864', line: '#7c4b3d', blush: '#ea877b' },
     lips: { base: '#c9787a', dark: '#9c5058', light: '#e5a5a2', inside: '#5c2229' },
     iris: { base: '#6b4b35', dark: '#2b1c13', light: '#9a7656' },
@@ -78,7 +78,7 @@ export const CH: Record<FriendId, Look> = {
     ex: { smirk: { m: 'talk' }, cool: { m: 'grin', cheeks: true } }
   },
   forchetta: {
-    P: 'fo', name: 'Forchetta', face: 'oval', earDx: 1, thumb: '38 12 184 184',
+    P: 'fo', name: 'Forchetta', face: 'oval', earDx: 1, thumb: '6 13 248 248',
     skin: { base: '#e4bca1', light: '#f4d6c1', shade: '#c79c84', deep: '#a0715d', line: '#724739' },
     lips: { base: '#c07672', dark: '#924d51', light: '#dc9e98', inside: '#572229' },
     /* light eyes, between blue and green */
@@ -99,7 +99,7 @@ export const CH: Record<FriendId, Look> = {
     }
   },
   zendavid: {
-    P: 'zd', name: 'Zendavid', face: 'oval', earDx: 1, thumb: '40 14 180 180',
+    P: 'zd', name: 'Zendavid', face: 'oval', earDx: 1, thumb: '13 22 234 234',
     skin: { base: '#deb294', light: '#efcdb5', shade: '#c09177', deep: '#986751', line: '#6c4334' },
     lips: { base: '#b87170', dark: '#8b4a4e', light: '#d69791', inside: '#552127' },
     iris: { base: '#5a3e2b', dark: '#24170f', light: '#8a684c' },
@@ -110,5 +110,22 @@ export const CH: Record<FriendId, Look> = {
     glasses: { style: 'round', when: 'always', koTilt: true },
     earring: { x: 187.6, y: 172, r: 3.4, metal: 'silver' }, props: { phones: true }, ko: 'eyes',
     ex: { smirk: { m: 'soft' }, cool: { m: 'soft', e: { closed: 'happy' } } }
+  },
+  /* Claudia, from her photo: black hair to the shoulders with a full fringe, olive skin, winged liner and dark full
+     brows, glossy lips, a ring in the septum, big silver hoops, a black strapless top and a chunky pendant */
+  claudia: {
+    P: 'cl', name: 'Claudia', face: 'oval', earDx: 1, thumb: '6 13 248 248', underEye: 0.28, lashes: true, septum: true, pendant: true,
+    hoops: { r: 7, metal: 'silver' },
+    skin: { base: '#dca684', light: '#efc8a9', shade: '#c38d6c', deep: '#9c6a4f', line: '#6e4535', blush: '#d98a78' },
+    lips: { base: '#c27a70', dark: '#8d4b45', light: '#e6a79c', inside: '#4e1f22' },
+    iris: { base: '#4a2f1f', dark: '#1d120b', light: '#7d5a3e' },
+    brow: { color: '#17100d', hi: '#3d2c26', w: 0.92, lift: 0.6 },
+    hair: { style: 'long', bob: true, bangs: true, seed: 1312, out: '#090707', fills: ['#1b1514', '#221a19', '#151010', '#2a201e'], hi: '#6e5a57' },
+    outfit: { style: 'strapless', base: '#17161b', dark: '#0b0a0e', light: '#2e2c35', line: '#050507', fold: '#0b0a0e' },
+    ko: 'eyes',
+    ex: {
+      smirk: { m: 'smirk', bl: { outer: 0.4 }, br: { outer: 2.6, mid: 2, inner: 0.6 }, e: { open: 0.9, look: [2, 0] } },
+      cool: { m: 'smug', e: { open: 0.8, lid: true, lidAt: -1.8 } }
+    }
   }
 };

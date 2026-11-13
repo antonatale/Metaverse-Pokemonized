@@ -105,7 +105,7 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
   if (me.conf > 0 && id !== 'copenhagenRet' && !BAG[id]) {
     me.conf--;
     ev.push(anim(i, 'confused'));
-    ev.push(say(cm.name + ' è confuso…'));
+    ev.push(say(cm.name + (cm.fem ? ' è confusa…' : ' è confuso…')));
     if (rand(s) < 0.33) {
       let self = Math.max(1, Math.round(30 * statsOf(me).atk / statsOf(me).def * (s.K || K) * (0.88 + rand(s) * 0.12)));
       if (me.id === 'forchetta' && !me.sturdy && self >= me.hp && me.hp > 1) { self = me.hp - 1; me.sturdy = true; }
@@ -116,7 +116,17 @@ function act(s: BattleState, i: number, choice: string | null, ev: BattleEvent[]
       fire(s, i, 'hurt', ev, { side: true });
       return false;
     }
-    if (me.conf === 0) ev.push(say(cm.name + ' torna lucido.'));
+    if (me.conf === 0) ev.push(say(cm.name + (cm.fem ? ' torna lucida.' : ' torna lucido.')));
+  }
+  /* its move was put at the other table (Claudia's Tavoli Separati) before it could use it: it does something else */
+  if (me.banned && me.banned.until >= s.turn && id === me.banned.move && !BAG[id]) {
+    const left = available(s, i).filter(function (x) { return x !== id; });
+    if (left.length) { id = pick(s, left); ev.push(say(cm.name + ' trova il tavolo separato: deve cambiare mossa.')); }
+  }
+  /* led astray (Claudia's Cattiva Strada): now and then it does something else */
+  if (me.astray && me.astray >= s.turn && id !== 'copenhagenRet' && rand(s) < 0.3) {
+    const others = available(s, i).filter(function (x) { return x !== id; });
+    if (others.length) { id = pick(s, others); ev.push(anim(i, 'confused')); ev.push(say(cm.name + ' ha preso la cattiva strada: fa tutt\'altro.')); }
   }
   if (me.id === 'valentin' && id !== 'copenhagenRet' && rand(s) < 0.15) {
     const others = available(s, i).filter(function (x) { return x !== id; });

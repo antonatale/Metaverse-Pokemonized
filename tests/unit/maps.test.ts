@@ -99,8 +99,10 @@ for (const [id, m] of Object.entries(MAPS)) {
       [...(m.signs || []), ...(m.npcs || []), ...(m.items || []), ...(m.warps || [])].forEach((o) => expect(inside(o.x, o.y), JSON.stringify(o).slice(0, 60)).toBe(true));
     });
     it('lets you talk to every person, read every sign and pick up every lost thing', () => {
-      (m.npcs || []).forEach((n) => expect(canTalkTo(id, n.x, n.y), 'person ' + n.id).toBe(true));
-      (m.signs || []).forEach((s) => expect(canTalkTo(id, s.x, s.y), 'sign ' + s.text[0]).toBe(true));
+      /* out at sea a person or a buoy is reached swimming: it needs open water around it */
+      const afloat = (x: number, y: number) => DIRS.some((d) => { const r = m.rows[y + DV[d][1]], ch = r && r[x + DV[d][0]]; return ch === '~'; });
+      (m.npcs || []).forEach((n) => expect(n.float || n.mon ? afloat(n.x, n.y) : canTalkTo(id, n.x, n.y), 'person ' + n.id).toBe(true));
+      (m.signs || []).forEach((s) => expect(s.buoy ? afloat(s.x, s.y) : canTalkTo(id, s.x, s.y), 'sign ' + s.text[0]).toBe(true));
       (m.items || []).forEach((it) => expect(canTalkTo(id, it.x, it.y), 'item ' + it.id).toBe(true));
     });
     it('has doors on the front of their buildings, usable from a reachable tile', () => {
@@ -131,7 +133,8 @@ for (const [id, m] of Object.entries(MAPS)) {
           for (const w of [n.wild, n.wild.night]) if (w) { expect(SPECIES[w.sp], n.id).toBeDefined(); expect(w.lv[0]).toBeLessThanOrEqual(w.lv[1]); }
           return;
         }
-        if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
+        if (n.mon) expect(!!SPECIES[n.mon] && !!n.name, n.id + ' needs a name and a known creature').toBe(true);
+        else if (n.person) expect(CHARS[n.person], n.id).toBeDefined();
         else if (n.look) expect(LOOKS[n.look] && !!n.name, n.id + ' needs a name and a known look').toBeTruthy();
         else if (n.ghost) expect(!!n.name, n.id + ' needs a name').toBe(true);
         else expect(typeof n.seed === 'number' && !!n.name, n.id + ' needs a name and a seed').toBe(true);

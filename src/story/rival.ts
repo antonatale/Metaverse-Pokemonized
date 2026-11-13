@@ -5,8 +5,12 @@ import { TRAINERS, type Trainer } from '../data/trainers';
 import { flag } from './plot';
 import { tullioMood } from './choices';
 import { monsOf } from './growth';
+import { rivalFriend, rivalName } from './rival-who';
+import { CHARS } from '../data/characters';
+import { VOICE, PARTNER, RIVAL_LINES } from '../data/rival-lines';
 
-/* The rival, as in the Pokémon games: Tullio, the guardaparco's grandson. He picks his creature right after Antonio,
+/* The rival, as in the Pokémon games: one of the friends, picked at random for each story (story/rival-who.ts; Tullio,
+   the guardaparco's grandson, in the stories that met him before). The rival picks a creature right after Antonio,
    the one of the three whose type beats Antonio's (none beats Ramarrino's Calma: he takes Polpino, the cleverest), and
    meets him three times, each time stronger: at the park as soon as they have their creatures, on the Appia on the way
    to Cicero's tomb, and at the park again once Mamurra is beaten, for the title of the strongest in Formia.
@@ -50,14 +54,19 @@ export function teamOf(id: string): Trainer['team'] {
   var tr = TRAINERS[id], r = rival();
   if (!tr.rival) return tr.team;
   if (tr.rival === 1) return [{ sp: r, lv: 5, moves: FIRST_MOVES[r] }];
-  if (tr.rival === 2) return [{ sp: 'cicalina', lv: 13 }, { sp: formAt(r, 2), lv: 16 }];
+  /* a friend brings along a creature of their own (the one they join with), Tullio a cicada of his grandfather's park */
+  var f = rivalFriend(), mate = (f ? PARTNER[f] : 'cicalina') as SpeciesId;
+  if (tr.rival === 2) return [{ sp: mate, lv: 13 }, { sp: formAt(r, 2), lv: 16 }];
   /* made an enemy of him, he comes back stronger, and he has learned what Antonio has */
   var angry = tullioMood() === 'bitter', up = angry ? 2 : 0;
-  return [{ sp: 'granchione', lv: 27 + up, resonate: angry }, { sp: 'civettona', lv: 28 + up, resonate: angry }, { sp: formAt(r, 3), lv: 31 + up, resonate: angry }];
+  return [{ sp: f ? formAt(mate, 3) : 'granchione', lv: 27 + up, resonate: angry }, { sp: 'civettona', lv: 28 + up, resonate: angry }, { sp: formAt(r, 3), lv: 31 + up, resonate: angry }];
 }
 /** a trainer as he is now: Tullio is what the player has made of him */
 export function trainerNow(id: string): Trainer {
-  var tr = TRAINERS[id], m = tullioMood(), over = tr.moods && m ? tr.moods[m] : null;
+  var tr = TRAINERS[id], f = tr.rival ? rivalFriend() : null;
+  /* a friend as the rival: the same meetings, in the friend's words */
+  if (f && RIVAL_LINES[id]) { var R = RIVAL_LINES[id]; tr = Object.assign({}, tr, { intro: R.intro, win: R.win, lose: R.lose, after: R.after, moods: R.moods, title: CHARS[f].name + (CHARS[f].fem ? ', la tua rivale' : ', il tuo rivale') }); }
+  var m = tullioMood(), over = tr.moods && m ? tr.moods[m] : null;
   return over ? Object.assign({}, tr, over) : tr;
 }
 /** the magic that shields a trainer's side, as it stands: Tullio has cracked it, or has told Mamurra how Antonio fights */
@@ -72,5 +81,7 @@ export function trainerLine(t: string, id: string): string {
   var rt = SPECIES[r].type, mt = m ? SPECIES[m].type : null, mn = m ? SPECIES[m].name : 'creatura';
   var why = mt && magicBeats(rt, mt) ? rt + ' contro ' + mt + ': il ' + rt + ' ' + MAGIC_CHART[rt].why[MAGIC_CHART[rt].beats.indexOf(mt)] + '. Contro il tuo ' + mn + ' ho il vantaggio!'
     : 'Nessuna delle tre batte il tuo ' + mn + ', e allora ho preso la più sveglia.';
-  return t.replace(/\{rival\}/g, SPECIES[r].name).replace(/\{mine\}/g, mn).replace(/\{why\}/g, why);
+  var f = rivalFriend(), v = f ? VOICE[f] : null, mate = team.length > 1 ? SPECIES[team[0].sp].name : '';
+  if (v) t = t.replace(/\{voice\}/g, v.hi).replace(/\{won\}/g, v.won).replace(/\{beaten\}/g, v.beaten);
+  return t.replace(/\{rival\}/g, SPECIES[r].name).replace(/\{mine\}/g, mn).replace(/\{why\}/g, why).replace(/\{partner\}/g, mate).replace(/\{rv\}/g, rivalName());
 }

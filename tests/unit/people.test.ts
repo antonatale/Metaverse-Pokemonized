@@ -125,7 +125,10 @@ describe('in a battle', () => {
     expect(E.moveLabel(s, 0, 'paper').sub).toContain('Potenza 75');
     expect(E.moveLabel(s, 0, 'gradiente').sub).toContain('Attacco +30%');
     expect(E.moveLabel(s, 0, 'chicago').sub).toContain('Un turno per caricare');
-    expect(E.moveLabel(s, 0, 'paper').eff, 'the magic of the types is for the creatures').toBeUndefined();
+    /* a friend's card says the friend's type, and how it does on the one in front: Cervello beats Chiacchiera */
+    expect(E.moveLabel(s, 0, 'paper').ptype).toBe('Cervello');
+    expect(E.effLevel(E.moveLabel(s, 0, 'paper').eff!)).toBe(1);
+    expect(E.moveLabel(s, 0, 'gradiente').eff).toBeUndefined();
   });
   it('a change of form goes with who comes in', () => {
     const me = { id: 'cicalina' as const, key: 'c1', stats: atLevel(CHARS.antonio.stats, 20), lvl: 20, known: ['botta'] };

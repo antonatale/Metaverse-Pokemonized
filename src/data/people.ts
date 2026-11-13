@@ -92,16 +92,29 @@ export const PATHS: Record<FriendId, PersonPath> = {
       { at: 14, title: 'DJ Zendavid', text: 'La giacca nera e le cuffie più grosse di Formia.' },
       { at: 26, title: 'Il Maestro Zen', text: 'Bianco, calmo, senza ansia. Quasi.' }
     ]
+  },
+  claudia: {
+    learn: [[5, 'ascolta'], [5, 'tavoli'], [7, 'trinita'], [10, 'cattiva'], [14, 'predica'], [20, 'benedizione'], [26, 'verdetto']],
+    moves: [
+      atk('predica', 'La Predica del Padre', 75, 'Parla piano, e non alza mai la voce: danno alto, e l\'Attacco avversario cala per 5 turni.', { fx: { foe: 'atkDown' } }),
+      { id: 'benedizione', name: 'Benedizione del Tavolo', kind: 'heal', uses: 2, text: 'Il Padre benedice il tavolo: recupera il 35% dei PS e la Difesa sale per 5 turni.', fx: { heal: 0.35, self: 'defUp' } },
+      atk('verdetto', 'Il Verdetto', 115, 'Dopo aver ascoltato tutti, decide: danno enorme, va a segno 85 volte su 100.', { acc: 0.85, show: { a: 'banner', text: 'TRINITÀ!', style: 'usa' } })
+    ],
+    forms: [
+      { at: 14, title: 'Diabolica', text: 'Il soprannome di Costanzo, portato come un complimento: le corna rosse sul cerchietto e il giubbotto di pelle.' },
+      { at: 26, title: 'Il Padre', text: 'Della Trinità: Antonio è il Figlio, Valentin lo Spirito. Quando parla lei, il tavolo ascolta. Anche Costanzo, quasi.' }
+    ]
   }
 };
-/** where each one lives (Antonio told): his story begins at his door (data/maps/formia-places.ts, `casa-<id>`) */
+/** where each one lives (Antonio told): the story begins at the door (data/maps/formia-places.ts, `casa-<id>`) */
 export const HOMES: Record<FriendId, string> = {
   antonio: 'Parco la Fontana, in via Amendola',
   valentin: 'Via Ferrucci, accanto a piazza Risorgimento',
   forchetta: 'Via Abate Tosti, vicino alla Torre di Mola',
   costanzo: 'Via Solaro, vicino alla chiesa di San Giovanni',
   andrea: 'Castellone, a due passi da piazza Mattej',
-  zendavid: 'Scauri, vicino alla stazione'
+  zendavid: 'Scauri, vicino alla stazione',
+  claudia: 'San Giulio, in via Palazzo, di fronte alla scuola Mattej'
 };
 /** the same, as Cicero says it to whoever is played: a whole sentence each, so the capitals stay right */
 export const LIVES: Record<FriendId, string> = {
@@ -110,7 +123,8 @@ export const LIVES: Record<FriendId, string> = {
   forchetta: 'Tu abiti in via Abate Tosti, vicino alla Torre di Mola.',
   costanzo: 'Tu abiti in via Solaro, vicino alla chiesa di San Giovanni.',
   andrea: 'Tu abiti a Castellone, a due passi da piazza Mattej.',
-  zendavid: 'Tu abiti a Scauri, vicino alla stazione.'
+  zendavid: 'Tu abiti a Scauri, vicino alla stazione.',
+  claudia: 'Tu abiti a San Giulio, in via Palazzo, di fronte alla scuola Mattej e al parchetto con le altalene.'
 };
 export function isFriend(id: string): id is FriendId { return Object.prototype.hasOwnProperty.call(PATHS, id); }
 
@@ -121,7 +135,8 @@ export const JOIN: Record<Exclude<FriendId, 'antonio'>, { sp: SpeciesId; lv: num
   forchetta: { sp: 'lumacotta', lv: 9 },
   andrea: { sp: 'stellina', lv: 8, activity: 'padel', say: ['Ho calcolato che con te perdo meno tempo. Vengo.', 'Questa stella l\'ho trovata sugli scogli: è di tipo Cervello, come me.'] },
   valentin: { sp: 'cinghialetto', lv: 8, activity: 'volley', say: ['Weee! Da oggi la festa si sposta dove vai tu.', 'Lui è il mio cinghialetto. Non chiedere.'] },
-  zendavid: { sp: 'olivella', lv: 8, activity: 'corsa', say: ['Bau. Se corri così, vengo con te.', 'Questa Olivella ascolta la musica con me. Non si lamenta mai.'] }
+  zendavid: { sp: 'olivella', lv: 8, activity: 'corsa', say: ['Bau. Se corri così, vengo con te.', 'Questa Olivella ascolta la musica con me. Non si lamenta mai.'] },
+  claudia: { sp: 'lumacotta', lv: 8, activity: 'quiz', say: ['Ho sentito il tuo punto: vengo con te.', 'Lei è la mia Lumacotta. Lenta, calma, e non sbaglia mai strada. Al contrario di quel che dice Costanzo.'] }
 };
 /** how far a form takes the numbers: the people have no second form of a kind to get them from, as the creatures do */
 export const FORM_STATS = [1, 1.08, 1.16];
