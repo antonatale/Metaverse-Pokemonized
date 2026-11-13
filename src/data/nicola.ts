@@ -9,7 +9,8 @@ import { FORMIA_AT, FORMIA_SPOT } from './maps/formia-ground';
     are, because Gianola is reached by sea; on the way he tells what Formia is */
 export const PICKUP = {
   come: ['In fondo alla strada spunta un furgone bianco, con una tavola da windsurf legata sul tetto. Rallenta, e suona il clacson.'],
-  hello: ['UAGLIÒ! Ahahah!', 'La guardaparco di Gianola m\'ha chiamato stamattina: oggi affida le creature ai ragazzi di Formia, e ha detto di portarti da lei.',
+  cheer: ['UAGLIÒ! Ma perché hai *’sto muso lungo*? *Su con la vita!* Oggi si va al mare, ahahah!'],
+  hello: ['La guardaparco di Gianola m\'ha chiamato stamattina: oggi affida le creature ai ragazzi di Formia, e ha detto di portarti da lei.',
     'Per strada? Ma quale strada! A Gianola ci si arriva dal *mare*. Ti porto all\'Eclipse: lì ho i windsurf, e il vento oggi è quello giusto. Sali!'],
   board: 'Sali sul furgone',
   arrive: ['Eccoci, uagliò: l\'Eclipse! Ahahah, hai visto che guida? Manco una buca.', 'Vieni giù in riva, che ti presento un amico.'],

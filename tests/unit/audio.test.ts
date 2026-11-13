@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TRACKS, NIGHT_OF } from '../../src/audio/tracks';
-import { worldMusic, settle, TUNE_WAIT, type TuneWait } from '../../src/audio/zones';
+import { worldMusic, openingMusic, settle, TUNE_WAIT, type TuneWait } from '../../src/audio/zones';
 import { parse } from '../../src/audio/music';
 import { hz } from '../../src/audio/synth';
 import { SFX_NAMES } from '../../src/audio/sfx';
@@ -68,6 +68,16 @@ describe('the cries of the creatures', () => {
 });
 
 describe('the music of the places', () => {
+  it('keeps the mystery until Nicola arrives, then plays his cheerful theme until the first creature', () => {
+    expect(openingMusic({})).toBe('mistero');
+    expect(openingMusic({ intro: true })).toBe('mistero');
+    expect(openingMusic({ intro: true, 'nicola-arrived': true })).toBe('nicola');
+    expect(openingMusic({ intro: true, 'nicola-arrived': true, starter: true })).toBe('');
+    expect(openingMusic({ tavola: true })).toBe('nicola');
+    expect(openingMusic({ 'ws-start': true })).toBe('nicola');
+    expect(openingMusic({ intro: true }, true)).toBe('nicola');
+    expect(TRACKS.nicola.loop).toBe(true);
+  });
   it('gives a night version of every tune of the map, slower and softer', () => {
     for (const n of NIGHT_OF) {
       const day = TRACKS[n], night = TRACKS[n + ':night'];

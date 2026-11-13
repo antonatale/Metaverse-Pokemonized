@@ -13,12 +13,22 @@ import { addCreature, firstHuman, heroText, homeMons, joinFriend, leadCreature, 
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly } from '../../src/story/missions';
 import { epilogue } from '../../src/story/epilogue';
 import { rival, rivalFor } from '../../src/story/rival';
+import { prepare, present } from '../../src/story/maps';
 
 /* Everyone in the company is a protagonist: its own creatures, and missions only it can do. */
 const mon = (uid: string, owner?: string) => ({ uid, sp: 'cicalina' as const, moves: ['botta'], bond: 20, nat: 'Sereno', ...(owner ? { owner } : {}) });
 beforeEach(() => { st.seen = {}; st.beaten = {}; st.lv = {}; st.mons = []; st.squad = ['antonio']; delete st.first; delete st.lead; delete st.leads; st.dex = {}; st.bag = {}; st.done = {}; st.best = {}; st.money = 0; });
 
 describe('who is being played', () => {
+  it('keeps the defeated rival visible until their conversation is over', () => {
+    st.seen.starter = true; st.beaten['tr-rivale-1'] = true; st.rivalFriend = 'andrea';
+    const rival = prepare('formia').people.find(p => p.n.trainer === 'rivale-1')!;
+    expect(present(rival)).toBe(false);
+    rival.engaged = true;
+    expect(present(rival)).toBe(true);
+    rival.engaged = false;
+    expect(present(rival)).toBe(false);
+  });
   it('is Antonio until the player says otherwise, and in an old save everything is his', () => {
     st.mons = [mon('c1'), mon('c2')];
     expect(firstHuman()).toBe('antonio');

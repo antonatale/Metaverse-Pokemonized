@@ -33,8 +33,10 @@ function lastFreed(): FriendId | null {
 }
 /** the lines of a chat for this story: who writes each one */
 function linesOf(c: Chat): [FriendId, string][] {
-  var me = firstHuman(), rv = rivalFriend(), hasRival = c.lines.some(function (l) { return l[0] === 'rival'; });
-  return c.lines.map(function (l): [FriendId, string] | null {
+  var won = st.chats?.[c.id]?.won ?? !!st.beaten['tr-rivale-1'];
+  var source = c.loss && !won ? c.loss : c.lines;
+  var me = firstHuman(), rv = rivalFriend(), hasRival = source.some(function (l) { return l[0] === 'rival'; });
+  return source.map(function (l): [FriendId, string] | null {
     var who = l[0] === 'rival' ? rv : l[0] === 'keys' ? keysHolder() : l[0] === 'last' ? lastFreed() : l[0];
     if (!who || who === me || (hasRival && l[0] !== 'rival' && who === rv)) return null;
     /* the keys are told of in the chat of the covo of the one who has them, until they are back */
@@ -123,12 +125,13 @@ export function openPhone() {
 }
 /** a chat, now: the phone buzzes, comes up, and the friends write one after the other; then `then` */
 export function playChat(id: string, then?: () => void) {
+  if (st.seen['chat-' + id]) { if (then) then(); return; }
   var c = CHATS.filter(function (x) { return x.id === id; })[0];
   if (!c || playing) { if (then) then(); return; }
   st.seen['chat-' + c.id] = true;
   st.chats = st.chats || {};
   var at = Date.now();
-  st.chats[c.id] = { at: at };
+  st.chats[c.id] = { at: at, won: c.loss ? !!st.beaten['tr-rivale-1'] : undefined };
   save();
   var ls = linesOf(c);
   if (!ls.length) { if (then) then(); return; }

@@ -22,11 +22,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - name: Typecheck
-        run: npx tsc --noEmit
-      - name: Unit tests and golden files
-        run: npm test
-      - name: Build the single file
-        run: npx vite build
+      - name: Verify game and build
+        run: npm run check
       - name: Size of the single file
         run: ls -l dist/index.html

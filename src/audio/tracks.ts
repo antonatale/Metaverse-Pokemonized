@@ -199,7 +199,7 @@ export const TRACKS: Record<string, Track> = {
     ],
     drums: { gain: 0.35, bars: repeat(['k . . h . . h . k . . h . . h .'], 8) }
   },
-  /* the night before (13 November 2026): the prologue and the first steps of the story, until the first creature. Slow,
+  /* the night before: the prologue and the first steps, until Nicola arrives. Slow,
      D minor, a low drone and a bell that rings far away; the melody asks something and does not answer */
   mistero: {
     bpm: 66, loop: true,
@@ -223,6 +223,31 @@ export const TRACKS: Record<string, Track> = {
         '. . . . C#6 . . . . . . . . . . .'
       ], { gain: 0.03, cutoff: 3600, decay: 0.6, sustain: 0.05, release: 0.9 })
     ]
+  },
+  /* Nicola's arrival: a bouncy major-key tune, with little answers and a skipping bass, through the first sea trip. */
+  nicola: {
+    bpm: 104, loop: true,
+    voices: [
+      lead([
+        'D5 . F#5 A5 . A5 F#5 . E5 . G5 B5 . A5 . .',
+        'F#5 . A5 D6 . C#6 B5 . A5 . F#5 E5 . D5 . .',
+        'G5 . B5 D6 . B5 A5 . G5 . E5 G5 . B5 . .',
+        'A5 . C#6 E6 . D6 C#6 . B5 . A5 E5 . A5 . .'
+      ], { type: 'triangle', gain: 0.2, cutoff: undefined, decay: 0.08, sustain: 0.35, vibrato: 5 }),
+      bass([
+        'D3 . A3 . D3 . F#3 . A2 . E3 . A2 . C#3 .',
+        'D3 . A3 . D3 . F#3 . D3 . A3 . D3 . F#3 .',
+        'G2 . D3 . G2 . B2 . E3 . B3 . E3 . G3 .',
+        'A2 . E3 . A2 . C#3 . A2 . E3 . A2 . C#3 .'
+      ], { gain: 0.24, sustain: 0.4 }),
+      pluck([
+        '. . F#4 A4 . . F#4 A4 . . E4 A4 . . E4 A4',
+        '. . F#4 A4 . . F#4 A4 . . F#4 A4 . . F#4 A4',
+        '. . G4 B4 . . G4 B4 . . G4 B4 . . G4 B4',
+        '. . E4 A4 . . E4 A4 . . E4 A4 . . E4 A4'
+      ], { gain: 0.024, cutoff: 2600 })
+    ],
+    drums: { gain: 0.32, bars: repeat(['k . h . s . h h k . h . s . h .'], 4) }
   },
   /* inside a covo (13 November 2026): the echo of Telepilo, a little spooky and a little funny, A minor with the leading
      tone of the harmonic scale, Am F Dm E */

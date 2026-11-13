@@ -68,7 +68,7 @@ export interface StoryProgress {
       story that had met him */
   rivalFriend?: FriendId;
   /** the chats of «il caminetto» (data/chat.ts): when each came, and what the player answered */
-  chats?: Record<string, { at: number; reply?: string }>;
+  chats?: Record<string, { at: number; reply?: string; won?: boolean }>;
   /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
   books?: number;
   /** the gifts of the covi (data/covo-places.ts): Valentin's mărțișor worn, the tune chosen with Zendavid's headphones */
@@ -146,6 +146,12 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
     if (v.map === 'circolo') { var d = MAPS.formia.buildings!.find(function (b) { return b.id === 'tennis'; })!; v.map = 'formia'; v.x = d.door[0]; v.y = d.door[1] + 1; v.dir = 'down'; }
     if (walled(v.x, v.y, /[-9|+8BiT#]/)) { backHome(v); delete v.moto; delete v.sella; }
     else if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT#]/)) delete v.moto;
+  } },
+  /* More paving and turning room for Nicola's van; generated houses and verge furniture keep clear of the route. */
+  { id: 'formia12', what: 'le strade larghe per il furgone', run: function (v) {
+    if (v.map === 'formia' && walled(v.x, v.y, /[-9|+8BiT#KLY]/)) { backHome(v); delete v.sella; }
+    if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT#KLY]/)) delete v.moto;
+    if (v.van && v.van.map === 'formia' && walled(v.van.x, v.van.y, /[-9|+8BiT#KLY]/)) delete v.van;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a

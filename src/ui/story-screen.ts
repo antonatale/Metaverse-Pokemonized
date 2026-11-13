@@ -52,7 +52,7 @@ import type { Bout, Member, StoryTag } from '../battle';
 import { wildGone, wildNow, hidingAt, restOf, settle as settlePeople } from '../story/maps';
 import { BOTTLES } from '../data/maps/formia';
 import { soundButton } from './sound';
-import { music, worldMusic, settle, sfx, type TuneWait } from '../audio';
+import { music, worldMusic, openingMusic, settle, sfx, type TuneWait } from '../audio';
 import { runs, plainText, typer, voiceOf, speak, pauseAfter } from './rich';
 import { headShot } from '../render/canvas/walkers';
 import { startBattle, goHome } from './battle-screen';
@@ -64,7 +64,7 @@ import { hasGift, charmOn } from '../story/lairs';
    enters the covi and challenges his friends; battles run on the battle screen. */
 
 export interface DialogOpt { label: string; fn: (() => void) | null }
-interface Dialog { lines: string[]; i: number; who?: string | null; opts?: DialogOpt[] | null; done?: () => void; typing: boolean; showingOpts: boolean; finish?: () => void }
+interface Dialog { lines: string[]; i: number; who?: string | null; opts?: DialogOpt[] | null; done?: () => void; read?: () => void; typing: boolean; showingOpts: boolean; finish?: () => void }
 function tc(id: string) { return 'var(--t-' + C[id as CharId].type.toLowerCase() + ')'; }
 
 /* ---------- DOM ---------- */
@@ -317,9 +317,9 @@ function arriveClick() {
 /* ---------- talking ---------- */
 export let dialog: Dialog | null = null;
 let typeTimer: ReturnType<typeof setTimeout> | undefined;
-export function say(lines: string | string[], who?: string | null, opts?: DialogOpt[] | null, done?: () => void) {
+export function say(lines: string | string[], who?: string | null, opts?: DialogOpt[] | null, done?: () => void, read?: () => void) {
   halt();
-  dialog = { lines: ([] as string[]).concat(lines), i: 0, who: who, opts: opts, done: done, typing: false, showingOpts: false };
+  dialog = { lines: ([] as string[]).concat(lines), i: 0, who: who, opts: opts, done: done, read: read, typing: false, showingOpts: false };
   show();
 }
 function show() {
@@ -348,6 +348,7 @@ function show() {
   clearTimeout(typeTimer);
   d.finish = function () {
     d.typing = false; type(full.length);
+    if (d.i === d.lines.length - 1 && d.read) { const read = d.read; d.read = undefined; read(); }
     if (d.i === d.lines.length - 1 && d.opts) {
       d.showingOpts = true; dlgOpts.hidden = false;
       dlgOpts.innerHTML = d.opts.map(function (o, k) { return '<button class="btn' + (k === 0 ? ' primary' : '') + '" type="button" data-k="' + k + '">' + esc(o.label) + '</button>'; }).join('');
@@ -819,15 +820,16 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
       if (gift) { st.bag = st.bag || {}; for (var g in gift.items) st.bag[g] = (st.bag[g] || 0) + gift.items[g]; }
       save(); renderHud(); fight = null;
       sfx('badge');
-      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['{hero} vince ' + coins(now.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id, f.who); });
+      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['{hero} vince ' + coins(now.prize) + '.'] : []), f.who, null, function () { plotAfter(f.id, f.who, f.id === 'rivale-1' ? firstChallengeChat : undefined); });
     });
     return;
   }
   rewardsAll(pay, 0, function () {
     fight = null;
-    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who); else say([sp.name + ' torna a nascondersi. {hero} e le sue creature vanno a riposare.']);
+    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who, null, f.id === 'rivale-1' ? firstChallengeChat : undefined); else say([sp.name + ' torna a nascondersi. {hero} e le sue creature vanno a riposare.']);
   });
 }
+function firstChallengeChat() { st.seen['sfida-rivale-1'] = true; save(); playChat('rivale-1'); }
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
 var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
@@ -904,6 +906,12 @@ function wildTalk(p: Person) {
 function lines(t: string[], id: string): string[] { return t.map(function (l) { return trainerLine(l, id); }); }
 /** a trainer challenges Antonio (`came`: he has walked up to him, and there is no saying later) */
 function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
+  const speaker = M.people.find(p => p.n.trainer === id);
+  if (speaker) {
+    if (meeting && meeting !== speaker) meeting.engaged = false;
+    meeting = speaker; speaker.engaged = true; speaker.path = undefined; speaker.mv = undefined;
+    if (!away.some(a => a.p === speaker)) away.push({ p: speaker, map: M.id });
+  }
   mentorTip('trainer');
   var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id];
   if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola la guardaparco ne affida una a chi se lo merita.']), who); return; }
@@ -957,6 +965,8 @@ function faceTo(x: number, y: number, tx: number, ty: number): Dir { return Math
 /** the "!", the walk up to Antonio (who stands still meanwhile), and the two face each other: then `then` */
 function approach(p: Person, then: () => void) {
   noticed[p.n.trainer!] = Date.now();
+  if (meeting && meeting !== p) meeting.engaged = false;
+  p.engaged = true;
   halt(); lock(true); meeting = p;
   p.alert = performance.now(); p.dir = faceTo(p.x, p.y, st.x, st.y);
   sfx('spot');
@@ -982,6 +992,8 @@ function walkPeople(now: number) {
     if (a.map !== M.id) { home(a); return; }
     if (p.mv && now - p.mv.t0 >= STEP) p.mv = undefined;
     if (p.mv) return;
+    /* The approach may finish, but the speaker waits through dialogue callbacks, rewards and the phone scene. */
+    if (meeting === p && !a.done && (dialog || fight || overlayOpen() || busy || between)) return;
     if (p.path && p.path.length) {
       var nx = p.path[0][0], ny = p.path[0][1];
       if ((nx === st.x && ny === st.y) || (mover && nx === mover.tx && ny === mover.ty) || personAt(M, nx, ny)) return;   /* in the way: he waits */
@@ -992,8 +1004,7 @@ function walkPeople(now: number) {
     }
     if (p.path) { p.path = undefined; var cb = a.done; a.done = undefined; if (cb) { cb(); return; } }
     /* the meeting is over: back to his place, or (beaten, and not there any more) away for good */
-    if (meeting === p && (dialog || fight || overlayOpen() || busy)) return;
-    if (meeting === p) meeting = null;
+    if (meeting === p) { meeting = null; p.engaged = false; }
     if (p.leaving) { home(a); return; }
     if (!present(p)) { p.leaving = true; walk(p, walkAway(p.x, p.y, 6), function () { home(a); }); return; }
     /* a defender of a covo, beaten, goes and stands aside */
@@ -1019,6 +1030,7 @@ function home(a: { p: Person }) {
   var p = a.p;
   var rest = restOf(p.n);
   p.x = rest[0]; p.y = rest[1]; p.dir = p.n.dir || 'down'; p.mv = p.path = p.alert = undefined; p.leaving = false;
+  p.engaged = false;
   away = away.filter(function (b) { return b.p !== p; });
   if (meeting === p) meeting = null;
 }
@@ -1081,10 +1093,12 @@ function starterTalk(who: string, first?: string[]) {
       chooseStarter(function (uid) {
         var sp = SPECIES[idOf(uid) as keyof typeof SPECIES];
         giveNets();
-        say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who, null, function () {
-          /* and his grandson, who has just picked the one that beats it, wants to try it straight away */
-          var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
-          if (r) { var n = r.n; bringNear(r); approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+        playChat('starter', function () {
+          say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who, null, function () {
+            /* The group has already celebrated the creature before the rival comes to challenge. */
+            var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
+            if (r) { var n = r.n; bringNear(r); approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+          });
         });
       });
     } },
@@ -1250,16 +1264,18 @@ function openMenu(tab?: string) {
     (audio/zones.ts); open() forgets the last one, because a battle has played its own in between */
 let lastTune = '', tuneWait: TuneWait = { now: '', next: '', since: 0 };
 onRadio(function () { tune(); });
-function tune() {
+function tune(fade = 0) {
   /* inside a covo, the tune of the covi; with Zendavid's headphones, the one chosen */
-  /* until the first creature, the tune of the night before: something has happened, nobody knows what */
-  const night = darkness(new Date()) > 0.5, chosen = hasGift('cuffie') && st.radio ? st.radio : M.theme ? 'covo' : !st.seen.starter ? 'mistero' : '';
-  const asked = chosen ? (chosen === 'home' || chosen === 'mistero' ? chosen : chosen + (night ? ':night' : '')) : worldMusic(M.id, areaName(), night);
+  const night = darkness(new Date()) > 0.5, chosen = hasGift('cuffie') && st.radio ? st.radio : M.theme ? 'covo' : openingMusic(st.seen, st.companion === 'nicola');
+  const asked = chosen ? (chosen === 'home' || chosen === 'mistero' || chosen === 'nicola' ? chosen : chosen + (night ? ':night' : '')) : worldMusic(M.id, areaName(), night);
   /* the first tune after open() comes in at once; then a change waits a moment (settle), and crosses over */
   if (!lastTune) { tuneWait = { now: asked, next: '', since: 0 }; lastTune = asked; music(asked); return; }
+  if (fade) { tuneWait = { now: asked, next: '', since: 0 }; lastTune = asked; music(asked, { fade }); return; }
   const t = settle(tuneWait, asked, performance.now());
   if (t !== lastTune) { lastTune = t; music(t, { fade: 2.6 }); }
 }
+/** Story milestones change the mood as they happen, without the neighbourhood delay. */
+export function refreshMusic() { tune(7); }
 export let running = false;
 let raf = 0;
 function frame(now: number) {
@@ -1299,7 +1315,7 @@ function intro() {
   prologue(function () { say(lines, CICERO, null, function () { playChat('inizio', function () { vanStart(); }); }); });
 }
 /* The night before (13 November 2026, Antonio: «all'inizio ci deve essere un alone di mistero, anche con la musica»):
-   on black, a line at a time, what happened at 3:12; its tune goes on until the first creature */
+   on black, a line at a time, what happened at 3:12; its tune goes on until Nicola arrives */
 const PROLOGUE = ['Formia, la notte prima.', 'Alle 3:12 un boato arriva dal mare, dalla parte di Gianola. I vetri tremano fino a Castellone.',
   'Le luci della città si spengono, tutte insieme, per un minuto.', 'Quando tornano, qualcuno giura di aver visto delle luci colorate sopra le case. Una, due… di più. Poi niente.',
   'Al mattino nessuno ne parla. Ma nelle pietre, nel mare e negli ulivi di Formia, qualcosa si è svegliato.'];
@@ -1438,12 +1454,12 @@ export const WORLD = {
     adopt: function (sp: SpeciesId, lv: number) { var uid = addCreature(sp, lv); st.seen.starter = true; save(); renderHud(); return uid; },
     /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */
     spotting: function (on: boolean) { spotting = on; },
-    who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir } : null; },
+    who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir, present: present(q), moving: !!q.mv } : null; },
     /* the way through a place, from its entry, as the validator found it; and straight to another map (playtests) */
     way: function () { return M.place ? placeProof(M).way : []; },
     travel: travel,
     /* experience for someone, as after a battle: what it learns and the form it takes (playtests) */
-    xp: function (key: string, n: number) { var g = gainXp(key, n); save(); renderHud(); growthSay(g, [nameOf(key) + ' guadagna ' + n + ' punti esperienza.']); },
+    xp: function (key: string, n: number, quiet?: boolean) { var g = gainXp(key, n); save(); renderHud(); if (!quiet) growthSay(g, [nameOf(key) + ' guadagna ' + n + ' punti esperienza.']); },
     /* a wild creature of a hiding place jumps out, as if Antonio had just stepped into it (playtests) */
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     /* a shop, as from its counter */

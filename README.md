@@ -10,6 +10,7 @@ npm run dev
 ```
 
 Apri http://localhost:5173. `npm run build` produce `dist/index.html`; `npm test` verifica dati, motore e grafica.
+`npm run check` esegue i test e compila il gioco, inclusa la verifica TypeScript: è lo stesso comando usato da GitHub.
 
 ## Dove leggere
 

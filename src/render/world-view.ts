@@ -7,9 +7,7 @@ import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/gr
 import type { FriendId } from '../data/characters';
 import { mover, parity, STEP, gear, van } from '../story/movement';
 import { vanSprite, VAN_W, VAN_H } from './canvas/van';
-import { roadShift } from '../story/van';
-/** the van is drawn smaller than its picture: a lane wide */
-const VAN_K = 0.6;
+import { roadShift, VAN_SCALE as VAN_K } from '../story/vehicle-space';
 import { covoOfBuilding } from '../data/covo-places';
 import { covoState, lairsKey, hasGift } from '../story/lairs';
 import { auraBack, auraFront, ambience, type AuraAt } from './canvas/covo';
@@ -228,11 +226,11 @@ function vanDrawn(now: number, x: number, y: number, dir: Dir, driver: boolean, 
   var k = dir + (driver ? 'd' : '') + (rider ? 'r' + firstHuman() : '') + (laugh ? 'l' : '') + bob + '@' + RS;
   if (!vanSprites[k]) {
     if (++vanN > 60) { vanSprites = {}; vanN = 0; }
-    /* drawn at VAN_K of its size: a van as wide as a lane, its wheels on the road (13 November 2026) */
+    /* Full-size beside the scooter; routing reserves its ground footprint. */
     vanSprites[k] = { cv: vanSprite(P || palette(), RS * VAN_K, dir, driver ? LOOKS.nicola : null, rider ? lookFor(firstHuman() as FriendId) : null, laugh, bob), w: VAN_W * VAN_K, h: VAN_H * VAN_K, up: VAN_H * VAN_K - T };
   }
   /* in the middle of the street, never over the water (story/van.ts) */
-  var sh = M && !M.inside ? roadShift(M, Math.round(x / T), Math.round(y / T), dir, T) : { dx: 0, dy: 0 };
+  var sh = M && !M.inside ? roadShift(M, x / T, y / T, dir, T) : { dx: 0, dy: 0 };
   return { yb: y + T + 0.5 + sh.dy, x: x - (VAN_W * VAN_K - T) / 2 + sh.dx, spr: vanSprites[k] };
 }
 function vanNow(now: number, pp: { x: number; y: number }): Drawn | null {

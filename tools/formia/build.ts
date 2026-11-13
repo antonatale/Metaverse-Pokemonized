@@ -12,11 +12,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { W, H, col, row } from '../../src/data/maps/formia-projection';
-import { PAINT, CLEAR } from './paint';
 import { PLACES, SPOTS, HIDING } from '../../src/data/maps/formia-places';
 import { RAILS, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, WIDEN, SHORE, QUAYS, BEACHFRONT, POND, SEAS, BUOYS, HARBOUR, NETS,
   TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, ROWS, PINES, BEDS, ANCHOR, BENCHES, SCOOTERS, FENCES, GATES, CLOSED, KEEP_OPEN, HEDGES,
-  LAND, DARSENA,
+  LAND, DARSENA, VAN_ROADS,
   type Line, type Rect } from './network';
 
 type LL = [number, number];   /* lat, lon */
@@ -78,8 +77,7 @@ function walkLine(l: Line, fn: (x: number, y: number) => void) {
     if (x0 !== x1 && y0 !== y1) { problems.push(l.name + ': ' + x0 + ',' + y0 + ' → ' + x1 + ',' + y1 + ' is not straight'); continue; }
     const sx = Math.sign(x1 - x0), sy = Math.sign(y1 - y0);
     for (let x = x0, y = y0; ; x += sx, y += sy) {
-      fn(x, y);
-      if (l.w === 2) { fn(x + 1, y); fn(x, y + 1); fn(x + 1, y + 1); }
+      for (let dy = 0; dy < l.w; dy++) for (let dx = 0; dx < l.w; dx++) fn(x + dx, y + dy);
       if (x === x1 && y === y1) break;
     }
   }
@@ -264,9 +262,7 @@ for (const b of BEACHFRONT) for (let x = b.x0; x <= b.x1; x++) {
   for (let y = b.y + 1; y < H && isLand(x, y) && !isStreet(x, y); y++) set(x, y, ':');
 }
 
-/* ---------- 7. by hand ---------- */
-for (const c of CLEAR) for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) if (isLand(x, y) && !/[=v,r]/.test(get(x, y))) set(x, y, c.to || '.');
-for (const p of PAINT) p.rows.forEach((line, dy) => [...line].forEach((ch, dx) => { if (ch !== ' ') set(p.x + dx, p.y + dy, ch); }));
+/* ---------- 7. the relief ---------- */
 /* the terraces of the relief are open ground: no mountain on them, and later no houses and no wilderness */
 const terraced = grid(false);
 for (const t of TERRACES) for (let y = t.y0; y <= t.y1; y++) for (let x = t.x0; x <= t.x1; x++) {
@@ -285,6 +281,10 @@ for (const t of TERRACES) if (!t.olives) for (let y = t.y0; y <= t.y1; y++) for 
 
 /* ---------- 8. the places: near where each one really is, with the door on a street ---------- */
 const reserved = grid(false);
+const vanRoad = grid(false);
+for (const l of VAN_ROADS) walkLine(l, (x, y) => {
+  if (isLand(x, y)) vanRoad[y][x] = true;
+});
 /** the tiles under a building: nothing goes through them */
 const foot = grid(false);
 /** the footpaths to the doors: no one stands on them */
@@ -534,6 +534,11 @@ if (placed.gelati) {
 each(MARANOLA, (x, y) => { if (isLand(x, y) && !isStreet(x, y)) set(x, y, 'v'); });
 
 /* ---------- 9. people, signs and things, by their places ---------- */
+/* A little extra paving on the main van route, after fixed places have kept their footprints. */
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (vanRoad[y][x] && !foot[y][x]) {
+  reserved[y][x] = true;
+  if (!/[=vzr]/.test(get(x, y))) set(x, y, '_');
+}
 const spots: Record<string, [number, number]> = {};
 /* nobody stands right in front of a door */
 const front = grid(false);
@@ -549,7 +554,7 @@ for (const s of SPOTS) {
   else { const q = P(s.at!); tx = Math.floor(q[0]); ty = Math.floor(q[1]); }
   const ok = STAND[s.on || 'land'];
   /* a spot may stand in the room around a place, never on a building, a door's path (Antonio himself may) or another spot */
-  const open = (x: number, y: number) => inside(x, y) && !foot[y][x] && !roofed[y][x] && !front[y][x] && (!pathed[y][x] || !!s.walk);
+  const open = (x: number, y: number) => inside(x, y) && !vanRoad[y][x] && !foot[y][x] && !roofed[y][x] && !front[y][x] && (!pathed[y][x] || !!s.walk);
   const found = rings(tx, ty, 6, (x, y) => {
     if (!open(x, y) || !ok.test(get(x, y))) return false;
     /* two ways to reach it, so nothing placed later can shut it in, and it must not shut in a spot placed before */
@@ -596,7 +601,7 @@ for (const far of [0, 2, 5]) for (const z of TOWN) for (let y = z.y0; y <= z.y1;
   if (kind !== 'condo' && HIGH_STREET.some((r) => within(r, x + 1, y + 2))) kind = 'shop';
   const w = kind === 'condo' ? 4 : 3, h = kind === 'condo' ? 3 : 2;
   let fits = true;
-  for (let a = y; a < y + h && fits; a++) for (let b = x; b < x + w && fits; b++) if (!free(b, a) || !/[.fT]/.test(get(b, a))) fits = false;
+  for (let a = y; a < y + h && fits; a++) for (let b = x; b < x + w && fits; b++) if (!free(b, a) || vanRoad[a][b] || !/[.fT]/.test(get(b, a))) fits = false;
   /* room to walk around it: no building, railway, sea or hill right next to it */
   for (let a = y - 1; a <= y + h && fits; a++) for (let b = x - 1; b <= x + w && fits; b++) if (!inside(b, a) || foot[a][b] || /[~rRMQJ]/.test(get(b, a))) fits = false;
   for (let a = y - 2; a < y && fits; a++) for (let b = x; b < x + w && fits; b++) if (inside(b, a) && spotted[a][b]) fits = false;
@@ -763,7 +768,7 @@ let lamps = 0;
   let total = reach();
   for (let y = 4; y < H; y++) for (let x = 0; x < W; x++) {
     const g = get(x, y);
-    if (!LAMP[g] || foot[y][x] || pathed[y][x] || roofed[y][x] || keep[y][x] || squared[y][x] || road(x, y)) continue;
+    if (!LAMP[g] || vanRoad[y][x] || foot[y][x] || pathed[y][x] || roofed[y][x] || keep[y][x] || squared[y][x] || road(x, y)) continue;
     if (!((road(x, y + 1) && x % 8 === 0) || (road(x, y - 1) && x % 8 === 4) || (road(x + 1, y) && y % 8 === 2) || (road(x - 1, y) && y % 8 === 6))) continue;
     set(x, y, LAMP[g]);
     if (reach() !== total - 1) { set(x, y, g); continue; }
@@ -782,7 +787,7 @@ if (process.argv.includes('--print')) {
   rows.forEach((r, y) => console.log(String(y).padStart(2) + ' ' + r));
 }
 const file = path.join(here, '../../src/data/maps/formia-ground.ts');
-fs.writeFileSync(file, '/* Generated by tools/formia/build.ts from OpenStreetMap (© OpenStreetMap contributors, ODbL 1.0). Do not edit by hand:\n   change the generator, tools/formia/paint.ts or formia-places.ts, and run it again. One character per tile, see legend.ts. */\n' +
+fs.writeFileSync(file, '/* Generated by tools/formia/build.ts from OpenStreetMap (© OpenStreetMap contributors, ODbL 1.0). Do not edit by hand:\n   change tools/formia/network.ts or formia-places.ts, and run it again. One character per tile, see legend.ts. */\n' +
   'export const FORMIA_ROWS: string[] = [\n' + rows.map((r) => '  ' + JSON.stringify(r)).join(',\n') + '\n];\n' +
   '/** where each place of formia-places.ts ended up: top-left corner, size, door */\n' +
   'export const FORMIA_AT: Record<string, { x: number; y: number; w: number; h: number; door?: [number, number] }> = ' + JSON.stringify(placed) + ';\n' +

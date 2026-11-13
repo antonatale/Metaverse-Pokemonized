@@ -167,3 +167,36 @@ export async function goStory(page: Page, who = 'antonio') {
   const pick = page.locator('[data-hero="' + who + '"]');
   if (await pick.count()) await pick.click();
 }
+
+/** plays a battle to the end, choosing what the computer would choose, with a screenshot of the first turns */
+export async function fight(r: Run, label: string, shots = 4) {
+  const p = r.page;
+  for (let turn = 0; turn < 40; turn++) {
+    await toPrompt(p);
+    if (await battleOver(p)) break;
+    if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('pass'); })) {
+      if (turn < shots) await r.shot(label + '-pass' + turn);
+      await p.click('#ps-go');
+      continue;
+    }
+    /* a team battle: someone is down, or the foe's next is coming. The first who can come in, or stay as we are */
+    if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('bench'); })) {
+      if (turn < shots) await r.shot(label + '-bench' + turn);
+      /* a touch on the dark around the sheet must not close it: this question has to be answered */
+      await p.evaluate(() => document.getElementById('overlay')!.click());
+      expect(await p.locator('#overlay.bench').count()).toBe(1);
+      const pick = p.locator('.bench-pick:not([disabled])');
+      if (await p.locator('#overlay h2', { hasText: 'sta per mandare' }).count()) await p.click('#bn-no');
+      else await pick.first().click({ timeout: 10_000 });
+      continue;
+    }
+    if (turn < shots) await r.shot(label + '-turn' + turn);
+    /* the computer's choice; if it has no button right now, the first move that can be used */
+    const id = await p.evaluate(() => window.UI._debug.suggest());
+    const btn = p.locator('#pad .mv[data-id="' + id + '"]:not([disabled])');
+    if (id && await btn.count()) await btn.click({ timeout: 10_000 });
+    else await p.locator('#pad .mv:not([disabled]):not([hidden])').first().click({ timeout: 10_000 });
+  }
+  await p.clock.runFor(600);
+  await r.shot(label + '-result');
+}

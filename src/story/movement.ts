@@ -139,7 +139,8 @@ export interface VanRun { path: [number, number][]; i: number; carry: boolean; x
 export let van: VanRun | null = null;
 export function vanGo(from: [number, number], path: [number, number][], carry: boolean, base: number, then: () => void) {
   halt(); busy = true;
-  van = { path: path, i: 0, carry: carry, x: from[0], y: from[1], fx: from[0], fy: from[1], t0: performance.now(), dur: 0, dir: st.dir, base: base, then: then, laugh: 0 };
+  const first = path[0], dir: Dir = first ? first[0] > from[0] ? 'right' : first[0] < from[0] ? 'left' : first[1] > from[1] ? 'down' : 'up' : st.dir;
+  van = { path: path, i: 0, carry: carry, x: from[0], y: from[1], fx: from[0], fy: from[1], t0: performance.now(), dur: 0, dir: dir, base: base, then: then, laugh: 0 };
   if (carry) { st.x = from[0]; st.y = from[1]; }
   sfx('scooter');
 }

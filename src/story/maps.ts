@@ -15,6 +15,7 @@ import { shutAt } from './place';
 import { LEGENDS } from '../data/legends';
 import { firstHuman, homeMons } from './growth';
 import { QUIZZES } from '../data/quizzes';
+import { vanBody, tileBox, overlaps } from './vehicle-space';
 
 /** a quiz at the door of a covo is passed: all the answers right, or its asker beaten in a fight */
 export function quizPassed(id: string): boolean { var q = QUIZZES[id]; return !!(st.seen['quiz-' + id] || (q && st.beaten['tr-' + q.trainer])); }
@@ -28,7 +29,7 @@ export const OPP: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', ri
 export type Spot = { kind: 'door'; b: Building } | { kind: 'sign'; s: Sign } | { kind: 'warp'; w: Warp };
 /** someone on the map: on a tile, facing somewhere; a trainer who has seen Antonio has a "!" over his head (since
     `alert`) and walks to him, one tile after the other (`mv`: the step in progress, from that tile) */
-export interface Person { n: Npc; x: number; y: number; dir: Dir; alert?: number; mv?: { fx: number; fy: number; t0: number }; path?: [number, number][]; leaving?: boolean }
+export interface Person { n: Npc; x: number; y: number; dir: Dir; alert?: number; mv?: { fx: number; fy: number; t0: number }; path?: [number, number][]; leaving?: boolean; engaged?: boolean }
 export interface Gull { x: number; y: number; r: number; sp: number; ph: number }
 export interface PreparedMap extends MapDef {
   id: string;
@@ -134,6 +135,7 @@ export function areaName(): string {
 }
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean {
+  if (p.engaged) return true;
   var w = p.n.when;
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
@@ -197,11 +199,11 @@ export function motoAt(m: PreparedMap, x: number, y: number): boolean {
   var p = moto();
   return p.map === m.id && p.x === x && p.y === y;
 }
-/** Nicola's van, parked on this map (story/van.ts): three tiles along it seen from the side, two from in front or behind */
+/** The parked van blocks the same ground footprint its route and drawing use. */
 export function vanAt(m: PreparedMap, x: number, y: number): boolean {
   var v = st.van;
   if (!v || v.map !== m.id || m.inside) return false;
-  return v.dir === 'left' || v.dir === 'right' ? y === v.y && Math.abs(x - v.x) <= 1 : x === v.x && (y === v.y || y === v.y - 1);
+  return overlaps(vanBody(m, v.x, v.y, v.dir), tileBox(x, y));
 }
 /** a tile the scooter can go on (it must be free too: see blocked) */
 export function rideable(m: PreparedMap, x: number, y: number): boolean {

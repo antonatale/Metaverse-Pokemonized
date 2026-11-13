@@ -152,7 +152,7 @@ export function legendPact(L: LegendDef, lv: number) {
 }
 
 /** after a battle won against someone of the plot (a trainer's id), with who stood by for it (who asked for a mission) */
-export function plotAfter(id: string, who: string) {
+export function plotAfter(id: string, who: string, then?: () => void) {
   if (id === 'mamurr-scavi') say(['Mamurra… Lucio Mamurra! Lo conoscevo: cavaliere di Formia, prefetto del genio di Cesare, il più ricco di tutti. La villa qui a Gianola era la sua.',
     'Catullo lo chiamava «lo scialacquatore di Formia». Se il suo fantasma cerca le Pietre di Telepilo, vuole qualcosa di grosso.',
     'All\'Archivio della Torre di Mola sanno tutto delle leggende di Formia. Andiamo a chiedere.'], CICERO);
@@ -162,7 +162,7 @@ export function plotAfter(id: string, who: string) {
   }); }
   else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); askChoice('pietre'); }
   /* the first two meetings with Tullio: what the player says to him stays */
-  else if (id === 'rivale-1') askChoice('tullio1');
+  else if (id === 'rivale-1') askChoice('tullio1', then);
   else if (id === 'rivale-2') askChoice('tullio2');
   else { var m = missionOfTrainer(id); if (m) missionDoneNow(m, who); }
 }

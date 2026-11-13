@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { play, until, toPrompt, battleOver, walk, goStory, type Run } from './harness';
+import { play, until, toPrompt, battleOver, walk, goStory, fight, type Run } from './harness';
 
 /* Whole games played to the end: the title and its stories, the story, its battles, saves.
    Each must finish without errors; the saves they leave are checked where it matters. */
@@ -7,7 +7,7 @@ import { play, until, toPrompt, battleOver, walk, goStory, type Run } from './ha
 declare global {
   interface Window {
     WORLD: { _debug: { spot(k: string, id: string): { x: number; y: number; dir: string } | null;
-        way(): string[]; moto(): { at: { map: string; x: number; y: number; dir: string }; sella: boolean }; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; xp(key: string, n: number): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string } | null; spotting(on: boolean): void }; state(): unknown };
+        way(): string[]; moto(): { at: { map: string; x: number; y: number; dir: string }; sella: boolean }; travel(to: string, x: number, y: number, dir?: string): void; route(x: number, y: number): string[] | null; pos(): { dialog: boolean; opts: boolean; text: string; map: string; x: number; y: number }; area(): string; meet(id: string): void; wild(sp: string, lv: number): void; xp(key: string, n: number, quiet?: boolean): void; overview(id: string, s: number): string; who(id: string): { x: number; y: number; dir: string; present: boolean; moving: boolean } | null; spotting(on: boolean): void }; state(): unknown };
     UI: { _debug: { suggest(): string | null } };
   }
 }
@@ -16,38 +16,6 @@ async function saves(r: Run, name: string) {
   r.keep(name, await r.page.evaluate(() => ({
     storia: localStorage.getItem('lotte-tra-amici:storia:v1')
   })));
-}
-/** plays a battle to the end, choosing what the computer would choose, with a screenshot of the first turns */
-async function fight(r: Run, label: string, shots = 4) {
-  const p = r.page;
-  for (let turn = 0; turn < 40; turn++) {
-    await toPrompt(p);
-    if (await battleOver(p)) break;
-    if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('pass'); })) {
-      if (turn < shots) await r.shot(label + '-pass' + turn);
-      await p.click('#ps-go');
-      continue;
-    }
-    /* a team battle: someone is down, or the foe's next is coming. The first who can come in, or stay as we are */
-    if (await p.evaluate(() => { const o = document.getElementById('overlay')!; return !o.hidden && o.classList.contains('bench'); })) {
-      if (turn < shots) await r.shot(label + '-bench' + turn);
-      /* a touch on the dark around the sheet must not close it: this question has to be answered */
-      await p.evaluate(() => document.getElementById('overlay')!.click());
-      expect(await p.locator('#overlay.bench').count()).toBe(1);
-      const pick = p.locator('.bench-pick:not([disabled])');
-      if (await p.locator('#overlay h2', { hasText: 'sta per mandare' }).count()) await p.click('#bn-no');
-      else await pick.first().click({ timeout: 10_000 });
-      continue;
-    }
-    if (turn < shots) await r.shot(label + '-turn' + turn);
-    /* the computer's choice; if it has no button right now, the first move that can be used */
-    const id = await p.evaluate(() => window.UI._debug.suggest());
-    const btn = p.locator('#pad .mv[data-id="' + id + '"]:not([disabled])');
-    if (id && await btn.count()) await btn.click({ timeout: 10_000 });
-    else await p.locator('#pad .mv:not([disabled]):not([hidden])').first().click({ timeout: 10_000 });
-  }
-  await p.clock.runFor(600);
-  await r.shot(label + '-result');
 }
 async function overview(r: Run, id: string) {
   const url = await r.page.evaluate((m) => window.WORLD._debug.overview(m, 1), id);

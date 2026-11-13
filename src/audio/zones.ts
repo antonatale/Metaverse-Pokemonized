@@ -15,6 +15,12 @@ export function worldMusic(map: string, area: string, night: boolean): string {
   return night ? base + ':night' : base;
 }
 
+/** Nicola breaks the suspense when he arrives; old saves can already have his board or his company. */
+export function openingMusic(seen: Record<string, boolean>, withNicola = false): string {
+  if (seen.starter) return '';
+  return seen['nicola-arrived'] || seen['ws-start'] || seen.tavola || withNicola ? 'nicola' : 'mistero';
+}
+
 /** what the map plays and what it has been asked for lately: a change counts only once the same new tune has been
     asked for `wait` ms in a row, so walking along the edge of two neighbourhoods does not flip the music back and forth */
 export interface TuneWait { now: string; next: string; since: number }

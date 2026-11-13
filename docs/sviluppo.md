@@ -7,10 +7,12 @@
 | `npm ci` | Installa le dipendenze dal lockfile, Node 22+ |
 | `npm run dev` | Server Vite sulla porta 5173 |
 | `npm run typecheck` | TypeScript strict |
+| `npm run check` | Test, golden, TypeScript e build: lo stesso controllo locale e su GitHub |
 | `npm test` | Dati, motore, mappe, ritratti e golden |
 | `npm run build` | Verifica i tipi e genera `dist/index.html` autonomo |
 | `npm run build:google-fonts` | Variante con font esterni in `dist-google-fonts/` |
 | `npm run test:e2e` | Prove complete in Playwright |
+| `npm run test:e2e -- tests/e2e/nicola.spec.ts` | Prologo, musica di Nicola, viaggio senza collisioni né sbalzi, chat della prima creatura e del risultato, rivale fermo durante il dialogo |
 | `npm run golden` | Rigenera deliberatamente i golden dopo un cambiamento verificato |
 | `npm run sim`, `npm run sim:fun` | Duelli fra amici e decisioni fra creature |
 | `npx tsx tools/sim-story.ts trainers` | Allenatori contro squadre di riferimento |
@@ -26,7 +28,7 @@ Per il giocatore automatico e le opzioni mirate leggere `tools/playtest/README.m
 
 `tests/fixtures/engine-golden.json` contiene 2.040 lotte deterministiche. `sprites-golden.json` registra le stringhe SVG e `canvas-golden.json` le chiamate al canvas. Se cambia un golden senza volerlo, cercare la regressione: non aggiornare il riferimento per nasconderla. I test del motore attuali non sostituiscono ancora golden completi delle lotte di squadra.
 
-GitHub esegue typecheck, unitari e build (`.github/workflows/ci.yml`). Per gli interventi sullo schermo eseguire anche Playwright, guardando il risultato a 1366×768. Il telefono ha una prova dei comandi touch.
+GitHub e il Mac usano entrambi `npm run check` (`.github/workflows/ci.yml`). Per gli interventi sullo schermo eseguire anche Playwright, guardando il risultato a 1366×768. Il telefono ha una prova dei comandi touch.
 
 ## Playwright
 

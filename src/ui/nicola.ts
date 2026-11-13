@@ -7,9 +7,9 @@ import { PICKUP, RIDE_TALK, ON_THE_WAY, SEA_TIPS, RIDES, RIDE, WALK, WS_ROUTE, W
 import { FORMIA_SPOT } from '../data/maps/formia-ground';
 import { notify } from './story-screen';
 import { MAPS } from '../data/maps';
-import type { Npc } from '../data/maps/types';
+import type { Npc, Dir } from '../data/maps/types';
 import { FORMIA_AT } from '../data/maps/formia-ground';
-import { say, renderHud, renderPlace, root, dialog, keeperComes, type DialogOpt } from './story-screen';
+import { say, renderHud, renderPlace, refreshMusic, root, dialog, keeperComes, type DialogOpt } from './story-screen';
 import { startActivity } from './activities';
 import { activity } from '../story/activities';
 import { areaName, route } from '../story/maps';
@@ -43,12 +43,13 @@ window.addEventListener('keydown', function (e) { if (van && van.carry && (e.key
 
 /** the van comes up the street to the tile `at` (from where it is parked, if it is near, or from further down the
     road), and stops; then `then` */
-function comeTo(at: Tile, then: () => void) {
+function comeTo(at: Tile, then: (dir: Dir) => void) {
   var v = st.van, from: Tile = v && v.map === M.id && Math.abs(v.x - at[0]) + Math.abs(v.y - at[1]) < 30 ? [v.x, v.y] : backAlong(M, at, 14);
-  st.van = undefined;
   var path = roadPath(M, from, at);
-  if (!path || !path.length) { then(); return; }
-  vanGo(from, path, false, 70, function () { vanStop(); sfx('horn'); then(); });
+  if (!path) { say(RIDE.none, NICOLA); return; }
+  st.van = undefined;
+  if (!path.length) { then(v ? v.dir : 'left'); return; }
+  vanGo(from, path, false, 70, function () { var dir = van!.dir; vanStop(); sfx('horn'); then(dir); });
 }
 /* ---------- what Nicola says while he drives: a line at a time, under the van, as the way goes by ---------- */
 var talkEl: HTMLElement | null = null, talkT = 0;
@@ -115,32 +116,37 @@ function park(t: Tile, dir: 'left' | 'right' | 'up' | 'down') { st.van = { map: 
 export function vanStart(then?: () => void) {
   var done = then || function () { /* nothing */ };
   if (M.id !== 'formia' || M.inside) { done(); return; }
-  var at = nearRoad(M, st.x, st.y, 12, true), ec = FORMIA_AT.eclipse.door!, end = nearRoad(M, ec[0], ec[1], 16);
+  var ec = FORMIA_AT.eclipse.door!, end = nearRoad(M, ec[0], ec[1], 16), at = end && nearRoad(M, st.x, st.y, 12, true, end);
   if (!at || !end) { done(); return; }
   say(PICKUP.come, null, null, function () {
-    comeTo(at!, function () {
-      park(at!, 'left');
-      say(PICKUP.hello, NICOLA, [{ label: PICKUP.board, fn: function () {
-        st.van = undefined;
-        driveTo(at!, end!, [ec[0], ec[1] + 2], function () {
-          say(PICKUP.arrive, NICOLA, null, function () {
-            /* down to the water, where Faro is playing */
-            walkTo(FORMIA_SPOT['riva-eclipse'], function () {
-              st.dir = 'down'; renderPlace();
-              say(PICKUP.faro, NICOLA, null, function () {
-                /* and how strong Faro is: his hydro pump on the old board */
-                say(PICKUP.show, NICOLA, null, function () {
-                  faroShow(function () {
-                    say(PICKUP.shown, NICOLA, null, function () {
-                      say(PICKUP.lend, NICOLA, [{ label: PICKUP.go, fn: function () { windsurfStart(); done(); } }]);
+    comeTo(at!, function (dir) {
+      park(at!, dir);
+      say(PICKUP.cheer, NICOLA, null, function () {
+        say(PICKUP.hello, NICOLA, [{ label: PICKUP.board, fn: function () {
+          st.van = undefined;
+          driveTo(at!, end!, [ec[0], ec[1] + 2], function () {
+            say(PICKUP.arrive, NICOLA, null, function () {
+              /* down to the water, where Faro is playing */
+              walkTo(FORMIA_SPOT['riva-eclipse'], function () {
+                st.dir = 'down'; renderPlace();
+                say(PICKUP.faro, NICOLA, null, function () {
+                  /* and how strong Faro is: his hydro pump on the old board */
+                  say(PICKUP.show, NICOLA, null, function () {
+                    faroShow(function () {
+                      say(PICKUP.shown, NICOLA, null, function () {
+                        say(PICKUP.lend, NICOLA, [{ label: PICKUP.go, fn: function () { windsurfStart(); done(); } }]);
+                      });
                     });
                   });
                 });
               });
             });
-          });
-        }, RIDE_TALK);
-      } }]);
+          }, RIDE_TALK);
+        } }]);
+      }, function () {
+        st.seen['nicola-arrived'] = true; save();
+        refreshMusic();
+      });
     });
   });
 }
@@ -223,14 +229,16 @@ export function windsurfLanded() {
 /** a lift in the van to one of the places of RIDES */
 function ride(r: Ride) {
   if (M.id !== 'formia' || M.inside || moveMode.swim || st.sella) { say(RIDE.none, NICOLA); return; }
-  var at = nearRoad(M, st.x, st.y, 10, true), to = nearRoad(M, r.at[0], r.at[1], 20);
-  if (!at || !to) { say(RIDE.none, NICOLA); return; }
+  var at = nearRoad(M, st.x, st.y, 10, true);
+  if (!at) { say(RIDE.none, NICOLA); return; }
   var v = st.van;
   /* the van parked a few steps away: they walk to it */
   if (v && v.map === M.id && Math.abs(v.x - st.x) + Math.abs(v.y - st.y) <= 5) at = [v.x, v.y];
+  var to = nearRoad(M, r.at[0], r.at[1], 20, false, at);
+  if (!to) { say(RIDE.none, NICOLA); return; }
   var go = function () { st.van = undefined; driveTo(at!, to!, r.at, function () { say(RIDE.here, NICOLA); }); };
   if (v && v.map === M.id && v.x === at[0] && v.y === at[1]) { go(); return; }
-  say(RIDE.far, NICOLA, null, function () { comeTo(at!, function () { park(at!, 'left'); go(); }); });
+  say(RIDE.far, NICOLA, null, function () { comeTo(at!, function (dir) { park(at!, dir); go(); }); });
 }
 function rideMenu() {
   var here = areaName();

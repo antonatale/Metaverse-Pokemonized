@@ -59,6 +59,12 @@ Dalle indicazioni di Antonio, dai dati OSM/Overpass (`/ref/poi` del lavoro: Zanz
 - **Il furgone di Nicola** evita la corsia accanto al mare (`shoreCost` in `story/van.ts`) e dove non può viene disegnato spostato sulla strada (`shoreShift`): a Mola non sta più sulla darsena.
 - **Salvataggi:** `formia11` riporta a casa chi era sotto un covo o una siepe, fa uscire dal vecchio circolo e lascia le chiavi del Liberty a chi l'aveva già guidato.
 
+## Il corridoio del furgone (13 novembre 2026)
+
+- `VAN_ROADS` in `network.ts` riserva una fascia di tre caselle lungo l’Appia e il lungomare fino all’Eclipse, con bordi pavimentati e spazio per le svolte. Il generatore tiene fuori case di riempimento, persone, cartelli e lampioni; gli edifici fissi mantengono la loro impronta.
+- `story/vehicle-space.ts` condivide fra disegno, percorso e sosta la posizione sulla carreggiata e l’ingombro del furgone. La centratura segue le corsie che continuano oltre gli incroci, senza spostamenti laterali a ogni traversa. Il percorso controlla tutto il mezzo, anche fra due caselle, contro edifici, ostacoli e Liberty; una fermata deve avere un accesso collegato al tragitto.
+- `formia12` mette al sicuro i salvataggi se una casa di riempimento o un arredo spostato occupa la vecchia posizione. Misure: 208 case, 7 schermate vuote su 86, 9% di caselle deserte.
+
 ## Rilievo
 
 La mappa ha gradoni sugli Aurunci, all'Acervara e a Gianola, muraglione dell'Appia, la salita di via Solaro, tre sentieri, cinque salti verso sud e quattro belvedere registrati nel diario. I fianchi sono caselle solide; una quota numerica per casella non è implementata. Castellone richiede ancora un intervento specifico per diventare visibilmente più alto dell'Appia.

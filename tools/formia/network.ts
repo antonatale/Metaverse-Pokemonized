@@ -10,8 +10,24 @@
    Castellone and of Maranola are cobbled (ch 'v', sampietrini).
    Nothing else in the generator has a coordinate in it: every zone it works by is at the bottom of this file. */
 export type XY = [number, number];
-export interface Line { name: string; w: 1 | 2; pts: XY[]; ch?: string }
+export interface Line { name: string; w: 1 | 2 | 3; pts: XY[]; ch?: string }
 export interface Rect { x0: number; y0: number; x1: number; y1: number }
+
+/** Nicola's main route: one extra lane, on the landward side, with room to turn. The houses and verge decorations
+    keep clear of it; the narrow streets of the old town remain footpaths for a van this size. */
+export const VAN_ROADS: Line[] = [
+  { name: 'Via Appia Lato Napoli', w: 3, pts: [[159, 45], [214, 45]] },
+  { name: 'Via Appia Lato Napoli', w: 3, pts: [[159, 45], [159, 54]] },
+  { name: 'Via Emanuele Filiberto', w: 3, pts: [[151, 53], [159, 53]] },
+  { name: 'Lungomare della Repubblica', w: 3, pts: [[151, 54], [151, 80]] },
+  { name: 'Lungomare della Repubblica', w: 3, pts: [[116, 79], [151, 79]] },
+  { name: 'Lungomare della Repubblica', w: 3, pts: [[116, 80], [116, 84]] },
+  { name: 'Viale Unità d’Italia', w: 3, pts: [[92, 83], [116, 83]] },
+  { name: 'Viale Unità d’Italia', w: 3, pts: [[92, 84], [92, 92]] },
+  { name: 'Viale Unità d’Italia', w: 3, pts: [[62, 91], [92, 91]] },
+  { name: 'Viale Unità d’Italia', w: 3, pts: [[62, 92], [62, 103]] },
+  { name: 'Via Tito Scipione', w: 3, pts: [[44, 102], [62, 102]] }
+];
 
 /** the railway Roma–Napoli, in two pieces: from the west edge into the hill, and out of it past the station, up behind
     Mola, along the foot of the Aurunci and down to Scauri */

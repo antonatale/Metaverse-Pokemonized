@@ -12,7 +12,7 @@ export const GROUP = 'il caminetto';
 /** who writes a line: a friend; the rival of this story; the friend who has the keys of the scooter ('keys', written only in
     the chat of his own covo); the friend freed last ('last') */
 export type Speaker = FriendId | 'rival' | 'keys' | 'last';
-export interface Chat { id: string; label: string; after?: string; badges?: number; replies?: string[]; lines: [Speaker, string][];
+export interface Chat { id: string; label: string; after?: string; badges?: number; replies?: string[]; lines: [Speaker, string][]; loss?: [Speaker, string][];
   /** a chat of one covo (13 November 2026): it comes when the invitation to that covo is the next stop of the tour, and
       is written by its keeper only, one covo at a time, nothing told before its time */
   covo?: string }
@@ -57,7 +57,11 @@ export const CHATS: Chat[] = [
   { id: 'eco-pineta', covo: 'pineta', label: 'Il basso della pineta', replies: ['Zendavid, abbassa!', 'Arrivo in pineta', '🔊'], lines: [
     ['zendavid', 'Bau. Non sento niente, c\'è Ye a palla.'], ['zendavid', 'Il volume non scende. Ok. Respira. Bau bau.'],
     ['keys', 'Le chiavi del Liberty le ho io. Le tengo al ritmo. Bau.'] ] },
-  { id: 'rivale-1', label: 'La prima sfida', after: 'tr-rivale-1', replies: ['Rivincita quando vuoi 😏', 'Bella lotta!', '🔥'], lines: [
+  { id: 'rivale-1', label: 'La prima sfida', after: 'sfida-rivale-1', replies: ['Rivincita quando vuoi 😏', 'Bella lotta!', '🔥'], loss: [
+    ['rival', 'Prima sfida vinta! Te l\'avevo detto, {hero}: la mia creatura è fortissima.'],
+    ['claudia', 'Era la prima lotta, ragazzi. {hero}, prenditi cura della tua creatura: la prossima andrà meglio.'],
+    ['forchetta', 'poteva andare peggio.'],
+    ['valentin', 'Weee, adesso vogliamo la rivincita!'] ], lines: [
     ['rival', 'Ok, ok, al parco hai vinto tu. Ma è solo l\'inizio, {hero}.'],
     ['forchetta', 'Poteva andare peggio, {rv}. Potevi perdere contro di me.'],
     ['valentin', 'Weee, la rivalità! Io faccio il tifo per tutti e due. Più per chi offre.'] ] },
