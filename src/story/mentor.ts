@@ -10,6 +10,7 @@ import { firstHuman } from './growth';
 import { GATES, SECOND_CITY } from '../data/gates';
 import { TYPES, isPersonType } from '../data/types';
 import type { FriendId } from '../data/characters';
+import { COVO_PLACES } from '../data/covo-places';
 
 /* Antonio's guide: the ghost of Marcus Tullius Cicero, who died at Formia in 43 BC and has his tomb on the Appia
    (and in Italian a guide is still a "cicerone"). He opens the story explaining how things work, then stays in the
@@ -24,7 +25,7 @@ export const CICERO = 'Cicerone';
    of whoever is played goes (where he lives, his covi and his train: intro() in ui/story-screen.ts). */
 export const OPENING: string[] = [
   'Salve, {hero}! Non spaventarti: sono un fantasma, ma di quelli simpatici. Marco Tullio Cicerone, la tua guida: a Formia avevo la villa, e sull\'Appia c\'è la mia tomba.',
-  'Mi faccio vedere perché a Formia sta per succedere qualcosa. Nelle pietre, nel mare e negli ulivi dormono creature che non trovi in nessun libro. E di notte, tra le rovine di Gianola, qualcuno scava.',
+  'Mi faccio vedere perché stanotte, alle 3:12, a Formia le pietre hanno parlato. Non succedeva da duemila anni. Cosa abbiano detto, ancora non lo so: so solo che le creature si sono svegliate, e che tra le rovine di Gianola qualcuno scava.',
   'Frecce o WASD per camminare, o un clic dove vuoi andare; Invio per parlare, M per il menu, T per il telefono, C per chiamare me, F per lo schermo intero. In alto c\'è sempre la prossima tappa, con la freccia. La prima: Gianola, dalla guardaparco. Ma senti… ti vibra il *telefono*!'
 ];
 
@@ -32,23 +33,23 @@ export const OPENING: string[] = [
 type Chapter = { title: string; intro: string[]; done: string[] };
 export const CHAPTERS: Record<string, Chapter> = {
   starter: { title: 'La prima creatura',
-    intro: ['Prima regola del viaggio: non si parte mai da soli.', 'Al Parco di Gianola, sotto le rovine di una villa romana, la guardaparco custodisce tre creature appena nate. Vai a sceglierne una: segui la freccia, verso est.'],
-    done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'Le selvatiche non si vedono: si nascondono nell\'erba alta (Parco Gramsci, pineta, uliveti, monti) e nelle pozze tra gli scogli (Gianola, la Scogliera). Passaci in mezzo e salteranno fuori: battile per allenarti, o catturale con un retino.'] },
-  'seconda-creatura': { title: 'La seconda creatura',
-    intro: ['Una creatura sola non basta: quando è a terra, tocca a te. Cammina nell\'erba alta o tra gli scogli di Gianola, indebolisci una selvatica e lancia uno dei retini della guardaparco.', 'In lotta, con due creature, puoi cambiare: chi entra prende il colpo, ma è in guardia.'],
-    done: ['Due creature! Mandale contro chi ha il tipo che battono: una batte, l\'altra regge.'] },
+    intro: ['Prima regola del viaggio: non si parte mai da soli.', 'La guardaparco di Gianola ha scritto a tutta Formia: stanotte, dopo il boato, nel parco sono nate tre creature, e non si calmano. Cerca qualcuno che le prenda con sé. Segui la freccia, verso est.'],
+    done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'E hai visto come tremava? Qualunque cosa sia successa stanotte, le creature l\'hanno sentita prima di noi.'] },
+  'seconda-creatura': { title: 'La creatura che ha paura',
+    intro: ['La guardaparco è preoccupata: dopo il boato le creature dell\'erba alta di Gianola sono scappate dalle tane, e una non trova più le altre. Segue la tua da quando sei arrivato: è sola, e ha paura.', 'Cercala nell\'erba alta o tra gli scogli: indeboliscila, lancia un retino, e portala con te. Con una compagna la tua creatura si calma. E in lotta, con due, puoi cambiare: chi entra prende il colpo, ma è in guardia.'],
+    done: ['Due creature, e nessuna ha più paura. Mandale contro chi ha il tipo che battono: una batte, l\'altra regge.', 'Ora ascolta. La guardaparco ha visto da dove venivano le luci di stanotte: non solo da Gianola. Una si è accesa anche in città, e non si è più spenta. Segui la freccia: là qualcuno sa cosa è successo.'] },
   'squadra-cisterna': { title: 'Una squadra per il buio',
-    intro: ['Nel Cisternone si scende al buio, e là sotto vive gente strana. Non con meno di tre creature: catturane un\'altra.'],
+    intro: ['L\'archivista l\'ha detto: la Pietra delle Mura è sotto Castellone, nel Cisternone. Laggiù, al buio, vivono creature che non hanno mai visto il sole, e gli uomini di Mamurra ci stanno già provando.', 'Non scendere con meno di tre creature: catturane un\'altra, nell\'erba alta o tra gli scogli.'],
     done: ['Tre creature: ora il Cisternone non fa più paura.'] },
   'squadra-mamurra': { title: 'Una squadra per Mamurra',
     intro: ['Mamurra ha tre creature evolute e la Ricchezza, che si rompe solo con i colpi superefficaci. Ti servono quattro creature che battano tipi diversi.'],
     done: ['Quattro creature, e di tipi diversi. Mamurra ha i soldi; tu hai una squadra.'] },
   'trama-scavi': { title: 'Gli scavi di Gianola',
-    intro: ['A Gianola, tra le rovine della villa romana, qualcuno scava con la pala. Di notte, in giacca e cravatta. Strano, no?', 'Ora hai una creatura: andiamo a vedere chi è. Le creature lottano con le creature.'],
-    done: ['Uomini di Mamurra, e cercano le Pietre di Telepilo. Questa storia è più grande di un giro per Formia.'] },
+    intro: ['Il boato di stanotte è partito da Gianola, dalle rovine della villa romana. E lì, adesso, qualcuno scava con la pala. Di giorno, in giacca e cravatta. Strano, no?', 'Hai una creatura: andiamo a vedere chi è. Le creature lottano con le creature.'],
+    done: ['Uomini di Mamurra! Cercano le Pietre di Telepilo, e sono stati loro a svegliarle stanotte, scavando: il boato, le luci, le creature, quello che è successo ai tuoi amici. Tutto viene da lì.', 'Questa storia è più grande di un giro per Formia.'] },
   'trama-archivio': { title: 'Le Pietre di Telepilo',
-    intro: ['Nella Torre di Mola c\'è l\'Archivio storico della città: carte, mappe, leggende. Chiedi all\'archivista delle Pietre di Telepilo.'],
-    done: ['Tre pietre: delle mura, del mare, della voce. E Mamurra le vuole tutte.'] },
+    intro: ['Per capire cosa hanno svegliato gli uomini di Mamurra servono le carte giuste. Nella Torre di Mola c\'è l\'Archivio storico: l\'archivista conosce le leggende delle Pietre.'],
+    done: ['Tre pietre: delle mura, del mare, della voce. Tengono chiuse le porte di Telepilo, la città dei giganti. E Mamurra le vuole tutte.'] },
   'trama-cisterna': { title: 'L\'uomo del Cisternone',
     intro: ['A Castellone uno degli uomini di Mamurra cerca di entrare nel Cisternone: una cisterna romana del primo secolo avanti Cristo, sotto le case del borgo. Fermalo.'],
     done: ['La porta non si apre con la forza: ci vuole una parola.'] },
@@ -68,27 +69,27 @@ export const CHAPTERS: Record<string, Chapter> = {
     intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
     done: ['Mamurra è caduto. Formia ti deve un favore.'] },
   /* the seven covi (data/covi.ts): whoever is played meets the other six, in any order; each pin makes the next one harder */
-  'covo-palamendola': { title: 'Il covo di Antonio',
-    intro: ['Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta: ha appena letto il paper della settimana.', 'È di tipo Cervello: il Caos gli manda all\'aria i piani.'],
-    done: ['Stato dell\'arte. Ogni spilla rende più forti i covi che restano: allenati.'] },
-  'covo-padel': { title: 'Il covo di Andrea',
-    intro: ['Andrea ti aspetta ai campi da padel del Bruno Zauli: dice che ha calcolato tutto.', 'È di tipo Cervello: il Caos lo batte. E i colpi critici gli fanno il doppio.'],
-    done: ['Non era nei dati, dice lui. Lo era nei miei.'] },
-  'covo-circolo': { title: 'Il covo di Forchetta',
-    intro: ['Forchetta ti aspetta nei campi coperti del Bruno Zauli. Fuori non gioca mai.', 'È di tipo Calma: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
-    done: ['Spilla «Poteva andare peggio». Ogni spilla rende più forti i covi che restano.'] },
-  'covo-morgana': { title: 'Il covo di Claudia',
-    intro: ['Da Morgana, a Mola, Claudia ha il suo tavolo: lì si parla uno alla volta, e chi interrompe cambia tavolo.', 'È di tipo Calma: il Cuore la batte. Ma il primo colpo che le dai vale la metà: Il Padre la protegge.'],
-    done: ['Spilla «Tavoli separati». Anche il Padre, alla fine, ha ascoltato.'] },
+  'covo-palamendola': { title: 'La Cupola di Antonio',
+    intro: ['Nel parco, accanto alla fontana, la cupola di Antonio. Ci si arriva da casa sua: dalla porta sul retro, tra le siepi e i suoi robot. Dentro, i laser si spengono dalle pedane dall\'altra parte del nucleo.', 'È di tipo Cervello: il Caos gli manda all\'aria i piani.'],
+    done: ['Stato dell\'arte. Ogni spilla rende più forti i covi che restano: allenati.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+  'covo-padel': { title: 'La Torre delle Probabilità',
+    intro: ['La torre di dadi di Andrea, a Castellone. Alle due porte fanno domande di probabilità: sbagli, e si lotta.', 'È di tipo Cervello: il Caos lo batte. E i colpi critici gli fanno il doppio.'],
+    done: ['Non era nei dati, dice lui. Lo era nei miei.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+  'covo-circolo': { title: 'Il Tempio della Terra Rossa',
+    intro: ['Nei coperti del Zauli la terra rossa scivola come il ghiaccio: guarda dove è asciutta. In fondo, oltre la rete, Forchetta.', 'È di tipo Calma: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
+    done: ['Spilla «Poteva andare peggio». Ogni spilla rende più forti i covi che restano.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+  'covo-morgana': { title: 'Il Castello del Padre',
+    intro: ['Il castello nero di Claudia, in via Palazzo. Due sedie, nelle due ali: sedersi su entrambe apre la sala del trono. Uno alla volta.', 'È di tipo Calma: il Cuore la batte. Ma il primo colpo che le dai vale la metà: Il Padre la protegge.'],
+    done: ['Spilla «Tavoli separati». Anche il Padre, alla fine, ha ascoltato.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
   quiz: { title: 'Una sera da Morgana',
     intro: ['Stasera da Morgana, a Mola, c\'è il quiz su Formia. Domande sulla mia città: le so tutte, ma non ti suggerisco. Quasi.'],
     done: ['Ora sai qualcosa in più di Formia. Io ci ho passato le estati migliori, nella mia villa.'] },
   gelato: { title: 'Un gelato da Lavezzi',
-    intro: ['Un gelato da Lavezzi, in piazza Marconi: c\'è dal 1870. Ai miei tempi il gelato non esisteva. Che tristezza.'],
-    done: ['Le pause servono. Anche Cesare ne faceva, per quanto ne so.'] },
-  'covo-piazza': { title: 'Il covo di Costanzo',
-    intro: ['In piazza della Vittoria Costanzo tiene il suo comizio. Di comizi me ne intendo: le Catilinarie le ho scritte io.', 'È di tipo Chiacchiera: il Cervello lo batte.'],
-    done: ['Hai zittito un oratore! Ogni spilla rende più forti i covi che restano.'] },
+    intro: ['Gli amici che hai liberato ti hanno scritto: vi vedete da Lavezzi, in piazza Marconi, per un gelato. Vogliono ringraziarti, e raccontarti quello che ricordano dell\'eco.', 'C\'è dal 1870. Ai miei tempi il gelato non esisteva. Che tristezza.'],
+    done: ['Le pause servono, e servono gli amici. Anche Cesare ne aveva, per quanto ne so. Pochi.'] },
+  'covo-piazza': { title: 'Il Palazzo del Popolo',
+    intro: ['In piazza della Vittoria Costanzo parla dal balcone del suo palazzo. Di comizi me ne intendo: le Catilinarie le ho scritte io. Alle porte, l\'esame di educazione civica.', 'È di tipo Chiacchiera: il Cervello lo batte.'],
+    done: ['Hai zittito un oratore! Ogni spilla rende più forti i covi che restano.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
   'item-caricabatterie': { title: 'Il caricabatterie perduto',
     intro: ['{hero}, perdi le cose come io perdevo la pazienza con Catilina.', 'Il caricabatterie del robot è dalle parti della stazione. Ritrovalo e nelle lotte della storia non lo perderai più.'],
     done: ['Uno in meno. Sim-to-Real non resterà più bloccata.'] },
@@ -96,17 +97,17 @@ export const CHAPTERS: Record<string, Chapter> = {
     intro: ['Gli appunti di Diagnosi Energetica sono sui gradini di Sant\'Erasmo, a Castellone. Il borgo è antico: guarda bene tra i vicoli.'],
     done: ['Appunti ritrovati. Io i miei li facevo copiare da Tirone, il mio segretario: ti servirebbe.'] },
   windsurf: { title: 'Vento a Vindicio',
-    intro: ['A Vindicio c\'è vento: Nicola Spadea, il campione, ti aspetta all\'Eclipse per una lezione di windsurf.', 'Tieni la vela nelle raffiche: è come tenere un discorso, ci vuole equilibrio.'],
+    intro: ['Nicola ha visto tutto dalla tavola, il giorno della Pietra del Mare, e vuole festeggiare: all\'Eclipse c\'è vento, e ti aspetta per la lezione vera di windsurf.', 'Tieni la vela nelle raffiche: è come tenere un discorso, ci vuole equilibrio.'],
     done: ['Hai planato! Ai miei tempi sul golfo c\'erano solo le triremi.'] },
-  'covo-eclipse': { title: 'Il covo di Valentin',
-    intro: ['All\'Eclipse Valentin fa festa, e la festa è sua.', 'È di tipo Caos: la Calma lo spegne. E recupera un po\' di PS a ogni turno: non farla durare.'],
-    done: ['Weee! Anche la festa di Valentin ha una fine.'] },
+  'covo-eclipse': { title: 'La Torre Verde',
+    intro: ['Nella torre verde di Valentin, in via Ferrucci, ballano le Iele: tre file, ognuna al suo tempo. Guardale, e sali in passo con loro.', 'È di tipo Caos: la Calma lo spegne. E recupera un po\' di PS a ogni turno: non farla durare.'],
+    done: ['Weee! Anche la festa di Valentin ha una fine.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
   'item-portafoglio': { title: 'Il portafoglio sotto l\'ombrellone',
     intro: ['Il portafoglio è sotto un ombrellone dell\'Eclipse. Senza soldi niente retini e niente tielle.'],
     done: ['Portafoglio al sicuro: i sesterzi ti servono nei negozi.'] },
-  'covo-pineta': { title: 'Il covo di Zendavid',
-    intro: ['Zendavid è in pineta, a Vindicio, con le cuffie in testa.', 'È di tipo Cuore: la Chiacchiera lo convince di tutto. E ogni colpo che prende gli mette ansia.'],
-    done: ['Bau. Anche Zendavid ha dovuto togliersi le cuffie.'] },
+  'covo-pineta': { title: 'Il Tempio del Basso',
+    intro: ['In mezzo alla pineta di Vindicio, il tempio di casse di Zendavid. Il DJ alla porta fa tre domande su Kanye.', 'È di tipo Cuore: la Chiacchiera lo convince di tutto. E ogni colpo che prende gli mette ansia.'],
+    done: ['Bau. Anche Zendavid ha dovuto togliersi le cuffie.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
   'item-passaporto': { title: 'Il passaporto alla mia tomba',
     intro: ['L\'ultima cosa: il passaporto. È ai piedi della mia tomba, sull\'Appia verso Itri.', 'Sì, la mia tomba. Passa a salutarmi: lì mi sento a casa.'],
     done: ['Passaporto ritrovato. Chissà fin dove ti porterà.'] },
@@ -148,6 +149,12 @@ function best(): number { return Math.max.apply(null, team().map(function (k) { 
 /** a covo's level, when the stop is a covo */
 /** the chapter of a stop, for whoever is played: the train is the one of his city (Torino or Milano) */
 export function chapterOf(id: string): Chapter | undefined {
+  /* the invitations to the covi: who sends the player there (data/covo-places.ts) */
+  if (id.indexOf('invito-') === 0 && COVO_PLACES[id.slice(7)]) {
+    var P = COVO_PLACES[id.slice(7)];
+    return { title: P.hook.text, intro: [P.hook.tip, 'Un\'altra luce che non si spegne, in città. Senti cosa racconta: un amico non si sfida per niente.'],
+      done: ['Hai l\'invito: ' + COVI[P.covo].name + '. Dentro, prima di ' + C[P.leader].name + ', ci sono quelli che l\'eco ha messo a difenderlo: non ti lasceranno passare senza lottare, e non si scappa.'] };
+  }
   var ch = CHAPTERS[id];
   /* the park is east of most homes, but west of Zendavid's, in Scauri */
   if (id === 'starter' && ch) {
@@ -155,7 +162,7 @@ export function chapterOf(id: string): Chapter | undefined {
     return home[0] > park[0] ? { title: ch.title, intro: ch.intro.map(function (l) { return l.replace('verso est', 'verso ovest'); }), done: ch.done } : ch;
   }
   if (id !== 'torino' || !ch) return ch;
-  var G0 = GATES[SECOND_CITY[firstHuman() as FriendId] || 'torino'], city = G0.station.replace(/ (Porta Nuova|Centrale)$/, '');
+  var G0 = GATES[SECOND_CITY[firstHuman() as FriendId] || 'torino'], city = G0.station.replace(/ (Porta Nuova|Centrale|Rogoredo)$/, '');
   return { title: G0.label, intro: ['Hai fatto tutto il giro di Formia! In stazione il capotreno ti dirà del treno per ' + G0.station + '.', 'Io resto a Formia, è la mia città da duemila anni. Ma ti seguirò fino a ' + city + ', da lontano. O tempora, o mores… o treni!'], done: ch.done };
 }
 /** what the type of whoever is played means against a covo leader, if anything: he fights last, after his creatures */

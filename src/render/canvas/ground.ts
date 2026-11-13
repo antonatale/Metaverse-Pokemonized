@@ -1,3 +1,4 @@
+import { covoProp } from './covo';
 import type { Ground, GroundObject } from '../../data/maps/types';
 import type { Palette } from './palette';
 import { T, mk, rr, hash, fillStroke, circle, ell, poly, blobs, type Ctx } from './draw';
@@ -764,6 +765,8 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.fillStyle = '#ffd166'; c.font = '700 13px ui-monospace, Menlo, monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(o.text || '15 – 0', X + W / 2, Y + H / 2 + 1);
   },
+  /* the things in the covi of the friends (data/maps/covi.ts): render/canvas/covo.ts */
+  'covo-prop': function (c, o, P) { covoProp(c, o, P); },
   /* the things that say whose home it is (data/maps/homes.ts): o.text is which */
   'home-prop': function (c, o, P) {
     var w = o.w * T, h = o.h * T, k;

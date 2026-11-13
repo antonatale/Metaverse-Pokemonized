@@ -84,17 +84,24 @@ const houses: Building[] = FORMIA_HOUSES.map((h, k): Building => {
 const buildings: Building[] = [
   building('casa', { label: 'CASA DI ANTONIO', to: 'casa', tx: 5, ty: 6, tdir: 'up', v: 11 }),
   /* the homes of the others: each one's story begins at his door (MapDef.starts) */
-  building('casa-valentin', { label: 'CASA DI VALENTIN', v: 23, to: 'casa-valentin', tx: 5, ty: 6, tdir: 'up' }),
+  /* the homes of Valentin, Claudia and Andrea are covi since the night of the echo (data/covo-places.ts): their doors
+     lead into the covo, or home when the friend is the one played (story-screen.ts, doorFor) */
+  building('casa-valentin', { label: 'CASA DI VALENTIN', v: 23, to: 'covo-valentin', tx: 7, ty: 12, tdir: 'up' }),
   building('casa-costanzo', { label: 'CASA DI COSTANZO', v: 41, to: 'casa-costanzo', tx: 5, ty: 6, tdir: 'up' }),
   building('casa-forchetta', { label: 'CASA DI FORCHETTA', v: 7, to: 'casa-forchetta', tx: 5, ty: 6, tdir: 'up' }),
-  building('casa-claudia', { label: 'CASA DI CLAUDIA', v: 12, to: 'casa-claudia', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa-claudia', { label: 'CASA DI CLAUDIA', v: 12, to: 'covo-claudia', tx: 7, ty: 12, tdir: 'up' }),
+  /* the covi that were never homes: Costanzo's palace in Piazza della Vittoria, Zendavid's temple in the pineta,
+     Antonio's dome in Parco la Fontana */
+  building('covo-costanzo', { label: 'PALAZZO DEL POPOLO', to: 'covo-costanzo', tx: 7, ty: 12, tdir: 'up' }),
+  building('covo-zendavid', { label: 'TEMPIO DEL BASSO', to: 'covo-zendavid', tx: 7, ty: 12, tdir: 'up' }),
+  building('covo-antonio', { label: 'LA CUPOLA', to: 'covo-antonio', tx: 7, ty: 10, tdir: 'up' }),
   /* across via Palazzo from Claudia's: the Mattej school, and the little park with the swings in front of it */
   building('scuola-mattej', { label: 'SCUOLA MATTEJ', msg: ['Scuola Mattej, in via Palazzo: le elementari e le medie dell\'Istituto comprensivo «Pasquale Mattej».', 'Davanti, il parchetto con gli alberi e le altalene. Di fronte abita Claudia.'] }),
   building('casa-zendavid', { label: 'CASA DI ZENDAVID', v: 33, to: 'casa-zendavid', tx: 5, ty: 6, tdir: 'up' }),
   building('stazione-scauri', { label: 'MINTURNO-SCAURI', msg: ['Stazione di Minturno-Scauri, sulla linea Roma–Napoli che passa per Formia.', 'Da qui a Formia è una fermata.'] }),
-  building('casa-andrea', { label: 'CASA DI ANDREA', v: 58, to: 'casa-andrea', tx: 5, ty: 6, tdir: 'up' }),
+  building('casa-andrea', { label: 'CASA DI ANDREA', v: 58, to: 'covo-andrea', tx: 6, ty: 12, tdir: 'up' }),
   /* the other palazzine of Parco la Fontana */
-  ...['A', 'B', 'C', 'D', 'E', 'F'].map((l, k) => building('palazzina-' + (k + 1), { v: 11 + k * 7, msg: ['Parco la Fontana, palazzina ' + l + '.', DOORS[(k + 2) % DOORS.length][0]] })),
+  ...['A', 'B', 'C', 'D'].map((l, k) => building('palazzina-' + (k + 1), { v: 11 + k * 7, msg: ['Parco la Fontana, palazzina ' + l + '.', DOORS[(k + 2) % DOORS.length][0]] })),
   /* what Antonio asked for on 11 November 2026 (docs/fonti-formia.md) */
   building('altieri', { label: 'TABACCHI', v: 1, to: 'altieri', tx: 4, ty: 6, tdir: 'up' }),
   building('telaro', { label: 'TELARO', v: 4, msg: ['Enoteca Telaro, a due passi da Largo Paone.', 'In vetrina, i vini del basso Lazio e della Campania: il confine è a pochi chilometri.'] }),
@@ -112,7 +119,7 @@ const buildings: Building[] = [
   building('villa-rubino', { label: 'VILLA RUBINO', v: 52, msg: ['Villa Rubino, a Caposele: fu la residenza d\'estate di Ferdinando II di Borbone.', 'Sotto ci sono i resti di una villa romana sul mare: la tradizione dice che fosse di Cicerone.', 'Il cancello è chiuso: è una casa privata.'] }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli»: più di venti sport, all\'aperto e al coperto.', 'Si entra solo con il tesserino.'] }),
-  building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 5, ty: 11, tdir: 'up' }),
+  building('tennis', { label: 'TENNIS COPERTI', to: 'circolo', tx: 6, ty: 15, tdir: 'up' }),
   building('morgana', { label: 'MORGANA', v: 3, to: 'morgana', tx: 5, ty: 7, tdir: 'up' }),
   building('chiesa-mola', { label: 'SAN GIOVANNI BATTISTA', msg: ['Chiesa dei Santi Lorenzo e Giovanni Battista, in piazza San Giovanni, nel borgo di Mola: è citata già nell\'841.', 'Fino all\'Ottocento erano due chiese divise da un muro. La guerra l\'ha quasi distrutta, poi è stata ricostruita.', 'Dentro c\'è una tavola di Antoniazzo Romano, dipinta verso il 1490.'] }),
   building('scuola', { label: 'VITRUVIO POLLIONE', msg: ['Istituto comprensivo «Vitruvio Pollione»: la scuola media di Mola, in via Emanuele Filiberto.', 'Dalle finestre aperte si sente la ricreazione.'] }),
@@ -233,10 +240,16 @@ const signs: Sign[] = [
   ] as [string, string, string][]).map(([id, street, note]): Sign => ({ ...sign(id, [street + '.', note]), plate: true })));
 
 const npcs: Npc[] = [
-  /* the covi on the street: each friend in theirs, with a challenge (data/covi.ts); Forchetta's and Claudia's are
-     indoors (circolo.ts, morgana.ts); whoever is played does not meet themself */
-  npc('costanzo', { person: 'costanzo', dir: 'down', covo: 'piazza', unless: 'costanzo' }),
-  npc('antonio-covo', { person: 'antonio', name: 'antonio', dir: 'down', covo: 'palamendola' }),
+  /* the covi are buildings now, each keeper inside his own (data/maps/covi.ts); once beaten, a friend comes out and
+     goes back where he hangs out. Whoever is played does not meet themself */
+  npc('costanzo', { person: 'costanzo', name: 'costanzo', dir: 'down', beaten: 'piazza', lines: ['GIÀ LO SAI: il comizio è finito. Per oggi.', 'Il palazzo? Che palazzo? Ah, quello. Lo uso per le riunioni del caminetto.'] }),
+  npc('antonio-covo', { person: 'antonio', name: 'antonio', dir: 'down', beaten: 'palamendola', lines: ['Stavo facendo girare una simulazione da dodici ore. Grazie per avermi tirato fuori.', 'Stasera partita al Palamendola: vieni?'] }),
+  /* who sends the player to each covo, and why (data/covo-places.ts) */
+  npc('vigile', { name: 'Vigile di piazza della Vittoria', seed: 131, dir: 'up', hook: 'piazza', lines: ['Circolare, circolare! Anzi no: non circola niente.'] }),
+  npc('vicino-pineta', { name: 'Il signore della pineta', seed: 132, dir: 'right', hook: 'pineta', lines: ['Bum, bum, bum. Da stanotte.'] }),
+  /* Antonio's guards in his park, while he is still to be beaten (data/adepts.ts) */
+  npc('robot-parco-1', { trainer: 'robot-parco-1', name: 'Robot di Sim-to-Real', seed: 133, dir: 'up', guard: 'palamendola', aside: [219, 41], lines: ['BIP. Il parco è in modalità test.'] }),
+  npc('robot-parco-2', { trainer: 'robot-parco-2', name: 'Drone di sorveglianza', seed: 134, dir: 'left', guard: 'palamendola', aside: [230, 43], lines: ['Bzzz. Zona sorvegliata.'] }),
   /* a friend once beaten comes out of his covo now and then, where the others hang out */
   npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', beaten: 'circolo', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
   npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
@@ -247,24 +260,24 @@ const npcs: Npc[] = [
   /* Faro, Nicola's Delfaro: it leaps in front of the Eclipse; on stormy nights it lights the lamp on its head */
   npc('faro-nicola', { name: 'Faro', mon: 'delfaro', dir: 'left', lines: ['Faro, il Delfaro di Nicola, salta fuori dall\'acqua e ti schizza tutto. «KIII! Tutti in porto!»', 'Le notti di burrasca accende la luce che ha in testa: le barche di Mola lo seguono fino al porto.'] }),
   npc('barista', { name: 'Bar dell\'Eclipse', seed: 83, dir: 'down', activity: 'lettino', lines: ['Benvenuto all\'Eclipse!', 'Il solito ombrellone in prima fila, con due lettini?'] }),
-  npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', covo: 'eclipse', activity: 'volley', lines: ['Weee! {hero}, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
-  npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', covo: 'pineta', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
-  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', covo: 'padel', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
-  npc('vicina', { reacts: [{ after: 'tr-mamurr-scavi', say: ['Ho sentito che a Gianola scavavano di notte. Tu stai attento, {hero}.'] }, { after: 'tr-mamurra', say: ['Dicono che hai mandato via un fantasma. Un fantasma! Mangia qualcosa, che sei sciupato.'] }, { after: 'sc-lamo-amico', say: ['Quello grosso che ti segue ha mangiato? Ho fatto la tiella.', 'Tre, ne ha mangiate. E ha chiesto il bis.'] }], name: 'Vicina di casa', seed: 15, dir: 'left', hint: true, lines: ['{hero}! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
+  npc('valentin', { person: 'valentin', name: 'valentin', dir: 'left', beaten: 'eclipse', activity: 'volley', lines: ['Weee! {hero}, stasera si fa festa qui all\'Eclipse!', 'Prima però una partita a beach volley.'] }),
+  npc('zendavid', { person: 'zendavid', name: 'zendavid', dir: 'down', beaten: 'pineta', activity: 'corsa', lines: ['Bau. Qui in pineta si sente solo la musica in cuffia.', 'Facciamo una corsetta tra i pini?'] }),
+  npc('andrea', { person: 'andrea', name: 'andrea', dir: 'down', beaten: 'padel', activity: 'padel', lines: ['Ho calcolato tutto: tre giri di pista e poi padel.', 'Statisticamente oggi vinco io.'] }),
+  npc('vicina', { hook: 'palamendola', reacts: [{ after: 'tr-mamurr-scavi', say: ['Ho sentito che a Gianola scavavano di notte. Tu stai attento, {hero}.'] }, { after: 'tr-mamurra', say: ['Dicono che hai mandato via un fantasma. Un fantasma! Mangia qualcosa, che sei sciupato.'] }, { after: 'sc-lamo-amico', say: ['Quello grosso che ti segue ha mangiato? Ho fatto la tiella.', 'Tre, ne ha mangiate. E ha chiesto il bis.'] }], name: 'Vicina di casa', seed: 15, dir: 'left', hint: true, lines: ['{hero}! Hai preso tutto? Chiavi, portafoglio, caricabatterie?', 'Dicono che in giro per Formia ci sia roba tua. Come sempre.'] }),
   npc('capotreno', { name: 'Capotreno', seed: 21, dir: 'down', gate: 'torino' }),
   npc('turista', { name: 'Turista', seed: 22, dir: 'left', lines: ['Cicerone aveva una villa qui a Formia: è qui che lo raggiunsero i sicari di Marco Antonio, nel 43 a.C.', 'Dicono che parlasse tantissimo. Ho conosciuto uno in piazza che lo batte.'] }),
   npc('anziano', { trainer: 'anziano', name: 'Signore di Castellone', seed: 23, dir: 'down', lines: ['Castellone è nato per difendersi dai Saraceni, sopra l\'acropoli romana.', 'Le mura avevano dodici torri: intera è rimasta solo quella ottagonale. Il resto l\'hanno fatto le bombe del \'43.', 'Io a Castellone ci sono nato. Pure mio nonno.'] }),
   npc('teatro', { reacts: [{ after: 'pietra-mura', say: ['Il Cisternone ha smesso di brontolare. Dormo meglio.'] }], name: 'Signora del teatro', seed: 27, dir: 'down', lines: ['Lo sai che casa mia sta dentro il teatro romano?', 'È di età augustea: sopra la cavea ci hanno costruito le case. Ci abitiamo in trecento.'] }),
   npc('devota', { name: 'Devota di Sant\'Erasmo', seed: 28, dir: 'right', lines: ['Il 2 giugno è la festa di Sant\'Erasmo, il patrono.', 'Protegge i marinai: il «fuoco di Sant\'Elmo» che si vede sugli alberi delle navi porta il suo nome.'] }),
   npc('guida', { trainer: 'guida', name: 'Guida del museo', seed: 29, dir: 'down', lines: ['Al museo ci sono le statue dei notabili di Formiae e della famiglia imperiale, compreso Gaio Cesare, il nipote di Augusto.', 'Le hanno trovate quasi tutte nell\'antico Foro, oggi piazza Mattej.'] }),
-  npc('fornaia', { name: 'Fornaia', seed: 24, dir: 'down', shop: 'forno', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'È la pizza bassa ripiena del golfo, nata tra pescatori e contadini. E ho pure le ciambelle all\'anice.'] }),
+  npc('fornaia', { hook: 'padel', name: 'Fornaia', seed: 24, dir: 'down', shop: 'forno', lines: ['Tiella di polpo o di scarola? Appena sfornata.', 'È la pizza bassa ripiena del golfo, nata tra pescatori e contadini. E ho pure le ciambelle all\'anice.'] }),
   npc('tifoso', { reacts: [{ after: 'pietra-mura', say: ['Al bar non si parla d\'altro: luci strane sotto Castellone.'] }, { after: 'tr-mamurra', say: ['Da quando c\'è questa storia di Mamurra, al bar viene più gente.', 'Dicono che di notte, sotto le mura di Castellone, si muova qualcosa di grosso.'] }, { after: 'sc-pietre-tenute', say: ['Stanotte le mura di Castellone hanno tremato. Mia moglie dice che è colpa tua.', 'Io non so niente, eh. Però di notte, sotto le mura, non ci andrei.'] }, { after: 'sc-lamo-preso', say: ['Hai preso il re dei Lestrigoni con un retino? Al bar non ci crede nessuno.', 'Mia moglie dice che è una stupidaggine. Però lo dice piano.'] }, { after: 'sc-lamo-amico', say: ['Dicono che il re dei Lestrigoni giri per Formia insieme a te. E che mangi.', 'Se passa dal bar, offro io. Ma prima avvisami.'] }, { after: 'sc-lamo-libero', say: ['Di notte a Castellone si sente russare. Dicono che sia il re dei Lestrigoni.', 'Mia moglie dice che è lei. Io non commento.'] }], name: 'Tifoso', seed: 51, dir: 'up', hint: true, lines: ['Il bar è pieno, c\'è la partita. Io guardo da qui.', 'Qui al bar si sa tutto.'] }),
   npc('gelataio', { name: 'Gelataio di Lavezzi', seed: 52, dir: 'down', activity: 'gelato', lines: ['Benvenuto da Lavezzi! Facciamo il gelato qui in piazza Marconi dal 1870.', 'Il bisnonno Amalio aveva un chiosco e solo due gusti, limone e caffè: la neve la prendeva sul Vesuvio.'] }),
   npc('studente', { trainer: 'studente', name: 'Studente della Vitruvio Pollione', seed: 64, dir: 'down', lines: ['Abbiamo la scuola proprio davanti alla chiesa di San Giovanni: a mezzogiorno suonano le campane e sembra la campanella.', 'La scuola porta il nome di Vitruvio Pollione, l\'architetto del «De architectura». Molti dicono che fosse di Formia.'] }),
   npc('animatore', { trainer: 'animatore', name: 'Animatore dell\'oratorio', seed: 63, dir: 'down', lines: ['Il pomeriggio l\'oratorio è pieno: chi gioca a pallone qui al campo, chi fa i compiti dentro.', 'Don Bosco diceva: «Basta che siate giovani perché io vi ami assai».'] }),
   npc('marinaio', { reacts: [{ after: 'tr-mamurr-peschiere', keep: true, say: ['Alle peschiere di Caposele c\'era uno che si immergeva di notte. Non si è più visto, per fortuna.'] }], name: 'Marinaio', seed: 32, dir: 'right', hint: true, lines: ['Questo va a Ponza e a Ventotene, tutto l\'anno.', 'Nelle notti brutte, sul molo del faro, a volte si accende una fiamma azzurra: il fuoco di Sant\'Elmo. Porta fortuna, ma non toccarlo.', 'Tu però prima finisci quello che hai cominciato in città.'] }),
   npc('velocista', { name: 'Velocista', seed: 61, dir: 'down', tourney: true, lines: ['Qui si allenava Pietro Mennea, con il professor Carlo Vittori.', 'Ogni anno qui si corre il Memorial Mennea. E da quest\'anno c\'è anche il Torneo degli amici: lo organizzo io.'] }),
-  npc('infermiere', { name: 'Infermiere', seed: 95, dir: 'down', lines: ['Turno di notte finito. Adesso un caffè a piazza Risorgimento e poi a dormire.', 'Via Ferrucci la faccio a piedi tutti i giorni: l\'ospedale è a due passi da Mola.'] }),
+  npc('infermiere', { hook: 'eclipse', name: 'Infermiere', seed: 95, dir: 'down', lines: ['Turno di notte finito. Adesso un caffè a piazza Risorgimento e poi a dormire.', 'Via Ferrucci la faccio a piedi tutti i giorni: l\'ospedale è a due passi da Mola.'] }),
   npc('vecchio-paone', { name: 'Signore di Largo Paone', seed: 96, dir: 'down', hint: true, lines: ['«Ci vediamo a Largo Paone»: a Formia si dice così da sempre.', 'Poi uno arriva tardi, ma il posto è questo.'] }),
   npc('maranolese', { name: 'Signora di Maranola', seed: 97, dir: 'down', lines: ['A Natale qui si fa il presepe vivente: le botteghe, i mestieri, tutto il paese.', 'L\'ultima domenica di giugno portiamo San Michele su all\'eremo, a spalla. Il 29 settembre lo riportiamo giù.'] }),
   npc('pellegrino', { name: 'Pellegrino', seed: 98, dir: 'down', lines: ['Dentro la grotta c\'è una sorgente. E un silenzio che giù in città te lo sogni.', 'Più su c\'è il Redentore: la statua è lassù dal 1901.'] }),
@@ -281,7 +294,7 @@ const npcs: Npc[] = [
   npc('bagnina-scauri', { name: 'Bagnina di Scauri', seed: 109, dir: 'down', lines: ['Benvenuto a Scauri! La spiaggia è lunga: comincia sotto il Monte di Scauri e non finisce più.', 'Il parco di Gianola, da questa parte, comincia dove finisce la sabbia.'] }),
   npc('pescatore-scauri', { name: 'Ragazzo con il retino', seed: 110, dir: 'left', lines: ['Tra questi scogli ne ho viste di strane. Non pesci: creature.'] }),
   npc('signora-vindicio', { name: 'Signora di Vindicio', seed: 111, dir: 'down', lines: ['D\'inverno a Vindicio ci siamo solo noi e i gabbiani.', 'È il periodo che preferisco.'] }),
-  npc('tennista', { name: 'Tennista', seed: 26, dir: 'down', lines: ['Forchetta? È dentro, nel campo coperto. Fuori non gioca mai.'] }),
+  npc('tennista', { hook: 'circolo', name: 'Tennista', seed: 26, dir: 'down', lines: ['Forchetta? È dentro, nel campo coperto. Fuori non gioca mai.'] }),
   npc('cestista', { name: 'Cestista', seed: 62, dir: 'down', lines: ['Stasera al Palamendola c\'è la partita. Vieni?'] }),
   npc('bagnino-oriente', { name: 'Bagnino del Lido Oriente', seed: 61, dir: 'down', activity: 'canoa', lines: ['Benvenuto al Lido Oriente! Siamo a Formia, sul lungomare Città di Ferrara: Gianola è a due passi.', 'Ti va un giro in canoa? Fino alla boa e ritorno: vediamo quanto ci metti.'] }),
   npc('bagnino', { reacts: [{ after: 'pietra-mare', say: ['L\'acqua è più calma da qualche giorno. Io non faccio domande.'] }], name: 'Bagnino', seed: 43, dir: 'down', hint: true, lines: ['Bandiera verde: si può fare il bagno.', 'Vindicio è Bandiera Blu. E con la termica del pomeriggio è il posto del windsurf e del kite.'] }),

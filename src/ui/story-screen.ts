@@ -49,13 +49,16 @@ import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wi
 import { onReward } from '../story/activities';
 import type { Growth } from '../story/growth';
 import type { Bout, Member, StoryTag } from '../battle';
-import { wildGone, wildNow, hidingAt } from '../story/maps';
+import { wildGone, wildNow, hidingAt, restOf, settle as settlePeople } from '../story/maps';
 import { BOTTLES } from '../data/maps/formia';
 import { soundButton } from './sound';
 import { music, worldMusic, settle, sfx, type TuneWait } from '../audio';
 import { runs, plainText, typer, voiceOf, speak, pauseAfter } from './rich';
 import { headShot } from '../render/canvas/walkers';
 import { startBattle, goHome } from './battle-screen';
+import { hookTalk, quizTalk, doorShut, doorRoute, keeperGifts, noKeys, giftsPane, wireGifts, onRadio } from './lairs';
+import { setDoorRules } from '../story/movement';
+import { hasGift, charmOn } from '../story/lairs';
 
 /* Story mode, the screen: a tile map seen from above. Antonio walks around, talks to people,
    enters the covi and challenges his friends; battles run on the battle screen. */
@@ -447,6 +450,8 @@ function sleep(s: Sign) {
 /* ---------- the scooter: a blue Liberty with its top case, parked where he left it ---------- */
 /** up on it: the creature jumps on behind */
 function rideOn() {
+  /* the keys first: the friend of the nearest covo took them home from the caminetto (story/lairs.ts) */
+  if (noKeys()) return;
   if (!mount()) return;
   var first = !st.seen.sella;
   st.seen.sella = true; save(); renderHud();
@@ -459,6 +464,8 @@ function rideOff() {
 }
 /** why the scooter did not go on: said once in a while, not at every bump */
 var rideSaid = 0;
+/* the doors that open with the story: the covi before their invitation, Antonio's flat (ui/lairs.ts) */
+setDoorRules(doorShut, doorRoute);
 onRideStop(function (x, y) {
   var c = M.cell(x, y), a = M.at[key(x, y)], now = performance.now();
   var why = a && a.kind === 'door' ? 'Prima parcheggia: premi Invio per scendere dal motorino.'
@@ -482,6 +489,9 @@ function talkTo(p: Person, past?: boolean) {
   var n = p.n;
   if (n.pet != null) { openHome(); return; }
   if (!past && plotTalk(n, function () { talkTo(p, true); })) return;
+  /* who sends the player to a covo, and why (data/covo-places.ts); who asks the questions at its door */
+  if (n.hook && hookTalk(n)) return;
+  if (n.quiz) { quizTalk(p); return; }
   if (n.covo) leaderTalk(n.covo, n);
   else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
@@ -510,6 +520,11 @@ export function useDoor(b: Building) {
 }
 function gateTalk(g: string, who?: string) {
   var G0 = gateFor(g, firstHuman() as FriendId), need = cityCovi(G0.city), have = need.filter(hasBadge).length, city = MAPS[G0.city].name;
+  /* Formia's line is closed since the night of the echo: a boulder of the Laestrygonians on the tracks, past the tunnel,
+     that moves once the seals of the covi are together again (data/covo-places.ts) */
+  if (have < need.length && G0.city === 'formia') { say(['Da stanotte non parte niente: dopo la galleria, sui binari, è caduto un masso. Grosso come un palazzo, e non si sa da dove.',
+    'Dicono che sia un masso dei Lestrigoni, caduto con il boato delle 3:12. E che lo tenga lì la stessa cosa che ha acceso quelle luci in città.',
+    'Le spille, dicono, sono sigilli: quando saranno di nuovo insieme, il masso si sposterà da solo. Ne hai ' + have + ' su ' + need.length + '. ' + G0.label + ' ti aspetta.'], who); return; }
   if (have < need.length) { say([G0.label + ' parte quando hai tutte le spille di ' + city + '.', 'Ne hai ' + have + ' su ' + need.length + '.'], who); return; }
   /* the train across Italy (ui/train.ts), and the arrival: the station hall of the city, or Formia's station */
   var go = function () {
@@ -546,7 +561,8 @@ function leaderTalk(id: string, n?: Npc) {
   var rv = rivalFriend() === cv0.leader, ready = cityCovi(cv0.city).every(function (c) { return c === cv0 || hasBadge(c); });
   if (rv && !ready) { say([cv0.intro[0], 'Da me si viene per ultimi, {hero}: prima prendi le altre spille di Formia. Ti aspetto qui, come al parco.'], cv0.leader); return; }
   var last = rv ? ['L\'ultima spilla di Formia è la mia, {hero}. Dal giorno del parco sapevo che saremmo finiti qui.'] : [];
-  say(mine ? [cv0.intro[0]].concat(last, mine) : last.concat(cv0.intro), cv0.leader, opts.concat(doIt).concat([{ label: 'Più tardi', fn: null }]));
+  /* the keeper of a covo, reached, fights: no «later» (13 November 2026) */
+  say(mine ? [cv0.intro[0]].concat(last, mine) : last.concat(cv0.intro), cv0.leader, opts.concat(doIt));
 }
 /* ---------- the creatures' powers: swimming, climbing the walls, the view from above ---------- */
 const MEET_LINE: Record<string, string> = { grotta: 'Qualcosa si muove nel buio…', erba: 'Qualcosa si muove nell\'erba alta…', scogli: 'Qualcosa si muove tra gli scogli…', acqua: 'Qualcosa nuota sotto di te…', mura: 'Qualcosa si muove tra le pietre delle mura…' };
@@ -710,7 +726,7 @@ function challenge(id: string) {
     startBattle({ a: idOf(k), b: crew[0].sp, mode: 'cpu', story: { covo: id, key: k, foeLv: lv, scene: sceneFor(M.id, areaName()) }, safe: safeMoves(),
       sideA: memberOf(k), sideB: foes[0], benchA: left.concat([firstHuman()]).filter(function (x) { return x !== k; }).map(memberOf), benchB: foes.slice(1),
       smart: [0, 1], bag: battleBag(), trainer: C[cv0.leader].name, surgeStart: stonesKept() ? 1 : 0, hero: nameOf(firstHuman()) });
-  }, SPECIES[crew[0].sp].type2);
+  }, SPECIES[crew[0].sp].type2, { must: true, foe: { sp: crew[0].sp, name: SPECIES[crew[0].sp].name, who: 'La manda in campo ' + C[cv0.leader].name } });
 }
 /** Antonio's moves whose thing he has found around town: in story battles he can't lose it any more */
 function safeMoves() { return foundItems().map(function (it) { return it.move; }); }
@@ -766,7 +782,9 @@ function fightOn() {
   };
   /* a legend may start with other types than those of its kind */
   var ty = foe.stages && foe.stages[0].types;
-  pickFighter('Chi mandi contro ' + sp.name + '?', ty ? ty[0] : sp.type, left, go, ty ? ty[1] : sp.type2);
+  /* a trainer's challenge, once started, is not left: only a wild one can be (13 November 2026) */
+  pickFighter('Chi mandi contro ' + sp.name + '?', ty ? ty[0] : sp.type, left, go, ty ? ty[1] : sp.type2,
+    { must: f.kind === 'trainer', foe: { sp: foe.sp, name: sp.name + ' · Lv ' + foe.lv, who: f.kind === 'trainer' ? 'La manda in campo ' + trainerNow(f.id).title : 'Selvatica' } });
 }
 /** a fight is over: a caught creature, a beaten trainer, or Antonio who has lost; each fighter gets what it earned */
 function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
@@ -824,7 +842,8 @@ export function stepped(): boolean {
   /* and now and then, out in town, it finds something on the ground: the closer they are, the more often */
   if (++sniffed >= 60 && M.id === 'formia') { sniffed = 0; var fl = leadCreature(); if (fl && Math.random() < 0.15 + 0.05 * hearts(fl)) sniff(fl); }
   var h = hidingAt(st.x, st.y);
-  if (!h) return false;
+  /* Valentin's mărțișor at the wrist: the wild ones keep away (not in a place with creatures of its own, like the Cisternone) */
+  if (!h || (charmOn() && !M.meet)) return false;
   if (calm > 0) { calm--; return false; }
   if (Math.random() >= meetChance(RATE, st.skills || {}) * (h.rate || 1)) return false;
   calm = CALM;
@@ -852,18 +871,22 @@ function meet(h: Hiding) {
   halt();
   sfx('meet');
   if (!reduced) { root.classList.remove('meet'); void root.offsetWidth; root.classList.add('meet'); setTimeout(function () { root.classList.remove('meet'); }, 900); }
-  wildMeet(h.id, MEET_LINE[h.on], { sp: m.sp, lv: lv, gold: gold });
+  /* Andrea's notebook: how likely this one was, here and at this hour */
+  var pool = ((night && h.night) || h.day).filter(function (x) { return !x.after || flag(x.after); }), tot = pool.reduce(function (a, x) { return a + x.w; }, 0);
+  var mine0 = pool.filter(function (x) { return x.sp === m.sp; }).reduce(function (a, x) { return a + x.w; }, 0);
+  var odds = hasGift('quaderno') && tot ? 'Il quaderno di Andrea: qui, a quest\'ora, una ' + SPECIES[m.sp].name + ' esce il ' + Math.round(100 * mine0 / tot) + '% delle volte.' : '';
+  wildMeet(h.id, MEET_LINE[h.on], { sp: m.sp, lv: lv, gold: gold }, odds);
 }
 /** who a trainer sends in, in one line */
 export function foesLine(id: string): string { return 'Creature: ' + teamOf(id).map(function (t) { return SPECIES[t.sp].name + ' (Lv ' + t.lv + ')'; }).join(', ') + '.'; }
 /** a battle with a trainer, with the creatures of who is being played (one of the missions of the friends is one too) */
 export function trainerFight(id: string, who: string) { fight = { kind: 'trainer', id: id, who: who, foes: teamOf(id).slice() }; fightOn(); }
 /** a wild creature in front of Antonio: fight it (with his creatures), or slip away */
-function wildMeet(id: string, first: string, foe: Foe) {
+function wildMeet(id: string, first: string, foe: Foe, odds?: string) {
   mentorTip(foe.stages ? 'legend' : 'wild');
   var sp = SPECIES[foe.sp];
   see(foe.sp); save();
-  say([first, sp.wild.replace(/,$/, '') + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : []), null, [
+  say([first, sp.wild.replace(/,$/, '') + ', livello ' + foe.lv + '!'].concat(foe.gold ? ['Ma è dorata! Una creatura così si vede una volta nella vita.'] : [], odds ? [odds] : []), null, [
     { label: 'Lotta!', fn: function () { fight = { kind: 'wild', id: id, who: '', foes: [foe] }; fightOn(); } },
     { label: 'Scappa', fn: function () { say(['{hero} si allontana in punta di piedi.']); } }
   ]);
@@ -885,7 +908,8 @@ function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id];
   if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola la guardaparco ne affida una a chi se lo merita.']), who); return; }
   var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { trainerFight(id, who); } }];
-  if (!came) opts.push({ label: 'Più tardi', fn: null });
+  /* the defenders of a covo do not let you by with a «later» (13 November 2026); a rematch is always optional */
+  if (!came && (beaten || !tr.covo)) opts.push({ label: 'Più tardi', fn: null });
   say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat([foesLine(id)]), who, opts);
 }
 
@@ -898,7 +922,8 @@ const SIGHT = 4, RIVAL_NEAR = 5, ALERT_MS = 750, LEAVE_ALONE = 180000;
 var noticed: Record<string, number> = {}, meeting: Person | null = null, away: { p: Person; map: string; done?: () => void }[] = [];
 function seesAntonio(p: Person): boolean {
   var id = p.n.trainer;
-  if (!id || p.n.ghost || p.path || !present(p) || st.beaten['tr-' + id] || Date.now() - (noticed[id] || 0) < LEAVE_ALONE) return false;
+  /* who asks a quiz waits to be asked: he does not walk up and fight */
+  if (!id || p.n.ghost || p.n.quiz || p.path || !present(p) || st.beaten['tr-' + id] || Date.now() - (noticed[id] || 0) < LEAVE_ALONE) return false;
   var dx = st.x - p.x, dy = st.y - p.y;
   if (TRAINERS[id].rival) return Math.abs(dx) + Math.abs(dy) <= RIVAL_NEAR && !!walkPath(p.x, p.y, st.x, st.y, true);
   var v = DV[p.dir], d = v[0] ? dx * v[0] : dy * v[1];
@@ -912,7 +937,7 @@ var spotting = true;
     on sight: beyond that he only looks and lets it go (the challenge stays, talking to him) */
 const SIGHT_GAP = 3;
 function tooStrong(id: string): boolean {
-  if (TRAINERS[id].rival || !teamMons().length) return false;
+  if (TRAINERS[id].rival || TRAINERS[id].covo || !teamMons().length) return false;
   var mine = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
   return Math.min.apply(null, teamOf(id).map(function (t) { return t.lv; })) - mine > SIGHT_GAP;
 }
@@ -971,22 +996,36 @@ function walkPeople(now: number) {
     if (meeting === p) meeting = null;
     if (p.leaving) { home(a); return; }
     if (!present(p)) { p.leaving = true; walk(p, walkAway(p.x, p.y, 6), function () { home(a); }); return; }
-    if (p.x === p.n.x && p.y === p.n.y) { home(a); return; }
+    /* a defender of a covo, beaten, goes and stands aside */
+    var rest = restOf(p.n);
+    if (p.x === rest[0] && p.y === rest[1]) { home(a); return; }
     /* too far from his place to walk it in sight: he walks off, and is back there */
-    var way = walkPath(p.x, p.y, p.n.x, p.n.y, false);
+    var way = walkPath(p.x, p.y, rest[0], rest[1], false);
     walk(p, way || walkAway(p.x, p.y, 6), function () { home(a); });
+  });
+}
+/** the defenders of a covo who have just been beaten (or passed) walk aside, out of the way (data/maps/covi.ts) */
+export function stepAside() {
+  M.people.forEach(function (p) {
+    if (!p.n.aside || p.path || p.mv || away.some(function (b) { return b.p === p; })) return;
+    var rest = restOf(p.n);
+    if (p.x === rest[0] && p.y === rest[1]) return;
+    var way = walkPath(p.x, p.y, rest[0], rest[1], false);
+    if (way) walk(p, way, function () { home({ p: p }); }); else settlePeople(M);
   });
 }
 /** back on his own tile, facing his own way */
 function home(a: { p: Person }) {
   var p = a.p;
-  p.x = p.n.x; p.y = p.n.y; p.dir = p.n.dir || 'down'; p.mv = p.path = p.alert = undefined; p.leaving = false;
+  var rest = restOf(p.n);
+  p.x = rest[0]; p.y = rest[1]; p.dir = p.n.dir || 'down'; p.mv = p.path = p.alert = undefined; p.leaving = false;
   away = away.filter(function (b) { return b.p !== p; });
   if (meeting === p) meeting = null;
 }
 /* the nets: the guardaparco gives the first ones and says how to catch; the net maker beside him sells the rest */
 const GIFT_NETS = 5;
-const NETS_TALK = ['Tieni anche questi: ' + GIFT_NETS + ' retini, per cominciare.',
+const NETS_TALK = ['Senti, una cosa. Dopo il boato di stanotte le creature dell\'erba alta sono scappate dalle tane, e una non ha più trovato le altre: segue la tua da quando sei arrivato. È sola, e ha paura.',
+  'Prendila con te: con una compagna, anche la tua si calma. Tieni: ' + GIFT_NETS + ' retini, per cominciare.',
   'Per catturare una creatura selvatica, prima la fai lottare con la tua e la stanchi. Poi nella lotta, in basso, c\'è la tua Borsa: tocca un retino e lancialo.',
   'Più la creatura è stanca, più è facile. Il retino trema un po\', e se regge è tua.',
   'Altri retini, anche più buoni, li vende il retaio qui accanto.'];
@@ -1063,6 +1102,7 @@ function face(id: string) { return SPR.personIn(id, formNow(id), 'smirk', '', SP
 /** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
 export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; bouts?: Bout[] }) {
   open(true);
+  setTimeout(stepAside, 400);
   var tag = res.tag, key = tag.key || 'antonio';
   keepBag(res.bag); save(); renderHud();
   if (res.quit) { (res.bouts || []).forEach(function (b) { see(b.foe as SpeciesId); }); fight = null; save(); say(['Hai lasciato la lotta a metà. Puoi riprovare quando vuoi.']); return; }
@@ -1081,7 +1121,8 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
     st.beaten[tag.covo!] = true;
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
     save(); renderHud();
-    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { rewardsAll(pay, cash, trainNews); }); });
+    /* the pin, then what the freed keeper gives besides it (story/lairs.ts, ui/lairs.ts) */
+    say(cv0.win, cv0.leader, null, function () { award(cv0!, function () { keeperGifts(tag.covo!, function () { rewardsAll(pay, cash, trainNews); }); }); });
   } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewardsAll(pay, cash); });
   else say(cv0.lose, cv0.leader, null, function () { rewardsAll(pay, 0); });
 }
@@ -1157,7 +1198,7 @@ function openMenu(tab?: string) {
         return '<li class="' + (got ? 'got' : '') + '">' + itemSVG(ITEMS[it.move].icon, got, 40) + '<span><b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b><small>' +
           esc(got ? it.text + ' Nelle lotte della Storia non si perde più.' : 'Perso da qualche parte in città.') + '</small></span></li>';
       }).join('') + '</ul></div>' + dexHtml(),
-    mappa: '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' +
+    mappa: '<div class="pickrow"><h3>Formia</h3><div class="townmap" id="wm-map"></div></div>' + giftsPane() +
       '<div class="pickrow"><h3>Ora del giorno</h3><div class="seg seg4" role="group" aria-label="Ora del giorno">' + DAY_MODES.map(function (m) {
         return '<button type="button" data-ora="' + m.id + '" aria-pressed="' + (m.id === dayMode) + '">' + esc(m.label) + '</button>';
       }).join('') + '</div><p class="hint" id="wm-ora">' + esc(hourHint()) + '</p></div>' +
@@ -1183,6 +1224,7 @@ function openMenu(tab?: string) {
   each(document.querySelectorAll('[data-tab]'), function (b) { b.addEventListener('click', function () { sfx('click'); show(b.getAttribute('data-tab')!); }); });
   show(menuTab);
   wireTeam(openMenu);
+  wireGifts(openMenu);
   each(document.querySelectorAll('[data-ora]'), function (b) {
     b.addEventListener('click', function () {
       setDayMode(b.getAttribute('data-ora') as DayMode);
@@ -1207,8 +1249,12 @@ function openMenu(tab?: string) {
 /** the tune of the place Antonio is in, by day or night: asked often, it changes only when the place or the light does
     (audio/zones.ts); open() forgets the last one, because a battle has played its own in between */
 let lastTune = '', tuneWait: TuneWait = { now: '', next: '', since: 0 };
+onRadio(function () { tune(); });
 function tune() {
-  const asked = worldMusic(M.id, areaName(), darkness(new Date()) > 0.5);
+  /* inside a covo, the tune of the covi; with Zendavid's headphones, the one chosen */
+  /* until the first creature, the tune of the night before: something has happened, nobody knows what */
+  const night = darkness(new Date()) > 0.5, chosen = hasGift('cuffie') && st.radio ? st.radio : M.theme ? 'covo' : !st.seen.starter ? 'mistero' : '';
+  const asked = chosen ? (chosen === 'home' || chosen === 'mistero' ? chosen : chosen + (night ? ':night' : '')) : worldMusic(M.id, areaName(), night);
   /* the first tune after open() comes in at once; then a change waits a moment (settle), and crosses over */
   if (!lastTune) { tuneWait = { now: asked, next: '', since: 0 }; lastTune = asked; music(asked); return; }
   const t = settle(tuneWait, asked, performance.now());
@@ -1244,12 +1290,27 @@ function intro() {
   st.seen.intro = true; st.seen['cap-starter'] = true; save();
   /* the story of whoever is played: where they live, the covi of the others, and where their train goes */
   var me = firstHuman() as FriendId, G0 = gateFor('torino', me), lines = OPENING.slice();
-  lines.splice(2, 0, LIVES[me] + ' A Formia ci sono sette covi, uno per ognuno di voi amici: batti gli altri sei, e poi il treno ti porterà a ' + G0.station + '.');
+  /* where he lives, and where his life goes; nothing of what waits for him in Formia (13 November 2026: no spoilers) */
+  lines.splice(2, 0, LIVES[me] + ' Un giorno il treno ti porterà a ' + G0.station + '. Ma oggi da Formia non parte niente, e presto capirai perché.');
   /* the rival is picked now, but who it is stays a surprise until the park (story/rival-who.ts) */
   if (rivalFriend()) lines.splice(3, 0, 'Ah, un\'ultima cosa: a Formia avrai anche un *rivale*. Chi? Lo scoprirai presto. Ti dico solo che lo conosci meglio di quanto pensi.');
   /* Cicero first, at home; then Nicola comes up the street with the van (ui/nicola.ts) */
   /* then the phone buzzes: the friends in «il caminetto» have heard about the creatures (ui/chat.ts); then the van */
-  say(lines, CICERO, null, function () { playChat('inizio', function () { vanStart(); }); });
+  prologue(function () { say(lines, CICERO, null, function () { playChat('inizio', function () { vanStart(); }); }); });
+}
+/* The night before (13 November 2026, Antonio: «all'inizio ci deve essere un alone di mistero, anche con la musica»):
+   on black, a line at a time, what happened at 3:12; its tune goes on until the first creature */
+const PROLOGUE = ['Formia, la notte prima.', 'Alle 3:12 un boato arriva dal mare, dalla parte di Gianola. I vetri tremano fino a Castellone.',
+  'Le luci della città si spengono, tutte insieme, per un minuto.', 'Quando tornano, qualcuno giura di aver visto delle luci colorate sopra le case. Una, due… di più. Poi niente.',
+  'Al mattino nessuno ne parla. Ma nelle pietre, nel mare e negli ulivi di Formia, qualcosa si è svegliato.'];
+function prologue(then: () => void) {
+  music('mistero');
+  var o = sheet('<div class="prologo" role="dialog" aria-modal="true" aria-label="Prologo">' + PROLOGUE.map(function (l, i) { return '<p style="--d:' + (reduced ? 0 : 600 + i * 2300) + 'ms">' + esc(l) + '</p>'; }).join('') +
+    '<button class="btn primary" type="button" id="pr-go" style="--d:' + (reduced ? 0 : 600 + PROLOGUE.length * 2300) + 'ms">Il mattino</button></div>', 'pass prologo-bg');
+  var go = $('pr-go');
+  go.addEventListener('click', function () { closeSheet(); then(); });
+  setTimeout(function () { var b = $('pr-go'); if (b) b.focus(); }, reduced ? 30 : 600 + PROLOGUE.length * 2300);
+  void o;
 }
 /* ---------- Cicero, when he is needed ---------- */
 /* He is not always there: he appears (on the map, beside Antonio, and in the corner) when he has something to say,

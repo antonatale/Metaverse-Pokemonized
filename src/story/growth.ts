@@ -1,4 +1,5 @@
 import { rivalName, rivalA } from './rival-who';
+import { discounted } from './lairs';
 import { st } from '../save/story-progress';
 import type { FighterId, FriendId, Move } from '../data/characters';
 import { fighter } from '../data/fighters';
@@ -282,7 +283,8 @@ export function giveHeld(key: string, it: HeldId | null) {
   if (mon.item) { st.bag[mon.item] = (st.bag[mon.item] || 0) + 1; delete mon.item; }
   if (it && has(it) > 0) { st.bag[it] = has(it) - 1; mon.item = it; }
 }
-export function priceFor(it: ItemId): number { return priceOf(it, st.skills || {}); }
+/** what a thing costs in the shops of Formia: with Costanzo's Tessera, a fifth less (story/lairs.ts) */
+export function priceFor(it: ItemId): number { return discounted(priceOf(it, st.skills || {})); }
 /** buys n of a thing, all or none: false when the money is not enough */
 export function buy(it: ItemId, n?: number): boolean {
   var k = Math.max(1, Math.floor(n || 1)), p = priceFor(it) * k;

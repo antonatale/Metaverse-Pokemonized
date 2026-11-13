@@ -17,6 +17,7 @@ export interface PlaceSpec {
   /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it; a yard is a
       lawn closed by a hedge, with a gate on its west side) */
   fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'track' | 'court' | 'round' | 'parking' | 'pinetina';
+  /* kind 'covo': the lair of a friend (data/covi.ts), drawn as `look` (the leader) in render/canvas/covo.ts */
   /** tiles kept free of houses and trees around it */
   room?: number;
   /** how far it may move from where it really is, in tiles */
@@ -52,16 +53,17 @@ export const PLACES: PlaceSpec[] = [
   { id: 'campo-amendola', kind: 'area', fill: 'garden', w: 7, h: 4, at: [41.2611, 13.6380], tile: [212, 52] },
   /* the other palazzine of Parco la Fontana (seven of the eight shapes of OpenStreetMap, Antonio's included), along
      its walks; in the middle the round common garden, the fountain at its centre */
-  { id: 'palazzina-1', kind: 'condo', w: 4, h: 3, at: [41.2633, 13.6412], door: true, tile: [220, 37] },
-  { id: 'palazzina-2', kind: 'condo', w: 4, h: 3, at: [41.2633, 13.6417], door: true, tile: [225, 37] },
-  { id: 'palazzina-3', kind: 'condo', w: 4, h: 3, at: [41.2632, 13.6421], door: true, tile: [230, 37] },
-  { id: 'palazzina-4', kind: 'condo', w: 4, h: 3, at: [41.2628, 13.6424], door: true, tile: [235, 37] },
-  { id: 'palazzina-5', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6412], door: true, tile: [220, 41] },
-  { id: 'palazzina-6', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6420], door: true, tile: [235, 41] },
-  { id: 'parco-giardino', kind: 'area', fill: 'round', w: 7, h: 5, at: [41.2627, 13.6417], tile: [226, 41] },
+  /* 13 November 2026 (Antonio): the park is bigger, up to the railway; the round garden with the fountain is its
+     centre, and beside it, on the east, Antonio's covo. The palazzine stand along the north side and in the corner */
+  { id: 'palazzina-1', kind: 'condo', w: 4, h: 3, at: [41.2633, 13.6412], door: true, tile: [221, 32] },
+  { id: 'palazzina-2', kind: 'condo', w: 4, h: 3, at: [41.2633, 13.6417], door: true, tile: [226, 32] },
+  { id: 'palazzina-3', kind: 'condo', w: 4, h: 3, at: [41.2632, 13.6421], door: true, tile: [231, 32] },
+  { id: 'palazzina-4', kind: 'condo', w: 4, h: 3, at: [41.2622, 13.6412], door: true, tile: [221, 41] },
+  { id: 'parco-giardino', kind: 'area', fill: 'round', w: 10, h: 7, at: [41.2627, 13.6417], tile: [225, 35] },
+  { id: 'covo-antonio', kind: 'covo', look: 'antonio', up: 0.8, w: 5, h: 4, at: [41.2628, 13.6424], door: true, doorAt: 2, tile: [235, 34] },
   /* ---------- the Bruno Zauli olympic centre, and its covered tennis courts (Forchetta's covo) ---------- */
   { id: 'zauli', kind: 'coni', w: 7, h: 3, at: [41.2632, 13.6293], door: true, tile: [189, 42] },
-  { id: 'tennis', kind: 'circolo', w: 6, h: 3, at: [41.2644, 13.6276], door: true, tile: [189, 33] },
+  { id: 'tennis', kind: 'covo', look: 'forchetta', up: 2.6, w: 6, h: 3, at: [41.2644, 13.6276], door: true, tile: [189, 33] },
   /* the athletics track where Mennea trained, behind the centre */
   { id: 'pista', kind: 'area', fill: 'track', w: 7, h: 13, at: [41.2655, 13.6300], tile: [179, 33] },
   { id: 'parco-gramsci', kind: 'area', fill: 'garden', w: 5, h: 3, at: [41.2616, 13.6250], tile: [165, 41] },
@@ -119,19 +121,25 @@ export const PLACES: PlaceSpec[] = [
   /* the homes of the others (Antonio told where; the streets checked on OpenStreetMap, no house numbers): Valentin in
      via Adalgiso Ferrucci, by piazza Risorgimento and opposite the Dono Svizzero hospital; Costanzo in via Solaro and
      Forchetta in via Abate Tosti, in Mola; Andrea in Castellone, by piazza Pasquale Mattei */
-  { id: 'casa-valentin', kind: 'house', w: 3, h: 2, at: [41.2613, 13.6172], door: true, tile: [147, 42] },
+  /* where the friends live, their homes turned covi by the echo of Telepilo (data/covi.ts): drawn as the covo, or as the
+     home when the friend is the one played (render/canvas/covo.ts) */
+  { id: 'casa-valentin', kind: 'covo', look: 'valentin', up: 4.2, w: 4, h: 3, at: [41.2613, 13.6172], door: true, doorAt: 2, tile: [145, 41] },
   { id: 'casa-costanzo', kind: 'condo', w: 4, h: 3, at: [41.2600, 13.6121], door: true, tile: [132, 43] },
   { id: 'casa-forchetta', kind: 'cortina', up: 0.55, w: 2, h: 5, at: [41.2592, 13.6146], door: true, tile: [139, 60] },
   /* Claudia: San Giulio, in via Palazzo, across from the Mattej school and the little park with the swings in front of
      it; between the Zauli and piazza Risorgimento, on the street inside, not on the Appia (Antonio, 13 November) */
-  { id: 'casa-claudia', kind: 'condo', w: 4, h: 3, at: [41.2641, 13.6213], door: true, tile: [159, 37] },
+  { id: 'casa-claudia', kind: 'covo', look: 'claudia', up: 5.2, w: 5, h: 4, at: [41.2641, 13.6213], door: true, doorAt: 2, tile: [158, 37] },
   { id: 'scuola-mattej', kind: 'school', w: 6, h: 3, at: [41.2652, 13.6191], door: true, tile: [155, 32] },
   { id: 'parchetto-mattej', kind: 'area', fill: 'garden', w: 5, h: 4, at: [41.2641, 13.6198], tile: [153, 37] },
-  { id: 'casa-andrea', kind: 'borgo', w: 3, h: 2, at: [41.2541, 13.6016], door: true, tile: [87, 79] },
+  { id: 'casa-andrea', kind: 'covo', look: 'andrea', up: 4.4, w: 4, h: 3, at: [41.2541, 13.6016], door: true, doorAt: 1, tile: [87, 78] },
+  /* Costanzo's covo: a palace of the people in the middle of Piazza della Vittoria, where he holds his rally */
+  { id: 'covo-costanzo', kind: 'covo', look: 'costanzo', up: 2.8, w: 6, h: 3, at: [41.2551, 13.6062], door: true, doorAt: 2, tile: [101, 79] },
+  /* Zendavid's covo: the temple of sound in the Pineta di Vindicio, on the crossing of its footpaths */
+  { id: 'covo-zendavid', kind: 'covo', look: 'zendavid', up: 3.2, w: 5, h: 3, at: [41.2503, 13.5925], door: true, doorAt: 2, tile: [56, 98] },
   /* Scauri, east of Gianola: the station of Minturno-Scauri (OpenStreetMap: 41.25785, 13.72077), and Zendavid's home at
      the beginning of the village, near it */
   /* the fountain of the common garden */
-  { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], tile: [228, 42] },
+  { id: 'fontana', kind: 'fountain', w: 2, h: 2, at: [41.2626, 13.6446], tile: [229, 37] },
   /* ---------- the revision of 11 November 2026: what Antonio asked for (sources in docs/fonti-formia.md) ---------- */
   /* Largo Paone, where everyone meets: the square between Via Vitruvio and the lungomare, the tobacconist on it */
   /* Largo Paone (OpenStreetMap, the satellite view, Street View and Antonio's photo from above the tobacconist): the
@@ -202,26 +210,27 @@ export const SPOTS: SpotSpec[] = [
   { id: 'pellegrino', near: { place: 'san-michele', dx: 4, dy: 2 } },
   { id: 'allenatore', near: { place: 'tribuna', dx: 0, dy: 6 } },
   { id: 'start', near: { place: 'casa', dx: 2, dy: 4 }, walk: true },
-  { id: 'start-valentin', near: { place: 'casa-valentin', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-valentin', near: { place: 'casa-valentin', dx: 2, dy: 3 }, walk: true },
   { id: 'start-costanzo', near: { place: 'casa-costanzo', dx: 1, dy: 2 }, walk: true },
   { id: 'start-forchetta', near: { place: 'casa-forchetta', dx: 0, dy: 5 }, walk: true },
-  { id: 'start-claudia', near: { place: 'casa-claudia', dx: 1, dy: 3 }, walk: true },
-  { id: 'start-andrea', near: { place: 'casa-andrea', dx: 1, dy: 2 }, walk: true },
+  { id: 'start-claudia', near: { place: 'casa-claudia', dx: 2, dy: 4 }, walk: true },
+  { id: 'start-andrea', near: { place: 'casa-andrea', dx: 1, dy: 3 }, walk: true },
   { id: 'start-zendavid', near: { place: 'casa-zendavid', dx: 1, dy: 2 }, walk: true },
   /* the scooter, before its first ride: by the home of whoever is played (story/maps.ts, moto) */
   { id: 'motorino', near: { place: 'casa', dx: -3, dy: 5 } },
-  { id: 'motorino-valentin', near: { place: 'casa-valentin', dx: 3, dy: 3 } },
+  { id: 'motorino-valentin', near: { place: 'casa-valentin', dx: 4, dy: 3 } },
   { id: 'motorino-costanzo', near: { place: 'casa-costanzo', dx: 5, dy: 3 } },
   /* not in the lane: at its mouth, on the paving by Largo Paone */
   { id: 'motorino-forchetta', tile: [140, 68] },
-  { id: 'motorino-claudia', near: { place: 'casa-claudia', dx: 3, dy: 3 } },
-  { id: 'motorino-andrea', near: { place: 'casa-andrea', dx: 3, dy: 2 } },
+  { id: 'motorino-claudia', near: { place: 'casa-claudia', dx: 5, dy: 5 } },
+  { id: 'motorino-andrea', near: { place: 'casa-andrea', dx: 3, dy: 3 } },
   { id: 'motorino-zendavid', near: { place: 'casa-zendavid', dx: 3, dy: 2 } },
   { id: 'sign-casa', near: { place: 'casa', dx: -2, dy: 3 } },
   /* the friends and the townsfolk */
-  { id: 'costanzo', near: { place: 'piazza', dx: 4, dy: 1 } },
-  { id: 'folla1', near: { place: 'piazza', dx: 2, dy: 3 } }, { id: 'folla2', near: { place: 'piazza', dx: 5, dy: 3 } },
-  { id: 'folla3', near: { place: 'piazza', dx: 7, dy: 3 } }, { id: 'folla4', near: { place: 'piazza', dx: 1, dy: 2 } },
+  /* the crowd in front of Costanzo's palace; Costanzo himself, out of it once beaten */
+  { id: 'costanzo', near: { place: 'piazza', dx: 8, dy: 5 } },
+  { id: 'folla1', near: { place: 'piazza', dx: 1, dy: 4 } }, { id: 'folla2', near: { place: 'piazza', dx: 6, dy: 4 } },
+  { id: 'folla3', near: { place: 'piazza', dx: 8, dy: 4 } }, { id: 'folla4', near: { place: 'piazza', dx: 0, dy: 3 } },
   /* Nicola Spadea, windsurf champion, by his boards on the shore; the bar of the lido gives out the sunbeds */
   { id: 'nicola', near: { place: 'eclipse-spiaggia', dx: 2, dy: 5 }, on: 'sand' },
   /* Nicola's Delfaro, in the water in front of the Eclipse, and where the windsurf is put in the sea at the start */
@@ -235,8 +244,13 @@ export const SPOTS: SpotSpec[] = [
   { id: 'valentin', near: { place: 'eclipse-spiaggia', dx: 9, dy: 4 }, on: 'sand' },
   { id: 'zendavid', near: { place: 'pineta', dx: 10, dy: 4 } },
   { id: 'andrea', near: { place: 'zauli', dx: 7, dy: 2 } },
-  /* Antonio's covo: at the door of the Palamendola, next to his home */
-  { id: 'antonio-covo', near: { place: 'palamendola', dx: 7, dy: 1 } },
+  /* Antonio, out of his covo once beaten: at the door of the Palamendola, next to his home */
+  { id: 'antonio-covo', near: { place: 'palamendola', dx: 4, dy: 2 } },
+  /* the guards of Parco la Fontana while Antonio is still to be beaten: his robots on the walks to the covo */
+  { id: 'robot-parco-1', tile: [220, 42] }, { id: 'robot-parco-2', tile: [230, 44] },
+  /* who sends the player to Costanzo's palace and to Zendavid's temple */
+  { id: 'vigile', near: { place: 'piazza', dx: -2, dy: 2 } },
+  { id: 'vicino-pineta', near: { place: 'pineta', dx: -1, dy: 3 } },
   { id: 'forchetta-eclipse', near: { place: 'eclipse-spiaggia', dx: 4, dy: 5 }, on: 'sand' },
   { id: 'vicina', near: { place: 'casa', dx: -1, dy: 3 } },
   /* the back door of Antonio's flat, on the walk of Parco la Fontana: the only way into the closed park */
@@ -327,7 +341,7 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-gianola-1', tile: [259, 92], on: 'sand' },
   { id: 'selv-gianola-2', tile: [261, 102], on: 'sand' },
   { id: 'selv-pineta-1', near: { place: 'pineta', dx: 4, dy: 2 } },
-  { id: 'selv-pineta-2', near: { place: 'pineta', dx: 12, dy: 4 } },
+  { id: 'selv-pineta-2', tile: [49, 102] },
   { id: 'selv-scogli-1', near: { place: 'scogliera', dx: -2, dy: 3 }, on: 'sand' },
   { id: 'selv-scogli-2', near: { place: 'scogliera', dx: 5, dy: 4 }, on: 'sand' },
   { id: 'selv-ulivi-1', tile: [8, 75] },

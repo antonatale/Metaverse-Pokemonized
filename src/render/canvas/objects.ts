@@ -1,3 +1,4 @@
+import { covo } from './covo';
 import type { Palette } from './palette';
 import { T, STICKER_INK, mk, rr, hash, fillStroke, circle, ell, poly, blobs, plaque, cylinder, type Ctx } from './draw';
 import { cortina, castello, anchor, castlewall, cannelle } from './cortina';
@@ -15,8 +16,11 @@ export interface ObjOpts {
   item?: string;
   /** a house of the town: its variation seed (facade colour, roof, shutters, balconies) */
   v?: number;
-  /** a palazzo of a cortina: what its ground floor is (see cortina) */
+  /** a palazzo of a cortina: what its ground floor is (see cortina); a covo: its keeper */
   look?: string;
+  /** a covo (render/canvas/covo.ts): how it stands, and the kind of home it is drawn as when its keeper is the one played */
+  state?: string;
+  base?: string;
 }
 /** a painted object: the picture, and its size in map px (up included) */
 export interface Sprite { cv: HTMLCanvasElement; w: number; h: number; up: number }
@@ -119,6 +123,8 @@ export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts):
 }
 const OBJ: Record<string, ObjFn> = {
   cortina: cortina, castello: castello, anchor: anchor, castlewall: castlewall, cannelle: cannelle,
+  /* the covi of the friends: the home of the one played is still a home */
+  covo: function (c, w, h, P, o) { if (o.state === 'mine' && o.base && OBJ[o.base]) OBJ[o.base](c, w, h, P, o); else covo(c, w, h, P, o); },
   tree: function (c, w, h, P) {
     ell(c, 16, 28, 11, 3.6); c.fillStyle = P.shadow; c.fill();
     rr(c, 13, 14, 6, 15, 2); fillStroke(c, P.trunk, P.ink, 1.6);

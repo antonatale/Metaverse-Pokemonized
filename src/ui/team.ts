@@ -66,30 +66,52 @@ export function chooseStarter(done: (uid: string) => void) {
 
 /* ---------- who goes into battle ---------- */
 /** one of a few of Antonio's team, from their pictures (with a mark on the ones that have the advantage) */
-function pickFrom(title: string, hint: string, keys: string[], go: (key: string) => void, best?: string[] | null) {
-  var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2><button class="tb-btn" type="button" id="pf-x">Annulla</button></div>' +
-    '<p class="hint">' + esc(hint) + '</p><div class="pickgrid">' +
-    keys.map(function (key) {
-      var c = fighter(idOf(key));
-      return '<button class="pick" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + '"><span class="face">' + portrait(key) + '</span><span>' + esc(nameOf(key)) + ' <small class="lv">Lv ' + level(key).lv + '</small></span>' +
-        (best && (best.indexOf(c.type) >= 0 || (c.type2 && best.indexOf(c.type2) >= 0)) ? '<small class="adv">Vantaggio</small>' : '') + '</button>';
-    }).join('') + '</div></div>');
-  $('pf-x').addEventListener('click', closeSheet);
-  each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { closeSheet(); go(b.getAttribute('data-key')!); }); });
-  setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
+/** who is on the other side, for the choice of who goes in: a creature or a person, and what is said of it */
+export interface PickFoe { sp?: SpeciesId; person?: string; name: string; who?: string }
+export interface PickOpts {
+  /** a challenge that has started: no way back from the choice (a covo, a trainer); a wild one can still be left */
+  must?: boolean;
+  foe?: PickFoe;
+}
+function typeChip(t: string): string { return '<span class="pf-type" style="--tc:var(--t-' + t.toLowerCase() + ')">' + esc(t) + '</span>'; }
+/* The choice of who goes in (13 November 2026, Antonio: «quando scegli la creatura voglio un design più coinvolgente»):
+   the one on the other side, big, under a VS; then each of the team as a card with its picture on the colour of its
+   magic, level, types, how far to the next level, and a ribbon when its magic has the better of the foe's, or the worse */
+function pickFrom(title: string, hint: string, keys: string[], go: (key: string) => void, best?: string[] | null, o2: PickOpts = {}, foeTypes: TypeName[] = []) {
+  var foe = o2.foe;
+  var foeArt = foe ? (foe.sp ? creature(foe.sp, 'angry', '', '10 26 180 170') : foe.person ? SPR.personIn(foe.person, undefined, 'smirk', '', SPR.thumb(foe.person)) : '') : '';
+  var vs = foe && foeTypes.length ? '<div class="pf-vs" style="--tc:var(--t-' + foeTypes[0].toLowerCase() + ')"><div class="pf-foe-art">' + foeArt + '</div><div class="pf-foe-txt"><small>' + esc(foe.who || 'Dall\'altra parte') + '</small><b>' + esc(foe.name) + '</b><span>' + foeTypes.map(typeChip).join('') + '</span></div><div class="pf-vs-badge" aria-hidden="true">VS</div></div>' : '';
+  var o = sheet('<div class="sheet pickfx" role="dialog" aria-modal="true" aria-labelledby="pf-t"><div class="sheet-h"><h2 id="pf-t">' + esc(title) + '</h2>' + (o2.must ? '' : '<button class="tb-btn" type="button" id="pf-x">Annulla</button>') + '</div>' +
+    vs + '<p class="hint pf-hint">' + esc(hint) + (o2.must ? ' Una sfida accettata non si lascia: scegli chi scende in campo.' : '') + '</p><div class="pickgrid pf-grid">' +
+    keys.map(function (key, i) {
+      var c = fighter(idOf(key)), mine = [c.type].concat(c.type2 ? [c.type2] : []) as TypeName[];
+      var good = !!(best && (best.indexOf(c.type) >= 0 || (c.type2 && best.indexOf(c.type2) >= 0)));
+      var bad = !good && foeTypes.some(function (ft) { return mine.some(function (mt) { return beatersOf(mt).indexOf(ft) >= 0; }); });
+      var l = level(key), need = toNext(l.lv), pct = l.lv >= MAX_LEVEL ? 100 : Math.round(100 * l.xp / need);
+      return '<button class="pick pf-card' + (good ? ' is-good' : bad ? ' is-bad' : '') + '" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + ';--d:' + (i * 70) + 'ms">' +
+        (good ? '<span class="pf-ribbon">Vantaggio</span>' : bad ? '<span class="pf-ribbon bad">Svantaggio</span>' : '') +
+        '<span class="face pf-art">' + portrait(key) + '</span>' +
+        '<span class="pf-name">' + esc(nameOf(key)) + '</span><span class="pf-meta"><span class="pf-lv">Lv ' + l.lv + '</span>' + mine.map(typeChip).join('') + '</span>' +
+        '<span class="pf-xp" aria-hidden="true"><i style="width:' + pct + '%"></i></span></button>';
+    }).join('') + '</div></div>', o2.must ? 'pass' : undefined);
+  var x = document.getElementById('pf-x');
+  if (x) x.addEventListener('click', closeSheet);
+  each(o.querySelectorAll('.pick'), function (b) { b.addEventListener('click', function () { sfx('click'); closeSheet(); go(b.getAttribute('data-key')!); }); });
+  setTimeout(function () { var b = o.querySelector<HTMLElement>('.pick.is-good') || o.querySelector<HTMLElement>('.pick'); if (b) b.focus(); }, 30);
 }
 /** one of these to send into battle (the only one goes straight in) */
-export function pickFighter(title: string, foeType: TypeName, keys: string[], go: (key: string) => void, foeType2?: TypeName) {
+export function pickFighter(title: string, foeType: TypeName, keys: string[], go: (key: string) => void, foeType2?: TypeName, o2?: PickOpts) {
   if (keys.length <= 1) { go(keys[0] || 'antonio'); return; }
+  var opts = o2 || {};
   if (isPersonType(foeType) && !foeType2 && !keys.some(function (k) { return isSpecies(idOf(k)); })) {
     var best = beaterOf(foeType);
-    pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best ? [best] : null);
+    pickFrom(title, 'È di tipo ' + foeType + ': ha il vantaggio chi è di tipo ' + (best || '') + '.', keys, go, best ? [best] : null, opts, [foeType]);
     return;
   }
   /* against a creature: the magic that beats each of its types */
   var foes = foeType2 ? [foeType, foeType2] : [foeType], good: TypeName[] = [];
   foes.forEach(function (t) { beatersOf(t).forEach(function (b) { if (good.indexOf(b) < 0 && foes.indexOf(b) < 0) good.push(b); }); });
-  pickFrom(title, 'È di tipo ' + foes.join(' e ') + ': ha il vantaggio la magia ' + good.join(', ') + '.', keys, go, good);
+  pickFrom(title, 'È di tipo ' + foes.join(' e ') + ': ha il vantaggio la magia ' + good.join(', ') + '.', keys, go, good, opts, foes);
 }
 /* ---------- the things used from the bag, outside a battle: the coffee ---------- */
 /** a cup of coffee, for the bag and the shop */

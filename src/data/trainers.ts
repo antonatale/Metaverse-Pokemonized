@@ -1,4 +1,5 @@
 import type { SpeciesId } from './creatures';
+import { ADEPTS } from './adepts';
 
 /* People around Formia with creatures of their own. They challenge Antonio with them one after the other: his
    fighter keeps the health it has left from one to the next, and if it goes down he can send in another of his
@@ -31,6 +32,9 @@ export interface Trainer {
       Antonio's choice and the story (story/rival.ts); in his lines {rival} is his creature, {mine} Antonio's, {why}
       why his has the better of Antonio's */
   rival?: 1 | 2 | 3;
+  /** an adept of a covo (data/adepts.ts): his creatures grow with that covo, and the levels of `team` are how far below
+      its keeper's level they are */
+  covo?: string;
 }
 
 export const TRAINERS: Record<string, Trainer> = {
@@ -241,5 +245,7 @@ export const TRAINERS: Record<string, Trainer> = {
     win: ['Duemila anni di mura… e tu le hai scavalcate.', 'Tieni. E rispetta le pietre di Castellone.'],
     lose: ['Le mura sono ancora in piedi. Ritorna più forte.'],
     after: ['Il Dracastello ti aspetta. Rivincita?']
-  }
+  },
+  /* the adepts of the covi (13 November 2026) */
+  ...ADEPTS
 };

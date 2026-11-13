@@ -5,8 +5,8 @@ import { FORMIA_AT } from './formia-ground';
 const out = FORMIA_AT.morgana.door!;
 
 /* Inside the Birreria Morgana: the counter with the taps (the host behind it runs the quiz), the little stage with
-   the microphone, wooden tables. Claudia keeps her table here: it is her covo. When Costanzo has joined the squad,
-   he holds court at another table. */
+   the microphone, wooden tables. Claudia keeps her table here; the night of the echo she left the invitation to her
+   castle at the counter (data/covo-places.ts). Once beaten, Costanzo holds court at another table. */
 export const morgana: MapDef = {
   name: 'Birreria Morgana',
   city: 'formia',
@@ -30,9 +30,10 @@ export const morgana: MapDef = {
   ],
   warps: [{ x: 5, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 8, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }],
   npcs: [
-    { id: 'oste', name: 'Al bancone', seed: 82, x: 4, y: 1, dir: 'down', activity: 'quiz', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] },
+    { id: 'oste', name: 'Al bancone', seed: 82, x: 4, y: 1, dir: 'down', activity: 'quiz', hook: 'morgana', lines: ['Benvenuti da Morgana!', 'Avete un tavolo? Stasera c\'è il quiz.'] },
     { id: 'costanzo-morgana', person: 'costanzo', name: 'costanzo', x: 3, y: 5, dir: 'up', beaten: 'piazza', lines: ['GIÀ LO SAI: stasera qui da Morgana offro io.', 'Anzi no. Facciamo alla romana.'] },
-    { id: 'claudia', person: 'claudia', x: 7, y: 5, dir: 'left', covo: 'morgana', unless: 'claudia' },
+    /* Claudia's table: since the night of the echo she is in her castle, in via Palazzo; freed, she comes back to it */
+    { id: 'claudia', person: 'claudia', name: 'claudia', x: 7, y: 5, dir: 'left', beaten: 'morgana', lines: ['Sono tornata al mio tavolo. Stasera ascolto tutti, uno alla volta.', 'Il castello? Diciamo che avevo bisogno di spazio.'] },
     { id: 'avventore', name: 'Avventore', seed: 84, x: 8, y: 6, dir: 'left', lines: ['La domanda su Mamurra la sbagliano tutti.', 'Io no. Io l\'ho sbagliata solo tre volte.'] }
   ],
   start: [5, 7, 'up']

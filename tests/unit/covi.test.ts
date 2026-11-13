@@ -64,9 +64,11 @@ describe('the seven covi', () => {
     play('antonio', 'zendavid');
     expect(covi()[covi().length - 1]).toBe('covo-pineta');
   });
-  it('lead to Torino or Milano, as each one\'s life does', () => {
-    expect(SECOND_CITY).toEqual({ antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'milano', andrea: 'milano', claudia: 'torino' });
+  it('lead to Torino, Milano or Perugia, as each one\'s life does', () => {
+    expect(SECOND_CITY).toEqual({ antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'rogoredo', andrea: 'milano', claudia: 'perugia' });
     expect(gateFor('torino', 'andrea').station).toBe('Milano Centrale');
+    expect(gateFor('torino', 'costanzo').station).toBe('Milano Rogoredo');
+    expect(gateFor('torino', 'claudia').station).toBe('Perugia');
     expect(gateFor('torino', 'forchetta').station).toBe('Torino Porta Nuova');
     play('costanzo');
     expect(myStops()[myStops().length - 1].text).toBe('Il treno per Milano');

@@ -124,6 +124,14 @@ export interface Npc {
   float?: 'swim' | 'sup' | 'boat' | 'windsurf';
   /** someone's own creature, tame (Nicola's Delfaro at the Eclipse): drawn as that creature, leaping when in the sea */
   mon?: SpeciesId;
+  /** a guard of a covo (data/covo-places.ts): there only while that covo is still to be beaten by the one played */
+  guard?: string;
+  /** asks the questions of a quiz at the door of a covo (data/quizzes.ts), and steps aside once it is passed */
+  quiz?: string;
+  /** sends the player to a covo and gives the invitation to it (data/covo-places.ts, hook) */
+  hook?: string;
+  /** a defender of a covo who stands in the way: once beaten (or his quiz passed) he steps aside, onto this tile */
+  aside?: [number, number];
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {
@@ -152,8 +160,8 @@ export type Thing =
   /** takes you to another tile of the same map */
   | { k: 'pad'; x: number; y: number; tx: number; ty: number; tdir?: Dir }
   /** dangerous on some steps out of every so many: stepping on it then sends you back to the last rest. `rock`: what
-      comes is a boulder, not the water */
-  | { k: 'beat'; x: number; y: number; every: number; on: number[]; look?: 'rock' }
+      comes is a boulder, not the water; `mist`: the Iele dancing in the green mist of Valentin's tower */
+  | { k: 'beat'; x: number; y: number; every: number; on: number[]; look?: 'rock' | 'mist' }
   /** where a fall brings you back to, once you have been there */
   | { k: 'rest'; x: number; y: number }
   /** clears every flag: the way out of anything */
@@ -196,4 +204,6 @@ export interface MapDef {
   dark?: boolean;
   /** the wild creatures of a place (data/encounters.ts): every step inside may meet one */
   meet?: string;
+  /** the mood of a covo inside (render/canvas/covo.ts, ambience): the keeper it belongs to */
+  theme?: string;
 }

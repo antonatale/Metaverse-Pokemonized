@@ -7,6 +7,12 @@ import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/gr
 import type { FriendId } from '../data/characters';
 import { mover, parity, STEP, gear, van } from '../story/movement';
 import { vanSprite, VAN_W, VAN_H } from './canvas/van';
+import { roadShift } from '../story/van';
+/** the van is drawn smaller than its picture: a lane wide */
+const VAN_K = 0.6;
+import { covoOfBuilding } from '../data/covo-places';
+import { covoState, lairsKey, hasGift } from '../story/lairs';
+import { auraBack, auraFront, ambience, type AuraAt } from './canvas/covo';
 import { motoParked, motoRider, MOTO_W, MOTO_H } from './canvas/moto';
 import type { PersonLook } from './canvas/walkers';
 import type { Dir } from '../data/maps/types';
@@ -15,13 +21,13 @@ import { run } from '../story/run';
 import { lead, pump, PUMP } from '../story/lead';
 import { placeNow } from '../story/place-run';
 import { drawThings } from './canvas/place';
-import { heading } from '../story/goals';
+import { heading, nextStop } from '../story/goals';
 import { darkness, sunset, sunAt } from '../story/daytime';
 import { creature, MAGIC } from './svg/creatures';
 import { cicero, mamurra } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
-import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
+import { FORMIA_AT, FORMIA_SPOT, FORMIA_HIDING } from '../data/maps/formia-ground';
 import { BOTTLES } from '../data/maps/formia';
 import { reduced } from '../ui/dom';
 import { rich } from '../ui/gfx';
@@ -89,11 +95,16 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
     var it = add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'gozzo' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
     it.sway = SWAY[L.obj] || 0; it.afloat = L.g === 'sea';
   }
+  var nextId = nextStop().id;
   (m.buildings || []).forEach(function (b) {
     /* at night the windows light up: in every place, and in most of the houses */
     var lit = b.id.indexOf('casa-') !== 0 || hash(b.x, b.y, 7) < 0.7;
     var up = upOf(b);
-    var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: up, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v, look: b.look }); };
+    /* a covo of the friends: as it stands now (story/lairs.ts); the home of the one played is a home */
+    var cp = b.kind === 'covo' ? covoOfBuilding(b.id) : null, cs = cp ? covoState(cp.covo, nextId) : undefined;
+    if (cp && cs === 'mine' && cp.base && UP[cp.base]) up = UP[cp.base];
+    var label = cp && cs !== 'mine' ? cp.title : b.label;
+    var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: up, x: b.x, doorX: b.door[0], label: label, roof: b.roof, awning: b.awning, v: b.v, look: b.look, state: cs, base: cp ? cp.base : undefined }); };
     var it = add(b.x * T, (b.y + b.h) * T, volume(paint(), P0), false, 0, lit);
     it.box = block(b.x, b.y, b.w, b.h, b.kind, b.up != null ? up : undefined); it.flat = paint;
   });
@@ -123,12 +134,20 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   items.sort(function (a, b) { return a.yb - b.yb; });
   return items;
 }
+var auras: AuraAt[] = [];
 function ensureCaches(now: number) {
-  if (!themeK || now - themeAt > 500) { themeK = themeKey(); themeAt = now; }
+  /* the covi change with the story (story/lairs.ts): the key of how they stand goes with the theme's */
+  if (!themeK || now - themeAt > 500) { themeK = themeKey() + '|' + (M.id === 'formia' ? lairsKey(nextStop().id) : ''); themeAt = now; }
   if (cache.map === M.id && cache.theme === themeK) return;
   P = palette();
   cache.items = sceneItems(M, P, RS); cache.lights = lightsOf(M); cache.chunks = {}; cache.order = []; sprites = {};
   cache.map = M.id; cache.theme = themeK;
+  /* the auras of the covi still to beat: the next one burns */
+  var nid = nextStop().id;
+  auras = (M.inside ? [] : M.buildings || []).filter(function (b) { return b.kind === 'covo'; }).map(function (b): AuraAt | null {
+    var cp = covoOfBuilding(b.id), cs = cp ? covoState(cp.covo, nid) : 'mine';
+    return cs === 'next' || cs === 'waiting' ? { x: b.x * T, y: b.y * T, w: b.w * T, h: b.h * T, up: upOf(b), look: b.look || '', next: cs === 'next' } : null;
+  }).filter(function (a): a is AuraAt { return !!a; });
 }
 /* the ground is painted in square pieces as they come into view, and the least recently used are dropped */
 function chunk(cx: number, cy: number): HTMLCanvasElement {
@@ -209,9 +228,12 @@ function vanDrawn(now: number, x: number, y: number, dir: Dir, driver: boolean, 
   var k = dir + (driver ? 'd' : '') + (rider ? 'r' + firstHuman() : '') + (laugh ? 'l' : '') + bob + '@' + RS;
   if (!vanSprites[k]) {
     if (++vanN > 60) { vanSprites = {}; vanN = 0; }
-    vanSprites[k] = { cv: vanSprite(P || palette(), RS, dir, driver ? LOOKS.nicola : null, rider ? lookFor(firstHuman() as FriendId) : null, laugh, bob), w: VAN_W, h: VAN_H, up: VAN_H - T };
+    /* drawn at VAN_K of its size: a van as wide as a lane, its wheels on the road (13 November 2026) */
+    vanSprites[k] = { cv: vanSprite(P || palette(), RS * VAN_K, dir, driver ? LOOKS.nicola : null, rider ? lookFor(firstHuman() as FriendId) : null, laugh, bob), w: VAN_W * VAN_K, h: VAN_H * VAN_K, up: VAN_H * VAN_K - T };
   }
-  return { yb: y + T + 0.5, x: x - (VAN_W - T) / 2, spr: vanSprites[k] };
+  /* in the middle of the street, never over the water (story/van.ts) */
+  var sh = M && !M.inside ? roadShift(M, Math.round(x / T), Math.round(y / T), dir, T) : { dx: 0, dy: 0 };
+  return { yb: y + T + 0.5 + sh.dy, x: x - (VAN_W * VAN_K - T) / 2 + sh.dx, spr: vanSprites[k] };
 }
 function vanNow(now: number, pp: { x: number; y: number }): Drawn | null {
   if (van) {
@@ -626,7 +648,8 @@ function drawNight(now: number, dk: number, sn: number, camX: number, camY: numb
       var mx = mem[k3][0] * T + T / 2, my = mem[k3][1] * T + T / 2;
       if (seen(mx, my, mr)) lc.drawImage(soft, mx - mr, my - mr, mr * 2, mr * 2);
     });
-    hole(pp.x + T / 2, pp.y + T / 2, T * 4.8, 1);
+    /* with Claudia's lantern the light goes much further (story/lairs.ts) */
+    hole(pp.x + T / 2, pp.y + T / 2, T * (hasGift('lanterna') ? 7.6 : 4.8), 1);
   } else
   /* Antonio is never lost in the dark */
   hole(pp.x + T / 2, pp.y + T / 2, T * 2.4, 0.5);
@@ -878,6 +901,9 @@ function drawFrame(now: number, sk: number) {
     pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, false);
   }
   if (riding) exhaust(ctx, now, pp);
+  /* under the covi, the glow of their aura (render/canvas/covo.ts) */
+  var inView = function (a: AuraAt) { return a.x + a.w + 120 > camX && a.x - 120 < camX + vw && a.y + a.h + 80 > camY && a.y - a.up - 300 < camY + vh; };
+  auras.forEach(function (a) { if (inView(a)) auraBack(ctx, a, now, reduced, !rich()); });
   drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   if (M.id === 'formia') pumpScene(ctx, now);
   /* in the tall grass the blades hide Antonio's feet, and his creature's */
@@ -894,6 +920,10 @@ function drawFrame(now: number, sk: number) {
   if (mover && mover.jump) landed = { x: mover.tx * T + T / 2, y: mover.ty * T + T - 4, at: mover.t0 + (mover.dur || STEP) };
   if (landed && !reduced) { landing(ctx, landed.x, landed.y, (now - landed.at) / 380, P); if (now - landed.at > 380) landed = null; }
   ctx.save(); drawNight(now, dk, sn, camX, camY, vw, vh, pp, lit, people); ctx.restore();
+  /* over the night too: the motes and the pillar of light of the covi; inside one, its mood */
+  ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS);
+  auras.forEach(function (a) { if (inView(a)) auraFront(ctx, a, now, reduced, !rich()); });
+  if (M.theme) ambience(ctx, M.theme, cam, now, reduced, !rich());
   if (tiles) { ctx.setTransform(VS, 0, 0, VS, -camX * VS, -camY * VS); fireflies(ctx, tiles, x0, x1, y0, y1, now, reduced, dk, P); }
   /* over the night too: the "!" of a trainer who has seen Antonio */
   alerts.forEach(function (a) { exclaim(ctx, a[0], a[1], a[2]); });
@@ -996,7 +1026,7 @@ export function overview(id?: string, s?: number): string {
 
 /* ---------- the town map in the story menu: all of Formia, the places that matter, and where Antonio is ---------- */
 var town: { key: string; cv: HTMLCanvasElement } | null = null;
-const TOWN_LABELS: [string, string][] = [['Casa', 'casa'], ['Eclipse', 'eclipse'], ['Pineta', 'sign-pineta'], ['Morgana', 'morgana'], ['Piazza', 'piazza'],
+const TOWN_LABELS: [string, string][] = [['Casa', 'casa'], ['Eclipse', 'eclipse'], ['Pineta', 'sign-pineta'], ['Morgana', 'morgana'], ['Piazza', 'piazza'], ['Castello', 'casa-claudia'], ['Torre verde', 'casa-valentin'],
   ['Stazione', 'stazione'], ['Bruno Zauli', 'zauli'], ['Tomba di Cicerone', 'tomba'], ['Gianola', 'mamurra']];
 /** where Antonio is on the Formia map: indoors, at the door he went in by */
 function whereOnFormia(): [number, number] {
@@ -1006,7 +1036,7 @@ function whereOnFormia(): [number, number] {
 }
 export function townMap(el: HTMLElement) {
   /* drawn at the size it is shown, so labels and the marker stay readable on a phone */
-  var m = prepare('formia'), cssW = Math.max(240, el.clientWidth || 340), s = cssW * dpr() / (m.w * T), u = dpr(), key = themeKey() + '|' + s.toFixed(4);
+  var m = prepare('formia'), cssW = Math.max(240, el.clientWidth || 340), s = cssW * dpr() / (m.w * T), u = dpr(), key = themeKey() + '|' + lairsKey(nextStop().id) + '|' + s.toFixed(4);
   if (!town || town.key !== key) {
     var P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
     c0.width = Math.round(m.w * T * s); c0.height = Math.round(m.h * T * s);
@@ -1041,6 +1071,26 @@ export function townMap(el: HTMLElement) {
     o.beginPath();
     for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr0 = i % 2 ? R * 0.45 : R; o.lineTo(gx + Math.cos(a) * rr0, gy + Math.sin(a) * rr0); }
     o.closePath(); o.fillStyle = '#ffd166'; o.fill(); o.lineWidth = 1.6 * u; o.strokeStyle = '#1c2340'; o.stroke();
+  }
+  /* with Antonio's visor (story/lairs.ts): the hiding places of the wild creatures, and the lost things not found yet */
+  if (hasGift('visore')) {
+    FORMIA_HIDING.forEach(function (h) { o.beginPath(); o.arc((h.x + 0.5) * k, (h.y + 0.5) * k, Math.max(3 * u, h.r * k), 0, Math.PI * 2); o.fillStyle = 'rgba(87,201,104,.28)'; o.fill(); o.lineWidth = 1 * u; o.strokeStyle = 'rgba(28,35,64,.5)'; o.stroke(); });
+    (prepare('formia').items || []).forEach(function (it) { if (st.found[it.id]) return; var ix = (it.x + 0.5) * k, iy = (it.y + 0.5) * k; o.beginPath(); o.arc(ix, iy, 4 * u, 0, Math.PI * 2); o.fillStyle = '#fffdf6'; o.fill(); o.lineWidth = 2 * u; o.strokeStyle = '#b98cff'; o.stroke(); });
+  }
+  /* the scooter, wherever it was left, so it is never lost: a little blue Liberty with a ring */
+  var mo = moto();
+  if (mo.map === 'formia' && !st.sella) {
+    var sx0 = (mo.x + 0.5) * k, sy0 = (mo.y + 0.5) * k, q = 4.5 * u;
+    o.beginPath(); o.arc(sx0, sy0, q * 2.1, 0, Math.PI * 2); o.fillStyle = 'rgba(91,143,217,.25)'; o.fill();
+    o.lineWidth = 1.6 * u; o.strokeStyle = '#1c2340';
+    o.beginPath(); o.arc(sx0 - q, sy0 + q * 0.5, q * 0.55, 0, Math.PI * 2); o.fillStyle = '#1c2340'; o.fill();
+    o.beginPath(); o.arc(sx0 + q, sy0 + q * 0.5, q * 0.55, 0, Math.PI * 2); o.fill();
+    o.beginPath(); o.moveTo(sx0 - q * 1.2, sy0 + q * 0.2); o.lineTo(sx0 + q * 0.4, sy0 + q * 0.2); o.lineTo(sx0 + q * 0.9, sy0 - q * 1.1); o.lineTo(sx0 + q * 1.3, sy0 - q * 1.1); o.lineTo(sx0 + q * 1.1, sy0 + q * 0.2); o.lineTo(sx0 + q * 1.4, sy0 + q * 0.4);
+    o.lineTo(sx0 - q * 1.4, sy0 + q * 0.4); o.closePath(); o.fillStyle = '#3f7ccf'; o.fill(); o.stroke();
+    o.beginPath(); o.rect(sx0 - q * 1.5, sy0 - q * 0.9, q * 1.1, q * 0.9); o.fillStyle = '#3f7ccf'; o.fill(); o.stroke();
+    o.font = Math.round(10 * u) + 'px "Lilita One", "Arial Rounded MT Bold", sans-serif'; o.textAlign = 'center'; o.textBaseline = 'top';
+    o.lineWidth = 3 * u; o.strokeStyle = '#fffdf6'; o.strokeText('Liberty', sx0, sy0 + q * 1.3); o.fillStyle = '#1c2340'; o.fillText('Liberty', sx0, sy0 + q * 1.3);
+    o.textBaseline = 'bottom';
   }
   var me = whereOnFormia(), mx = (me[0] + 0.5) * k, my = (me[1] + 0.5) * k, r = 5 * u;
   o.beginPath(); o.arc(mx, my, r * 1.9, 0, Math.PI * 2); o.fillStyle = 'rgba(232,71,58,.25)'; o.fill();

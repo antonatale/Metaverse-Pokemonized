@@ -63,6 +63,16 @@ function boulder(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
   fillStroke(c, P.rock, P.ink, 2);
   c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(X + 13, Y + 10); c.lineTo(X + 18, Y + 14); c.lineTo(X + 16, Y + 19); c.stroke();
 }
+/** the Iele of the Carpathians dancing in the green mist (Valentin's tower): a swirl, and when they are about to pass, a
+    pale dancer in a ring of mist */
+function iele(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  c.globalAlpha = danger ? 0.75 : 0.22; c.fillStyle = '#7dff9e'; c.beginPath(); c.ellipse(X + T / 2, Y + T / 2 + 3, 13, 9, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+  c.strokeStyle = danger ? '#e9fff0' : '#3fbf6a'; c.lineWidth = 1.6; c.beginPath(); c.arc(X + T / 2, Y + T / 2 + 3, 8, 0.4, 5.2); c.stroke();
+  if (!danger) return;
+  c.fillStyle = '#f4fff6'; c.strokeStyle = P.ink; c.lineWidth = 1.3;
+  c.beginPath(); c.moveTo(X + 16, Y + 6); c.quadraticCurveTo(X + 25, Y + 18, X + 23, Y + 25); c.lineTo(X + 9, Y + 25); c.quadraticCurveTo(X + 7, Y + 18, X + 16, Y + 6); c.closePath(); c.fill(); c.stroke();
+  circle(c, X + 16, Y + 6, 3.4); c.fill(); c.stroke();
+}
 function rest(c: Ctx, P: Palette, X: number, Y: number) {
   c.fillStyle = P.lamp; c.beginPath(); c.moveTo(X + T / 2, Y + 7); c.quadraticCurveTo(X + 23, Y + 18, X + T / 2, Y + 24); c.quadraticCurveTo(X + 9, Y + 18, X + T / 2, Y + 7); c.fill();
   c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
@@ -79,7 +89,7 @@ export function drawThings(c: Ctx, P: Palette, p: PlaceDef, flags: Record<string
     else if (t.k === 'gate') gate(c, P, X, Y, hueOf(P, p, t.flag), gateShut(t, flags));
     else if (t.k === 'slide') slide(c, P, X, Y, t.dir, now, reduced);
     else if (t.k === 'pad') pad(c, P, X, Y, now, reduced);
-    else if (t.k === 'beat') (t.look === 'rock' ? boulder : beat)(c, P, X, Y, beatOn(t, tick + 1));
+    else if (t.k === 'beat') (t.look === 'rock' ? boulder : t.look === 'mist' ? iele : beat)(c, P, X, Y, beatOn(t, tick + 1));
     else if (t.k === 'rest') rest(c, P, X, Y);
     else mark(c, P, X, Y);
   });

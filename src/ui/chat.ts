@@ -1,3 +1,6 @@
+import { keysHolder, hasKeys } from '../story/lairs';
+import { COVI } from '../data/covi';
+import { myStops, nextStop } from '../story/goals';
 import { st, save } from '../save/story-progress';
 import { flag } from '../story/plot';
 import { firstHuman, formNow } from '../story/growth';
@@ -19,13 +22,23 @@ import { sfx } from '../audio';
    not get them all at once: what was already due when it was opened is counted as read. */
 
 var primed = '';
-const due = (c: Chat) => (c.after ? flag(c.after) : c.badges != null ? (st.badges || []).length >= c.badges : false);
+/* a chat of one covo comes once its invitation is the next stop (or past it), and never for one's own covo */
+const due = (c: Chat) => (c.covo ? COVI[c.covo].leader !== firstHuman() && myStops().some(function (q) { return q.id === 'invito-' + c.covo; }) && (nextStop().id === 'invito-' + c.covo || !!st.seen['invito-' + c.covo] || !!st.beaten[c.covo])
+  : c.after ? flag(c.after) : c.badges != null ? (st.badges || []).length >= c.badges : false);
+/** the friend freed last: the keeper of the last pin won */
+function lastFreed(): FriendId | null {
+  var b = (st.badges || [])[(st.badges || []).length - 1];
+  for (var k in COVI) if (COVI[k].badge.id === b) return COVI[k].leader;
+  return null;
+}
 /** the lines of a chat for this story: who writes each one */
 function linesOf(c: Chat): [FriendId, string][] {
   var me = firstHuman(), rv = rivalFriend(), hasRival = c.lines.some(function (l) { return l[0] === 'rival'; });
   return c.lines.map(function (l): [FriendId, string] | null {
-    var who = l[0] === 'rival' ? rv : l[0];
+    var who = l[0] === 'rival' ? rv : l[0] === 'keys' ? keysHolder() : l[0] === 'last' ? lastFreed() : l[0];
     if (!who || who === me || (hasRival && l[0] !== 'rival' && who === rv)) return null;
+    /* the keys are told of in the chat of the covo of the one who has them, until they are back */
+    if (l[0] === 'keys' && (hasKeys() || !c.covo || COVI[c.covo].leader !== who)) return null;
     return [who as FriendId, heroText(l[1])];
   }).filter(function (l): l is [FriendId, string] { return !!l; });
 }

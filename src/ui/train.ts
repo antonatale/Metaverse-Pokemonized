@@ -17,8 +17,9 @@ const ITALY: LL[] = [[6.8, 45.9], [7.0, 45.2], [7.6, 44.1], [7.5, 43.8], [8.9, 4
   [12.33, 45.44], [13.77, 45.65], [13.5, 46.0], [12.5, 46.7], [11.0, 46.9], [10.5, 46.5], [9.0, 46.4], [8.7, 46.1], [8.0, 46.3]];
 const SICILY: LL[] = [[12.4, 37.8], [13.3, 38.1], [15.6, 38.25], [15.1, 37.5], [15.1, 36.7], [14.3, 37.0], [12.6, 37.6]];
 const SARDINIA: LL[] = [[8.4, 41.0], [9.6, 41.1], [9.8, 40.5], [9.6, 39.2], [9.0, 39.0], [8.4, 39.1], [8.5, 40.4]];
-const CITY: Record<string, LL> = { Formia: [13.61, 41.26], Roma: [12.5, 41.9], Firenze: [11.25, 43.77], Bologna: [11.34, 44.49], Milano: [9.19, 45.48], Torino: [7.68, 45.07] };
-const LINE: Record<string, string[]> = { torino: ['Formia', 'Roma', 'Firenze', 'Bologna', 'Milano', 'Torino'], milano: ['Formia', 'Roma', 'Firenze', 'Bologna', 'Milano'] };
+const CITY: Record<string, LL> = { Formia: [13.61, 41.26], Roma: [12.5, 41.9], Firenze: [11.25, 43.77], Bologna: [11.34, 44.49], Milano: [9.19, 45.48], Torino: [7.68, 45.07], 'Milano Rogoredo': [9.24, 45.43], Orte: [12.39, 42.46], Terontola: [12.01, 43.21], Perugia: [12.39, 43.11] };
+const LINE: Record<string, string[]> = { torino: ['Formia', 'Roma', 'Firenze', 'Bologna', 'Milano', 'Torino'], milano: ['Formia', 'Roma', 'Firenze', 'Bologna', 'Milano'],
+  rogoredo: ['Formia', 'Roma', 'Firenze', 'Bologna', 'Milano Rogoredo'], perugia: ['Formia', 'Roma', 'Orte', 'Terontola', 'Perugia'] };
 const TRAIN = '<g transform="scale(1.5)"><rect x="-11" y="-6" width="22" height="11" rx="3" fill="#e5484d" stroke="#1c2340" stroke-width="1.6"/><rect x="-8" y="-4" width="5" height="4" rx="1" fill="#bfe3ff"/>' +
   '<rect x="-1" y="-4" width="5" height="4" rx="1" fill="#bfe3ff"/><path d="M11 -6Q16 -1 11 5" fill="#ffffff" stroke="#1c2340" stroke-width="1.4"/><circle cx="-5" cy="6" r="2" fill="#1c2340"/><circle cx="5" cy="6" r="2" fill="#1c2340"/></g>';
 

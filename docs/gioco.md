@@ -12,13 +12,30 @@ I dialoghi stanno su una pergamena che si srotola (`ui/rich.ts`): i nomi degli a
 
 | Protagonista | Tipo | Covo | Treno |
 |---|---|---|---|
-| Antonio | Cervello | Palamendola | Torino |
-| Costanzo | Chiacchiera | Piazza della Vittoria | Milano |
-| Andrea | Cervello | Padel del Bruno Zauli | Milano |
-| Valentin | Caos | Eclipse | Torino |
-| Forchetta | Calma | Tennis coperti del Bruno Zauli | Torino |
-| Zendavid | Cuore | Pineta | Torino |
-| Claudia | Calma | Birreria Morgana (Mola) | Torino |
+| Antonio | Cervello | La Cupola (Parco la Fontana, accanto alla fontana) | Torino |
+| Costanzo | Chiacchiera | Il Palazzo del Popolo (piazza della Vittoria) | Milano Rogoredo |
+| Andrea | Cervello | La Torre delle Probabilità (casa sua, Castellone) | Milano Centrale |
+| Valentin | Caos | La Torre Verde (casa sua, via Ferrucci) | Torino |
+| Forchetta | Calma | Il Tempio della Terra Rossa (tennis coperti del Zauli) | Torino |
+| Zendavid | Cuore | Il Tempio del Basso (pineta di Vindicio) | Torino |
+| Claudia | Calma | Il Castello del Padre (casa sua, via Palazzo) | Perugia |
+
+### I covi e la trama (13 novembre 2026)
+
+La notte in cui si svegliano le creature, l'eco delle Pietre di Telepilo cerca dei custodi e trova i sette del caminetto: le case di sei di loro diventano covi a immagine di chi ci abita, e loro restano chiusi dentro, non del tutto in sé. Chi si gioca è il settimo custode, libero, e deve riunire i sigilli: ogni spilla è un sigillo, battere un custode lo libera. Finché i sigilli non sono di nuovo insieme sulla linea dopo la galleria c'è un masso dei Lestrigoni e da Formia non parte nessun treno (il capotreno). Lo spiegano Cicerone (fine della tappa «seconda creatura») e la chat «La notte dell'eco» (`data/chat.ts`, dopo i retini).
+
+Dati in `data/covo-places.ts`, regole in `story/lairs.ts`, schermo in `ui/lairs.ts`, disegni in `render/canvas/covo.ts`, interni in `data/maps/covi.ts` e `circolo.ts`.
+
+- **L'invito.** Prima di ogni covo c'è una tappa con chi in città dice cosa è successo e dà l'invito (senza, la porta non si apre e dice da chi andare): la vicina di Antonio (le chiavi di casa sua), la fornaia di Castellone (le tielle bruciate una su tre), la tennista del Zauli (il palleggio infinito), l'infermiere del Dono Svizzero (la nebbia verde), il bancone di Morgana (l'invito di Claudia si vince al quiz, almeno 3 su 5), il vigile di piazza della Vittoria (la Repubblica di Costanzo), il signore della pineta (il basso). `myStops` mette l'invito subito prima del suo covo. Dopo, ognuno ringrazia una volta.
+- **Fuori.** Ogni covo è un edificio fantasy con un'aura del colore del custode: tenue mentre aspetta, forte (cerchio a terra, colonna di luce, scintille) quando è la prossima tappa; battuto, colori spenti e bandiera bianca. Se il custode è chi si gioca, la casa resta casa e la porta porta dentro casa. Grafica Bassa: solo il bagliore; movimento ridotto: fermo.
+- **Dentro.** Adepti che vedono il giocatore e sfidano (`data/adepts.ts`: le loro creature crescono con il livello del covo) e una prova per covo: le due sedie delle ali del castello di Claudia, i laser della cupola di Antonio, la nebbia delle Iele della torre di Valentin (tre file, ognuna al suo tempo), la terra rossa che scivola da Forchetta, le domande alle porte (`data/quizzes.ts`: probabilità da Andrea, Kanye da Zendavid, educazione civica da Costanzo; una sbagliata e si lotta con chi chiede). Ogni covo ha musica (`covo`) e atmosfera sue.
+- **Parco la Fontana.** Si entra solo da casa di Antonio (chiusa finché la vicina non dà le chiavi). Mentre Antonio è da battere, in casa l'aspirapolvere senziente e nel parco due robot fanno la guardia; le siepi obbligano a fare il giro lungo la ringhiera fino alla cupola.
+- **I doni.** Oltre alla spilla ogni custode dà un dono: il Visore (Antonio: tane e cose perse sulla pianta), il Quaderno delle probabilità (Andrea: quanto è probabile la selvatica incontrata), il fischio (Forchetta: richiama il Liberty), il Mărțișor (Valentin: tiene lontane le selvatiche, si mette e si toglie), la Lanterna (Claudia: più luce al buio), la Tessera (Costanzo: un quinto di sconto nei negozi), le cuffie (Zendavid: scegli la musica). Si usano dal menu, Mappa.
+- **Il Liberty.** Le chiavi le ha il custode del primo covo del giro (il più vicino a casa): lo dice nella chat dell'eco, e le ridà con la sua spilla. Prima, il motorino non parte. Sulla pianta di Formia il Liberty ha sempre il suo segno.
+- **Senza spoiler, una cosa alla volta (seconda revisione, 13 novembre).** La storia comincia con il prologo della notte prima (il boato delle 3:12, le luci colorate sopra le case) e la musica `mistero`, che resta fino alla prima creatura; la chat del mattino parla solo del boato. Ogni tappa ha un perché raccontato (`CHAPTERS` in `story/mentor.ts`): la seconda creatura è quella spaventata dal boato che segue la tua, gli scavi di Gianola sono l'origine di tutto. Un covo si scopre solo quando il suo invito è la prossima tappa: allora il suo custode scrive nel caminetto (`covo` in `data/chat.ts`) e, liberato, dice di chi ha sentito la voce nell'eco (il covo dopo). La scelta del personaggio non dice più dove abitano gli altri né i covi.
+- **Le sfide dei covi.** Chi difende un covo dice perché lo difende, sta nei passaggi obbligati o guarda le caselle da cui si deve passare, non accetta «più tardi» e, battuto, si fa da parte (`aside` delle persone, `restOf` in `story/maps.ts`). Anche il custode, raggiunto, lotta subito. Iniziata una sfida, nella scelta di chi mandare in campo non c'è «Annulla» (solo le selvatiche si possono lasciare); la scelta mostra l'avversario sotto un VS e le creature come carte con vantaggio e svantaggio.
+- **Il furgone** è disegnato al 60%, largo una corsia, e sulle strade a due corsie sta in mezzo (`roadShift` in `story/van.ts`).
+- Gli amici battuti escono dal covo e tornano dove stanno di solito (Valentin all'Eclipse, Zendavid in pineta, Andrea al Zauli, Claudia al suo tavolo da Morgana, Costanzo in piazza, Antonio al Palamendola).
 
 Claudia abita a San Giulio, in via Palazzo, di fronte alla scuola Mattej e al parchetto con gli alberi e le altalene; il suo ritratto viene dalla sua foto (frangia e caschetto neri, cerchi d'argento, piercing al setto, top nero e ciondolo). Sopra le case degli amici c'è scritto «Casa di …»; il nome della via sta su una targa all'angolo, leggibile sulla mappa (`streetPlate`).
 

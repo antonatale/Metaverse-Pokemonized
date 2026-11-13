@@ -26,6 +26,7 @@ export function placeArrived(p: PlaceDef): Arrival {
     stand on a tile counts as standing there, even if the story may take them away: a way must not need them to be gone */
 export function placeProof(m: PreparedMap): Proof {
   return prove(m.place!, function (x, y) {
-    return x < 0 || y < 0 || x >= m.w || y >= m.h || m.solid[y * m.w + x] === 1 || (m.npcs || []).some(function (n) { return n.x === x && n.y === y; }) || (m.items || []).some(function (it) { return it.x === x && it.y === y; });
+    /* a defender in a doorway is beaten on the way, and then stands aside: the proof walks past him to where he goes */
+    return x < 0 || y < 0 || x >= m.w || y >= m.h || m.solid[y * m.w + x] === 1 || (m.npcs || []).some(function (n) { var at = n.aside || [n.x, n.y]; return at[0] === x && at[1] === y; }) || (m.items || []).some(function (it) { return it.x === x && it.y === y; });
   });
 }

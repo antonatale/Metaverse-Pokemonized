@@ -1,4 +1,4 @@
-import type { Dir } from '../data/maps/types';
+import type { Building, Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
 import { stepTime } from '../data/growth';
 import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall, moto, motoAt, rideable } from './maps';
@@ -29,6 +29,10 @@ export const WIND = [150, 118, 94, 76, 62, 54];
 /** the gear he is riding in (0 on foot, and when the scooter has just set off) */
 export let gear = 0;
 let rideDir: Dir | null = null, lastEnd = 0;
+/* ---------- doors that open with the story (the covi, Antonio's flat): the story screen says which, and where they lead ---------- */
+let doorShut: ((b: Building, again: boolean) => boolean) | null = null;
+let doorRoute: ((b: Building) => { to: string; x: number; y: number; dir?: Dir } | null) | null = null;
+export function setDoorRules(shut: (b: Building, again: boolean) => boolean, route: (b: Building) => { to: string; x: number; y: number; dir?: Dir } | null) { doorShut = shut; doorRoute = route; }
 /** the story screen says why the scooter does not go there (a door, the steps, the sand) */
 let rideHook: ((x: number, y: number) => void) | null = null;
 export function onRideStop(f: (x: number, y: number) => void) { rideHook = f; }
@@ -84,6 +88,9 @@ export function onEdge(f: (kind: 'swim' | 'climb', d: Dir) => boolean) { edgeHoo
 export function stepNow(d: Dir) { held = null; walking = false; st.dir = d; tryStep(d, performance.now()); }
 function tryStep(d: Dir, now: number): boolean {
   var v = DV[d], nx = st.x + v[0], ny = st.y + v[1], k = key(nx, ny);
+  /* a door that does not open yet (a covo before the invitation): it says why, once per bump */
+  var a0 = M.at[k];
+  if (a0 && a0.kind === 'door' && a0.b.to && doorShut && !st.sella && doorShut(a0.b, lastBump === k)) { lastBump = k; held = null; walking = false; return false; }
   /* down from a terrace: over its edge and onto the ground below, in one jump */
   if (d === 'down' && ledgeAt(nx, ny) && !st.sella && !moveMode.swim && !moveMode.climb && !blocked(M, nx, ny + 1)) {
     lastBump = '';
@@ -183,7 +190,7 @@ function arrived(): boolean {
   if (moveMode.swim && M.cell(st.x, st.y).g !== 'sea') { moveMode.swim = false; moveMode.board = false; }
   if (moveMode.climb && !isWall(M, st.x, st.y)) moveMode.climb = false;
   var a = M.at[key(st.x, st.y)];
-  if (a && a.kind === 'door' && a.b.to) { warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
+  if (a && a.kind === 'door' && a.b.to) { var dr = doorRoute ? doorRoute(a.b) : null; if (dr) warp(dr.to, dr.x, dr.y, dr.dir); else warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
   if (a && a.kind === 'warp') { warp(a.w.to, a.w.tx, a.w.ty, a.w.tdir); return true; }
   /* a place with a puzzle: the tile does what it does; a floor that carries is one more step, with nobody asking */
   if (M.place) {

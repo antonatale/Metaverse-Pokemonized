@@ -14,6 +14,10 @@ import { rivalFriend, rivalSpeaker } from './rival-who';
 import { shutAt } from './place';
 import { LEGENDS } from '../data/legends';
 import { firstHuman, homeMons } from './growth';
+import { QUIZZES } from '../data/quizzes';
+
+/** a quiz at the door of a covo is passed: all the answers right, or its asker beaten in a fight */
+export function quizPassed(id: string): boolean { var q = QUIZZES[id]; return !!(st.seen['quiz-' + id] || (q && st.beaten['tr-' + q.trainer])); }
 
 /* The maps as the story uses them: what blocks, who stands where, what is on each tile. No drawing here. */
 
@@ -136,6 +140,9 @@ export function present(p: Person): boolean {
   if (p.n.person && p.n.person === firstHuman()) return false;
   /* Nicola walking with the player is not at the Eclipse */
   if (p.n.id === 'nicola' && st.companion === 'nicola') return false;
+  /* a guard of a covo only while it is still to be beaten (not one's own); whoever asks a quiz steps aside once passed */
+  if (p.n.guard && (COVI[p.n.guard].leader === firstHuman() || st.beaten[p.n.guard])) return false;
+  if (p.n.quiz && quizPassed(p.n.quiz) && !p.n.aside) return false;
   return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.beaten || !!st.beaten[p.n.beaten]) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
@@ -246,9 +253,20 @@ export function covoPins(id: string): number {
 }
 export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badge.id) >= 0; }
 
+/** a defender of a covo who has been beaten (or whose quiz is passed) stands aside, out of the way */
+export function steppedAside(n: Npc): boolean {
+  if (!n.aside) return false;
+  return !!((n.trainer && st.beaten['tr-' + n.trainer]) || (n.quiz && quizPassed(n.quiz)));
+}
+/** where someone stands when nothing is going on: his own tile, or aside */
+export function restOf(n: Npc): [number, number] { return steppedAside(n) ? n.aside! : [n.x, n.y]; }
+/** everyone of a map on the tile they rest on (when the map is entered, and after a fight) */
+export function settle(m: PreparedMap) {
+  m.people.forEach(function (p) { if (!p.n.aside || p.path || p.mv) return; var r = restOf(p.n); p.x = r[0]; p.y = r[1]; });
+}
 /** the map Antonio is on (set when the story opens, and on every door or warp) */
 export let M = null as unknown as PreparedMap;
-export function setMap(id: string): PreparedMap { M = prepare(id); return M; }
+export function setMap(id: string): PreparedMap { M = prepare(id); settle(M); return M; }
 
 /** the tiles someone walks from a tile, to one next to a target (`beside`) or onto it: the shortest way, not
     through doors or warps, within a few tiles; null when there is none */

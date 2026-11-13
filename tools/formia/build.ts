@@ -15,7 +15,7 @@ import { W, H, col, row } from '../../src/data/maps/formia-projection';
 import { PAINT, CLEAR } from './paint';
 import { PLACES, SPOTS, HIDING } from '../../src/data/maps/formia-places';
 import { RAILS, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, WIDEN, SHORE, QUAYS, BEACHFRONT, POND, SEAS, BUOYS, HARBOUR, NETS,
-  TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, ROWS, PINES, BEDS, ANCHOR, BENCHES, SCOOTERS, FENCES, GATES, CLOSED, KEEP_OPEN,
+  TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, ROWS, PINES, BEDS, ANCHOR, BENCHES, SCOOTERS, FENCES, GATES, CLOSED, KEEP_OPEN, HEDGES,
   LAND, DARSENA,
   type Line, type Rect } from './network';
 
@@ -344,7 +344,9 @@ for (const p of PLACES) {
     /* picked by hand: it only has to keep off the streets, the railway, the sea and the other buildings (the room around them is fine) */
     const [tx, ty] = p.tile;
     found = true;
-    for (let y = ty; y < ty + p.h; y++) for (let x = tx; x < tx + p.w; x++) if (!isLand(x, y) || /[=vzr]/.test(get(x, y)) || foot[y][x]) { problems.push(p.id + ' at ' + p.tile + ': tile ' + x + ',' + y + ' is taken (' + get(x, y) + ')'); found = false; }
+    /* a covo may stand in a square (Costanzo's palace in Piazza della Vittoria) */
+    const keepOff = p.kind === 'covo' ? /[=zr]/ : /[=vzr]/;
+    for (let y = ty; y < ty + p.h; y++) for (let x = tx; x < tx + p.w; x++) if (!isLand(x, y) || keepOff.test(get(x, y)) || foot[y][x]) { problems.push(p.id + ' at ' + p.tile + ': tile ' + x + ',' + y + ' is taken (' + get(x, y) + ')'); found = false; }
     if (found) placed[p.id] = { x: tx, y: ty, w: p.w, h: p.h, door: p.door ? [tx + dx, ty + p.h - 1] : undefined };
   } else found = tries.some((door) => rings(x0, y0, p.reach == null ? 10 : p.reach, (x, y) => {
     if (!body(x, y) || !door(x, y)) return false;
@@ -645,6 +647,11 @@ for (const f of FENCES) walkLine({ name: 'cancellata', w: 1, pts: f }, (x, y) =>
   set(x, y, '|'); reserved[y][x] = true;
 });
 for (const [x, y] of GATES) { if (foot[y][x] || isStreet(x, y)) problems.push('gate at ' + x + ',' + y + ' on ' + get(x, y)); else { set(x, y, '+'); reserved[y][x] = true; } }
+/* the hedges of the park, between which the walk to Antonio's covo winds */
+for (const f of HEDGES) walkLine({ name: 'siepe', w: 1, pts: f }, (x, y) => {
+  if (!isLand(x, y) || foot[y][x] || isStreet(x, y)) { problems.push('hedge at ' + x + ',' + y + ' on ' + (foot[y][x] ? 'a building' : get(x, y))); return; }
+  set(x, y, '#'); green[y][x] = true; reserved[y][x] = true;
+});
 /* Antonio's back door, on the walk of the park */
 if (spots['porta-parco']) { const [x, y] = spots['porta-parco']; set(x, y, '0'); }
 

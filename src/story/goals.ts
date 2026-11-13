@@ -9,6 +9,8 @@ import { st } from '../save/story-progress';
 import { activity, timesDone } from './activities';
 import { flag } from './plot';
 import { rivalFriend } from './rival-who';
+import { COVO_PLACES } from '../data/covo-places';
+import { invited, keysFrom } from './lairs';
 
 /* The thread through the story: one next stop at a time, so Antonio always knows where to go next.
    The stops follow a tour of Formia from home westwards: the Bruno Zauli next door, Mola, the piazza and the
@@ -46,6 +48,11 @@ const doing = (id: string, who: string, tip: string, map = 'formia'): Stop => {
   const a = activity(id), [x, y] = npcAt(map, who), n = (MAPS[map].npcs || []).find((q) => q.id === who);
   return { id, text: a.name, where: a.where, tip, map, x, y, done: () => timesDone(id) > 0, who: n && n.person ? n.person : undefined };
 };
+/** the invitation to a covo (data/covo-places.ts, hook): someone in town says what has happened and sends the player there */
+const hook = (id: string): Stop => {
+  const h = COVO_PLACES[id].hook, [x, y] = npcAt(h.map, h.npc);
+  return { id: 'invito-' + id, text: h.text, where: h.where, tip: h.tip, map: h.map, x, y, done: () => invited(id), who: COVI[id].leader };
+};
 const covo = (id: string, map: string, tip: string): Stop => {
   const cv = COVI[id], n = (MAPS[map].npcs || []).find((q) => q.covo === id);
   if (!n) throw new Error('no leader of ' + id + ' on ' + map);
@@ -77,15 +84,14 @@ export const STOPS: Stop[] = [
   })(),
   /* R10: the stops that teach the game: a second creature from the grass, then a team for the dark and for Mamurra */
   team('seconda-creatura', 2, 'La tua seconda creatura', 'L\'erba alta del Parco di Gianola', 'La guardaparco dice: con i retini che ti ho dato, cammina nell\'erba alta o tra gli scogli di Gianola. Indebolisci una creatura e lancia il retino.'),
-  covo('palamendola', 'formia', 'Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta per una sfida. Ha appena letto un paper.'),
+  covo('palamendola', 'covo-antonio', 'Antonio è chiuso nella cupola accanto alla fontana di Parco la Fontana. Nel parco si entra solo da casa sua, dalla porta sul retro.'),
   plot('trama-scavi', 'Chi scava tra le rovine di Gianola?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa romana, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
-  covo('padel', 'formia', 'Andrea ti aspetta ai campi da padel del Bruno Zauli: ha calcolato che oggi vince lui.'),
-  covo('circolo', 'circolo', 'Forchetta è nei campi coperti del Bruno Zauli. Fuori non gioca mai.'),
+  covo('padel', 'covo-andrea', 'Andrea è in cima alla Torre delle Probabilità, a Castellone, dietro piazza Mattei. Alla porta fanno domande di probabilità.'),
+  covo('circolo', 'circolo', 'Forchetta palleggia da dodici ore nel Tempio della Terra Rossa, i tennis coperti del Zauli.'),
   plot('trama-archivio', 'L\'Archivio della Torre di Mola', 'Torre di Mola', 'Le leggende di Formia le conosce l\'archivista della Torre di Mola: chiedi a lei delle Pietre di Telepilo.', 'archivista', 'trama-archivio'),
-  doing('quiz', 'oste', 'Stasera da Morgana, a Mola, c\'è il quiz su Formia.', 'morgana'),
-  covo('morgana', 'morgana', 'Da Morgana, a Mola, Claudia ti aspetta al suo tavolo. Uno alla volta, si parla.'),
+  covo('morgana', 'covo-claudia', 'Claudia è nel suo castello nero, in via Palazzo, a San Giulio. Il Padre ti aspetta sul trono. Uno alla volta.'),
   doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
-  covo('piazza', 'formia', 'In piazza della Vittoria Costanzo fa un comizio che non finisce più.'),
+  covo('piazza', 'covo-costanzo', 'Costanzo parla dal balcone del Palazzo del Popolo, in piazza della Vittoria. Per salire, l\'esame di educazione civica.'),
   team('squadra-cisterna', 3, 'Tre creature per il buio', 'L\'erba alta e gli scogli', 'Nel Cisternone si lotta al buio: Cicerone dice di non scendere con meno di tre creature. Cattura nell\'erba alta o tra gli scogli.'),
   plot('trama-cisterna', 'L\'uomo del Cisternone', 'Castellone', 'A Castellone, davanti al Cisternone, c\'è uno con la torcia che cerca di forzare la porta.', 'mamurr-cisterna', 'tr-mamurr-cisterna'),
   { ...plot('trama-mura', 'La parola del Cisternone', 'Castellone, dalla signora del teatro', 'La signora che abita dentro il teatro romano sa la parola che apre il Cisternone.', 'teatro', 'porta-cisterna'),
@@ -96,9 +102,9 @@ export const STOPS: Stop[] = [
   lost('appunti'),
   plot('trama-mare', 'La Pietra del Mare', 'Le peschiere di Caposele', 'Un sub si immerge tra le peschiere romane di Caposele: dicono che abbia tirato su una pietra che brilla.', 'mamurr-peschiere', 'pietra-mare'),
   doing('windsurf', 'nicola', 'All\'Eclipse c\'è Nicola Spadea, il campione di windsurf: oggi c\'è la termica giusta per una lezione.'),
-  covo('eclipse', 'formia', 'All\'Eclipse Valentin fa festa: chi vuole la sua spilla, prima lo deve battere.'),
+  covo('eclipse', 'covo-valentin', 'Valentin è in cima alla torre verde di via Ferrucci, di fronte all\'ospedale. Nella nebbia ballano le Iele.'),
   lost('portafoglio'),
-  covo('pineta', 'formia', 'Zendavid è in pineta, a Vindicio, con le cuffie: la sua spilla si prende lì.'),
+  covo('pineta', 'covo-zendavid', 'Zendavid è alla consolle del Tempio del Basso, in mezzo alla pineta di Vindicio. Alla porta, domande su Kanye.'),
   lost('passaporto'),
   { id: 'trama-voce', text: 'La Pietra della Voce', where: 'Tomba di Cicerone', tip: 'Alla Tomba di Cicerone, sull\'Appia, di sera si sente una voce che parla latino.',
     map: 'formia', x: tomb.x, y: tomb.y, done: () => flag('pietra-voce') },
@@ -124,8 +130,16 @@ export function myStops(): Stop[] {
   const rv = rivalFriend(), last = covi.findIndex((s) => s.who === rv);
   if (rv && last >= 0) covi.push(covi.splice(last, 1)[0]);
   slots.forEach((k, n) => { list[k] = covi[n]; });
-  return list;
+  /* before each covo, whoever sends the player there (data/covo-places.ts): one does not knock on a friend's covo for nothing */
+  const out: Stop[] = [];
+  list.forEach((s) => { if (s.id.indexOf('covo-') === 0 && COVO_PLACES[s.id.slice(5)]) out.push(hook(s.id.slice(5))); out.push(s); });
+  return out;
 }
+/* the keys of the scooter are with the keeper of the first covo of the tour, the nearest (story/lairs.ts) */
+keysFrom(function () { const c = myStops().find((s) => s.id.indexOf('covo-') === 0); return c ? c.id.slice(5) : null; });
+/** Parco la Fontana is closed: Antonio's dome is reached through his flat, out of the back door */
+const PARK = { x0: 219, y0: 31, x1: 240, y1: 45 };
+function inPark(x: number, y: number): boolean { return x >= PARK.x0 && x <= PARK.x1 && y >= PARK.y0 && y <= PARK.y1; }
 export function nextStop(): Stop { return myStops().find((s) => !s.done())!; }
 export function stopsDone(): number { return myStops().filter((s) => s.done()).length; }
 
@@ -134,6 +148,11 @@ export function heading(map: string): Heading | null {
   const s = nextStop();
   if (s.map === map) return { stop: s, x: s.x, y: s.y, exact: true };
   const m = MAPS[map];
+  /* to Antonio's dome: through his flat, and out of the back door into the park */
+  if (s.map === 'covo-antonio') {
+    if (map === 'casa') { const w = (m.warps || []).find((q) => q.to === 'formia' && inPark(q.tx, q.ty)); if (w) return { stop: s, x: w.x, y: w.y, exact: false }; }
+    if (map === 'formia' && !inPark(st.x, st.y)) { const c = (m.buildings || []).find((q) => q.id === 'casa'); if (c) return { stop: s, x: c.door[0], y: c.door[1], exact: false }; }
+  }
   if (m.inside) { const w = (m.warps || [])[0]; return w ? { stop: s, x: w.x, y: w.y, exact: false } : null; }
   const b = (m.buildings || []).find((q) => q.to === s.map);
   if (b) return { stop: s, x: b.door[0], y: b.door[1], exact: false };

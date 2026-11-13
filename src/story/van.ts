@@ -12,6 +12,27 @@ function drivable(m: PreparedMap, x: number, y: number): boolean {
   return m.solid[y * m.w + x] !== 1 && rideable(m, x, y);
 }
 const isRoad = (m: PreparedMap, x: number, y: number) => m.cell(x, y).g === 'road';
+const wet = (m: PreparedMap, x: number, y: number) => x >= 0 && y >= 0 && x < m.w && y < m.h && m.cell(x, y).g === 'sea';
+/** what it costs to drive a tile in a direction beyond the road itself: seen from in front or behind the van is wider
+    than its tile, so a lane with the sea beside it (the lungomare over the darsena of Mola) puts half of it in the water.
+    Where the road has another lane, it takes that one */
+export function shoreCost(m: PreparedMap, x: number, y: number, dx: number): number {
+  return dx === 0 && (wet(m, x - 1, y) || wet(m, x + 1, y)) ? 6 : 0;
+}
+/** how far, in px, the van is drawn aside from its tile so that it stands in the middle of the road: on a road two lanes
+    wide it is drawn between them (it drives down the middle of the street, not with two wheels on the pavement), and on
+    a lane by the sea it moves off the water */
+export function roadShift(m: PreparedMap, x: number, y: number, dir: Dir, T: number): { dx: number; dy: number } {
+  var road = function (xx: number, yy: number) { return xx >= 0 && yy >= 0 && xx < m.w && yy < m.h && m.cell(xx, yy).g === 'road'; };
+  if (dir === 'up' || dir === 'down') {
+    var l = road(x - 1, y), r = road(x + 1, y);
+    if (l && !r) return { dx: -T / 2, dy: 0 };
+    if (r && !l) return { dx: T / 2, dy: 0 };
+    return { dx: wet(m, x - 1, y) && !wet(m, x + 1, y) ? 8 : wet(m, x + 1, y) && !wet(m, x - 1, y) ? -8 : 0, dy: 0 };
+  }
+  var a = road(x, y - 1), b = road(x, y + 1);
+  return { dx: 0, dy: b && !a ? T / 2 : a && !b ? -T / 2 : 0 };
+}
 /** the way from a to b over the streets, cheapest first: a road costs 1, anything else it can drive on 4, and every
     turn a little more, so it keeps to the streets and goes straight; null when b cannot be reached */
 export function roadPath(m: PreparedMap, a: Tile, b: Tile): Tile[] | null {
@@ -33,7 +54,7 @@ export function roadPath(m: PreparedMap, a: Tile, b: Tile): Tile[] | null {
       const nx = x + dx, ny = y + dy;
       if (!drivable(m, nx, ny)) continue;
       const j = ny * W + nx, turn = pi >= 0 && (x - px !== dx || y - py !== dy) ? 0.6 : 0;
-      const c = cost[i] + (isRoad(m, nx, ny) ? 1 : 4) + turn;
+      const c = cost[i] + (isRoad(m, nx, ny) ? 1 : 4) + turn + shoreCost(m, nx, ny, dx);
       if (c < cost[j]) { cost[j] = c; from[j] = i; push(j, c); }
     }
   }

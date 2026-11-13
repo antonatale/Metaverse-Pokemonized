@@ -8,6 +8,8 @@ import { monsOf } from './growth';
 import { rivalFriend, rivalName } from './rival-who';
 import { CHARS } from '../data/characters';
 import { VOICE, PARTNER, RIVAL_LINES } from '../data/rival-lines';
+import { covoLevel } from './maps';
+import { grownAt, CREW_LATE } from './covo-crew';
 
 /* The rival, as in the Pokémon games: one of the friends, picked at random for each story (story/rival-who.ts; Tullio,
    the guardaparco's grandson, in the stories that met him before). The rival picks a creature right after Antonio,
@@ -52,6 +54,8 @@ const FIRST_MOVES: Partial<Record<SpeciesId, string[]>> = { polpino: ['botta', '
 /** the creatures a trainer sends in, one after the other: the rival's follow the story */
 export function teamOf(id: string): Trainer['team'] {
   var tr = TRAINERS[id], r = rival();
+  /* an adept of a covo: his creatures as far below the keeper as the team says, in the forms of their level */
+  if (tr.covo) { var top = covoLevel(tr.covo); return tr.team.map(function (t) { var lv = Math.max(3, top - t.lv); return { sp: grownAt(t.sp, lv, CREW_LATE), lv: lv }; }); }
   if (!tr.rival) return tr.team;
   if (tr.rival === 1) return [{ sp: r, lv: 5, moves: FIRST_MOVES[r] }];
   /* a friend brings along a creature of their own (the one they join with), Tullio a cicada of his grandfather's park */

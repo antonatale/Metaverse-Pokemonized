@@ -118,7 +118,8 @@ describe('the trainers of Formia', () => {
     const { MISSIONS } = await import('../../src/data/missions');
     for (const tr of Object.values(TRAINERS)) {
       /* the battles of the missions start from who asks for them, not from a trainer on the map */
-      const n = (MAPS.formia.npcs || []).find((q) => q.trainer === tr.id) || MISSIONS.find((m) => m.trainer === tr.id);
+      /* the adepts of the covi stand inside their covo (data/maps/covi.ts) */
+      const n = Object.values(MAPS).flatMap((m) => m.npcs || []).find((q) => q.trainer === tr.id) || MISSIONS.find((m) => m.trainer === tr.id);
       expect(n, 'nobody is ' + tr.id).toBeDefined();
       const team = teamOf(tr.id);
       expect(team.length).toBeGreaterThan(0);

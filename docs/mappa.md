@@ -52,6 +52,13 @@ Dalle indicazioni di Antonio, dai dati OSM/Overpass (`/ref/poi` del lavoro: Zanz
 - **Case degli amici:** sopra la casa c'è «Casa di …», non più il nome della via. Il nome della via è su una targa all'angolo, larga tre caselle e leggibile (`streetPlate` in `render/canvas/objects.ts`): via Palazzo, via Adalgiso Ferrucci, via Solaro, piazza Pasquale Mattei, oltre a quelle che c'erano (via Abate Tosti, via Amendola…). Per Zendavid a Scauri non c'è targa: la via non è stata detta.
 - **Mare aperto:** le caselle di mare sono raggiungibili a nuoto o in SUP; boe, bottiglie e tre allenatori al largo sono punti `on: 'sea'`, esclusi dai controlli di raggiungibilità a piedi.
 
+## I covi e il parco grande (13 novembre 2026)
+
+- **Covi** (`kind: 'covo'`, `look` = custode, in `formia-places.ts`): le case di Valentin (4×3), Claudia (5×4, alto 5 caselle) e Andrea (4×3) al posto delle vecchie, il Palazzo del Popolo (6×3) in mezzo a piazza della Vittoria (un covo può stare su una piazza), il Tempio del Basso (5×2) all'incrocio dei sentieri della pineta, i tennis coperti, la Cupola (5×4) nel parco. Le porte portano agli interni `covo-*` (o a `circolo`), a casa per il custode.
+- **Parco la Fontana** va fino alla ferrovia (x 220–240, y 31–45): quattro palazzine, il giardino rotondo 10×7 con la fontana al centro e la cupola di Antonio accanto, a est. Via Palazzo finisce a via Amendola, via Stendhal è tolta. `HEDGES` in `network.ts`: le siepi tengono chiusi giardino e cupola dal lato della porta sul retro; si scende lungo la palazzina, si va lungo la ringhiera e si risale in fondo.
+- **Il furgone di Nicola** evita la corsia accanto al mare (`shoreCost` in `story/van.ts`) e dove non può viene disegnato spostato sulla strada (`shoreShift`): a Mola non sta più sulla darsena.
+- **Salvataggi:** `formia11` riporta a casa chi era sotto un covo o una siepe, fa uscire dal vecchio circolo e lascia le chiavi del Liberty a chi l'aveva già guidato.
+
 ## Rilievo
 
 La mappa ha gradoni sugli Aurunci, all'Acervara e a Gianola, muraglione dell'Appia, la salita di via Solaro, tre sentieri, cinque salti verso sud e quattro belvedere registrati nel diario. I fianchi sono caselle solide; una quota numerica per casella non è implementata. Castellone richiede ancora un intervento specifico per diventare visibilmente più alto dell'Appia.

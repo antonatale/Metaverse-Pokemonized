@@ -52,5 +52,8 @@ export const LEGEND: Record<string, Ground> = {
   '|': { g: 'grass', deco: 'fence', solid: true }, '+': { g: 'path', deco: 'gate', solid: true },
   '0': { g: 'path', deco: 'backdoor' },
   /* the car parks of Largo Paone and of the Pinetina (Street View): asphalt, the bays with their lines, parked cars */
-  '!': { g: 'road' }, '$': { g: 'road', deco: 'stall' }, '-': { g: 'road', deco: 'stall', obj: 'car', solid: true }
+  '!': { g: 'road' }, '$': { g: 'road', deco: 'stall' }, '-': { g: 'road', deco: 'stall', obj: 'car', solid: true },
+  /* the covi inside (13 November 2026): a floor tile taken by one of the keeper's things (a throne, a speaker, a server…,
+     drawn by the map's covo-prop ground objects) */
+  '@': { g: 'floor', solid: true }
 };

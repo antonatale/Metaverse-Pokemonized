@@ -3,6 +3,7 @@ import { SPECIES } from '../../src/data/creatures';
 import { describe, expect, it } from 'vitest';
 import { MAPS, LEGEND, type MapDef } from '../../src/data/maps';
 import { COVI } from '../../src/data/covi';
+import { covoOfBuilding } from '../../src/data/covo-places';
 import { GATES } from '../../src/data/gates';
 import { CHARS } from '../../src/data/characters';
 import { ITEMS } from '../../src/data/items';
@@ -23,7 +24,10 @@ const W = (m: MapDef) => m.rows[0].length, H = (m: MapDef) => m.rows.length;
     place are not walls: what they let through, and when, is what tests/unit/place.test.ts proves */
 function solidity(m: MapDef) {
   const id = Object.keys(MAPS).find((k) => MAPS[k] === m)!, pm = { ...prepare(id), place: undefined };
-  return (x: number, y: number) => blocked(pm, x, y);
+  /* the defenders of a covo who stand in a doorway, and whoever asks a quiz there, step aside once beaten (or passed):
+     like the gates of a place, what lets through is proven elsewhere (tests/unit/quiz.test.ts, aside below) */
+  const asks = new Set((m.npcs || []).filter((n) => n.quiz || n.aside).map((n) => n.x + ',' + n.y));
+  return (x: number, y: number) => !asks.has(x + ',' + y) && blocked(pm, x, y);
 }
 
 /** every tile you can stand on, across maps, walking from the start of Formia through doors and warps */
@@ -39,6 +43,9 @@ function reachable() {
     const door = (m.buildings || []).find((b) => b.to && b.door[0] === x && b.door[1] === y);
     const warp = (m.warps || []).find((w) => w.x === x && w.y === y);
     const jump = door ? [door.to!, door.tx!, door.ty!] as const : warp ? [warp.to, warp.tx, warp.ty] as const : null;
+    /* the door of a covo that is a home leads home for its keeper, when he is the one played */
+    const cp = door && covoOfBuilding(door.id);
+    if (cp && cp.home) visit(cp.home, MAPS[cp.home].start[0], MAPS[cp.home].start[1]);
     if (jump) { visit(jump[0], jump[1], jump[2]); continue; }   /* stepping on a door or warp takes you through */
     for (const d of DIRS) {
       const nx = x + DV[d][0], ny = y + DV[d][1], way = (m.signs || []).find((g) => g.enter && g.x === nx && g.y === ny);
@@ -47,7 +54,7 @@ function reachable() {
       if (down) visit(down.to, down.x, down.y);                                 /* a legend with a place of its own */
       const crew = (m.npcs || []).find((n) => n.gate && n.x === nx && n.y === ny), G0 = crew && GATES[crew.gate!];
       /* a capotreno: his train takes you to his city's station (data/gates.ts), each one his own */
-      if (crew && G0) for (const to of crew.gate === 'torino' ? ['torino', 'milano'] : [G0.to]) visit(to, MAPS[to].start[0], MAPS[to].start[1]);
+      if (crew && G0) for (const to of crew.gate === 'torino' ? Object.values(GATES).filter((g) => g.city === 'formia').map((g) => g.to) : [G0.to]) visit(to, MAPS[to].start[0], MAPS[to].start[1]);
       if (!blocked[map](nx, ny)) visit(map, nx, ny);
     }
   }

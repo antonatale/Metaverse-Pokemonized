@@ -199,6 +199,57 @@ export const TRACKS: Record<string, Track> = {
     ],
     drums: { gain: 0.35, bars: repeat(['k . . h . . h . k . . h . . h .'], 8) }
   },
+  /* the night before (13 November 2026): the prologue and the first steps of the story, until the first creature. Slow,
+     D minor, a low drone and a bell that rings far away; the melody asks something and does not answer */
+  mistero: {
+    bpm: 66, loop: true,
+    voices: [
+      lead([
+        'D5 - - - - - F5 - E5 - - - . . . .',
+        'A4 - - - - - C5 - Bb4 - - - A4 - - -',
+        'D5 - - - - - F5 - G5 - - - A5 - - -',
+        'C#5 - - - - - E5 - D5 - - - . . . .'
+      ], { type: 'triangle', gain: 0.16, cutoff: undefined, decay: 0.4, sustain: 0.6, vibrato: 18 }),
+      bass([
+        'D2 - - - - - - - D2 - - - - - - -',
+        'Bb1 - - - - - - - Bb1 - - - - - - -',
+        'G1 - - - - - - - G1 - - - - - - -',
+        'A1 - - - - - - - A1 - - - - - - -'
+      ], { gain: 0.26, sustain: 0.95 }),
+      pluck([
+        'A5 . . . . . . . . . . . D6 . . .',
+        '. . . . F5 . . . . . . . . . . .',
+        'A5 . . . . . . . . . . . E6 . . .',
+        '. . . . C#6 . . . . . . . . . . .'
+      ], { gain: 0.03, cutoff: 3600, decay: 0.6, sustain: 0.05, release: 0.9 })
+    ]
+  },
+  /* inside a covo (13 November 2026): the echo of Telepilo, a little spooky and a little funny, A minor with the leading
+     tone of the harmonic scale, Am F Dm E */
+  covo: {
+    bpm: 96, loop: true,
+    voices: [
+      lead([
+        'A4 - - C5 E5 - D5 C5 B4 - - - G#4 - A4 -',
+        'F4 - - A4 C5 - B4 A4 C5 - - - F5 - E5 -',
+        'D5 - - F5 A5 - G#5 F5 E5 - - - D5 - C5 -',
+        'B4 - - D5 G#5 - - - E5 - - - . . . .'
+      ], { type: 'square', gain: 0.06, cutoff: 1900, vibrato: 16 }),
+      bass([
+        'A2 - . A2 E3 - . E2 A2 - . A2 E3 - C3 .',
+        'F2 - . F2 C3 - . C2 F2 - . F2 C3 - A2 .',
+        'D2 - . D2 A2 - . A2 D2 - . D2 A2 - F2 .',
+        'E2 - . E2 B2 - . B2 E2 - . G#2 B2 - E3 .'
+      ]),
+      pluck([
+        repeat(['A3 C4 E4 C4'], 4).join(' '),
+        repeat(['F3 A3 C4 A3'], 4).join(' '),
+        repeat(['D4 F4 A4 F4'], 4).join(' '),
+        repeat(['E3 G#3 B3 G#3'], 4).join(' ')
+      ], { gain: 0.022, cutoff: 2200 })
+    ],
+    drums: { gain: 0.4, bars: repeat(['k . . h s . . h k . k h s . . h'], 4) }
+  },
   /* a friendly battle: driving bass, Am F G E */
   battle: {
     bpm: 150, loop: true,
@@ -269,5 +320,5 @@ function atNight(t: Track): Track {
   };
 }
 /** the tunes of the map, by place (audio/zones.ts); each has a night version, `name:night` */
-export const NIGHT_OF = ['world', 'castellone', 'mola', 'vindicio'];
+export const NIGHT_OF = ['world', 'castellone', 'mola', 'vindicio', 'covo'];
 NIGHT_OF.forEach(function (n) { TRACKS[n + ':night'] = atNight(TRACKS[n]); });

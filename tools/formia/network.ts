@@ -100,12 +100,11 @@ export const STREETS: Line[] = [
   { name: 'Via Gioacchino Rossini', w: 1, pts: [[176, 32], [176, 46]] },
   { name: 'Via Andrea Ciardo', w: 1, pts: [[176, 32], [196, 32]] },
   { name: 'Via Bruno Zauli', w: 1, pts: [[196, 32], [196, 46]] },
-  { name: 'Via Palazzo', w: 1, pts: [[196, 36], [241, 36]] },
+  { name: 'Via Palazzo', w: 1, pts: [[196, 36], [212, 36]] },
   { name: 'Via San Pietro', w: 1, pts: [[201, 36], [201, 46]] },
   { name: 'Via don Luigi Sturzo', w: 1, pts: [[206, 36], [206, 46]] },
   /* Antonio's: the left turn off the Appia, Parco la Fontana on its right */
   { name: 'Via Giovanni Amendola', w: 1, pts: [[212, 36], [212, 46]] },
-  { name: 'Via Stendhal', w: 1, pts: [[241, 36], [241, 46]] },
   /* across the Appia from Antonio's garden, down to the Villaggio Don Bosco */
   { name: 'Via San Giovanni Bosco', w: 1, pts: [[208, 48], [208, 51]] },
   /* the villas with streets named after flowers, between the Appia and the sea */
@@ -127,8 +126,9 @@ export const STREETS: Line[] = [
 export const PATHS: Line[] = [
   /* the walks of Parco la Fontana: in from Via Amendola behind Antonio's building, between the palazzine, out on
      Via Stendhal and down to the Appia */
-  { name: 'Viale del parco', w: 1, pts: [[219, 37], [219, 40], [240, 40]] },
-  { name: 'Viale del parco', w: 1, pts: [[224, 40], [224, 45]] },
+  { name: 'Viale del parco', w: 1, pts: [[219, 38], [219, 40], [220, 40], [220, 44], [238, 44], [238, 38]] },
+  { name: 'Viale del parco', w: 1, pts: [[238, 40], [240, 40]] },
+  { name: 'Viale del parco', w: 1, pts: [[224, 44], [224, 45]] },
   { name: 'Sentiero della pineta', w: 1, pts: [[54, 98], [54, 102]] },
   { name: 'Sentiero della pineta', w: 1, pts: [[47, 100], [61, 100]] }
 ];
@@ -260,7 +260,7 @@ export const ROWS: (Rect & { name: string; up: number; shops: number })[] = [
   { name: 'Via Abate Tosti, lato mare', x0: 137, y0: 66, x1: 139, y1: 69, up: 0.1, shops: 1 }
 ];
 /** no house of the town here: the pavement south of the castle, the one down via Vitruvio, the passage into the Pinetina */
-export const KEEP_OPEN: Rect[] = [{ x0: 144, y0: 67, x1: 147, y1: 69 }, { x0: 118, y0: 70, x1: 119, y1: 78 }, { x0: 133, y0: 66, x1: 133, y1: 69 }];
+export const KEEP_OPEN: Rect[] = [{ x0: 220, y0: 31, x1: 240, y1: 45 }, { x0: 144, y0: 67, x1: 147, y1: 69 }, { x0: 118, y0: 70, x1: 119, y1: 78 }, { x0: 133, y0: 66, x1: 133, y1: 69 }];
 /** umbrella pines planted by hand: along the lungomare between the car park of Largo Paone and the port, and down
     the pavement of via Vitruvio */
 export const PINES: XY[] = [[118, 79], [120, 79], [122, 79], [124, 79], [126, 79], [128, 79], [130, 79], [118, 71], [118, 74], [118, 77]];
@@ -274,12 +274,16 @@ export const SCOOTERS: XY[] = [[125, 65], [126, 65], [129, 65]];
 /** Parco la Fontana is closed: a railing all around (the palazzine are part of the wall), the gates locked. Antonio
     gets in from his own flat, through the back door (the spot `porta-parco` of formia-places.ts) */
 export const FENCES: XY[][] = [
-  [[224, 37], [224, 37]], [[229, 37], [229, 37]], [[234, 37], [234, 37]], [[239, 37], [240, 37]],
-  [[240, 37], [240, 45]], [[220, 45], [240, 45]]
+  [[220, 31], [240, 31]], [[220, 31], [220, 36]], [[219, 37], [220, 37]],
+  [[240, 31], [240, 45]], [[220, 45], [240, 45]]
 ];
-export const GATES: XY[] = [[219, 37], [240, 40], [224, 45]];
+export const GATES: XY[] = [[240, 40], [224, 45]];
 /** inside a closed fence nothing has to be reached on foot from home */
-export const CLOSED: Rect[] = [{ x0: 219, y0: 38, x1: 239, y1: 44 }];
+export const CLOSED: Rect[] = [{ x0: 221, y0: 32, x1: 239, y1: 44 }, { x0: 219, y0: 38, x1: 220, y1: 44 }];
+/** the hedges of Parco la Fontana (13 November 2026): from Antonio's back door the round garden and the covo are not
+    reached straight across; the walk goes down along his palazzina, all the way along the south railing past his
+    robots, and back up at the far end to the door of the covo */
+export const HEDGES: XY[][] = [[[224, 35], [224, 40]], [[225, 42], [236, 42]], [[236, 39], [236, 41]], [[225, 43], [229, 43]], [[231, 43], [236, 43]]];
 /** the shops of Via Vitruvio: the houses whose door opens on these rows of it are all shops */
 export const HIGH_STREET: Rect[] = [{ x0: 86, y0: 76, x1: 110, y1: 76 }, { x0: 112, y0: 66, x1: 130, y1: 66 }];
 /** tree-lined roads: the Appia out of town, the coast road of Vindicio, the Appia along the bay, the road to Gianola */

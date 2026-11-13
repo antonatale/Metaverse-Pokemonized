@@ -55,3 +55,36 @@
 .btn { padding: 11px 12px; border: 2px solid var(--line); border-radius: 9px; background: var(--card); color: var(--ink); font: 17px/1.1 var(--font-display); box-shadow: 3px 3px 0 var(--line); cursor: pointer; }
 .btn.primary { background: var(--btn); color: var(--on-btn); }
 .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+
+/* ---------- the choice of who goes in (ui/team.ts pickFrom, 13 November 2026) ---------- */
+.pickfx { width: min(100% - 24px, 760px); }
+.pf-vs { position: relative; display: flex; align-items: center; gap: 14px; margin: 4px 0 10px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 14px;
+  background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--tc) 55%, transparent), transparent 70%), var(--card); box-shadow: 4px 4px 0 var(--line); overflow: hidden; }
+.pf-foe-art { width: 104px; flex: none; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--tc) 70%, #fff), var(--tc)); border: 2px solid var(--line); overflow: hidden; animation: pf-breathe 2.6s ease-in-out infinite; }
+.pf-foe-art svg { width: 100%; height: 100%; }
+.pf-foe-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pf-foe-txt small { font: 700 11px/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pf-foe-txt b { font: 24px/1.05 var(--font-display); color: var(--ink); }
+.pf-vs-badge { margin-left: auto; font: 46px/1 var(--font-display); color: var(--red); -webkit-text-stroke: 2px var(--line); transform: rotate(-8deg); text-shadow: 3px 3px 0 var(--line); animation: pf-pop .5s cubic-bezier(.2,1.6,.4,1) both; }
+.pf-type { display: inline-block; margin: 0 4px 0 0; padding: 1px 7px; border: 1.5px solid var(--line); border-radius: 999px; font: 700 10.5px/1.5 var(--font-body); color: var(--ink); background: color-mix(in srgb, var(--tc) 75%, #fff); }
+.pf-hint { margin-bottom: 8px; }
+.pf-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.pf-card { position: relative; padding: 8px 8px 10px; border-radius: 14px; gap: 5px; box-shadow: 3px 3px 0 var(--line); transition: transform .15s, box-shadow .15s;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 30%, var(--card)), var(--card) 62%); animation: pf-in .38s cubic-bezier(.2,1.4,.4,1) both; animation-delay: var(--d); }
+.pf-card:hover, .pf-card:focus-visible { transform: translateY(-4px) rotate(-1deg); box-shadow: 5px 7px 0 var(--line); outline: none; }
+.pf-card .pf-art { border-radius: 50%; border: 2px solid var(--line); background: radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--tc) 55%, #fff), var(--tc)); }
+.pf-card:hover .pf-art svg, .pf-card:focus-visible .pf-art svg { animation: pf-hop .5s ease-in-out infinite alternate; }
+.pf-card.is-good { border-color: var(--good); box-shadow: 3px 3px 0 var(--line), 0 0 0 3px color-mix(in srgb, var(--good) 45%, transparent); }
+.pf-card.is-bad { opacity: .86; }
+.pf-name { font: 17px/1.1 var(--font-display) !important; }
+.pf-meta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3px; white-space: normal !important; }
+.pf-lv { font: 700 11px/1.5 var(--font-body) !important; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--card) !important; }
+.pf-xp { width: 80%; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--line) 18%, transparent); overflow: hidden; }
+.pf-xp i { display: block; height: 100%; background: var(--tc); }
+.pf-ribbon { position: absolute; top: 8px; left: -6px; z-index: 1; padding: 1px 9px; border: 1.5px solid var(--line); border-radius: 3px; font: 12px/1.4 var(--font-display) !important; color: #fff !important; background: var(--good); transform: rotate(-6deg); box-shadow: 2px 2px 0 var(--line); }
+.pf-ribbon.bad { background: var(--red); }
+@keyframes pf-in { from { opacity: 0; transform: translateY(14px) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes pf-pop { from { transform: scale(0) rotate(-30deg); } to { transform: rotate(-8deg); } }
+@keyframes pf-breathe { 50% { transform: scale(1.04); } }
+@keyframes pf-hop { to { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .pf-card, .pf-vs-badge, .pf-foe-art, .pf-card .pf-art svg { animation: none !important; } }

@@ -14,7 +14,7 @@ TypeScript strict + Vite, DOM/SVG per lotte e interfaccia, canvas 2D per la mapp
 
 - Mappa: 320×128 caselle. Tutte le coordinate stanno in `tools/formia/network.ts` e `formia-places.ts`, mai nel generatore; dopo ogni cambio `npx tsx tools/formia/build.ts` (zero problemi) e `density.ts`.
 - Motore in `src/battle/` puro: stato JSON e RNG con seme; niente DOM, `Date` o `Math.random`. La UI riproduce gli eventi; regole della storia in `src/story/`.
-- Salvataggi compatibili: non rinominare `lotte-tra-amici:*`; campi nuovi facoltativi, accesso a `localStorage` protetto. Cambiando le coordinate della mappa aggiungere una migrazione in `save/story-progress.ts` (l'ultima è `formia10`).
+- Salvataggi compatibili: non rinominare `lotte-tra-amici:*`; campi nuovi facoltativi, accesso a `localStorage` protetto. Cambiando le coordinate della mappa aggiungere una migrazione in `save/story-progress.ts` (l'ultima è `formia11`).
 - Golden: rigenerarli solo per cambiamenti voluti e verificati. Le 2.040 lotte tra amici sono il riferimento esistente; non eliminarle prima che ci sia una copertura equivalente delle lotte di squadra.
 - Prima di cambiare numeri, misurare con i simulatori pertinenti. Nessun ritocco di bilanciamento solo per far combaciare la biografia.
 - Testi in italiano, commenti del codice in inglese, colori UI nei token CSS; ritratti e omini usano colori fissi. Stile quaderno a penna ed evidenziatori; niente migrazione a Phaser o al 3D.

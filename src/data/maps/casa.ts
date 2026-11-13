@@ -5,7 +5,9 @@ import { FORMIA_AT, FORMIA_SPOT } from './formia-ground';
 const out = FORMIA_AT.casa.door!, park = FORMIA_SPOT['porta-parco'];
 
 /* Antonio's flat in Parco la Fontana: his room on the left (bed, desk, the robot on the shelf),
-   the living room and the kitchen on the right, the window on the gulf. */
+   the living room and the kitchen on the right, the window on the gulf. Since 13 November 2026 a little more his: the
+   model rocket, the telescope by the window, the rug, the poster of the way he wants to go. The back door is the only
+   way into the closed park: while Antonio is shut in his dome, his vacuum cleaner guards it (data/adepts.ts). */
 export const casa: MapDef = {
   name: 'Casa',
   city: 'formia',
@@ -17,8 +19,14 @@ export const casa: MapDef = {
     'xFFFxFFFFFFx',
     'xFFFFFFFF4FD',
     'x6FFFFFF3FFx',
-    'xFFFFFFFFFFx',
+    'x@FFFFFFFF@x',
     'xxxxxDDxxxxx'
+  ],
+  groundObjects: [
+    { kind: 'rug', x: 5, y: 2, w: 5, h: 4, color: '#3b3f7a' },
+    { kind: 'banner', x: 6, y: 0, w: 5, text: 'TORINO → CHICAGO', color: '#c3a0ff' },
+    { kind: 'covo-prop', x: 1, y: 6, w: 1, h: 1, text: 'rocket' },
+    { kind: 'covo-prop', x: 10, y: 6, w: 1, h: 1, text: 'telescope' }
   ],
   signs: [
     { x: 1, y: 1, quiet: true, text: ['Il robot di Sim-to-Real, in carica sullo scaffale.', 'In simulazione funziona sempre.'] },
@@ -27,7 +35,12 @@ export const casa: MapDef = {
     { x: 6, y: 0, quiet: true, text: ['Dalla finestra, al piano terra, si vede il giardino dietro il cancello.', 'Chissà dove porta la strada. Ma si parte da qui.'] },
     { x: 9, y: 1, quiet: true, text: ['In frigo: mozzarella di bufala, olive di Gaeta e una tiella avanzata.'] },
     { x: 8, y: 5, quiet: true, text: ['La PlayStation.', 'Forchetta vuole sempre la rivincita.'] },
-    { x: 9, y: 4, quiet: true, text: ['Il divano. Ci si sta in quattro, se nessuno si muove.'] }
+    { x: 9, y: 4, quiet: true, text: ['Il divano. Ci si sta in quattro, se nessuno si muove.'] },
+    { x: 1, y: 6, quiet: true, text: ['Il modellino di un razzo, alto come un gatto. Sulla base: «un giorno, quello vero».'] },
+    { x: 10, y: 6, quiet: true, text: ['Un telescopio puntato fuori dalla finestra. Di giorno guarda il golfo, di notte Marte.'] }
+  ],
+  npcs: [
+    { id: 'robot-casa', trainer: 'robot-casa', name: 'Aspirapolvere senziente', seed: 135, x: 10, y: 4, dir: 'left', guard: 'palamendola', aside: [7, 1], lines: ['VRRRR. Nessuno passa dal retro.'] }
   ],
   /* the front door to the garden and the gate on via Amendola; the back door to the park, where the fountain is */
   warps: [{ x: 5, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 6, y: 7, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' },

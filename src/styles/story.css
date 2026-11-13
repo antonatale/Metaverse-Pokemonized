@@ -225,3 +225,12 @@ div.pick { cursor: default; }
 .ph-input i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #1a7f64; color: #fff; font-style: normal; font-size: 15px; }
 .wphone svg { display: block; }
 @media (prefers-reduced-motion: reduce) { .phone, .ph-msg, .ph-chip.ph-away.go, .ph-msg.typing .ph-b i { animation: none; } }
+
+/* ---------- the prologue: the night before (ui/story-screen.ts, 13 November 2026) ---------- */
+.overlay.prologo-bg { background: radial-gradient(120% 90% at 50% 120%, #1a2350 0%, #05060d 70%); align-items: center; }
+.prologo { width: min(100% - 40px, 620px); display: flex; flex-direction: column; gap: 18px; text-align: center; color: #e9ecff; }
+.prologo p { margin: 0; font: 19px/1.5 var(--font-body); opacity: 0; animation: pr-in 1.6s ease forwards; animation-delay: var(--d); text-shadow: 0 0 18px rgba(140, 160, 255, .35); }
+.prologo p:first-child { font: 26px/1.2 var(--font-display); letter-spacing: .04em; color: #ffd166; }
+.prologo .btn { align-self: center; margin-top: 10px; opacity: 0; animation: pr-in 1s ease forwards; animation-delay: var(--d); }
+@keyframes pr-in { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .prologo p, .prologo .btn { animation: none; opacity: 1; } }

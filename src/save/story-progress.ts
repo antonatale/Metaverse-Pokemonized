@@ -71,6 +71,9 @@ export interface StoryProgress {
   chats?: Record<string, { at: number; reply?: string }>;
   /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
   books?: number;
+  /** the gifts of the covi (data/covo-places.ts): Valentin's mărțișor worn, the tune chosen with Zendavid's headphones */
+  martisor?: boolean;
+  radio?: string;
   /** when it was last saved (ms since 1970), for the title screen: missing in an old save */
   at?: number;
 }
@@ -133,6 +136,16 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
   { id: 'formia10', what: 'Largo Paone, Mola e piazza Risorgimento', run: function (v) {
     if (walled(v.x, v.y, /[-9|+8BiT]/)) { backHome(v); delete v.moto; delete v.sella; }
     else if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT]/)) delete v.moto;
+  } },
+  /* the covi (13 November 2026): the homes of Valentin, Claudia and Andrea became covi, two more stand in Piazza della
+     Vittoria and in the pineta, Parco la Fontana grew to the railway with hedges inside, and Forchetta's courts were
+     drawn again. Whoever stood where a covo or a hedge is now goes home; whoever was inside the old courts goes back out
+     to their door; an old story that has already ridden the scooter keeps its keys */
+  { id: 'formia11', what: 'i covi e il parco la Fontana', run: function (v) {
+    if (v.moto || v.sella) { v.seen = v.seen || {}; v.seen['chiavi-liberty'] = true; }
+    if (v.map === 'circolo') { var d = MAPS.formia.buildings!.find(function (b) { return b.id === 'tennis'; })!; v.map = 'formia'; v.x = d.door[0]; v.y = d.door[1] + 1; v.dir = 'down'; }
+    if (walled(v.x, v.y, /[-9|+8BiT#]/)) { backHome(v); delete v.moto; delete v.sella; }
+    else if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT#]/)) delete v.moto;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a
