@@ -193,7 +193,7 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
 export function cardFor(key: string, id: string): MoveCard {
   var m = anyMove(id), mon = creatureOf(key), bits = moveBits(m).join(', ');
   return { name: m.name, creature: !!mon, type: mon ? (m.plain ? null : m.mtype || SPECIES[mon.sp].type) : undefined, tc: mon ? undefined : TC[fighter(idOf(key)).type],
-    icon: moveIcon(m), kind: m.kind, power: m.power, acc: m.acc || 1, more: bits || (mon ? '' : m.text), uses: m.uses };
+    icon: moveIcon(m), kind: m.kind, power: m.power, acc: m.acc || 1, more: bits || (mon ? '' : m.text), uses: m.uses, ptype: mon ? undefined : fighter(idOf(key)).type };
 }
 /** a new move and four already known: the sheet shows them as in a battle, and a touch says which one to forget */
 function askLearn(key: string, list: string[], then: () => void) {

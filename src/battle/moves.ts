@@ -26,7 +26,11 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
   const me = s.sides[i], foe = s.sides[1 - i], j = 1 - i, cm = ch(me), m = mv(me, id), nm = cm.name;
   let attacked = false, dmg;
   /* the bag is Antonio's: he throws the nets, the tiella says itself (story battles only) */
-  if (id !== 'copenhagenRet' && !BAG[id]) ev.push(say(nm + ' usa ' + m!.name + '!'));
+  if (id !== 'copenhagenRet' && !BAG[id]) {
+    ev.push(say(nm + ' usa ' + m!.name + '!'));
+    /* a person's move: the battle shows it with a scene of its own (ui/friend-moves.ts); only a sign, no numbers */
+    if (!isSpecies(me.id)) ev.push(anim(i, 'act', { move: id }));
+  }
   /* a creature's moves are numbers: an id it shares with someone else's move (Radici, the Esame's too) must not end up
      in that one's case */
   switch (isSpecies(me.id) && !BAG[id] ? '' : id) {
@@ -213,6 +217,41 @@ export function useMove(s: BattleState, i: number, id: string, ev: BattleEvent[]
       ev.push(expr(i, 'cool'));
       ev.push(anim(i, 'notes'));
       applyHit(s, i, id, ev, { noLunge: true }); attacked = true;
+      break;
+    /* --- Claudia --- */
+    case 'ascolta': {
+      const back = me.hurtAt === s.turn;
+      ev.push(expr(i, back ? 'cool' : 'smirk'));
+      if (back) { ev.push(line(i, cm.lines.ascolta!)); ev.push(say('Ha ascoltato tutto: adesso risponde punto per punto.')); }
+      applyHit(s, i, id, ev, { mult: back ? TUNE.ascolta : 1 }); attacked = true;
+      break;
+    }
+    case 'tavoli':
+      ev.push(expr(i, 'cool'));
+      if (zenOn(s, foe)) ev.push(say('Zendavid ha le cuffie: al suo tavolo non arriva niente.'));
+      else if (!foe.lastMove || foe.lastMove === 'copenhagenRet') ev.push(say('Ma ' + ch(foe).name + ' non ha ancora fatto niente da mettere all\'altro tavolo.'));
+      else {
+        foe.banned = { move: foe.lastMove, until: s.turn + 2 };
+        ev.push(anim(j, 'confused'));
+        ev.push(say('Tavoli separati: per 2 turni ' + ch(foe).name + ' non può usare ' + mv(foe, foe.lastMove)!.name + '.'));
+      }
+      break;
+    case 'trinita': {
+      ev.push(expr(i, 'grin'));
+      ev.push(line(i, cm.lines.trinita!));
+      let n = 0;
+      for (let k = 0; k < 3 && foe.hp > 0 && me.hp > 0; k++) { if (applyHit(s, i, id, ev, { noLunge: k > 0, quiet: k > 0 }) > 0) n++; attacked = true; }
+      if (n > 1) ev.push(say('Il Padre, il Figlio e lo Spirito: ' + n + ' colpi a segno!'));
+      break;
+    }
+    case 'cattiva':
+      ev.push(expr(i, 'smirk'));
+      if (zenOn(s, foe)) ev.push(say('Zendavid ha le cuffie: la cattiva strada non la sente nemmeno.'));
+      else {
+        foe.astray = s.turn + 3;
+        ev.push(anim(j, 'confused'));
+        ev.push(say('Secondo Costanzo, Claudia porta tutti sulla cattiva strada: per 3 turni ' + ch(foe).name + ' si perde.'));
+      }
       break;
     /* --- Esame --- */
     case 'bode': case 'trabocchetto': case 'bocciatura':

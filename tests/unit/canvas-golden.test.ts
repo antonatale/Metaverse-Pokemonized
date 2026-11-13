@@ -10,5 +10,6 @@ describe('map art, against the golden file', () => {
     const want = golden.calls as Record<string, string>, got = canvasDigests(ART, MAPS, LEGEND) as Record<string, string>;
     expect(Object.keys(want).filter((k) => got[k] !== want[k])).toEqual([]);
     expect(Object.keys(got).sort()).toEqual(Object.keys(want).sort());
-  });
+    /* it paints every map twice: about 5 s on a slow machine, over vitest's default */
+  }, 20_000);
 });

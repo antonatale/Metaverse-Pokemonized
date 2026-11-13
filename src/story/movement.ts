@@ -24,6 +24,8 @@ export function ledgeAt(x: number, y: number): boolean { return M.cell(x, y).dec
    It picks up speed along a straight: each step in the same direction is a gear up, a bend takes two off, a stop
    starts again from the first. The top gear is about two and a half times a walk. */
 export const GEARS = [150, 120, 98, 82, 68];
+/** how long a tile takes on the windsurf, picking up the wind */
+export const WIND = [150, 118, 94, 76, 62, 54];
 /** the gear he is riding in (0 on foot, and when the scooter has just set off) */
 export let gear = 0;
 let rideDir: Dir | null = null, lastEnd = 0;
@@ -111,13 +113,53 @@ function tryStep(d: Dir, now: number): boolean {
     gear = !rolling ? 0 : d === rideDir ? Math.min(GEARS.length - 1, gear + 1) : Math.max(0, gear - 2);
     rideDir = d; mover.dur = GEARS[gear];
     sfx('moto' + gear);
+  } else if (moveMode.board) {
+    /* on the windsurf the wind does it: faster and faster going straight, a tack slows it down */
+    var sailing = now - lastEnd < 90;
+    gear = !sailing ? 0 : d === rideDir ? Math.min(WIND.length - 1, gear + 1) : Math.max(0, gear - 2);
+    rideDir = d; mover.dur = WIND[gear];
   } else sfx('step');
   parity ^= 1;
   return true;
 }
 /** someone stands there: the scooter just waits (no word about where it cannot go) */
 function personAtBump(x: number, y: number): boolean { return M.people.some(function (p) { return p.x === x && p.y === y; }); }
+/* ---------- in Nicola's van (story/van.ts) ----------
+   The van drives along a path of tiles, quicker on the straights, slower at the start and at the end. With `carry` the
+   player is in it: the camera follows (the player's tile is the van's), and nothing on the way (doors, places) counts.
+   Without, it comes up the street to the player, who waits. When it stops, `then` */
+export interface VanRun { path: [number, number][]; i: number; carry: boolean; x: number; y: number; fx: number; fy: number; t0: number; dur: number; dir: Dir; base: number; then: (() => void) | null; laugh: number }
+export let van: VanRun | null = null;
+export function vanGo(from: [number, number], path: [number, number][], carry: boolean, base: number, then: () => void) {
+  halt(); busy = true;
+  van = { path: path, i: 0, carry: carry, x: from[0], y: from[1], fx: from[0], fy: from[1], t0: performance.now(), dur: 0, dir: st.dir, base: base, then: then, laugh: 0 };
+  if (carry) { st.x = from[0]; st.y = from[1]; }
+  sfx('scooter');
+}
+/** the van stops where it is now, at once (a ride skipped): `then` comes as at the end */
+export function vanSkip() {
+  if (!van) return;
+  var last = van.path[van.path.length - 1] || [van.x, van.y], prev = van.path[van.path.length - 2] || [van.x, van.y];
+  if (last[0] !== prev[0] || last[1] !== prev[1]) van.dir = last[0] > prev[0] ? 'right' : last[0] < prev[0] ? 'left' : last[1] > prev[1] ? 'down' : 'up';
+  van.x = van.fx = last[0]; van.y = van.fy = last[1]; van.i = van.path.length; van.t0 = 0; van.dur = 0;
+  if (van.carry) { mover = null; st.x = last[0]; st.y = last[1]; }
+}
+/** the van has stopped: it stays parked there; the player is let go by whoever called (`then`) */
+export function vanStop() { van = null; busy = false; }
+function vanTick(now: number) {
+  var v = van!;
+  if (now - v.t0 < v.dur) return;
+  if (v.carry && mover) { st.x = mover.tx; st.y = mover.ty; mover = null; }
+  if (v.i >= v.path.length) { var t = v.then; v.then = null; if (t) t(); return; }
+  var n = v.path[v.i], left = v.path.length - v.i;
+  /* it picks up speed for a few tiles, and slows down for the last ones */
+  var ramp = Math.min(1, (v.i + 1) / 5, left / 5);
+  v.fx = v.x; v.fy = v.y; v.dir = n[0] > v.x ? 'right' : n[0] < v.x ? 'left' : n[1] > v.y ? 'down' : 'up';
+  v.x = n[0]; v.y = n[1]; v.t0 = now; v.dur = v.base + (1 - ramp) * 120; v.i++;
+  if (v.carry) { st.dir = v.dir; mover = { fx: v.fx, fy: v.fy, tx: v.x, ty: v.y, t0: now, dur: v.dur }; }
+}
 export function update(now: number) {
+  if (van) { vanTick(now); return; }
   if (mover) {
     if (now - mover.t0 < (mover.dur || STEP)) return;
     if (mover.jump) sfx('step');
@@ -138,7 +180,7 @@ export function update(now: number) {
 }
 function arrived(): boolean {
   /* back on land, or down from the walls */
-  if (moveMode.swim && M.cell(st.x, st.y).g !== 'sea') moveMode.swim = false;
+  if (moveMode.swim && M.cell(st.x, st.y).g !== 'sea') { moveMode.swim = false; moveMode.board = false; }
   if (moveMode.climb && !isWall(M, st.x, st.y)) moveMode.climb = false;
   var a = M.at[key(st.x, st.y)];
   if (a && a.kind === 'door' && a.b.to) { warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
@@ -168,7 +210,7 @@ function warp(to: string, x: number, y: number, dir?: Dir) {
   if (st.sella && to !== M.id) { st.moto = { map: M.id, x: st.x, y: st.y, dir: st.dir === 'right' ? 'right' : 'left' }; st.sella = false; }
   gear = 0;
   setTimeout(function () {
-    moveMode.swim = false; moveMode.climb = false;
+    moveMode.swim = false; moveMode.climb = false; moveMode.board = false;
     st.map = to; st.x = x; st.y = y; if (dir) st.dir = dir;
     setMap(to); if (M.place) placeEntered(); save(); renderHud();
     root.classList.remove('fade');

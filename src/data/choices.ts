@@ -10,14 +10,15 @@ export interface Choice {
   options: ChoiceOption[];
 }
 export const CHOICES: Record<string, Choice> = {
-  /* Tullio, at the first two meetings: be a friend, or rub it in. Both ways it goes somewhere: see tullioMood */
-  tullio1: { id: 'tullio1', ask: [{ who: 'Tullio', say: ['Però ti ho quasi battuto, eh? Ammettilo.'] }], options: [
-    { id: 'amico', label: 'Bella lotta, Tullio', say: ['…Davvero? Cioè, lo sapevo. Bella lotta anche a te.'] },
-    { id: 'sfotto', label: 'Tutto qui?', say: ['Ridi, ridi. Lo dico al nonno.'] }
+  /* the rival (a friend, or Tullio in a story that met him), at the first two meetings: be a friend, or rub it in. Both
+     ways it goes somewhere: see tullioMood. {rv} is the rival's name, '{rv}' as who speaks is the rival */
+  tullio1: { id: 'tullio1', ask: [{ who: '{rv}', say: ['Però ti ho quasi battuto, eh? Ammettilo.'] }], options: [
+    { id: 'amico', label: 'Bella lotta, {rv}', say: ['…Davvero? Cioè, lo sapevo. Bella lotta anche a te.'] },
+    { id: 'sfotto', label: 'Tutto qui?', say: ['Ridi, ridi. Me la lego al dito.'] }
   ] },
-  tullio2: { id: 'tullio2', ask: [{ who: 'Tullio', say: ['Il nonno dice sempre: «Guarda {hero}». Io sono stufo di guardarti.'] }], options: [
-    { id: 'amico', label: 'Alleniamoci insieme', say: ['Insieme? Nessuno me l\'aveva mai chiesto.', 'Va bene. Ma non dirlo al nonno.'] },
-    { id: 'sfotto', label: 'Salutami il nonno', say: ['…Te ne pentirai, {hero}. Conosco gente.'] }
+  tullio2: { id: 'tullio2', ask: [{ who: '{rv}', say: ['Tutti dicono sempre: «Guarda {hero}». Io sono stuf{rv-a} di guardarti.'] }], options: [
+    { id: 'amico', label: 'Alleniamoci insieme', say: ['Insieme? Nessuno me l\'aveva mai chiesto.', 'Va bene. Ma non dirlo in giro.'] },
+    { id: 'sfotto', label: 'Fatti un altro giro', say: ['…Te ne pentirai, {hero}. Conosco gente.'] }
   ] },
   /* the stones, once Mamurra is beaten: the seal of Telepilo, or the power in Antonio's bag */
   pietre: { id: 'pietre', ask: [

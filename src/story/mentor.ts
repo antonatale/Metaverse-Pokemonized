@@ -67,7 +67,7 @@ export const CHAPTERS: Record<string, Chapter> = {
   'trama-mamurra': { title: 'Il fantasma di Mamurra',
     intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
     done: ['Mamurra è caduto. Formia ti deve un favore.'] },
-  /* the six covi (data/covi.ts): whoever is played meets the other five, in any order; each pin makes the next one harder */
+  /* the seven covi (data/covi.ts): whoever is played meets the other six, in any order; each pin makes the next one harder */
   'covo-palamendola': { title: 'Il covo di Antonio',
     intro: ['Al Palamendola, accanto a Parco la Fontana, Antonio ti aspetta: ha appena letto il paper della settimana.', 'È di tipo Cervello: il Caos gli manda all\'aria i piani.'],
     done: ['Stato dell\'arte. Ogni spilla rende più forti i covi che restano: allenati.'] },
@@ -77,6 +77,9 @@ export const CHAPTERS: Record<string, Chapter> = {
   'covo-circolo': { title: 'Il covo di Forchetta',
     intro: ['Forchetta ti aspetta nei campi coperti del Bruno Zauli. Fuori non gioca mai.', 'È di tipo Calma: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
     done: ['Spilla «Poteva andare peggio». Ogni spilla rende più forti i covi che restano.'] },
+  'covo-morgana': { title: 'Il covo di Claudia',
+    intro: ['Da Morgana, a Mola, Claudia ha il suo tavolo: lì si parla uno alla volta, e chi interrompe cambia tavolo.', 'È di tipo Calma: il Cuore la batte. Ma il primo colpo che le dai vale la metà: Il Padre la protegge.'],
+    done: ['Spilla «Tavoli separati». Anche il Padre, alla fine, ha ascoltato.'] },
   quiz: { title: 'Una sera da Morgana',
     intro: ['Stasera da Morgana, a Mola, c\'è il quiz su Formia. Domande sulla mia città: le so tutte, ma non ti suggerisco. Quasi.'],
     done: ['Ora sai qualcosa in più di Formia. Io ci ho passato le estati migliori, nella mia villa.'] },

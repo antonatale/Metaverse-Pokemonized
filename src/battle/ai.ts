@@ -26,6 +26,10 @@ export function ai(s: BattleState, i: number): string {
       if (id === 'diagnosi' && !hasMod(s, foe, 'defDown')) sc += 5;
       if (id === 'abbaia' && !hasMod(s, foe, 'atkDown')) sc += 8;
       if (id === 'weee') sc += foe.conf ? 0 : 2;
+      /* Claudia: the answer is worth more right after a blow (she moves second, or has just been hit); the Trinità is
+         three blows of the expected one */
+      if (id === 'ascolta' && me.hurtAt === s.turn) sc *= TUNE.ascolta;
+      if (id === 'trinita') sc *= 3;
       if (m.fx && m.fx.foe && !hasMod(s, foe, m.fx.foe)) sc += worthOf(s, i, m.fx.foe) * 0.5;
       if (m.fx && m.fx.self && !hasMod(s, me, m.fx.self)) sc += worthOf(s, i, m.fx.self);
       if (m.fx && m.fx.conf && !foe.conf) sc += 6 * m.fx.conf;
@@ -56,6 +60,10 @@ export function ai(s: BattleState, i: number): string {
         sc = (!lm || zenOn(s, foe) || foe.encore) ? 2 : (lmMove!.kind !== 'atk' ? 22 : 10);
         sc += Math.min(10, missing) * 0.4;
       } else if (id === 'orale') sc = hpF < 0.45 ? 30 : 0;
+      else if (id === 'tavoli') {
+        const lm = foe.lastMove, lmMove = lm ? mv(foe, lm) : null;
+        sc = (!lm || lm === 'copenhagenRet' || zenOn(s, foe) || (foe.banned && foe.banned.until >= s.turn)) ? -10 : (lmMove!.kind === 'atk' ? 14 + (lmMove!.power || 50) * 0.1 : 16);
+      } else if (id === 'cattiva') sc = (foe.astray && foe.astray >= s.turn) || zenOn(s, foe) ? -10 : (foeHp > 35 ? 17 : 5);
     }
     /* a little doubt, so that the computer does not always do the same thing; less in someone who knows the game */
     sc *= s.smart && s.smart[i] ? 0.95 + rand(s) * 0.1 : 0.85 + rand(s) * 0.3;

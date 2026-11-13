@@ -14,7 +14,7 @@ export const GATES: Record<string, Gate> = {
 };
 /** the second city of each one */
 export const SECOND_CITY: Record<FriendId, 'torino' | 'milano'> = {
-  antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'milano', andrea: 'milano'
+  antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'milano', andrea: 'milano', claudia: 'torino'
 };
 /** the gate of a person who stands at one: a train gate is the train of whoever is played */
 export function gateFor(g: string, who: FriendId): Gate { return GATES[g] && GATES[g].city === 'formia' ? GATES[SECOND_CITY[who]] : GATES[g]; }

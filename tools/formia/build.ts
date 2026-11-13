@@ -15,7 +15,9 @@ import { W, H, col, row } from '../../src/data/maps/formia-projection';
 import { PAINT, CLEAR } from './paint';
 import { PLACES, SPOTS, HIDING } from '../../src/data/maps/formia-places';
 import { RAILS, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, WIDEN, SHORE, QUAYS, BEACHFRONT, POND, SEAS, BUOYS, HARBOUR, NETS,
-  TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, type Line, type Rect } from './network';
+  TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, ROWS, PINES, BEDS, ANCHOR, BENCHES, SCOOTERS, FENCES, GATES, CLOSED, KEEP_OPEN,
+  LAND, DARSENA,
+  type Line, type Rect } from './network';
 
 type LL = [number, number];   /* lat, lon */
 type XY = [number, number];   /* a tile */
@@ -172,6 +174,8 @@ for (let pass = 0; pass < 3; pass++) {
   while (q2.length) { const [x, y] = q2.pop()!; if (!inside(x, y) || dry[y][x] || wet[y][x]) continue; dry[y][x] = true; q2.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) sea[y][x] = !dry[y][x];
 }
+/* the port and Mola, where the smoothing took the land away (network.ts, LAND) */
+for (const r of LAND) each(r, (x, y) => { sea[y][x] = false; });
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (sea[y][x]) G[y][x] = '~';
 const isLand = (x: number, y: number) => inside(x, y) && !sea[y][x];
 
@@ -251,6 +255,9 @@ for (const l of PATHS.concat(TRAILS)) walkLine(l, (x, y) => { if (isLand(x, y) &
   if (pieces.length > 1) problems.push('the streets are in ' + pieces.length + ' pieces: ' + pieces.map((c) => c[0].join(',') + ' (' + c.length + ')').join(' '));
 }
 
+/* the little harbour of the Torre di Mola, inside the lungomare (network.ts, DARSENA): its water, the bridge kept */
+for (const r of DARSENA) each(r, (x, y) => { if (isStreet(x, y)) return; sea[y][x] = true; set(x, y, '~'); });
+
 /* the beaches squared to the road behind them: a row of promenade, then sand down to the sea */
 for (const b of BEACHFRONT) for (let x = b.x0; x <= b.x1; x++) {
   if (isLand(x, b.y) && !isStreet(x, b.y)) set(x, b.y, '_');
@@ -291,16 +298,16 @@ const free = (x: number, y: number) => inside(x, y) && !reserved[y][x] && !terra
 /* buildings and gardens stand on open ground, never on a street, a quay or the railway */
 const OPEN = /[.fTiOQ]/;
 const GROUND: Record<string, RegExp> = { land: OPEN, sand: /[:PI]/, sea: /~/, area: OPEN, beach: /[:PI~]/ };
-const STEP_ON = /[.f:_v,=zH7c]/;
+const STEP_ON = /[.f:_v,=zH7c!$]/;
 /** a street, a square, a quay or a promenade: where a door may open */
-const WAY = /[=vz_]/;
+const WAY = /[=vz_!]/;
 interface At { x: number; y: number; w: number; h: number; door?: [number, number] }
 const placed: Record<string, At> = {};
 const misses: string[] = [];
 /** a footpath from the tile in front of a door to the nearest street, square or quay; null when there is none within `limit` */
 function pathToStreet(x: number, y: number, limit: number, draw = true): number | null {
   if (WAY.test(get(x, y))) return 0;
-  const way = cheapest([[x, y]], (gx, gy) => /[=vz_,]/.test(get(gx, gy)) && !foot[gy][gx], (gx, gy) => {
+  const way = cheapest([[x, y]], (gx, gy) => /[=vz_,!]/.test(get(gx, gy)) && !foot[gy][gx], (gx, gy) => {
     if (!isLand(gx, gy) || foot[gy][gx]) return Infinity;
     const g = get(gx, gy);
     if (/[.f:H]/.test(g)) return 1;
@@ -365,6 +372,19 @@ for (const p of PLACES) {
     else if (p.fill === 'beach') { set(x, y, ':'); sea[y][x] = false; }
     else if (p.fill === 'pines') { green[y][x] = true; if (get(x, y) !== ',') set(x, y, noise(x, y, 5) < 0.42 ? 'i' : noise(x, y, 6) < 0.1 ? 'f' : '.'); }
     else if (p.fill === 'field') set(x, y, '.');
+    else if (p.fill === 'parking') {
+      /* the car park of Largo Paone: aisles of asphalt every third row, between them the bays, most of them taken */
+      const r = y - at.y;
+      set(x, y, r % 3 === 0 ? '!' : noise(x, y, 61) < 0.62 && x > at.x && x < at.x + at.w - 1 ? '-' : '$');
+    }
+    else if (p.fill === 'pinetina') {
+      /* the Pinetina of via Abate Tosti: a walk along the top, then bays under the umbrella pines */
+      const r = y - at.y;
+      if (r === 0) set(x, y, '_');
+      else if (r % 3 === 1) set(x, y, '!');
+      else if ((x + (r % 3 === 2 ? 0 : 2)) % 4 === 0) { set(x, y, 'i'); green[y][x] = true; }
+      else set(x, y, noise(x, y, 62) < 0.55 ? '-' : '$');
+    }
     else if (p.fill === 'track') {
       /* an athletics track, its long side down the map: two tiles of tartan around the pitch, round at both ends */
       const r = at.w / 2, u = x + 0.5 - (at.x + r), v = y + 0.5 - (at.y + at.h / 2), half = at.h / 2 - r;
@@ -394,6 +414,57 @@ for (const p of PLACES) {
   const at = placed[p.id];
   if (!at || !at.door || p.on === 'sand') continue;
   if (pathToStreet(at.door[0], at.door[1] + 1, 30) == null) misses.push(p.id + ' (no path to a street)');
+}
+/* by hand, in the squares: the umbrella pines of the lungomare, the flower beds of Largo Paone, the anchor of Mola
+   and its benches (network.ts) */
+for (const [x, y] of PINES) { if (isLand(x, y) && !foot[y][x] && !/[=vzr]/.test(get(x, y))) { set(x, y, 'i'); green[y][x] = true; reserved[y][x] = true; } else problems.push('pine at ' + x + ',' + y + ' on ' + get(x, y)); }
+for (const b of BEDS) each(b, (x, y) => { set(x, y, x === b.x0 && y === b.y0 ? 'T' : noise(x, y, 44) < 0.6 ? 'f' : '.'); green[y][x] = true; squared[y][x] = false; reserved[y][x] = true; });
+set(ANCHOR[0], ANCHOR[1], '8'); reserved[ANCHOR[1]][ANCHOR[0]] = true;
+for (const [x, y] of BENCHES) { set(x, y, 'B'); reserved[y][x] = true; }
+for (const [x, y] of SCOOTERS) { if (get(x, y) === 'v') { set(x, y, ';'); reserved[y][x] = true; } else problems.push('scooter at ' + x + ',' + y + ' on ' + get(x, y)); }
+
+/* ---------- 8b. the cortine: palazzi wall to wall along via Vitruvio and via Abate Tosti (network.ts, ROWS) ---------- */
+interface House { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number; up?: number; look?: string }
+const houses: House[] = [];
+/** a run of n tiles cut into palazzi 2 to 4 wide; never a single tile left over at the end */
+function cut(n: number, seed: number): number[] {
+  const out: number[] = [];
+  for (let left = n, k = 0; left >= 2; k++) {
+    let w = Math.min(left, 2 + Math.floor(noise(seed, k, 52) * 3));
+    if (left - w === 1) w = w < 4 ? w + 1 : w - 1;
+    out.push(w); left -= w;
+  }
+  return out;
+}
+/* behind the tall palazzo of Largo Paone: no house to peek over its roof */
+for (const k of KEEP_OPEN) each(k, (x, y) => { reserved[y][x] = true; });
+for (const r of ROWS) {
+  const h = r.y1 - r.y0 + 1;
+  const buildable = (x: number) => {
+    for (let y = r.y0; y <= r.y1; y++) if (!isLand(x, y) || foot[y][x] || pathed[y][x] || !/[.fTiO_]/.test(get(x, y))) return false;
+    return true;
+  };
+  for (let x = r.x0; x <= r.x1;) {
+    if (!buildable(x)) { x++; continue; }
+    let x1 = x;
+    while (x1 + 1 <= r.x1 && buildable(x1 + 1)) x1++;
+    let bx = x;
+    for (const w of cut(x1 - x + 1, x * 7 + r.y0)) {
+      /* the door in the middle, or where the tile in front of it is open */
+      const cols = Array.from({ length: w }, (_, k) => bx + ((Math.floor(w / 2) + k) % w));
+      const dx = cols.find((cx) => !foot[r.y1 + 1]?.[cx] && STEP_ON.test(get(cx, r.y1 + 1))) ?? cols[0];
+      /* never the same plaster as the palazzo next door (cortina.ts paints six colours, by v % 6) */
+      let v = Math.floor(noise(bx, r.y0, 17) * 1000);
+      const last = houses[houses.length - 1];
+      if (last && last.kind === 'cortina' && last.y === r.y0 && last.x + last.w === bx && last.v % 6 === v % 6) v = (v + 1) % 1000;
+      houses.push({ kind: 'cortina', x: bx, y: r.y0, w, h, door: [dx, r.y1], v, up: r.up, look: noise(bx, r.y0, 53) < r.shops ? 'bottega' : undefined });
+      for (let y = r.y0; y <= r.y1; y++) for (let xx = bx; xx < bx + w; xx++) { foot[y][xx] = true; reserved[y][xx] = true; set(xx, y, '_'); }
+      /* the roof hides whoever stands just above it */
+      for (let a = r.y0 - Math.ceil(r.up - 0.2); a < r.y0; a++) for (let xx = bx; xx < bx + w; xx++) if (inside(xx, a)) roofed[a][xx] = true;
+      bx += w;
+    }
+    x = x1 + 1;
+  }
 }
 /* the Eclipse beach: two rows of umbrellas with their sunbeds, two gazebos, the beach-volley net, and the windsurf
    school on the shore (Nicola Spadea's boards); out at sea, windsurfers and the line of buoys */
@@ -465,7 +536,7 @@ const spots: Record<string, [number, number]> = {};
 /* nobody stands right in front of a door */
 const front = grid(false);
 for (const p of Object.values(placed)) if (p.door && inside(p.door[0], p.door[1] + 1)) front[p.door[1] + 1][p.door[0]] = true;
-const STAND: Record<string, RegExp> = { land: /[.f_v,]/, sand: /[:]/, any: /[.f_v,:]/, sea: /~/ };
+const STAND: Record<string, RegExp> = { land: /[.f_v,!$]/, sand: /[:]/, any: /[.f_v,:!$]/, sea: /~/ };
 for (const s of SPOTS) {
   let tx: number, ty: number;
   if (s.near) {
@@ -481,8 +552,8 @@ for (const s of SPOTS) {
     if (!open(x, y) || !ok.test(get(x, y))) return false;
     /* two ways to reach it, so nothing placed later can shut it in, and it must not shut in a spot placed before */
     const walk = (a: number, b: number) => inside(a, b) && !foot[b][a] && STEP_ON.test(get(a, b));
-    if (N4.filter(([ax, ay]) => walk(x + ax, y + ay)).length < 2) return false;
-    if (N4.some(([ax, ay]) => inside(x + ax, y + ay) && spotted[y + ay][x + ax] && !N4.some(([bx, by]) => (x + ax + bx !== x || y + ay + by !== y) && walk(x + ax + bx, y + ay + by)))) return false;
+    if (s.on !== 'sea' && N4.filter(([ax, ay]) => walk(x + ax, y + ay)).length < 2) return false;
+    if (s.on !== 'sea' && N4.some(([ax, ay]) => inside(x + ax, y + ay) && spotted[y + ay][x + ax] && !N4.some(([bx, by]) => (x + ax + bx !== x || y + ay + by !== y) && walk(x + ax + bx, y + ay + by)))) return false;
     spots[s.id] = [x, y]; reserved[y][x] = true; foot[y][x] = true; spotted[y][x] = true;
     return true;
   });
@@ -499,6 +570,12 @@ for (const id of ['zendavid', 'sign-pineta', 'sign-tomba', 'turista']) {
   if (by && pathToStreet(by[0], by[1], 40) == null) misses.push(id + ' (no path to a street)');
 }
 
+/* the gozzi of the fishermen of Mola, moored along both quays of the little harbour under the tower, bow to the
+   quay; the middle of it is left open, the way in from the sea */
+for (const r of DARSENA) for (let y = r.y0; y <= r.y1; y++) for (const x of [r.x0, r.x1]) {
+  if (r.y1 - r.y0 < 3 || get(x, y) !== '~' || !free(x, y)) continue;
+  if (noise(x, y, 23) < 0.58) set(x, y, '9');
+}
 /* boats moored along the quays of the harbour */
 each(HARBOUR, (x, y) => {
   if (get(x, y) !== '~' || !free(x, y) || !N4.some(([a, b]) => get(x + a, y + b) === '_')) return;
@@ -506,7 +583,6 @@ each(HARBOUR, (x, y) => {
 });
 
 /* ---------- 10. the town around: houses along the streets of every neighbourhood ---------- */
-const houses: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = [];
 /* first the houses with the door right on a street, then the ones a short path away */
 /* first the houses whose door opens on a street, then those a couple of steps from one; last, where a neighbourhood
    says so (far), the ones behind a street, with a little path around them to it */
@@ -563,6 +639,15 @@ each(NETS, (x, y) => {
   if (noise(x, y, 22) < 0.3) set(x, y, 'e');
 });
 
+/* ---------- 11b. Parco la Fontana is closed: the railing, the locked gates (network.ts, FENCES and GATES) ---------- */
+for (const f of FENCES) walkLine({ name: 'cancellata', w: 1, pts: f }, (x, y) => {
+  if (!isLand(x, y) || foot[y][x] || isStreet(x, y)) { problems.push('railing at ' + x + ',' + y + ' on ' + (foot[y][x] ? 'a building' : get(x, y))); return; }
+  set(x, y, '|'); reserved[y][x] = true;
+});
+for (const [x, y] of GATES) { if (foot[y][x] || isStreet(x, y)) problems.push('gate at ' + x + ',' + y + ' on ' + get(x, y)); else { set(x, y, '+'); reserved[y][x] = true; } }
+/* Antonio's back door, on the walk of the park */
+if (spots['porta-parco']) { const [x, y] = spots['porta-parco']; set(x, y, '0'); }
+
 /* ---------- 12. the countryside: olive trees in rows you can walk between, a few lone trees ---------- */
 const nearStreet = (x: number, y: number) => N4.some(([a, b]) => /[=v,r_]/.test(get(x + a, y + b)));
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -597,7 +682,7 @@ for (const h of HIDING) {
   /* what anchors the open ground around it: everything one walks on purpose (streets, paths, stone, sand, tall
      grass), every building with the room around it, every spot. The terraces are left as they are */
   const anchor = grid(false);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) anchor[y][x] = foot[y][x] || reserved[y][x] || /[=vz,_:HEAWuhgSNUdePILYK#7cn]/.test(get(x, y));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) anchor[y][x] = foot[y][x] || reserved[y][x] || /[=vz,_:HEAWuhgSNUdePILYK#7cn!$\-]/.test(get(x, y));
   const far = (x: number, y: number, keep: number) => {
     for (let a = -keep; a <= keep; a++) for (let b = -keep; b <= keep; b++) if (inside(x + b, y + a) && anchor[y + a][x + b]) return false;
     return true;
@@ -620,7 +705,7 @@ for (const h of HIDING) {
     if (foot[y][x]) { if (spotted[y][x]) problems.push(s.name + ': someone stands on the scarp at ' + x + ',' + y); return; }
     set(x, y, s.ch);
   });
-  const stand = (x: number, y: number) => inside(x, y) && !foot[y][x] && /[.f:_v,=zHeEA7c]/.test(get(x, y));
+  const stand = (x: number, y: number) => inside(x, y) && !foot[y][x] && /[.f:_v,=zHeEA7c!$0]/.test(get(x, y));
   for (const [x, y] of LEDGES) {
     if (!/[\^\[]/.test(get(x, y)) || !stand(x, y - 1) || !stand(x, y + 1)) { problems.push('ledge at ' + x + ',' + y + ': no scarp there, or no ground above or below it (' + get(x, y - 1) + get(x, y) + get(x, y + 1) + ')'); continue; }
     set(x, y, 'j');
@@ -636,15 +721,17 @@ for (const h of HIDING) {
       if (inside(u, v) && !seen[v][u] && (stand(u, v) || (u === spots.start[0] && v === spots.start[1]))) { seen[v][u] = true; q.push([u, v]); }
     }
   }
+  const closed = (x: number, y: number) => CLOSED.some((r) => within(r, x, y));
   for (const [id, [x, y]] of Object.entries(spots)) {
+    if (closed(x, y) || SPOTS.some((q) => q.id === id && q.on === 'sea')) continue;
     if (!seen[y][x] && !N4.some(([a, b]) => inside(x + a, y + b) && seen[y + b][x + a]) && !/^selv-(elmo|lamo)$/.test(id)) problems.push(id + ' at ' + x + ',' + y + ' cannot be reached from home');
   }
-  for (const [id, p] of Object.entries(placed)) if (p.door && !seen[p.door[1] + 1]?.[p.door[0]] && !N4.some(([a, b]) => seen[p.door![1] + b]?.[p.door![0] + a])) problems.push('the door of ' + id + ' cannot be reached from home');
+  for (const [id, p] of Object.entries(placed)) if (p.door && !closed(p.door[0], p.door[1] + 1) && !seen[p.door[1] + 1]?.[p.door[0]] && !N4.some(([a, b]) => seen[p.door![1] + b]?.[p.door![0] + a])) problems.push('the door of ' + id + ' cannot be reached from home');
 }
 /* ---------- 13. street lamps: along the streets of the town, on the pavement or the verge, the two sides taking turns ---------- */
 let lamps = 0;
 {
-  const WALK = /[.f:_v,=zHeEA7c]/;
+  const WALK = /[.f:_v,=zHeEA7c!$0]/;
   const walkable = (x: number, y: number) => inside(x, y) && !foot[y][x] && WALK.test(get(x, y));
   /* how many tiles one can walk to from the start: a lamp may never cut anything off */
   const reach = () => {
@@ -696,8 +783,8 @@ fs.writeFileSync(file, '/* Generated by tools/formia/build.ts from OpenStreetMap
   'export const FORMIA_SPOT: Record<string, [number, number]> = ' + JSON.stringify(spots) + ';\n' +
   '/** the mouths of the railway tunnels */\n' +
   'export const FORMIA_TUNNELS: [number, number][] = ' + JSON.stringify(tunnels) + ';\n' +
-  '/** the houses of the town around */\n' +
-  'export const FORMIA_HOUSES: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number }[] = ' + JSON.stringify(houses) + ';\n' +
+  '/** the houses of the town around (the palazzi of the cortine rise `up` tiles over their footprint, a shop below when `look` says so) */\n' +
+  'export const FORMIA_HOUSES: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number; up?: number; look?: string }[] = ' + JSON.stringify(houses) + ';\n' +
   '/** where the wild creatures hide: the middle of each patch of tall grass or rock pools, and how far it goes */\n' +
   'export const FORMIA_HIDING: { id: string; x: number; y: number; r: number }[] = ' + JSON.stringify(hidden) + ';\n');
 console.log('wrote', W + '×' + H, 'tiles to', path.relative(process.cwd(), file), '·', houses.length, 'houses ·', lamps, 'street lamps');

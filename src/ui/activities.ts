@@ -3,6 +3,7 @@ import { activity, record, bestOf, timesDone } from '../story/activities';
 import { sfx } from '../audio';
 import { say, sheet, closeSheet } from './story-screen';
 import { $ } from './dom';
+import { st, save } from '../save/story-progress';
 import { startRun } from './run';
 
 /* The things to do around Formia: offered by someone on the map, played here.
@@ -227,9 +228,17 @@ function windsurf(n: Npc) {
     if (quit) { over = true; cancelAnimationFrame(raf); if (m > 0) record('windsurf', m); }
     document.removeEventListener('keydown', key, true);
     closeSheet();
-    say(m >= 200 ? ['Questo è livello campionato!', 'Domani ti porto al largo, fino a Gianola.']
-      : m >= 60 ? ['Bella planata! Con la termica di Vindicio si vola.', 'La prossima volta lavoriamo sulla strambata.']
-        : ['In acqua! Succede a tutti, anche a me le prime volte.', 'Risali sulla tavola: più tieni la vela, più vai veloce.'], n.name);
+    var said = m >= 200 ? ['Uagliò, questo è livello campionato! Ahahah!', 'Domani ti porto al largo, fino a Gianola.']
+      : m >= 60 ? ['Bella planata! Con la termica di Vindicio si vola. Ahah!', 'La prossima volta lavoriamo sulla strambata.']
+        : ['Ahahah, in acqua! Succede a tutti, anche a me le prime volte.', 'Risali sulla tavola: più tieni la vela, più vai veloce.'];
+    /* the first lesson done, Nicola lends his paddle board: with it the whole gulf can be crossed, creature or not */
+    if (!st.seen.tavola) {
+      st.seen.tavola = true; save(); sfx('found');
+      said = said.concat(['Tie\', il windsurf tienilo tu. Con questo vai al largo quando vuoi, anche senza una creatura che nuota.',
+        'Là fuori ci stanno le boe, le secche, la gente del mare… e qualche bottiglia con dentro un messaggio. Ahahah, vai, vai!',
+        '(Ora puoi entrare in mare dalla riva col windsurf di Nicola.)']);
+    }
+    say(said, n.name);
   });
   draw();
   raf = requestAnimationFrame(frame);

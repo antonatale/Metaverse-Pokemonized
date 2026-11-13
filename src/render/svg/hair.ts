@@ -1,4 +1,4 @@
-import type { CurlsHair, Look, QuiffHair, WavyHair, BuzzHair } from './types';
+import type { LongHair, CurlsHair, Look, QuiffHair, WavyHair, BuzzHair } from './types';
 import { rng, r1, pt, thru, sample, coilPts, litRuns, swirl, mirrorG } from './util';
 
 /* ================= hair ================= */
@@ -160,6 +160,65 @@ export function hairWavy(c: Look): string {
   g += '<g fill="none" stroke-linecap="round" stroke-linejoin="round">' + o + b + h + '</g>';
   s += '<g id="' + P + 'Top">' + g + '</g>';
   s += '<g id="' + P + 'FShadow"><path d="M86 106C104 100 132 102 160 108C176 112 186 118 192 124L186 132C170 122 150 116 130 116C112 116 98 118 84 124Z" fill="' + c.skin.deep + '" opacity=".4" filter="url(#fB3)"/></g>';
+  return s;
+}
+
+/* long hair parted in the middle, soft waves down onto the shoulders: Claudia. The mass behind falls past the shoulders
+   (Back, under the clothes); the locks in front frame the face and come down over the collar (Top, over the clothes) */
+export function hairLong(c: Look): string {
+  var H = c.hair as LongHair, P = c.P, R = rng(H.seed), s = '', bob = !!H.bob;
+  /* long down the back, or a bob cut at the shoulders with the ends turned out */
+  var back = bob ? 'M58 128C52 90 72 44 130 40C188 44 208 90 202 128C204 160 207 190 214 214C220 226 210 238 196 236C188 240 178 238 172 234L88 234C82 238 72 240 64 236C50 238 40 226 46 214C53 190 56 160 58 128Z'
+    : 'M58 128C52 90 72 44 130 40C188 44 208 90 202 128C204 176 210 222 216 266C202 282 178 288 160 282L100 282C82 288 58 282 44 266C50 222 56 176 58 128Z';
+  s += '<g id="' + P + 'Back"><path d="' + back + '" fill="' + H.out + '"/><path d="' + back + '" fill="' + H.fills[2] + '" transform="translate(130 160) scale(.95) translate(-130 -160)"/></g>';
+  /* the crown, from the parting at 130 out to the temples; the two curtains that frame the face and fall over the
+     shoulders: filled masses, outlined once, with fine waving strands inside for the texture */
+  var cap = 'M72 112C66 70 96 42 130 42C164 42 194 70 188 112C182 98 172 86 158 78C146 72 136 64 130 56C124 64 114 72 102 78C88 86 78 98 72 112Z';
+  var curtL = bob ? 'M78 96C64 104 58 130 58 156C58 182 54 202 44 218C40 228 50 236 62 232C72 236 84 234 94 226C94 212 92 198 89 186C85 172 82 158 80 142C79 124 80 110 84 100Z'
+    : 'M78 96C64 104 58 130 58 160C58 196 54 228 46 256C52 266 64 270 74 266C80 268 88 268 96 262C94 244 92 222 90 206C86 190 82 172 80 152C79 132 80 112 84 100Z';
+  var curtR = bob ? 'M182 96C196 104 202 130 202 156C202 182 206 202 216 218C220 228 210 236 198 232C188 236 176 234 166 226C166 212 168 198 171 186C175 172 178 158 180 142C181 124 180 110 176 100Z'
+    : 'M182 96C196 104 202 130 202 160C202 196 206 228 214 256C208 266 196 270 186 266C180 268 172 268 164 262C166 244 168 222 170 206C174 190 178 172 180 152C181 132 180 112 176 100Z';
+  var g = '<clipPath id="' + P + 'LongClip"><path d="' + cap + '"/><path d="' + curtL + '"/><path d="' + curtR + '"/></clipPath>';
+  [cap, curtL, curtR].forEach(function (d) { g += '<path d="' + d + '" fill="' + H.fills[0] + '" stroke="' + H.out + '" stroke-width="2.6" stroke-linejoin="round"/>'; });
+  var lines = '';
+  function wave(ctrl: number[][], amp: number, waves: number, ph: number) {
+    var base = sample(ctrl, 30), pts = [];
+    for (var i = 0; i < base.length; i++) {
+      var p = base[i], q = base[Math.min(base.length - 1, i + 1)], o = base[Math.max(0, i - 1)];
+      var tx = q[0] - o[0], ty = q[1] - o[1], tl = Math.hypot(tx, ty) || 1, t = i / (base.length - 1);
+      var off = amp * Math.sin(ph + t * waves * Math.PI * 2) * (0.3 + 0.7 * t);
+      pts.push([p[0] - ty / tl * off, p[1] + tx / tl * off]);
+    }
+    return thru(pts);
+  }
+  for (var k = 0; k < 26; k++) {
+    var side = k % 2 ? 1 : -1, f = Math.floor(k / 2) / 12, x0 = 130 + side * (3 + f * 8);
+    var ctrl = bob ? [[x0, 46 + f * 6], [130 + side * (26 + f * 28), 62 + f * 8], [130 + side * (44 + f * 14), 104 + f * 6], [130 + side * (48 + f * 22), 154], [130 + side * (46 + f * 30), 196], [130 + side * (56 + f * 30), 230]]
+      : [[x0, 46 + f * 6], [130 + side * (26 + f * 28), 62 + f * 8], [130 + side * (44 + f * 14), 104 + f * 6], [130 + side * (48 + f * 22), 160], [130 + side * (44 + f * 34), 214], [130 + side * (42 + f * 42), 262]];
+    var d0 = wave(ctrl, 3 + R() * 2.4, 2 + R(), R() * 6.28), col = k % 3 === 0 ? H.hi : H.fills[k % H.fills.length];
+    lines += '<path d="' + d0 + '" stroke="' + col + '" stroke-width="' + r1(1.2 + R() * 1.6) + '" opacity="' + (col === H.hi ? '.55' : '.9') + '"/>';
+  }
+  g += '<g clip-path="url(#' + P + 'LongClip)" fill="none" stroke-linecap="round">' + lines + '</g>';
+  /* the shine on the top of the head, and the parting */
+  g += '<path d="M100 62C112 54 122 50 127 50M133 50C140 50 150 54 162 62" fill="none" stroke="' + H.hi + '" stroke-width="5" opacity=".3" filter="url(#fB3)"/>';
+  if (!H.bangs) g += '<path d="M130 44L130 58" stroke="' + H.out + '" stroke-width="1.6" opacity=".7"/>';
+  else {
+    /* the fringe: straight across, down to the brows, its edge a row of soft points; fine strands falling in it */
+    var edge: number[][] = [], n = 13;
+    for (var e = 0; e <= n; e++) { var t = e / n; edge.push([r1(178 - t * 96), r1(112 + Math.sin(t * Math.PI) * 4 + (e % 2 ? 4.2 : 0) + (R() - 0.5) * 1.6)]); }
+    var fr = 'M80 112C78 82 100 56 130 54C160 56 182 82 180 112L' + edge.map(function (q) { return q[0] + ' ' + q[1]; }).join('L') + 'Z';
+    g += '<clipPath id="' + P + 'FringeClip"><path d="' + fr + '"/></clipPath>';
+    g += '<path d="' + fr + '" fill="' + H.fills[1] + '" stroke="' + H.out + '" stroke-width="2.4" stroke-linejoin="round"/>';
+    var fl = '';
+    for (var q = 0; q < 22; q++) {
+      var x = 84 + q * 4.3 + (R() - 0.5) * 2, top = 60 + Math.abs(x - 130) * 0.32;
+      fl += '<path d="M' + r1(x + (130 - x) * 0.18) + ' ' + r1(top) + 'Q' + r1(x - 1 + (R() - 0.5) * 3) + ' ' + r1(top + 30) + ' ' + r1(x + (R() - 0.5) * 2) + ' 122" stroke="' + (q % 4 === 0 ? H.hi : H.fills[q % H.fills.length]) + '" stroke-width="' + r1(1.1 + R() * 1.3) + '" opacity="' + (q % 4 === 0 ? '.45' : '.85') + '"/>';
+    }
+    g += '<g clip-path="url(#' + P + 'FringeClip)" fill="none" stroke-linecap="round">' + fl + '</g>';
+    g += '<path d="M98 74C112 64 124 62 134 62" fill="none" stroke="' + H.hi + '" stroke-width="5" opacity=".22" filter="url(#fB3)"/>';
+  }
+  s += '<g id="' + P + 'Top">' + g + '</g>';
+  s += '<g id="' + P + 'FShadow"><path d="' + (H.bangs ? 'M86 116C100 112 116 112 130 114C144 112 160 112 174 116L172 126C158 120 144 120 130 122C116 120 102 120 88 126Z' : 'M88 108C100 96 116 90 130 88C144 90 160 96 172 108L170 118C158 106 144 100 130 100C116 100 102 106 90 118Z') + '" fill="' + c.skin.deep + '" opacity=".3" filter="url(#fB3)"/></g>';
   return s;
 }
 

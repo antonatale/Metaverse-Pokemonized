@@ -35,8 +35,9 @@ describe('the relief of Formia', () => {
       expect(back && back.length > 2, 'up from under the ledge at ' + x + ',' + y + ' goes round').toBe(true);
     });
   });
-  it('has four belvederi, each with its own view, each reached on foot from home', () => {
-    const views = (m.signs || []).filter((s) => !!s.view);
+  it('has four belvederi, each with its own view, each reached on foot from home (and one more out at sea, on a buoy)', () => {
+    expect((m.signs || []).filter((s) => !!s.view && s.buoy)).toHaveLength(1);
+    const views = (m.signs || []).filter((s) => !!s.view && !s.buoy);
     expect(views.length).toBe(4);
     expect(new Set(views.map((s) => s.view!.id)).size).toBe(4);
     from(m.start[0], m.start[1]);

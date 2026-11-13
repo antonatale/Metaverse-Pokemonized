@@ -39,14 +39,14 @@
   --font-book: "Alegreya", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   /* the city maps: ballpoint on squared paper, coloured with highlighters */
   --m-paper: #f7f6f0; --m-grid: #d5dfee; --m-ink: #1f2c6e; --m-label: #1b1f2e; --m-shadow: rgba(31, 44, 110, .16);
-  --m-grass: #cdeab4; --m-grass2: #9fcf86; --m-path: #f1e6cc; --m-path2: #d8c6a0; --m-road: #cfd4e1; --m-road2: #a9b1c4;
+  --m-grass: #cdeab4; --m-grass2: #9fcf86; --m-grass3: #6fa95a; --m-grass-hi: #e6f6d6; --m-path: #f1e6cc; --m-path2: #d8c6a0; --m-road: #cfd4e1; --m-road2: #a9b1c4;
   --m-sand: #f8e9b0; --m-sand2: #e2c97a; --m-sea: #a7d8f2; --m-sea2: #79bde6; --m-foam: #ffffff;
   --m-wood: #d9a874; --m-wood2: #b58552; --m-stone: #e4dfd2; --m-stone2: #c4bca9; --m-wall: #fffaf0; --m-clay: #e8916a; --m-line: #ffffff;
   --m-roof-a: #ff9a8b; --m-roof-b: #9ec5ff; --m-roof-c: #ffd166; --m-roof-d: #c3a6ff;
   --m-leaf: #86cf7f; --m-leaf2: #5aa860; --m-trunk: #b98a5e; --m-hedge: #77c07a; --m-flower-a: #ff8fc1; --m-flower-b: #ffd166;
-  --m-hill: #bcd8a0; --m-hill2: #93ba7c; --m-rock: #ddd6c8; --m-rock2: #b2a893; --m-olive: #aec69c; --m-track: #ea8f72; --m-far: #d6deee; --m-far2: #b0bed9;
+  --m-hill: #bcd8a0; --m-hill2: #93ba7c; --m-rock: #ddd6c8; --m-rock2: #b2a893; --m-rock3: #8f8572; --m-weed: #6e9b4f; --m-olive: #aec69c; --m-track: #ea8f72; --m-far: #d6deee; --m-far2: #b0bed9;
   /* the facades of Formia: cream, pale yellow, terracotta pink, peach, sea blue; green or brown shutters; striped sun tents */
-  --m-wall-b: #fbe8b8; --m-wall-c: #f7cdb9; --m-wall-d: #f4dec6; --m-wall-e: #dbe7ef; --m-shutter-a: #5f9e6e; --m-shutter-b: #a5714c; --m-tent-a: #e9765f; --m-tent-b: #3f9fc4;
+  --m-wall-b: #fbe8b8; --m-wall-c: #f7cdb9; --m-wall-d: #f4dec6; --m-wall-e: #dbe7ef; --m-wall-f: #f6b9a3; --m-wall-g: #f5cf74; --m-wall-h: #eda57f; --m-shutter-a: #5f9e6e; --m-shutter-b: #a5714c; --m-tent-a: #e9765f; --m-tent-b: #3f9fc4;
   /* the night over Formia, the light of sunset, the warm light of street lamps and windows */
   --m-night: #0b1640; --m-dusk: #ff8a4c; --m-lamp: #ffc96b;
   /* the light of the day on the map (VISIONE.md, V1): the colour of a cast shadow, the sunlit top and the shaded foot of
@@ -65,13 +65,13 @@
     --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
     --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-corrente: #4cc2b5; --t-calore: #f06a4d; --t-cielo: #a2dc7a; --t-corazza: #c9a074; --t-crepuscolo: #8a8bd8; --t-none: #c9d0cc;
     --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
-    --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
+    --m-grass: #2f4a36; --m-grass2: #46694f; --m-grass3: #6a9a72; --m-grass-hi: #3a5a42; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
     --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;
     --m-wood: #6e5238; --m-wood2: #8a6a48; --m-stone: #4e4b45; --m-stone2: #6b675e; --m-wall: #6a6459; --m-clay: #a85f44; --m-line: #e9efe7;
     --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
     --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
-    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
-    --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
+    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-rock3: #3c3933; --m-weed: #4d6e43; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+    --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-wall-f: #7a5650; --m-wall-g: #7a6a42; --m-wall-h: #7a5643; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
     --m-night: #03081a; --m-dusk: #c4602f; --m-lamp: #ffb950; --m-shade: #000000; --m-sunlit: #dfe8ff; --m-glint: #cfe6f2; --m-firefly: #e6ff8a;
     color-scheme: dark;
   }
@@ -82,13 +82,13 @@
   --on-hl: #1b1f2e; --shadow: rgba(0, 0, 0, .45); --btn: #d24638; --on-btn: #ffffff;
   --t-calma: #7cc3ea; --t-caos: #f6964d; --t-cervello: #ad92f6; --t-chiacchiera: #f2d64f; --t-cuore: #f285b6; --t-corrente: #4cc2b5; --t-calore: #f06a4d; --t-cielo: #a2dc7a; --t-corazza: #c9a074; --t-crepuscolo: #8a8bd8; --t-none: #c9d0cc;
   --m-paper: #1e2a26; --m-grid: #2b3934; --m-ink: #dbe4dc; --m-label: #1b1f2e; --m-shadow: rgba(0, 0, 0, .3);
-  --m-grass: #2f4a36; --m-grass2: #46694f; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
+  --m-grass: #2f4a36; --m-grass2: #46694f; --m-grass3: #6a9a72; --m-grass-hi: #3a5a42; --m-path: #4a463d; --m-path2: #6a6455; --m-road: #3a3f47; --m-road2: #555c68;
   --m-sand: #5c5640; --m-sand2: #7c7350; --m-sea: #22465c; --m-sea2: #2f6280; --m-foam: #a9c9d8;
   --m-wood: #6e5238; --m-wood2: #8a6a48; --m-stone: #4e4b45; --m-stone2: #6b675e; --m-wall: #6a6459; --m-clay: #a85f44; --m-line: #e9efe7;
   --m-roof-a: #b8665c; --m-roof-b: #5b78a8; --m-roof-c: #b39445; --m-roof-d: #7f6aad;
   --m-leaf: #4f8a56; --m-leaf2: #3c6e43; --m-trunk: #7a5a3c; --m-hedge: #43734a; --m-flower-a: #d0739c; --m-flower-b: #c9a74f;
-    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
-  --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
+    --m-hill: #2d4733; --m-hill2: #436349; --m-rock: #5a564c; --m-rock2: #7a7363; --m-rock3: #3c3933; --m-weed: #4d6e43; --m-olive: #5c7457; --m-track: #9a5442; --m-far: #2e3c50; --m-far2: #44566f;
+  --m-wall-b: #6f6850; --m-wall-c: #6f5b53; --m-wall-d: #6c6253; --m-wall-e: #59646d; --m-wall-f: #7a5650; --m-wall-g: #7a6a42; --m-wall-h: #7a5643; --m-shutter-a: #3f6b4a; --m-shutter-b: #6e4f38; --m-tent-a: #a3503f; --m-tent-b: #2c6b85;
     --m-night: #03081a; --m-dusk: #c4602f; --m-lamp: #ffb950; --m-shade: #000000; --m-sunlit: #dfe8ff; --m-glint: #cfe6f2; --m-firefly: #e6ff8a;
   color-scheme: dark;
 }

@@ -1,3 +1,4 @@
+import { rivalName, rivalA } from './rival-who';
 import { st } from '../save/story-progress';
 import type { FighterId, FriendId, Move } from '../data/characters';
 import { fighter } from '../data/fighters';
@@ -91,6 +92,8 @@ export function setFirst(id: string) {
 /** the story is told to whoever is being played: {hero} in a line is that one's name. Only the lines spoken to the one
     being played have it; Antonio written in a line is always Antonio himself (his house, his scooter, Marco Antonio) */
 export function heroText(t: string): string {
+  /* the rival of the story too: {rv} its name, {rv-a} the ending of a word that agrees with it */
+  if (t.indexOf('{rv') >= 0) t = t.replace(/\{rv\}/g, rivalName()).replace(/\{rv-a\}/g, rivalA());
   return t.indexOf('{hero}') < 0 ? t : t.replace(/\{hero\}/g, nameOf(firstHuman()));
 }
 /** a friend comes with its first creature; one who joined before there were teams gets it the first time it is played */

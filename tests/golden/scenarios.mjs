@@ -17,16 +17,25 @@ function mulberry(seed) {
 }
 
 /** every battle the golden file covers */
+/* the six friends of the original game: their 2,040 battles keep their seeds, whoever is added after them */
+const FIRST = ['antonio', 'costanzo', 'andrea', 'valentin', 'forchetta', 'zendavid'];
 export function scenarios() {
   const out = [];
   let n = 0;
-  for (const a of ROSTER) for (const b of ROSTER.concat(['esame'])) for (let k = 0; k < 40; k++) {
+  for (const a of FIRST) for (const b of FIRST.concat(['esame'])) for (let k = 0; k < 40; k++) {
     n++;
     out.push({ key: 'cpu ' + a + ' ' + b + ' ' + k, a, b, mode: 'cpu', seed: (n * 2654435761) >>> 0, chooser: k % 3 === 0 ? 'ai' : 'random', safe: a === 'antonio' ? SAFE[k % 3] : [] });
   }
-  for (const a of ROSTER) for (const b of ROSTER) for (let k = 0; k < 10; k++) {
+  for (const a of FIRST) for (const b of FIRST) for (let k = 0; k < 10; k++) {
     n++;
     out.push({ key: 'pvp ' + a + ' ' + b + ' ' + k, a, b, mode: 'pvp', seed: (n * 2654435761) >>> 0, chooser: k % 2 ? 'ai' : 'random', safe: [] });
+  }
+  /* then the battles of whoever came later (Claudia), with seeds that follow on */
+  const later = ROSTER.filter((id) => FIRST.indexOf(id) < 0);
+  for (const a of ROSTER) for (const b of ROSTER.concat(['esame'])) for (let k = 0; k < 20; k++) {
+    if (later.indexOf(a) < 0 && later.indexOf(b) < 0) continue;
+    n++;
+    out.push({ key: 'cpu ' + a + ' ' + b + ' ' + k, a, b, mode: 'cpu', seed: (n * 2654435761) >>> 0, chooser: k % 3 === 0 ? 'ai' : 'random', safe: a === 'antonio' ? SAFE[k % 3] : [] });
   }
   return out;
 }

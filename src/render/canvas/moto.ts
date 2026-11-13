@@ -114,20 +114,28 @@ export function motoRider(cv: HTMLCanvasElement, P: Palette, s: number, dir: Dir
   var S = r.look, sleeve = S.sleeve || S.top;
   /* a walker's picture is 32 px wide, its hips 34 px down: his top half, seated with the hips at (x, y) */
   var torso = function (d: Dir, x: number, y: number) { var img = r.walker[d][0]; c.drawImage(img, 0, 0, 32 * s, 34.5 * s, x - 16, y - 34 + r.bob, 32, 34.5); };
-  var pet = function (x: number, y: number, z: number) { if (r.pet) c.drawImage(r.pet, x - z / 2, y - z + r.bob, z, z); };
+  /* his creature rides with him, holding on to him: its picture's box z px wide, its bottom middle at (x, y) (the
+     picture has a margin around the box, see world-view's creatureImage) */
+  var pet = function (x: number, y: number, z: number) {
+    if (!r.pet) return;
+    var p = (r.pet as HTMLImageElement & { pad?: number }).pad || 0;
+    c.drawImage(r.pet, x - z / 2 - z * p, y - z - z * p + r.bob, z * (1 + 2 * p), z * (1 + 2 * p));
+  };
   if (dir === 'left' || dir === 'right') {
     if (dir === 'right') { c.translate(MOTO_W, 0); c.scale(-1, 1); }
     c.translate(OX, OY + r.bob * 0.5);
     side(c, P, false);
-    pet(32.6, 20.6, 21);
     torso('left', 24.6, 20);
     limb(c, S.pants, 4.6, [[23.4, 20], [17.6, 22.6], [17.4, 28.6]]);
     ell(c, 16.4, 30, 3.3, 1.9); fillStroke(c, S.shoes, ink, 1.2);
+    /* on the seat behind him, its arms round him */
+    pet(34.5, 21.5, 23);
     limb(c, sleeve, 3.6, [[23.4, 12], [17.4, 10.6]]);
     circle(c, 16.6, 10.2, 1.9); fillStroke(c, S.skin, ink, 1.1);
   } else if (dir === 'down') {
     c.translate(OX, OY + r.bob * 0.5);
-    pet(31, 9, 20);
+    /* behind him: its head over his shoulder */
+    pet(34, 4.5, 24);
     torso('down', 22, 19);
     front(c, P);
     [[13.6, 13.4, 11.6], [30.4, 13.4, 32.4]].forEach(function (a) {
@@ -141,7 +149,8 @@ export function motoRider(cv: HTMLCanvasElement, P: Palette, s: number, dir: Dir
     [11.6, 32.4].forEach(function (x) { circle(c, x, 11.5, 1.9); fillStroke(c, S.skin, ink, 1.1); });
     torso('up', 22, 19);
     [[14, 12.6, 11.8], [30, 12.6, 32.2]].forEach(function (a) { limb(c, sleeve, 3.4, [[a[0], a[1]], [a[2], 11.8]]); });
-    pet(31.5, 12, 18);
     back(c, P);
+    /* holding on to his shoulders, on his back (over the top case: it is the one to be seen from behind) */
+    pet(25, 16.5, 21);
   }
 }

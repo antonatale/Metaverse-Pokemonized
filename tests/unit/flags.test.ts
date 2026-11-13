@@ -121,7 +121,8 @@ describe('who says something new', () => {
     st.seen = {}; st.beaten = {};
     expect(linesNow(g).join(' ')).toContain('due facce');
     st.seen['sc-tullio1-amico'] = true;
-    expect(linesNow(g).join(' ')).toContain('Tullio');
+    /* the rival of the story, whoever it is ({rv}: the dialog puts the name in) */
+    expect(linesNow(g).join(' ')).toContain('{rv}');
     expect(linesNow(g).join(' ')).toContain('due facce');
   });
 });

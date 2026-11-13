@@ -1,8 +1,8 @@
 import type { FriendId } from './characters';
 import type { SpeciesId } from './creatures';
 
-/* The covi: our gyms. Each of the six friends has one in Formia, and gives a pin. Whoever is played beats the other
-   five (his own covo is not there for him: story/maps.ts cityCovi) and the train for his second city leaves. Nobody
+/* The covi: our gyms. Each of the seven friends has one in Formia, and gives a pin. Whoever is played beats the other
+   six (his own covo is not there for him: story/maps.ts cityCovi) and the train for his second city leaves. Nobody
    joins the company: a beaten friend stays where he is, and says so. */
 export interface Badge { id: string; name: string; mark: string; color: string }
 export interface Covo {
@@ -44,7 +44,8 @@ export const COVI: Record<string, Covo> = {
       andrea: ['Andrea! Anche tu a Milano, eh? Lì facciamo squadra.', 'Qui però no: i tuoi calcoli contro il mio comizio.'],
       valentin: ['Valentin, qui non si fa festa: si fa politica.', 'Vinci, e stasera ti lascio il palco per un Weee.'],
       forchetta: ['Forchetta, il più formiano di tutti. Il voto di Mola è tuo, lo so.', 'Ma piazza della Vittoria è mia.'],
-      zendavid: ['Zendavid, togli le cuffie: il comizio si ascolta.', 'Le battute le lascio a te. Le parole a me.']
+      zendavid: ['Zendavid, togli le cuffie: il comizio si ascolta.', 'Le battute le lascio a te. Le parole a me.'],
+      claudia: ['Claudia. Diabolica. Ora ti spiego perché hai portato tutti sulla cattiva strada.', 'Prima però si lotta. Poi il dibattito: tre ore, minimo.']
     }
   },
   circolo: {
@@ -59,7 +60,8 @@ export const COVI: Record<string, Covo> = {
       costanzo: ['Costanzo. Qui non si fanno comizi.', 'Si gioca e basta. Dopo, se vuoi, parli tu.'],
       andrea: ['Andrea. Tu fai i calcoli, io tiro.', 'A tennis i dati non bastano. Poteva andare peggio.'],
       valentin: ['Valentin. Prima il set, poi la festa.', 'Contro di te sto calmo. È il mio vantaggio.'],
-      zendavid: ['Zendavid. Lo so, il tuo Cuore con me va forte.', 'Poteva andare peggio. Giochiamo lo stesso.']
+      zendavid: ['Zendavid. Lo so, il tuo Cuore con me va forte.', 'Poteva andare peggio. Giochiamo lo stesso.'],
+      claudia: ['Claudia. Il Padre della Trinità sotto i coperti del Zauli.', 'Poteva andare peggio: almeno tu ascolti prima di colpire.']
     }
   },
   eclipse: {
@@ -74,7 +76,8 @@ export const COVI: Record<string, Covo> = {
       costanzo: ['Costanzo! Un comizio in spiaggia? Weee!', 'Se vinci, il microfono stasera è tuo.'],
       andrea: ['Andrea! I tuoi calcoli col caos non tornano mai.', 'Cambio di programma: si lotta!'],
       forchetta: ['Forchetta… tu sei troppo calmo per me.', 'Proviamo lo stesso: magari stavolta vince la festa.'],
-      zendavid: ['Zendavid! Tu metti la musica, io la festa.', 'Prima però si lotta: chi vince sceglie la canzone.']
+      zendavid: ['Zendavid! Tu metti la musica, io la festa.', 'Prima però si lotta: chi vince sceglie la canzone.'],
+      claudia: ['Il Padre! Weee! Lo Spirito ti saluta.', 'Stasera però la festa la decido io: lotta!']
     }
   },
   pineta: {
@@ -89,7 +92,8 @@ export const COVI: Record<string, Covo> = {
       costanzo: ['Costanzo… lo so, con te parto svantaggiato.', 'Ok. Respira. Metto Stronger e ci provo.'],
       andrea: ['Andrea. Quante probabilità ci sono che tu rida a una mia battuta?', 'Basse, lo so. Bau.'],
       valentin: ['Valentin. Tu la festa, io la musica.', 'Stavolta però si balla al mio ritmo.'],
-      forchetta: ['Forchetta. Tu sei calmo, io sono Zen.', 'Vediamo chi resiste di più. Bau.']
+      forchetta: ['Forchetta. Tu sei calmo, io sono Zen.', 'Vediamo chi resiste di più. Bau.'],
+      claudia: ['Claudia. Lo so, il Cuore batte la Calma. Bau.', 'Facciamo una lotta tranquilla. Cioè, io sono tranquillo.']
     }
   },
   padel: {
@@ -104,7 +108,8 @@ export const COVI: Record<string, Covo> = {
       costanzo: ['Costanzo. Ci vediamo a Milano, poi.', 'Qui però le parole non bastano: io ho i numeri.'],
       valentin: ['Valentin. Sei l\'unica variabile che non riesco a calcolare.', 'Sono già mezzo cucinato. Giochiamo.'],
       forchetta: ['Forchetta. Tennis contro padel: vediamo chi ha il campo migliore.', 'Ho calcolato tutto.'],
-      zendavid: ['Zendavid. Togli le cuffie: ti spiego la strategia.', 'Scherzo, non te la spiego. Al 94%.']
+      zendavid: ['Zendavid. Togli le cuffie: ti spiego la strategia.', 'Scherzo, non te la spiego. Al 94%.'],
+      claudia: ['Claudia, ho calcolato anche le tue risposte punto per punto.', 'Tre colpi della Trinità? Li ho già messi in tabella.']
     }
   },
   palamendola: {
@@ -119,7 +124,26 @@ export const COVI: Record<string, Covo> = {
       andrea: ['Andrea. Due cervelli, un solo Palamendola.', 'Vediamo chi ha il modello migliore.'],
       valentin: ['Valentin. Il caos è l\'unica cosa che i miei modelli non prevedono.', 'Crazy shit. Proviamo lo stesso.'],
       forchetta: ['Forchetta, prima di cominciare: hai visto le mie chiavi?', '…lasciamo stare. Sfida.'],
-      zendavid: ['Zendavid, da Scauri fin qui? Allora sei venuto per lottare.', 'Stato dell\'arte contro Stronger. Sfida.']
+      zendavid: ['Zendavid, da Scauri fin qui? Allora sei venuto per lottare.', 'Stato dell\'arte contro Stronger. Sfida.'],
+      claudia: ['Il Padre al Palamendola! Crazy shit.', 'Il Figlio ha letto un paper nuovo. Vediamo se basta.']
+    }
+  },
+  /* Claudia's covo: the Birreria Morgana, in Mola, at her table. Her crew is the night of Mola: an urchin of the rocks under
+     the tower, a snail of the old walls, an owl of the lane; they grow into creatures of the Calma, as she is */
+  morgana: {
+    name: 'Birreria Morgana', city: 'formia', leader: 'claudia', level: 6, crew: ['riccetto', 'lumacotta', 'civettina'], crewTune: [2, 1, 0, 1, 0],
+    badge: { id: 'tavoli', name: 'Spilla «Tavoli separati»', mark: 'D', color: '#d6403a' },
+    intro: ['Ho capito il tuo punto. Ora senti il mio.', 'Siediti, al tavolo di Morgana si parla. Poi si lotta.'],
+    win: ['Va bene. Ho ascoltato, e hai ragione tu.', 'La spilla è tua. Costanzo direbbe che ti ho portato sulla cattiva strada: tienila lo stesso.'],
+    lose: ['Puoi sentire anche il mio? Adesso sì. Ripassa quando vuoi.'],
+    after: ['Stasera c\'è il quiz: siediti al mio tavolo, se vuoi.'],
+    vs: {
+      antonio: ['Figlio mio. Il Padre ti aspettava.', 'Niente sconti di famiglia: lotta.'],
+      costanzo: ['Costanzo. Lo so cosa pensi di me. Lo dici a tutta Mola.', 'Facciamo così: prima lottiamo, poi parli. Uno alla volta.'],
+      andrea: ['Andrea, so che hai già calcolato tutto.', 'Ma quello che dico io, nei tuoi fogli, non c\'è.'],
+      valentin: ['Lo Spirito! Tu parli poco e dici tanto.', 'Oggi però parliamo con le creature.'],
+      forchetta: ['Forchetta. Il più formiano di tutti, nella mia Mola.', 'Calma contro calma: vince chi ascolta meglio.'],
+      zendavid: ['Zendavid, togli un attimo le cuffie: ti conviene sentirmi.', 'Il tuo Cuore con me va forte, lo so. Proviamo lo stesso.']
     }
   }
 };

@@ -3,7 +3,7 @@ import { GAME_NAME } from '../data/growth';
 import { fighter } from '../data/fighters';
 import { SLOTS, slotNow, useSlot, peekSlot, eraseSlot, startAs, putSlot, st, trouble, backupOf, type StoryProgress } from '../save/story-progress';
 import { toCode, fromCode } from '../save/transfer';
-import { ROSTER, CHARS, type FriendId } from '../data/characters';
+import { ROSTER, CHARS, NEW_FRIENDS, type FriendId } from '../data/characters';
 import { HOMES } from '../data/people';
 import { COVI } from '../data/covi';
 import { GATES, SECOND_CITY } from '../data/gates';
@@ -245,7 +245,7 @@ function enter(n: number) {
   sfx('click');
   WORLD.open();
 }
-/** a new story: who are you? The six, each from his home, each toward his city */
+/** a new story: who are you? The seven, each from home, each toward a city; whoever joined lately says NEW */
 function choose(n: number) {
   sfx('click');
   $('ti-menu').hidden = true;
@@ -254,9 +254,10 @@ function choose(n: number) {
   el.innerHTML = '<div class="ti-sl-h"><h2 id="ti-sl-t">Storia ' + n + ': chi sei?</h2><button class="ti-btn small" type="button" id="ti-back">Indietro</button></div>' +
     '<div class="ti-heroes">' + ROSTER.map(function (id) {
       const c = CHARS[id], G0 = GATES[SECOND_CITY[id]];
-      return '<button class="ti-hero" type="button" data-hero="' + id + '" style="--tc:' + tc(id) + '"><span class="ti-hero-art">' + bust(id, 'smirk', '', '0 6 260 294') + '</span>' +
+      const fresh = NEW_FRIENDS.indexOf(id) >= 0;
+      return '<button class="ti-hero' + (fresh ? ' is-new' : '') + '" type="button" data-hero="' + id + '" style="--tc:' + tc(id) + '">' + (fresh ? '<span class="ti-hero-new" aria-label="Nuovo personaggio">NEW</span>' : '') + '<span class="ti-hero-art">' + bust(id, 'smirk', '', '0 6 260 294') + '</span>' +
         '<b>' + esc(c.name) + '</b><small class="ti-hero-nick">' + esc(c.nick !== c.name ? c.nick : c.full) + '</small>' +
-        '<span class="ti-hero-home">Vive a: ' + esc(HOMES[id]) + '</span><span class="ti-hero-home">Il suo covo: ' + esc(Object.keys(COVI).map(function (k) { return COVI[k]; }).filter(function (c) { return c.leader === id; }).map(function (c) { return c.name; })[0] || '—') + '</span><span class="ti-hero-city">Poi: ' + esc(G0.station) + '</span></button>';
+        '<span class="ti-hero-home">Vive a: ' + esc(HOMES[id]) + '</span><span class="ti-hero-home">Il suo covo: ' + esc(Object.keys(COVI).map(function (k) { return COVI[k]; }).filter(function (c) { return c.leader === id; }).map(function (c) { return c.name; })[0] || '—') + '</span><span class="ti-hero-city">Poi: ' + esc(G0.station) + '</span>' + (fresh ? '<span class="ti-hero-tag">' + esc(c.tagline) + '</span>' : '') + '</button>';
     }).join('') + '</div>';
   el.hidden = false;
   $('ti-back').addEventListener('click', function () { sfx('click'); menu(); });

@@ -2,10 +2,11 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
 import type { FriendId } from '../data/characters';
-import { mover, parity, STEP, gear } from '../story/movement';
+import { mover, parity, STEP, gear, van } from '../story/movement';
+import { vanSprite, VAN_W, VAN_H } from './canvas/van';
 import { motoParked, motoRider, MOTO_W, MOTO_H } from './canvas/moto';
 import type { PersonLook } from './canvas/walkers';
 import type { Dir } from '../data/maps/types';
@@ -20,6 +21,7 @@ import { cicero, mamurra } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
 import { FORMIA_AT, FORMIA_SPOT } from '../data/maps/formia-ground';
+import { BOTTLES } from '../data/maps/formia';
 import { reduced } from '../ui/dom';
 import { rich } from '../ui/gfx';
 import { shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
@@ -34,11 +36,19 @@ type Walker = Record<string, HTMLCanvasElement[]>;
 /** something drawn in the sorted pass: a still picture, or a person (walker frames, facing, frame) */
 interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d?: string; f?: number; img?: HTMLImageElement; glow?: string; alpha?: number; size?: number; z?: number;
   /** a walker's little hop at each step (px), and how much it breathes standing still (its height, around 1) */
-  hop?: number; breath?: number }
+  hop?: number; breath?: number;
+  /** Antonio, his creature, his scooter: shown through what hides them (see drawSorted) */
+  me?: boolean;
+  /** a creature walking: how far it rocks (radians) and how tall it is for a moment (around 1) */
+  tilt?: number; sq?: number;
+  /** out at sea: in the water to the waist, standing on a paddle board, sitting in a gozzo (with its colour) */
+  float?: 'swim' | 'sup' | 'boat' | 'windsurf' }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null;
   /** the light and the wind (render/atmosphere.ts): how much it leans in the wind; the block that casts its shadow (a
       building), or none when it floats; the same picture without the light on it, to find its windows at night */
-  sway?: number; box?: Caster['box']; afloat?: boolean; flat?: () => Sprite }
+  sway?: number; box?: Caster['box']; afloat?: boolean; flat?: () => Sprite;
+  /** thin over the street (lights on a wire): it does not count as hiding Antonio */
+  thin?: boolean }
 /** a light of the night, in map px: a soft circle of radius r, with a warm glow (warm) and maybe a bright bulb */
 interface Light { x: number; y: number; r: number; a: number; warm: number; bulb?: [number, number] }
 
@@ -51,9 +61,14 @@ var cache: { map: string | null; theme: string; chunks: Record<string, HTMLCanva
 var walkers: Record<string, Walker> = {}, sprites: Record<string, Sprite> = {};
 /* how far above its footprint each kind of thing is drawn */
 const UP = HEIGHT;
-var UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'], SAILS = ['#ff8a3c', '#3f9fc4', '#e9765f', '#57c968', '#ffd166'];
+/** how far a building is drawn above its footprint, in px: its own `up` (the palazzi of the cortine), or its kind's */
+function upOf(b: { kind: string; up?: number }) { return b.up != null ? b.up * T : UP[b.kind] || T; }
+var SCOOTERS = ['#5b8fd9', '#e86a5c', '#fffdf6', '#57c968', '#ffd166', '#3c4658', '#ff8fc1'], GOZZI = ['#3f7ccf', '#ffffff', '#2c9a55', '#e9765f', '#ffd166', '#8fd0f6'], CARS = ['#e86a5c', '#5b8fd9', '#fffdf6', '#3c4658', '#ffd166', '#9aa3b2', '#57c968', '#b03a48'], UMBRELLAS = ['#ff8fc1', '#8fd0f6', '#ffd166'], BOATS = ['#ffffff', '#ffe9a8'], SAILS = ['#ff8a3c', '#3f9fc4', '#e9765f', '#57c968', '#ffd166'];
 function themeKey() { return getComputedStyle(document.documentElement).getPropertyValue('--m-paper').trim() + '|' + RS; }
 /* the tall still things of a map, sorted by their bottom edge (the ground is painted in pieces, see chunk) */
+/** a bottle adrift, drawn once */
+var bottleSpr: Sprite | null = null, bottleRS = 0;
+function bottleSprite(rs: number): Sprite { if (!bottleSpr || bottleRS !== rs) { bottleSpr = paintObject('bottle', P, rs, { up: UP.bottle }); bottleRS = rs; } return bottleSpr; }
 function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   var items: SceneItem[] = [], spr: Record<string, Sprite> = {};
   var add = function (x: number, yb: number, sp: Sprite, bob?: boolean, glide?: number, lit?: boolean): SceneItem {
@@ -62,23 +77,24 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
     return it;
   };
   /* a block casts the shadow of its footprint, as high as it stands over it (and a little more: its front has a height too) */
-  var block = function (x: number, y: number, w: number, h: number, kind: string) { return { x: x * T, y: y * T, w: w * T, h: h * T, up: (UP[kind] || T) + T * 0.45 }; };
+  var block = function (x: number, y: number, w: number, h: number, kind: string, up?: number) { return { x: x * T, y: y * T, w: w * T, h: h * T, up: (up != null ? up : UP[kind] || T) + T * 0.45 }; };
   for (var y = 0; y < m.h; y++) for (var x = 0; x < m.w; x++) {
     var L = m.cell(x, y);
     if (!L.obj) continue;
     var sail = L.obj === 'board' || L.obj === 'windsurf';
-    var color = L.obj === 'umbrella' ? UMBRELLAS[(x + y) % 3] : L.obj === 'boat' ? BOATS[(x + y) % 2] : sail ? SAILS[(x * 3 + y) % SAILS.length] : null, k = L.obj + (color || '');
+    var color = L.obj === 'car' ? CARS[Math.floor(hash(x, y, 41) * CARS.length)] : L.obj === 'scooter' ? SCOOTERS[Math.floor(hash(x, y, 47) * SCOOTERS.length)] : L.obj === 'umbrella' ? UMBRELLAS[(x + y) % 3] : L.obj === 'boat' ? BOATS[(x + y) % 2] : L.obj === 'gozzo' ? GOZZI[Math.floor(hash(x, y, 43) * GOZZI.length)] : sail ? SAILS[(x * 3 + y) % SAILS.length] : null, k = L.obj + (color || '');
     if (!spr[k]) spr[k] = volume(paintObject(L.obj, P0, s, { color: color, up: UP[L.obj] }), P0);
     /* the windsurfers glide back and forth across the bay */
-    var it = add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
+    var it = add(x * T, (y + 1) * T, spr[k], L.obj === 'boat' || L.obj === 'gozzo' || L.obj === 'windsurf', L.obj === 'windsurf' ? 3 : 0);
     it.sway = SWAY[L.obj] || 0; it.afloat = L.g === 'sea';
   }
   (m.buildings || []).forEach(function (b) {
     /* at night the windows light up: in every place, and in most of the houses */
     var lit = b.id.indexOf('casa-') !== 0 || hash(b.x, b.y, 7) < 0.7;
-    var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: UP[b.kind] || T, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v }); };
+    var up = upOf(b);
+    var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: up, x: b.x, doorX: b.door[0], label: b.label, roof: b.roof, awning: b.awning, v: b.v, look: b.look }); };
     var it = add(b.x * T, (b.y + b.h) * T, volume(paint(), P0), false, 0, lit);
-    it.box = block(b.x, b.y, b.w, b.h, b.kind); it.flat = paint;
+    it.box = block(b.x, b.y, b.w, b.h, b.kind, b.up != null ? up : undefined); it.flat = paint;
   });
   (m.objects || []).forEach(function (o) {
     var it = add(o.x * T, (o.y + o.h) * T, volume(paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), P0), o.bob);
@@ -86,9 +102,22 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
     if (o.w * o.h > 2) it.box = block(o.x, o.y, o.w, o.h, o.kind);
     it.afloat = !!o.bob || m.cell(o.x, o.y).g === 'sea';
   });
+  /* the lights across a lane: their foot just past the lane, so that whoever walks there passes under them */
+  (m.festoons || []).forEach(function (f) {
+    var raw = paintObject('festoon', P0, s, { w: f.x1 - f.x0 + 1, h: 1, up: UP.festoon });
+    var it = add(f.x0 * T, (f.y + 1) * T + 2, volume(raw, P0), false, 0, true);
+    it.thin = true; it.flat = function () { return raw; };
+  });
   if (m.signs && m.signs.length) {
-    var sg = volume(paintObject('sign', P0, s, {}), P0), pl = volume(paintObject('plate', P0, s, {}), P0), vw = volume(paintObject('viewer', P0, s, {}), P0);
-    m.signs.forEach(function (g) { if (!g.quiet) add(g.x * T, (g.y + 1) * T, g.view ? vw : g.plate ? pl : sg); });
+    var sg = volume(paintObject('sign', P0, s, {}), P0), vw = volume(paintObject('viewer', P0, s, {}), P0), by: Record<string, Sprite> = {};
+    m.signs.forEach(function (g) {
+      if (g.quiet) return;
+      /* a buoy out at sea: white for the bathing waters, yellow on the shoals, red in the middle of the gulf */
+      if (g.buoy) { var bc = g.view ? '#e9765f' : g.text[0].indexOf('gialla') >= 0 ? '#ffd166' : '#ffffff'; add(g.x * T, (g.y + 1) * T, by[bc] || (by[bc] = volume(paintObject('buoy', P0, s, { color: bc, up: UP.buoy }), P0)), true).afloat = true; return; }
+      /* a plate with the name of its street on it, three tiles wide around its pole */
+      if (g.plate) { var nm = g.text[0].replace(/\.$/, ''); add((g.x - 1) * T, (g.y + 1) * T, by['plate:' + nm] || (by['plate:' + nm] = volume(paintObject('streetPlate', P0, s, { w: 3, h: 1, label: nm, up: UP.streetPlate }), P0))); return; }
+      add(g.x * T, (g.y + 1) * T, g.view ? vw : sg);
+    });
   }
   items.sort(function (a, b) { return a.yb - b.yb; });
   return items;
@@ -149,16 +178,79 @@ function exhaust(c: CanvasRenderingContext2D, now: number, pp: { x: number; y: n
 }
 /* the wild creatures on the map: their battle picture, as an image (it loads once, and until then they are not drawn) */
 var monImg: Partial<Record<SpeciesId, { img: HTMLImageElement; ok: boolean }>> = {};
+/** a creature's picture has a margin around the box it is drawn in: this much of the box, on each side */
+const PAD = 0.12;
+type PaddedImage = HTMLImageElement & { pad?: number };
+/** draws a creature's picture with its box at (x, y), z × zh px: the margin around it falls outside */
+function drawMon(c: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, z: number, zh?: number) {
+  var p = (img as PaddedImage).pad || 0, h = zh || z;
+  c.drawImage(img, x - z * p, y - h * p, z * (1 + 2 * p), h * (1 + 2 * p));
+}
 function creatureImage(sp: SpeciesId): HTMLImageElement | null {
   var m = monImg[sp];
   if (!m) {
     var img = new Image(), entry = { img: img, ok: false };
     monImg[sp] = entry;
     img.onload = function () { entry.ok = true; };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(creature(sp, 'smirk', '', '0 0 200 200', 'smirk'));
+    /* painted with a margin around its 200 × 200 box (PAD of it on each side), so that a dragon's wings are not cut */
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(creature(sp, 'smirk', '', (-PAD * 200) + ' ' + (-PAD * 200) + ' ' + (200 + PAD * 400) + ' ' + (200 + PAD * 400), 'smirk'));
+    (img as PaddedImage).pad = PAD;
     return null;
   }
   return m.ok ? m.img : null;
+}
+/* ---------- Nicola's van, and Nicola walking with the player ----------
+   The van is drawn where it drives (story/movement.ts van): with the player in it, in the player's place (the camera
+   follows it); coming up the street, on its own; parked (st.van), empty, where it stopped. */
+var vanSprites: Record<string, Sprite> = {}, vanN = 0;
+function vanDrawn(now: number, x: number, y: number, dir: Dir, driver: boolean, rider: boolean, moving: boolean): Drawn {
+  var laugh = driver && moving && !reduced && Math.floor(now / 1300) % 4 === 0, bob = moving && !reduced ? Math.round(Math.sin(now / 50) * 2) / 4 : 0;
+  var k = dir + (driver ? 'd' : '') + (rider ? 'r' + firstHuman() : '') + (laugh ? 'l' : '') + bob + '@' + RS;
+  if (!vanSprites[k]) {
+    if (++vanN > 60) { vanSprites = {}; vanN = 0; }
+    vanSprites[k] = { cv: vanSprite(P || palette(), RS, dir, driver ? LOOKS.nicola : null, rider ? lookFor(firstHuman() as FriendId) : null, laugh, bob), w: VAN_W, h: VAN_H, up: VAN_H - T };
+  }
+  return { yb: y + T + 0.5, x: x - (VAN_W - T) / 2, spr: vanSprites[k] };
+}
+function vanNow(now: number, pp: { x: number; y: number }): Drawn | null {
+  if (van) {
+    if (van.carry) return Object.assign(vanDrawn(now, pp.x, pp.y, van.dir, true, true, !!mover), { me: true });
+    var t = van.dur ? Math.min(1, (now - van.t0) / van.dur) : 1;
+    return vanDrawn(now, (van.fx + (van.x - van.fx) * t) * T, (van.fy + (van.y - van.fy) * t) * T, van.dir, true, false, t < 1);
+  }
+  var v = st.van;
+  if (!v || v.map !== M.id || M.inside) return null;
+  return vanDrawn(now, v.x * T, v.y * T, v.dir, false, false, false);
+}
+/* Nicola walks behind: in the tile the creature has just left (or the player, when there is no creature with him). He
+   stays out of houses, and off the scooter: back outside, or down from it, he is put behind again */
+var comp: { map: string; x: number; y: number; fx: number; fy: number; t0: number } | null = null, compStep = -1, trail: [number, number][] = [];
+function placeComp() {
+  var f = fol && fol.map === M.id ? [fol.x, fol.y] : null, v = DV[st.dir];
+  /* beside the player first (in sight), then behind; never where the van or a roof would hide him */
+  var around: [number, number][] = [[st.x + 1, st.y], [st.x - 1, st.y], [st.x - v[0], st.y - v[1]], [st.x + 1, st.y + 1], [st.x - 1, st.y + 1], [st.x, st.y + 1], [st.x - v[0] * 2, st.y - v[1] * 2], [st.x, st.y - 1]];
+  /* at sea he sails on the water beside the player */
+  var free = function (c: [number, number]) { return moveMode.swim ? isSea(M, c[0], c[1]) && !M.people.some(function (p) { return p.x === c[0] && p.y === c[1]; }) : !blocked(M, c[0], c[1]) && !M.at[key(c[0], c[1])]; };
+  var at = around.filter(function (c) { return free(c) && !(f && f[0] === c[0] && f[1] === c[1]); })[0] || [st.x, st.y];
+  comp = { map: M.id, x: at[0], y: at[1], fx: at[0], fy: at[1], t0: 0 }; trail = [];
+}
+/** where Nicola is standing, when he walks with the player, for talking to him */
+export function companionAt(): [number, number] | null { return comp && st.companion && comp.map === M.id && !M.inside && !st.sella && !van ? [comp.x, comp.y] : null; }
+var compN = 0;
+function companion(now: number): Drawn | null {
+  if (st.companion !== 'nicola' || M.inside || st.sella || van) { comp = null; return null; }
+  if (!comp || comp.map !== M.id || (!mover && Math.abs(comp.x - st.x) + Math.abs(comp.y - st.y) > 3)) placeComp();
+  var c = comp!;
+  if (mover && mover.t0 !== compStep) {
+    compStep = mover.t0; compN++;
+    trail.unshift([mover.fx, mover.fy]); trail.length = Math.min(trail.length, 3);
+    var to = leadCreature() ? trail[1] : trail[0];
+    if (to && (to[0] !== c.x || to[1] !== c.y)) { c.fx = c.x; c.fy = c.y; c.x = to[0]; c.y = to[1]; c.t0 = mover.t0; }
+  }
+  var t = Math.min(1, (now - c.t0) / STEP), going = t < 1 && !reduced, d = c.x > c.fx ? 'right' : c.x < c.fx ? 'left' : c.y < c.fy ? 'up' : c.y > c.fy ? 'down' : st.dir;
+  var wx = (c.fx + (c.x - c.fx) * t) * T, wy = (c.fy + (c.y - c.fy) * t) * T, wet = isSea(M, c.x, c.y);
+  /* on the water he is on his own windsurf */
+  return { yb: wy + T, x: wx, y: wy, w: walkerFor({ look: 'nicola' }, RS), d: d, f: going && !wet ? 1 + (compN & 1) : 0, hop: going && !wet ? stepHop(t) : 0, float: wet ? 'windsurf' : undefined, breath: going || reduced ? 1 : 1 + 0.014 * Math.sin(now / 760 + 2) };
 }
 /* the ghost of Cicero appears near Antonio, a little behind him, see-through, only while he has something to say
    (ciceroShown fades him in and out) */
@@ -186,7 +278,7 @@ function mamurraImage(): HTMLImageElement | null {
 }
 /* Antonio's creature walks behind him: at each of his steps it moves to the tile he has just left. After a door,
    a warp or a scooter ride it is put behind him again */
-var fol: { map: string; x: number; y: number; fx: number; fy: number; t0: number } | null = null, folStep = -1;
+var fol: { map: string; x: number; y: number; fx: number; fy: number; t0: number } | null = null, folStep = -1, folN = 0;
 function placeBehind() {
   var v = DV[st.dir], around: [number, number][] = [[st.x - v[0], st.y - v[1]], [st.x, st.y + 1], [st.x - 1, st.y], [st.x + 1, st.y], [st.x, st.y - 1]];
   var at = around.filter(function (c) { return !blocked(M, c[0], c[1]) && !M.at[key(c[0], c[1])]; })[0] || [st.x, st.y];
@@ -202,15 +294,19 @@ function follower(now: number): Drawn | null {
   if (!fol || fol.map !== M.id || (!mover && Math.abs(fol.x - st.x) + Math.abs(fol.y - st.y) > 2)) placeBehind();
   var f = fol!;
   if (mover && mover.t0 !== folStep) {
-    folStep = mover.t0;
+    folStep = mover.t0; folN++;
     /* stepping off the scooter leaves it on the tile behind him: the creature jumps down beside it */
     var pm = moto();
     if (pm.map === M.id && pm.x === mover.fx && pm.y === mover.fy) { placeBehind(); f = fol!; }
     else { f.fx = f.x; f.fy = f.y; f.x = mover.fx; f.y = mover.fy; f.t0 = mover.t0; }
   }
-  var t = Math.min(1, (now - f.t0) / STEP), hop = reduced || t >= 1 ? 0 : Math.sin(t * Math.PI) * 3;
+  var t = Math.min(1, (now - f.t0) / STEP), going = !reduced && t < 1, hop = going ? Math.sin(t * Math.PI) * 3 : 0;
+  /* it walks with him: at each step it rocks onto the other foot (one way at one step, the other way at the next),
+     and lands with a little squash; standing, it breathes */
+  var side = folN & 1 ? 1 : -1, tilt = going ? side * 0.13 * Math.sin(t * Math.PI) : 0;
+  var sq = going ? 1 + 0.05 * Math.sin(t * Math.PI) - (t > 0.8 ? 0.07 * Math.sin((t - 0.8) / 0.2 * Math.PI) : 0) : reduced ? 1 : 1 + 0.02 * Math.sin(now / 520);
   /* just behind Antonio when they are on the same row; a little smaller than a wild one, so that it does not hide him */
-  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img, z: FOLLOWER, glow: MAGIC[SPECIES[idOf(uid!) as SpeciesId].type].col };
+  return { yb: (f.fy + (f.y - f.fy) * t + 1) * T - 0.25 - hop, x: (f.fx + (f.x - f.fx) * t) * T, img: img, z: FOLLOWER, glow: MAGIC[SPECIES[idOf(uid!) as SpeciesId].type].col, tilt: tilt, sq: sq };
 }
 function itemSprite(kind: string, s: number): Sprite {
   var id = kind + '@' + s;
@@ -231,19 +327,94 @@ function exclaim(c: CanvasRenderingContext2D, x: number, y: number, t: number) {
   c.restore();
 }
 /* draws the sorted items and the moving things in one pass, so people walk behind trees and roofs */
+/* ---------- out at sea: who swims, who paddles, who sits in a gozzo (Antonio too, with Nicola's board) ---------- */
+var ROWBOAT = ['#3f7ccf', '#ffffff', '#2c9a55', '#e9765f'];
+/** what is under someone afloat, before him: the board, the back of the boat */
+function floatUnder(c: CanvasRenderingContext2D, e: Drawn) {
+  var cx = e.x + T / 2, by = e.yb - 4;
+  if (e.float === 'windsurf') {
+    /* Nicola's windsurf: a white board with a blue stripe, its wake, and the sail behind (drawn over him, see below) */
+    var go = e.d === 'left' ? -1 : 1, side = e.d === 'left' || e.d === 'right';
+    c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.ellipse(cx - go * 4, by + 1, side ? 24 : 15, side ? 5 : 8, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.ellipse(cx, by, side ? 21 : 9, side ? 4.6 : 13, 0, 0, Math.PI * 2); c.fillStyle = '#fbfbf7'; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.4; c.stroke();
+    c.strokeStyle = '#1f7fb5'; c.lineWidth = 1.6; c.beginPath(); if (side) { c.moveTo(cx - 16, by); c.lineTo(cx + 16, by); } else { c.moveTo(cx, by - 10); c.lineTo(cx, by + 10); } c.stroke();
+    if (!side || e.d === 'up') sail(c, cx, by, e.d === 'up' ? 1 : -1, false);
+  } else if (e.float === 'sup') {
+    c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.ellipse(cx, by + 1, 21, 5, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.ellipse(cx, by, 19, 4.6, 0, 0, Math.PI * 2); c.fillStyle = '#ffd166'; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.4; c.stroke();
+    c.strokeStyle = '#e9765f'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(cx - 15, by); c.lineTo(cx + 15, by); c.stroke();
+  } else if (e.float === 'boat') {
+    var col = ROWBOAT[Math.floor(hash(Math.round(e.x / T), Math.round(e.yb / T), 47) * ROWBOAT.length)];
+    c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.ellipse(cx, by + 3, 25, 7, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.ellipse(cx, by - 4, 23, 8, 0, Math.PI, Math.PI * 2); c.lineTo(cx + 23, by - 4); c.fillStyle = P.wood; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.3; c.stroke();
+    c.fillStyle = col; c.beginPath(); c.ellipse(cx, by - 4, 23, 7, 0, 0, Math.PI); c.fill();
+  }
+}
+/** the sail of a windsurf: the mast, the boom held in both hands, the sail in red and yellow, swelling with the wind */
+function sail(c: CanvasRenderingContext2D, cx: number, by: number, go: number, front: boolean) {
+  var mx = cx + go * 7, top = by - 50, puff = reduced ? 0 : Math.sin(performance.now() / 420) * 1.5;
+  c.beginPath(); c.moveTo(mx, by - 2); c.lineTo(mx, top); c.quadraticCurveTo(mx + go * (22 + puff), top + 22, mx + go * 20, by - 8); c.closePath();
+  c.fillStyle = front ? 'rgba(226,58,79,.92)' : '#e23a4f'; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.4; c.stroke();
+  c.beginPath(); c.moveTo(mx, top + 14); c.quadraticCurveTo(mx + go * (14 + puff), top + 26, mx + go * 16, by - 14); c.lineTo(mx, by - 10); c.closePath(); c.fillStyle = '#ffd166'; c.fill();
+  c.strokeStyle = P.ink; c.lineWidth = 2; c.beginPath(); c.moveTo(mx, by - 2); c.lineTo(mx, top); c.stroke();
+  c.strokeStyle = '#3a3f55'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(mx - go * 6, by - 24); c.lineTo(mx + go * 14, by - 22); c.stroke();
+}
+/** what is in front of someone afloat, over his legs: the water to the waist, the paddle, the side of the boat */
+function floatOver(c: CanvasRenderingContext2D, e: Drawn) {
+  var cx = e.x + T / 2, by = e.yb - 4, wv = reduced ? 0 : Math.sin(performance.now() / 300 + e.x) * 1.5;
+  if (e.float === 'windsurf') { if (e.d === 'left' || e.d === 'right') sail(c, cx, by, e.d === 'left' ? 1 : -1, true); else if (e.d === 'down') sail(c, cx, by, 1, true); return; }
+  if (e.float === 'swim') {
+    c.save(); c.globalAlpha = 0.92 * (c.globalAlpha || 1); c.fillStyle = P.sea;
+    c.beginPath(); c.ellipse(cx, by - 3 + wv, T * 0.58, T * 0.34, 0, 0, Math.PI * 2); c.fill(); c.restore();
+    c.strokeStyle = P.foam; c.lineWidth = 2; c.beginPath(); c.ellipse(cx, by - 9 + wv, T * 0.5, T * 0.16, 0, 0, Math.PI * 2); c.stroke();
+  } else if (e.float === 'sup') {
+    /* the paddle, held across, its blade in the water */
+    c.strokeStyle = P.wood2; c.lineWidth = 2; c.beginPath(); c.moveTo(cx + 9, by - 26); c.lineTo(cx + 15, by + 2); c.stroke();
+    c.beginPath(); c.ellipse(cx + 15.5, by + 3, 2.4, 4, 0.2, 0, Math.PI * 2); c.fillStyle = P.wood2; c.fill();
+  } else if (e.float === 'boat') {
+    var col = ROWBOAT[Math.floor(hash(Math.round(e.x / T), Math.round(e.yb / T), 47) * ROWBOAT.length)];
+    c.beginPath(); c.moveTo(cx - 25, by - 8); c.quadraticCurveTo(cx, by + 9, cx + 25, by - 8); c.quadraticCurveTo(cx, by - 1, cx - 25, by - 8); c.closePath();
+    c.fillStyle = col; c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.5; c.stroke();
+    c.strokeStyle = col === '#ffffff' ? '#3f7ccf' : '#ffffff'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(cx - 20, by - 5); c.quadraticCurveTo(cx, by + 4, cx + 20, by - 5); c.stroke();
+  }
+}
 function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Drawn[], s: number, view: { x: number; y: number; w: number; h: number } | null, now: number, night?: number, lit?: SceneItem[]) {
   var k = 0;
   var person = function (e: Drawn) {
-    if (e.img) { var z = e.size || e.z || 52; if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.img, e.x + 16 - z / 2, e.yb - z, z, z * (e.size ? 1.17 : 1)); c.globalAlpha = 1; return; }
-    if (e.spr) { c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); return; }
+    if (e.img) {
+      var z = e.size || e.z || 52, zh = z * (e.size ? 1.17 : 1);
+      if (e.alpha) c.globalAlpha = e.alpha;
+      if (e.tilt || e.sq) {
+        /* a creature walking: it rocks from one foot to the other, and squashes a little as it lands */
+        var sq = e.sq || 1;
+        c.save(); c.translate(e.x + 16, e.yb - 2); c.rotate(e.tilt || 0); c.scale(1 / Math.sqrt(sq), sq);
+        drawMon(c, e.img, -z / 2, 2 - z, z, zh); c.restore();
+      } else drawMon(c, e.img, e.x + 16 - z / 2, e.yb - z, z, zh);
+      c.globalAlpha = 1; return;
+    }
+    if (e.spr) { if (e.alpha) c.globalAlpha = e.alpha; c.drawImage(e.spr.cv, e.x, e.yb - e.spr.h, e.spr.cv.width / s, e.spr.cv.height / s); c.globalAlpha = 1; return; }
     var img = e.w![e.d!][e.f || 0], ih = img.height / s, br = e.breath || 1;
     if (e.alpha) c.globalAlpha = e.alpha;
+    if (e.float) floatUnder(c, e);
     /* breathing: the picture grows and shrinks by a hair from the feet up (the last 2 px are its shadow on the ground) */
-    c.drawImage(img, e.x, e.y! - 12 - (e.hop || 0) - (ih - 2) * (br - 1), img.width / s, ih * br); c.globalAlpha = 1;
+    c.drawImage(img, e.x, e.y! - 12 - (e.hop || 0) - (ih - 2) * (br - 1), img.width / s, ih * br);
+    if (e.float) floatOver(c, e);
+    c.globalAlpha = 1;
+  };
+  /* whatever tall stands in front of Antonio (the Torre di Mola, a palazzo of a cortina) does not hide him: he is drawn
+     again over it, see-through, the way a game shows its hero behind a wall */
+  var mine: Drawn[] = [], hidden = false;
+  var covers = function (it: SceneItem, gx: number) {
+    if (it.thin || it.spr.h < T * 1.3) return false;
+    for (var q = 0; q < mine.length; q++) {
+      var e = mine[q], ex = e.x + (e.spr ? e.spr.w / 2 : 16), ey = e.yb - 18;
+      if (ex > it.x + gx + 4 && ex < it.x + gx + it.spr.w - 4 && ey > it.yb - it.spr.h + 6 && ey < it.yb - 4) return true;
+    }
+    return false;
   };
   for (var n = 0; n < items.length; n++) {
     var it = items[n];
-    while (k < people.length && people[k].yb <= it.yb) person(people[k++]);
+    while (k < people.length && people[k].yb <= it.yb) { if (people[k].me) mine.push(people[k]); person(people[k++]); }
     var gx = it.glide && now && !reduced ? Math.sin(now / 5200 + it.x * 0.013) * it.glide * T : 0;
     if (view && (it.x + gx + it.spr.w < view.x || it.x + gx > view.x + view.w || it.yb < view.y || it.yb - it.spr.h > view.y + view.h)) continue;
     var dy = it.bob && now && !reduced ? Math.sin(now / 650 + it.x * 0.037) * 1.5 : 0;
@@ -253,12 +424,14 @@ function drawSorted(c: CanvasRenderingContext2D, items: SceneItem[], people: Dra
       c.drawImage(it.spr.cv, -T / 2, 3 - it.spr.h, it.spr.cv.width / s, it.spr.cv.height / s); c.restore();
     } else
     c.drawImage(it.spr.cv, it.x + gx, it.yb - it.spr.h + dy, it.spr.cv.width / s, it.spr.cv.height / s);
+    if (!hidden && mine.length && covers(it, gx)) hidden = true;
     if (night && it.lit) {
       var g = glowOf(it);
       if (g) { c.globalAlpha = night; c.drawImage(g, it.x, it.yb - it.spr.h, it.spr.cv.width / s, it.spr.cv.height / s); c.globalAlpha = 1; if (lit) lit.push(it); }
     }
   }
   while (k < people.length) person(people[k++]);
+  if (hidden) mine.forEach(function (e) { var a = e.alpha; e.alpha = 0.45 * (a || 1); person(e); e.alpha = a; });
 }
 
 /* light/dark switches and late fonts repaint the map and the home preview */
@@ -560,6 +733,12 @@ function drawFrame(now: number, sk: number) {
       if (pimg) people.push({ yb: (p.y + 1) * T - bounce, x: p.x * T, img: pimg });
       return;
     }
+    if (p.n.mon) {
+      /* someone's creature in the sea (Nicola's Delfaro): now and then it leaps out of the water in an arc */
+      var mimg = creatureImage(p.n.mon), ph = (now / 2600 + hash(p.x, p.y, 3)) % 1, leap = reduced ? 0 : ph < 0.32 ? Math.sin(ph / 0.32 * Math.PI) * 30 : 0;
+      if (mimg) people.push({ yb: (p.y + 1) * T - leap + (leap ? 0 : 6), x: p.x * T + (leap ? (ph / 0.32 - 0.5) * 14 : 0), img: mimg, tilt: leap ? (ph / 0.32 - 0.5) * 1.1 : 0, glow: MAGIC[SPECIES[p.n.mon].type].col });
+      return;
+    }
     if (p.n.wild) {
       /* a wild creature hops on the spot now and then */
       var img = creatureImage(wildNow(p.n)!.sp), hop = reduced ? 0 : Math.max(0, Math.sin(now / 260 + hash(p.x, p.y, 5) * 9)) * 4;
@@ -572,23 +751,33 @@ function drawFrame(now: number, sk: number) {
     if (p.mv) { var u = Math.min(1, (now - p.mv.t0) / STEP); wx = (p.mv.fx + (p.x - p.mv.fx) * u) * T; wy = (p.mv.fy + (p.y - p.mv.fy) * u) * T; wf = u > 0.12 && u < 0.88 ? 1 + ((p.x + p.y) & 1) : 0; }
     /* a beaten rival walking away fades out over his last steps */
     var fade = p.leaving ? Math.min(1, ((p.path ? p.path.length : 0) + 1) / 3) : 1;
-    people.push({ yb: wy + T, x: wx, y: wy, w: walkerFor(p.n, RS), d: p.dir, f: wf, alpha: fade < 1 ? fade : undefined,
+    var bobS = p.n.float && !reduced ? Math.sin(now / 500 + p.x) * 1.5 : 0;
+    people.push({ yb: wy + T + bobS, x: wx, y: wy + bobS, float: p.n.float, w: walkerFor(p.n, RS), d: p.dir, f: wf, alpha: fade < 1 ? fade : undefined,
       hop: p.mv && !reduced ? stepHop(Math.min(1, (now - p.mv.t0) / STEP)) : 0, breath: p.mv || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820 + hash(p.x, p.y, 11) * 6.3) });
     if (p.alert) alerts.push([wx + T / 2, wy - 14, now - p.alert]);
   });
   var step = mover && pp.t > 0.12 && pp.t < 0.88 ? (parity ? 1 : 2) : 0;
-  var riding = !!st.sella && !M.inside;
-  if (riding) people.push(rider(now, RS, pp));
-  else people.push({ yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: step,
+  var riding = !!st.sella && !M.inside, vd = vanNow(now, pp), inVan = !!van && van.carry;
+  if (vd) people.push(vd);
+  if (inVan) { /* the player rides in the van */ }
+  else if (riding) people.push(Object.assign(rider(now, RS, pp), { me: true }));
+  else people.push({ me: true, yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: moveMode.swim ? 0 : step, float: moveMode.swim ? (moveMode.board ? 'windsurf' : 'swim') : undefined,
     hop: mover && !reduced && !moveMode.swim ? (mover.jump ? Math.sin(pp.t * Math.PI) * 13 : stepHop(pp.t)) : 0, breath: mover || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820) });
   var pk = parkedMoto(RS);
   if (pk) people.push(pk);
   /* on the scooter the creature rides behind him */
-  var fw = riding ? null : follower(now);
-  if (fw) people.push(fw);
+  var fw = riding || inVan ? null : follower(now);
+  if (fw) { fw.me = true; people.push(fw); }
+  var nw = companion(now);
+  if (nw) people.push(nw);
   var gh = ghost(now, pp);
   if (gh) people.push(gh);
   M.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: itemSprite(ITEMS[it.move].icon, RS) }); });
+  /* the bottles adrift in the gulf, rocking on the water */
+  if (M.id === 'formia') BOTTLES.forEach(function (b) {
+    if (st.seen[b.id] || b.x < x0 - 1 || b.x > x1 + 1 || b.y < y0 - 1 || b.y > y1 + 1) return;
+    people.push({ yb: (b.y + 1) * T + (reduced ? 0 : Math.sin(now / 420 + b.x) * 2), x: b.x * T, spr: bottleSprite(RS) });
+  });
   people.sort(function (a, b) { return a.yb - b.yb; });
   if (tiles) {
     /* on the ground, under everyone: the shadows, turning with the sun, and the clouds'; the pigeons that have not flown off */
@@ -602,14 +791,6 @@ function drawFrame(now: number, sk: number) {
   [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {
     if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P);
   });
-  /* swimming: the water comes up to his waist, with a ring of foam */
-  if (moveMode.swim) {
-    var wv = reduced ? 0 : Math.sin(now / 300) * 1.5;
-    ctx.globalAlpha = 0.92; ctx.fillStyle = P.sea;
-    ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.8 + wv, T * 0.58, T * 0.34, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1; ctx.strokeStyle = P.foam; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(pp.x + T / 2, pp.y + T * 0.62 + wv, T * 0.5, T * 0.16, 0, 0, Math.PI * 2); ctx.stroke();
-  }
   if (tiles) {
     /* in the air, over everyone: the pigeons flying off, the butterflies */
     pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, true);
@@ -634,7 +815,7 @@ function drawFrame(now: number, sk: number) {
     var fly = skyWho ? creatureOf(skyWho) : null, fimg = fly ? creatureImage(fly.sp) : null;
     if (fimg) {
       var ang = now / 520, size = T * 1.6 / sk;
-      ctx.drawImage(fimg, pp.x + T / 2 + Math.cos(ang) * T * 2.2 / sk - size / 2, pp.y - T * 1.5 / sk + Math.sin(ang) * T * 0.8 / sk - size / 2, size, size);
+      drawMon(ctx, fimg, pp.x + T / 2 + Math.cos(ang) * T * 2.2 / sk - size / 2, pp.y - T * 1.5 / sk + Math.sin(ang) * T * 0.8 / sk - size / 2, size);
     }
   }
   /* a glint on the lost things, gulls over the water */
@@ -692,7 +873,7 @@ export function preview(el: HTMLElement | null, o?: { at?: [number, number]; spa
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
   c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
-  var people = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
+  var people = m.people.filter(function (p) { return present(p) && !p.n.wild && !p.n.mon && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(hero(), s), d: me.dir });
   people.sort(function (a, b) { return a.yb - b.yb; });
   var items = sceneItems(m, P0, s);
@@ -712,7 +893,7 @@ export function overview(id?: string, s?: number): string {
   s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
   c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
-  var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
+  var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild && !p.n.mon && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
   m.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: paintObject('item', P0, s!, { item: ITEMS[it.move].icon, up: UP.item }) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
   drawSorted(c, sceneItems(m, P0, s), people, s, null, 0);

@@ -16,7 +16,7 @@
 | `npx tsx tools/sim-story.ts trainers` | Allenatori contro squadre di riferimento |
 | `npx tsx tools/sim-covi.ts` | Covi, protagonisti e iniziali; `--tune` cerca una taratura |
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | Una leggenda contro una squadra |
-| `npm run playtest` | 18 partite automatiche: sei protagonisti per tre iniziali |
+| `npm run playtest` | partite automatiche: ogni protagonista per tre iniziali |
 | `npm run perf` | Misura il fotogramma con `dist/perf.html` |
 | `npx tsx tools/move-sheet.ts <mossa>` | Controllo visivo di una scena, con server acceso |
 

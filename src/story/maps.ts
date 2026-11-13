@@ -10,6 +10,7 @@ import { HIDINGS, type Hiding } from '../data/encounters';
 import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { TRAINERS } from '../data/trainers';
 import { rivalHere } from './rival';
+import { rivalFriend, rivalSpeaker } from './rival-who';
 import { shutAt } from './place';
 import { LEGENDS } from '../data/legends';
 import { firstHuman, homeMons } from './growth';
@@ -42,6 +43,17 @@ export interface PreparedMap extends MapDef {
 }
 
 export function key(x: number, y: number): string { return x + ',' + y; }
+/** the rival on the map is whoever the rival of this story is (story/rival-who.ts): a friend, drawn and named as such,
+    or Tullio with his own look */
+function rivalNpc(n: Npc): Npc {
+  var o = Object.assign({}, n);
+  Object.defineProperties(o, {
+    person: { get: function () { return rivalFriend() || undefined; }, enumerable: true, configurable: true },
+    look: { get: function () { return rivalFriend() ? undefined : n.look; }, enumerable: true, configurable: true },
+    name: { get: function () { return rivalSpeaker(); }, enumerable: true, configurable: true }
+  });
+  return o;
+}
 /** where the creatures at home stand in Antonio's flat, clear of the furniture and of the way to the door */
 const HOME_SPOTS: [number, number, Dir][] = [[6, 2, 'down'], [8, 2, 'down'], [10, 2, 'left'], [7, 3, 'right'], [10, 5, 'left'], [3, 4, 'down']];
 /** the creature waiting at home on a spot, if any */
@@ -69,7 +81,7 @@ export function prepare(id: string): PreparedMap {
   });
   (m.signs || []).forEach(function (s) { m.solid[s.y * m.w + s.x] = 1; m.at[key(s.x, s.y)] = { kind: 'sign', s: s }; });
   (m.warps || []).forEach(function (w) { m.at[key(w.x, w.y)] = { kind: 'warp', w: w }; });
-  m.people = (m.npcs || []).map(function (n) { return { n: n, x: n.x, y: n.y, dir: n.dir || 'down' }; });
+  m.people = (m.npcs || []).map(function (n) { var r = n.trainer && TRAINERS[n.trainer] && TRAINERS[n.trainer].rival ? rivalNpc(n) : n; return { n: r, x: n.x, y: n.y, dir: n.dir || 'down' }; });
   /* Antonio's flat keeps the creatures that are not travelling with him: one on each of these tiles, if there */
   if (id === 'casa' || id.indexOf('casa-') === 0) (m.homeSpots || HOME_SPOTS).forEach(function (c, i) {
     m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
@@ -103,8 +115,11 @@ export function itemAt(m: PreparedMap, x: number, y: number): LostItem | null { 
 export function allItems(): LostItem[] { var out: LostItem[] = []; Object.keys(MAPS).forEach(function (k) { (MAPS[k].items || []).forEach(function (it) { out.push(it); }); }); return out; }
 export function foundItems(): LostItem[] { return allItems().filter(function (it) { return st.found[it.id]; }); }
 /** the neighbourhood Antonio is in (the first area that contains him), if any */
+/* out in the open gulf, past the shallow water, the corner names the sea */
+const GULF: Area = { name: 'Il golfo di Gaeta', x: 0, y: 0, w: 0, h: 0, note: 'Il largo: da qui Formia si vede intera, dal porto a Gianola, sotto gli Aurunci.' };
 export function currentArea(): Area | null {
   if (M.inside) return null;
+  if (M.id === 'formia' && M.cell(st.x, st.y).g === 'sea' && !isShallow(M, st.x, st.y)) return GULF;
   for (var i = 0; i < M.areas.length; i++) { var a = M.areas[i]; if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h) return a; }
   return null;
 }
@@ -119,6 +134,8 @@ export function present(p: Person): boolean {
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
   if (p.n.person && p.n.person === firstHuman()) return false;
+  /* Nicola walking with the player is not at the Eclipse */
+  if (p.n.id === 'nicola' && st.companion === 'nicola') return false;
   return (!p.n.with || st.squad.indexOf(p.n.with) >= 0) && (!p.n.unless || st.squad.indexOf(p.n.unless) < 0) && (!p.n.beaten || !!st.beaten[p.n.beaten]) && (!p.n.wild || wildHere(p.n.id)) && (!p.n.legend || legendHere(p.n)) &&
     (!p.n.trainer || !TRAINERS[p.n.trainer] || !TRAINERS[p.n.trainer].rival || rivalHere(p.n.trainer)) &&
     (!w || ((!w.after || flag(w.after)) && (!w.until || !flag(w.until))));
@@ -142,7 +159,7 @@ export function hidingAt(x: number, y: number): Hiding | null {
   if (M.meet) return HIDINGS[M.meet] || null;
   if (M.id !== 'formia') return null;
   /* in the water, and up on the walls, other creatures live */
-  if (moveMode.swim && M.cell(x, y).g === 'sea') return HIDINGS.mare || null;
+  if (moveMode.swim && M.cell(x, y).g === 'sea') return (isShallow(M, x, y) ? HIDINGS.mare : HIDINGS.largo) || null;
   if (moveMode.climb && isWall(M, x, y)) return HIDINGS.mura || null;
   var d = M.cell(x, y).deco;
   if (d !== 'tall' && d !== 'pools') return null;
@@ -173,6 +190,12 @@ export function motoAt(m: PreparedMap, x: number, y: number): boolean {
   var p = moto();
   return p.map === m.id && p.x === x && p.y === y;
 }
+/** Nicola's van, parked on this map (story/van.ts): three tiles along it seen from the side, two from in front or behind */
+export function vanAt(m: PreparedMap, x: number, y: number): boolean {
+  var v = st.van;
+  if (!v || v.map !== m.id || m.inside) return false;
+  return v.dir === 'left' || v.dir === 'right' ? y === v.y && Math.abs(x - v.x) <= 1 : x === v.x && (y === v.y || y === v.y - 1);
+}
 /** a tile the scooter can go on (it must be free too: see blocked) */
 export function rideable(m: PreparedMap, x: number, y: number): boolean {
   var c = m.cell(x, y), a = m.at[key(x, y)];
@@ -181,14 +204,21 @@ export function rideable(m: PreparedMap, x: number, y: number): boolean {
   return !(a && (a.kind === 'door' || a.kind === 'warp'));
 }
 /** swimming with a sea creature, or climbing the walls with one of the walls: then water, or walls, can be walked */
-export const moveMode = { swim: false, climb: false };
+export const moveMode = { swim: false, climb: false, board: false };
 export function isShallow(m: PreparedMap, x: number, y: number): boolean { return !!m.shallow && x >= 0 && y >= 0 && x < m.w && y < m.h && m.shallow[y * m.w + x] === 1; }
+/** open water out in town, near the shore or far out: swimming, the whole gulf can be crossed (not the rocks, the
+    boats at their moorings, the buoys) */
+export function isSea(m: PreparedMap, x: number, y: number): boolean {
+  if (m.inside || x < 0 || y < 0 || x >= m.w || y >= m.h) return false;
+  var c = m.cell(x, y);
+  return c.g === 'sea' && !c.deco && !c.obj && !m.at[key(x, y)];
+}
 /** walls that can be climbed: out in town only, like the water. Indoors a wall is a wall, or a place could be walked around */
 export function isWall(m: PreparedMap, x: number, y: number): boolean { return !m.inside && m.cell(x, y).g === 'mura'; }
 export function blocked(m: PreparedMap, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
-  if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isShallow(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;
-  if (motoAt(m, x, y)) return true;
+  if (m.solid[y * m.w + x] === 1 && !(moveMode.swim && isSea(m, x, y)) && !(moveMode.climb && isWall(m, x, y))) return true;
+  if (motoAt(m, x, y) || vanAt(m, x, y)) return true;
   if (m.place && shutAt(m.place, (st.places && st.places[m.id] && st.places[m.id].flags) || {}, x, y)) return true;
   return !!personAt(m, x, y) || !!itemAt(m, x, y);
 }

@@ -2,10 +2,10 @@ import type { TypeName } from './types';
 import type { StatusId } from './passives';
 import type { SpeciesId } from './creatures';
 
-/* The six friends and the boss. Stats, moves and `uses` were tuned with thousands of simulated
+/* The seven friends and the boss. Stats, moves and `uses` were tuned with thousands of simulated
    CPU-vs-CPU battles (npm run sim): every character should win 45–55% overall. Change them only with the sim. */
 
-export type FriendId = 'antonio' | 'costanzo' | 'andrea' | 'valentin' | 'forchetta' | 'zendavid';
+export type FriendId = 'antonio' | 'costanzo' | 'andrea' | 'valentin' | 'forchetta' | 'zendavid' | 'claudia';
 export type CharId = FriendId | 'esame';
 /** anyone who can fight: the friends, the Esame, and the creatures of Formia (data/creatures.ts) */
 export type FighterId = CharId | SpeciesId;
@@ -71,6 +71,8 @@ export interface Character {
   /** a second type: only some creatures of Formia, from their last forms */
   type2?: TypeName;
   tagline: string;
+  /** spoken of in the feminine (Claudia): «confusa», «lucida» */
+  fem?: boolean;
   boss?: boolean;
   stats: Stats;
   passive: Trait;
@@ -103,7 +105,7 @@ export const CHARS: Record<CharId, Character> = {
     weakness: { name: 'La fissa', text: 'Se cambia attacco rispetto all\'ultimo che ha usato, perde il filo e fa il 20% in meno. Se insiste con lo stesso attacco, ogni terza volta è un colpo critico sicuro.' },
     moves: [
       { id: 'comizio', name: 'Comizio', kind: 'atk', power: 50, text: 'Sale sul palco e parte il comizio. Danno medio.' },
-      { id: 'personaggismo', name: 'Personaggismo', kind: 'buff', text: 'Inforca gli occhiali di destra ed entra nel personaggio: per 3 turni diventa del tipo che batte l\'avversario.' },
+      { id: 'personaggismo', name: 'Personaggiame', kind: 'buff', text: 'Inforca gli occhiali di destra ed entra nel personaggio: per 3 turni diventa del tipo che batte l\'avversario.' },
       { id: 'bidet', name: 'Difesa del Bidet', kind: 'heal', uses: 3, text: 'Comizio in difesa del bidet: recupera 25 PS ed elimina gli effetti negativi.' },
       { id: 'daje', name: 'Daje Roma Daje', kind: 'atk', power: 70, acc: 0.8, text: 'Coro da curva: danno alto, ma va a segno 8 volte su 10.' }
     ],
@@ -161,6 +163,25 @@ export const CHARS: Record<CharId, Character> = {
     ],
     lines: { entry: 'Bau.', crit: 'BAU!', win: 'Bau bau. Questa era bella, ammettilo.', ko: 'Ansia… metto le cuffie.', zen: 'Ok. Respira.', jokeFail: '…nessuno ride.', jokeWin: 'Stavolta ridono tutti!' }
   },
+  /* Claudia, «Diabolica» for Costanzo (he says she led the group astray; she answers him point by point), the Padre of
+     the Trinità with Antonio the Figlio and Valentin the Spirito. Added in November 2026: her kit was tuned with the sim
+     like the others' */
+  claudia: {
+    id: 'claudia', name: 'Claudia', full: 'Claudia', nick: 'Diabolica', type: 'Calma', tagline: 'Il Padre della Trinità', fem: true,
+    stats: { hp: 110, atk: 102, def: 90, spe: 88 },
+    passive: { name: 'Il Padre', text: 'Chi la colpisce per primo trova un muro: il primo colpo che subisce in ogni lotta fa la metà.' },
+    weakness: { name: 'Diabolica', text: 'Sotto un terzo dei PS perde la pazienza: i suoi attacchi fanno il 20% in più, ma anche quelli che subisce.' },
+    moves: [
+      { id: 'ascolta', name: 'Puoi Sentire Anche il Mio?', kind: 'atk', power: 55, text: 'Risponde punto per punto: danno medio. Se l\'avversario l\'ha appena colpita, nello stesso turno, fa il 50% in più.' },
+      { id: 'tavoli', name: 'Tavoli Separati', kind: 'status', uses: 3, text: 'Mette distanza: per 2 turni l\'avversario non può usare l\'ultima mossa che ha fatto.' },
+      { id: 'trinita', name: 'La Trinità', kind: 'atk', power: 24, text: 'Chiama il Figlio e lo Spirito: tre colpi uno dopo l\'altro, e ognuno può fare critico.' },
+      { id: 'cattiva', name: 'La Cattiva Strada', kind: 'status', text: 'Così dice Costanzo: per 3 turni l\'avversario si perde, e il 30% delle volte usa una mossa a caso.' }
+    ],
+    lines: {
+      entry: 'Ho capito il tuo punto. Ora senti il mio.', crit: 'Diabolica, dicono.', win: 'Puoi sentire anche il mio? Adesso sì.', ko: 'Va bene… tavoli separati, per stasera.',
+      ascolta: 'Punto per punto.', trinita: 'Figlio, Spirito: tocca a voi.', padre: 'Calma. Prima ascolto.', diabolica: 'Adesso sono Diabolica davvero.'
+    }
+  },
   esame: {
     id: 'esame', name: 'Esame di Controlli', full: 'Esame di Controlli', nick: 'Il boss', type: 'Cervello', tagline: 'Appello · 2 ore', boss: true,
     stats: { hp: 180, atk: 92, def: 85, spe: 70 },
@@ -176,11 +197,16 @@ export const CHARS: Record<CharId, Character> = {
     lines: { entry: 'Avete due ore. Niente appunti.', win: 'Ci vediamo al prossimo appello.', ko: 'Accetta il voto?', time: 'Consegnate.' }
   }
 };
-export const ROSTER: FriendId[] = ['antonio', 'costanzo', 'andrea', 'valentin', 'forchetta', 'zendavid'];
+export const ROSTER: FriendId[] = ['antonio', 'costanzo', 'andrea', 'valentin', 'forchetta', 'zendavid', 'claudia'];
+/** the friends added lately: the choice of who to play marks them as new */
+export const NEW_FRIENDS: FriendId[] = ['claudia'];
 /** what two friends say to each other when they meet, by their ids sorted and joined with | */
 export const PAIRS: Record<string, Partial<Record<CharId, string>>> = {
   'andrea|antonio': { antonio: 'Dopo questa, padel?', andrea: 'Ho già calcolato il risultato. Anche quello del padel.' },
-  'antonio|forchetta': { antonio: 'Chi perde paga la prossima partita alla Play.', forchetta: 'Poteva andare peggio. Per te.' }
+  'antonio|forchetta': { antonio: 'Chi perde paga la prossima partita alla Play.', forchetta: 'Poteva andare peggio. Per te.' },
+  'claudia|costanzo': { costanzo: 'Claudia, ora ti spiego perché ho ragione. GIÀ LO SAI.', claudia: 'Ho capito il tuo punto, Costanzo. Puoi sentire anche il mio?' },
+  'antonio|claudia': { antonio: 'Il Padre contro il Figlio. Crazy shit.', claudia: 'Figlio mio, oggi niente sconti.' },
+  'claudia|valentin': { valentin: 'Weee! Il Padre e lo Spirito!', claudia: 'Lo Spirito parla poco. Ma quando parla…' }
 };
 
 /** Zendavid's Battuta */

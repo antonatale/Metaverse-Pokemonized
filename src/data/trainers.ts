@@ -198,6 +198,31 @@ export const TRAINERS: Record<string, Trainer> = {
       }
     }
   },
+  /* out at sea, for whoever gets that far (swimming with a sea creature, or on Nicola's board) */
+  sup: {
+    id: 'sup', title: 'La ragazza col SUP', prize: 70, smart: 1,
+    team: [{ sp: 'cefalino', lv: 14 }, { sp: 'medusella', lv: 15 }, { sp: 'delfi', lv: 16 }],
+    intro: ['Ehi! Fin qui a nuoto? Rispetto.', 'Io vengo al largo col SUP ogni mattina, prima che si alzi il vento. I miei amici del mare vengono con me.', 'Lotta sull\'acqua: chi cade, paga il cornetto.'],
+    win: ['In acqua sei più forte che a terra, eh.', 'Il cornetto te lo offro al bar dell\'Eclipse.'],
+    lose: ['Splash! Torna quando hai preso confidenza col mare.'],
+    after: ['Guarda laggiù: quando l\'acqua fa così, sotto passano i Delfì.']
+  },
+  sub: {
+    id: 'sub', title: 'Il sub delle secche', prize: 90, smart: 1,
+    team: [{ sp: 'murenaccia', lv: 17 }, { sp: 'riccione', lv: 18 }, { sp: 'astromarina', lv: 19 }],
+    intro: ['Shhh. Sotto di noi ci sono le secche: venti metri d\'acqua, posidonia e anfore rotte.', 'Ci vengo a vedere le murene. Ma una mi ha seguito su, e adesso lotta con me.', 'Pronto? Trattieni il fiato.'],
+    win: ['Bolle… Hai il fiato lungo, tu.', 'La boa gialla segna le secche: lì sotto vive il più grosso dei Delfaro, dicono.'],
+    lose: ['Riemergi, riposati, e riprova.'],
+    after: ['Sotto la boa delle secche passano i Delfaro, di sera. Io li ho visti due volte.']
+  },
+  pescatoreLargo: {
+    id: 'pescatoreLargo', title: 'Il pescatore del gozzo', prize: 120, smart: 2,
+    team: [{ sp: 'granchione', lv: 20 }, { sp: 'cefaldrago', lv: 22 }, { sp: 'delfaro', lv: 23 }],
+    intro: ['Uè, guagliò! Tu nuoti fin quaggiù e io col gozzo ci metto mezz\'ora.', 'Sessant\'anni che pesco nel golfo, da Mola a Gianola. Le creature del mare mi conoscono tutte.', 'Facciamo così: se vinci tu, ti do il pesce di oggi. Se vinco io, mi tiri su le reti.'],
+    win: ['Mannaggia! Sessant\'anni di mare e un ragazzino mi batte.', 'Tieni, il pesce di oggi lo vendi al porto. E salutami il golfo.'],
+    lose: ['Le reti stanno là. Ah, ah!'],
+    after: ['Di sera, dal gozzo, si vede Formia tutta accesa: dal porto a Gianola. Non ti stanchi mai di guardarla.']
+  },
   /* the missions of the friends (data/missions.ts): they are not on the map as trainers, the one who asks is */
   tennista: {
     id: 'tennista', title: 'Il tennista del circolo', prize: 40, smart: 1,

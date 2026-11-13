@@ -8,12 +8,12 @@ export const LEGEND: Record<string, Ground> = {
   'x': { g: 'wall', solid: true }, 'r': { g: 'rail', solid: true },
   'T': { g: 'grass', obj: 'tree', solid: true }, 'p': { g: 'path', obj: 'palm', solid: true }, 'P': { g: 'sand', obj: 'palm', solid: true },
   '#': { g: 'grass', deco: 'hedge', solid: true }, 'b': { g: 'path', deco: 'bench', solid: true }, 'l': { g: 'path', obj: 'lamp', solid: true },
-  'u': { g: 'sand', obj: 'umbrella', solid: true }, 'o': { g: 'sea', obj: 'boat', solid: true }, 'q': { g: 'path', deco: 'railing', solid: true },
+  'u': { g: 'sand', obj: 'umbrella', solid: true }, 'o': { g: 'sea', obj: 'boat', solid: true }, '9': { g: 'sea', obj: 'gozzo', solid: true }, 'q': { g: 'path', deco: 'railing', solid: true },
   's': { g: 'stone', deco: 'stage', solid: true }, 'm': { g: 'stone', deco: 'stage', obj: 'mic', solid: true },
   'n': { g: 'clay', deco: 'net', solid: true, reach: true }, 'k': { g: 'floor', deco: 'counter', solid: true, reach: true },
   /* Formia, second edition: mountains, olive trees, cypresses, steps, cobbles, the old polygonal walls, rocks in the sea */
   'M': { g: 'hill', solid: true }, 'O': { g: 'grass', obj: 'olive', solid: true }, 'C': { g: 'grass', obj: 'cypress', solid: true },
-  'H': { g: 'steps' }, 'v': { g: 'paving' }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
+  'H': { g: 'steps' }, 'v': { g: 'paving' }, ';': { g: 'paving', obj: 'scooter', solid: true }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
   'z': { g: 'road', deco: 'zebra' }, 'G': { g: 'far', solid: true }, 'B': { g: 'stone', deco: 'bench', solid: true },
   'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true }, 'K': { g: 'grass', obj: 'lamp', solid: true },
   'Q': { g: 'hill', obj: 'tree', solid: true }, 'J': { g: 'hill', obj: 'cypress', solid: true },
@@ -45,5 +45,12 @@ export const LEGEND: Record<string, Ground> = {
   /* the Bruno Zauli: the tartan of the athletics track, where one runs for real */
   '7': { g: 'grass', deco: 'tartan' },
   /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
-  'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' }
+  'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' },
+  /* the 12 November 2026 revision: the anchor of Mola on its plinth; the railing of Parco la Fontana and its locked
+     gates; the back door of Antonio's flat on the walk of the park (a warp, see formia.ts) */
+  '8': { g: 'paving', obj: 'anchor', solid: true },
+  '|': { g: 'grass', deco: 'fence', solid: true }, '+': { g: 'path', deco: 'gate', solid: true },
+  '0': { g: 'path', deco: 'backdoor' },
+  /* the car parks of Largo Paone and of the Pinetina (Street View): asphalt, the bays with their lines, parked cars */
+  '!': { g: 'road' }, '$': { g: 'road', deco: 'stall' }, '-': { g: 'road', deco: 'stall', obj: 'car', solid: true }
 };

@@ -17,7 +17,7 @@ export interface Rect { x0: number; y0: number; x1: number; y1: number }
     Mola, along the foot of the Aurunci and down to Scauri */
 export const RAILS: XY[][] = [
   [[0, 70], [20, 70], [20, 78], [61, 78]],
-  [[84, 60], [122, 60], [122, 40], [146, 40], [146, 30], [244, 30], [244, 42], [250, 42], [250, 34], [278, 34], [278, 46], [294, 46], [294, 58], [310, 58], [310, 66], [319, 66]]
+  [[84, 60], [119, 60], [119, 40], [146, 40], [146, 30], [244, 30], [244, 42], [250, 42], [250, 34], [278, 34], [278, 46], [294, 46], [294, 58], [310, 58], [310, 66], [319, 66]]
 ];
 /** where the railway goes into a hill: a tunnel mouth is drawn on the tile above */
 export const TUNNEL_ENDS: XY[] = [[61, 78], [84, 60]];
@@ -31,12 +31,19 @@ export const STREETS: Line[] = [
   { name: 'Via Appia', w: 2, pts: [[0, 84], [24, 84], [24, 92], [50, 92]] },
   /* the old road into town, up to Piazza Mattej */
   { name: 'Via Giuseppe Paone', w: 2, pts: [[50, 92], [50, 86], [84, 86]] },
-  /* the main street: Piazza Mattej, the Comune and Piazza della Vittoria, up to Largo Paone */
-  { name: 'Via Vitruvio', w: 2, pts: [[84, 86], [84, 76], [110, 76], [110, 66], [130, 66]] },
-  /* through Mola to Piazza Risorgimento and the roundabout */
-  { name: 'Via Emanuele Filiberto', w: 2, pts: [[130, 66], [130, 54], [158, 54]] },
+  /* the main street: Piazza Mattej, the Comune and Piazza della Vittoria, up to the roundabout of Largo Paone */
+  { name: 'Via Vitruvio', w: 2, pts: [[84, 86], [84, 76], [110, 76], [110, 66], [115, 66]] },
+  /* the roundabout of Largo Paone, by Piazza Tommaso Testa: a ring round a flower bed (BEDS), four ways out */
+  { name: 'Largo Domenico Paone', w: 1, pts: [[116, 66], [119, 66], [119, 69], [116, 69], [116, 66]] },
+  /* from the roundabout down the west side of the car park to the lungomare and the port */
+  { name: 'Via Vitruvio', w: 2, pts: [[116, 70], [116, 80]] },
+  /* in front of the tobacconist's row, along the car park, to via Tullia and via Abate Tosti */
+  { name: 'Largo Domenico Paone', w: 2, pts: [[120, 66], [131, 66]] },
+  /* from the roundabout up behind the row of Piazza Tommaso Testa, then along the top of Mola: San Giovanni, the
+     Vitruvio Pollione and De Amicis schools, Piazza Risorgimento, the roundabout of the Appia */
+  { name: 'Via Emanuele Filiberto', w: 2, pts: [[120, 66], [120, 57], [142, 57], [142, 54], [159, 54]] },
   /* east along the bay: Rio Fresco, the Zauli, Via Amendola, Santo Janni */
-  { name: 'Via Appia Lato Napoli', w: 2, pts: [[158, 54], [158, 46], [252, 46], [252, 38], [272, 38]] },
+  { name: 'Via Appia Lato Napoli', w: 2, pts: [[159, 54], [159, 46], [252, 46], [252, 38], [272, 38]] },
   /* and on to Scauri, the railway on its left all the way */
   { name: 'Via Appia', w: 2, pts: [[272, 38], [272, 50], [288, 50], [288, 62], [304, 62], [304, 72], [319, 72]] },
 
@@ -45,8 +52,9 @@ export const STREETS: Line[] = [
   { name: 'Viale Unità d\'Italia', w: 2, pts: [[26, 127], [26, 108], [44, 108], [44, 96], [62, 96], [62, 92], [92, 92], [92, 84], [110, 84]] },
   { name: 'Via Vindicio', w: 2, pts: [[44, 92], [44, 96]] },
   { name: 'Largo Aldo Moro', w: 2, pts: [[110, 76], [110, 84]] },
-  /* along the quays of the port and under Mola, up to Piazza Risorgimento */
-  { name: 'Lungomare della Repubblica', w: 2, pts: [[110, 84], [118, 84], [118, 72], [134, 72], [134, 66], [146, 66], [146, 54]] },
+  /* along the port, under the pines of Largo Paone and of the Pinetina, over the mouth of the little harbour of the
+     Torre di Mola, then up along the sea to Piazza Risorgimento */
+  { name: 'Lungomare della Repubblica', w: 2, pts: [[110, 84], [116, 84], [116, 80], [151, 80], [151, 55]] },
   /* the lungomare of Vindicio, between the pineta and the sand */
   { name: 'Via Tito Scipione', w: 1, pts: [[46, 103], [62, 103], [62, 98]] },
   { name: 'Via Vindicio', w: 1, pts: [[28, 120], [33, 120]] },
@@ -68,15 +76,21 @@ export const STREETS: Line[] = [
   { name: 'Via Sant\'Antonio', w: 1, pts: [[120, 56], [120, 36]] },
   { name: 'Via delle Fosse', w: 1, pts: [[120, 36], [150, 36]] },
 
-  /* ---------- Mola ---------- */
-  { name: 'Via Abate Tosti', w: 1, pts: [[132, 60], [146, 60]] },
-  { name: 'Via della Conca', w: 1, pts: [[126, 46], [126, 66]] },
+  /* ---------- Mola (OpenStreetMap, the satellite view and Street View, 12 November 2026) ---------- */
+  /* via Tullia, short, from via Emanuele Filiberto down to where via Abate Tosti begins: the enoteca Telaro on its corner */
+  { name: 'Via Tullia', w: 1, pts: [[132, 59], [132, 65]] },
+  /* the lane of the borgo, paved with basalt: from Largo Paone, between two walls of palazzi, to the square of the
+     anchor under the Torre di Mola; from there a passage climbs to via Emanuele Filiberto */
+  { name: 'Via Abate Tosti', w: 1, pts: [[132, 65], [140, 65]], ch: 'v' },
+  { name: 'Via Abate Tosti', w: 1, pts: [[142, 59], [142, 60]], ch: 'v' },
+  { name: 'Via della Conca', w: 1, pts: [[124, 46], [124, 56]] },
   /* to the right of San Giovanni the street climbs, then turns left: Via Solaro */
-  { name: 'Via Solaro', w: 1, pts: [[140, 54], [140, 46], [126, 46]] },
-  { name: 'Via Adalgiso Ferrucci', w: 2, pts: [[150, 54], [150, 36]] },
+  { name: 'Via Solaro', w: 1, pts: [[132, 56], [132, 46], [124, 46]] },
+  /* from Piazza Risorgimento up past the Dono Svizzero, on its left */
+  { name: 'Via Adalgiso Ferrucci', w: 2, pts: [[151, 54], [151, 36]] },
 
   /* ---------- up to Maranola: two hairpins ---------- */
-  { name: 'Via Rotabile', w: 2, pts: [[150, 36], [150, 23], [168, 23], [168, 15], [142, 15]] },
+  { name: 'Via Rotabile', w: 2, pts: [[151, 36], [151, 23], [168, 23], [168, 15], [142, 15]] },
 
   /* ---------- Rio Fresco, the Zauli, Via Amendola: the streets between the Appia and Via Palazzo ---------- */
   { name: 'Via Palazzo', w: 1, pts: [[152, 36], [176, 36]] },
@@ -148,7 +162,7 @@ export const SCARPS: { name: string; ch: '^' | '['; pts: XY[] }[] = [
   { name: 'Aurunci, il secondo gradone', ch: '^', pts: [[99, 7], [121, 7]] },
   { name: 'Acervara', ch: '^', pts: [[0, 80], [19, 80]] },
   { name: 'Il muraglione dell\'Appia', ch: '[', pts: [[26, 94], [43, 94]] },
-  { name: 'La salita di Via Solaro', ch: '[', pts: [[137, 48], [149, 48]] },
+  { name: 'La salita di Via Solaro', ch: '[', pts: [[125, 48], [137, 48]] },
   { name: 'Gianola, la terrazza bassa', ch: '^', pts: [[268, 110], [282, 110]] }
 ];
 /** dry-stone walls drawn by hand: the one that closes the terrace of the Acervara on its east side */
@@ -186,10 +200,14 @@ export const SHORE: { x0: number; x1: number; kind: 'beach' | 'town' | 'rocky' }
     under Mola. Only sea becomes stone */
 export const QUAYS: Rect[] = [
   { x0: 112, y0: 74, x1: 123, y1: 87 },
-  { x0: 120, y0: 70, x1: 138, y1: 77 },
-  { x0: 134, y0: 62, x1: 150, y1: 69 },
-  { x0: 134, y0: 58, x1: 150, y1: 62 }
+  { x0: 120, y0: 70, x1: 138, y1: 77 }
 ];
+/** land where the smoothed coast left sea (cut in step 1, before anything else): the quays of the port of Formia below
+    Largo Paone, and Mola along the sea, from the Torre di Mola up to the roundabout of the Appia */
+export const LAND: Rect[] = [{ x0: 116, y0: 52, x1: 154, y1: 84 }, { x0: 155, y0: 50, x1: 161, y1: 56 }];
+/** the little harbour inside the lungomare, under the Torre di Mola: its water, boats moored in it; the lungomare
+    crosses its mouth on a bridge (the street over it is kept), the open sea beyond */
+export const DARSENA: Rect[] = [{ x0: 148, y0: 59, x1: 150, y1: 79 }, { x0: 148, y0: 82, x1: 150, y1: 82 }];
 /** a beach squared to the road behind it: under the road a row of promenade, then sand down to the sea */
 export const BEACHFRONT: { x0: number; x1: number; y: number }[] = [
   { x0: 46, x1: 66, y: 104 }
@@ -223,6 +241,45 @@ export const TOWN: (Rect & { name: string; kinds: string[]; every: number; far?:
   { name: 'Santo Janni e Gianola', x0: 236, y0: 46, x1: 262, y1: 92, kinds: ['villa', 'house', 'villa'], every: 0.55, far: true },
   { name: 'Scauri', x0: 296, y0: 60, x1: 320, y1: 90, kinds: ['house', 'villa', 'condo'], every: 0.6, far: true }
 ];
+/** the cortine of the centre and of Mola: palazzi wall to wall, four or five floors over a row of shops and
+    portoni, that make the street a corridor (Antonio's photos of via Abate Tosti and of Largo Paone). Each rectangle
+    is a row of footprints, the fronts on its bottom side; the generator cuts it into palazzi 2 to 4 tiles wide, around
+    the places already standing in it (Morgana, the barber, the tobacconist…). `up`: how far, in tiles, each palazzo
+    rises over its footprint (a deep footprint is mostly roof seen from above); `shops`: how many have a shop below.
+    A row whose fronts look away from a lane keeps `up` small, so that the lane behind it is not hidden */
+export const ROWS: (Rect & { name: string; up: number; shops: number })[] = [
+  /* via Vitruvio before the roundabout: shops under the palazzi */
+  { name: 'Via Vitruvio', x0: 112, y0: 61, x1: 118, y1: 65, up: 0.7, shops: 0.75 },
+  /* Piazza Tommaso Testa, the row in front of the car park: Zanzibar and the tobacconist are places of their own
+     (formia-places.ts), the rest is the pharmacy and the shops */
+  { name: 'Piazza Tommaso Testa', x0: 122, y0: 60, x1: 131, y1: 63, up: 0.7, shops: 1 },
+  /* via Abate Tosti: the side toward the mountain, its fronts on the lane (Telaro, the bar, the barber and Forchetta's
+     home are places)… */
+  { name: 'Via Abate Tosti, lato monte', x0: 133, y0: 60, x1: 140, y1: 64, up: 0.55, shops: 0.5 },
+  /* …and the side toward the sea, next to Morgana: its front on the Pinetina, its roof on the lane */
+  { name: 'Via Abate Tosti, lato mare', x0: 137, y0: 66, x1: 139, y1: 69, up: 0.1, shops: 1 }
+];
+/** no house of the town here: the pavement south of the castle, the one down via Vitruvio, the passage into the Pinetina */
+export const KEEP_OPEN: Rect[] = [{ x0: 144, y0: 67, x1: 147, y1: 69 }, { x0: 118, y0: 70, x1: 119, y1: 78 }, { x0: 133, y0: 66, x1: 133, y1: 69 }];
+/** umbrella pines planted by hand: along the lungomare between the car park of Largo Paone and the port, and down
+    the pavement of via Vitruvio */
+export const PINES: XY[] = [[118, 79], [120, 79], [122, 79], [124, 79], [126, 79], [128, 79], [130, 79], [118, 71], [118, 74], [118, 77]];
+/** flower beds: the island in the middle of the roundabout of Largo Paone */
+export const BEDS: Rect[] = [{ x0: 117, y0: 67, x1: 118, y1: 68 }, { x0: 126, y0: 54, x1: 127, y1: 55 }, { x0: 130, y0: 54, x1: 131, y1: 55 }];
+/** l'Ancora: the anchor on its plinth in the square under the Torre di Mola, and two benches by it */
+export const ANCHOR: XY = [142, 64];
+export const BENCHES: XY[] = [[141, 67], [143, 67]];
+/** scooters parked at the kerb of the wide pavement of Largo Paone, in front of the tabacchi (Street View) */
+export const SCOOTERS: XY[] = [[125, 65], [126, 65], [129, 65]];
+/** Parco la Fontana is closed: a railing all around (the palazzine are part of the wall), the gates locked. Antonio
+    gets in from his own flat, through the back door (the spot `porta-parco` of formia-places.ts) */
+export const FENCES: XY[][] = [
+  [[224, 37], [224, 37]], [[229, 37], [229, 37]], [[234, 37], [234, 37]], [[239, 37], [240, 37]],
+  [[240, 37], [240, 45]], [[220, 45], [240, 45]]
+];
+export const GATES: XY[] = [[219, 37], [240, 40], [224, 45]];
+/** inside a closed fence nothing has to be reached on foot from home */
+export const CLOSED: Rect[] = [{ x0: 219, y0: 38, x1: 239, y1: 44 }];
 /** the shops of Via Vitruvio: the houses whose door opens on these rows of it are all shops */
 export const HIGH_STREET: Rect[] = [{ x0: 86, y0: 76, x1: 110, y1: 76 }, { x0: 112, y0: 66, x1: 130, y1: 66 }];
 /** tree-lined roads: the Appia out of town, the coast road of Vindicio, the Appia along the bay, the road to Gianola */
@@ -235,10 +292,12 @@ export const ZEBRAS: Rect[] = [
   { x0: 88, y0: 76, x1: 88, y1: 77 }, { x0: 99, y0: 76, x1: 99, y1: 77 }, { x0: 108, y0: 76, x1: 108, y1: 77 },
   { x0: 110, y0: 72, x1: 111, y1: 72 }, { x0: 121, y0: 66, x1: 121, y1: 67 }, { x0: 128, y0: 66, x1: 128, y1: 67 },
   { x0: 130, y0: 62, x1: 131, y1: 62 }, { x0: 139, y0: 54, x1: 139, y1: 55 }, { x0: 148, y0: 54, x1: 148, y1: 55 },
-  { x0: 104, y0: 84, x1: 104, y1: 85 }, { x0: 124, y0: 72, x1: 124, y1: 73 }, { x0: 211, y0: 46, x1: 211, y1: 47 }
+  { x0: 104, y0: 84, x1: 104, y1: 85 }, { x0: 124, y0: 72, x1: 124, y1: 73 }, { x0: 211, y0: 46, x1: 211, y1: 47 },
+  /* Largo Paone: in front of the tobacconist, across the lungomare to the port; via Emanuele Filiberto at San Giovanni */
+  { x0: 127, y0: 66, x1: 127, y1: 67 }, { x0: 123, y0: 80, x1: 123, y1: 81 }, { x0: 129, y0: 57, x1: 129, y1: 58 }, { x0: 146, y0: 54, x1: 146, y1: 55 }
 ];
 /** the centre is paved: pavements along its streets, no scraps of grass between them */
-export const URBAN: Rect[] = [{ x0: 84, y0: 61, x1: 150, y1: 92 }];
+export const URBAN: Rect[] = [{ x0: 84, y0: 61, x1: 156, y1: 92 }, { x0: 120, y0: 44, x1: 160, y1: 60 }];
 /** Castellone, the old borgo: stone everywhere between its houses; and the polygonal walls along its edge */
 export const BORGO: Rect = { x0: 85, y0: 62, x1: 96, y1: 76 };
 export const WALLS: XY[][] = [[[85, 61], [95, 61]], [[85, 65], [85, 69]]];

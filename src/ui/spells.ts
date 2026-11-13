@@ -25,11 +25,11 @@ import { STAGES } from './move-stages';
    motion they are not there. castSpell resolves on the hit, so the damage number and the HP bar land on it. */
 
 /** how grand a move's show is: 1 for a small move, up to about 1.8 for a form's own big one */
-function grand(c: Cast): number { return (1 + Math.max(0, Math.min(0.45, (c.power - 40) / 100)) + (c.sig ? 0.3 : 0)) * (c.crit ? 1.1 : 1); }
+export function grand(c: Cast): number { return (1 + Math.max(0, Math.min(0.45, (c.power - 40) / 100)) + (c.sig ? 0.3 : 0)) * (c.crit ? 1.1 : 1); }
 
 /* ---------- what every spell has: the dark, the circle, the band with the name, the glow ---------- */
 /** the arena goes dark around the caster, lit by the colour of its magic; off() brings the light back */
-function darken(from: number, mc: string, amount: number) {
+export function darken(from: number, mc: string, amount: number) {
   const el = document.createElement('div'), c = anchor(from, 0.5, 0.45), scene = battle.classList.contains('has-scene');
   el.className = 'spell-dim';
   el.style.setProperty('--mc', mc);
@@ -56,7 +56,7 @@ function circleSvg(t: TypeName | null, mc: string): string {
   return s + '</svg>';
 }
 /** the magic circle at a fighter's feet: it opens, turns and fades */
-function magicCircle(i: number, t: TypeName | null, mc: string, w: number, ms: number) {
+export function magicCircle(i: number, t: TypeName | null, mc: string, w: number, ms: number) {
   const g = anchor(i, 0.5, 0.88), el = piece(circleSvg(t, mc), 'sp-circle', w);
   el.style.setProperty('--mc', mc);
   const at = tr(g) + ' scaleY(.34)';
@@ -68,7 +68,7 @@ function magicCircle(i: number, t: TypeName | null, mc: string, w: number, ms: n
   ], { duration: ms, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' }).then(gone(el));
 }
 /** the move's name on a band across the arena, coming in from the caster's side */
-function band(i: number, name: string, t: TypeName | null, sig: boolean, mc: string) {
+export function band(i: number, name: string, t: TypeName | null, sig: boolean, mc: string) {
   const el = fx('<div class="sp-band-in">' + (sig ? '<small>Mossa speciale</small>' : '') + '<span>' + (t ? runeIcon(t, 46) : '') + '<b>' + esc(name) + '</b></span></div>', 'sp sp-band' + (sig ? ' sig' : ''), 0, 0, 0);
   el.style.left = ''; el.style.top = '';
   el.style.setProperty('--mc', mc);
@@ -79,7 +79,7 @@ function band(i: number, name: string, t: TypeName | null, sig: boolean, mc: str
     { duration: 820, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' });
 }
 /** the caster glows with its magic and grows a little */
-function glow(i: number, mc: string, ms: number) {
+export function glow(i: number, mc: string, ms: number) {
   const m = $('m-' + i);
   if (!m) return;
   m.style.setProperty('--mc', mc);
@@ -723,7 +723,7 @@ function boulder(from: number, end: P, c: Cast, mc: string, k: number): Promise<
 const EPIC: Record<string, Epic> = { portatempo: timeGate, tempestelmo: elmoStorm, masso: boulder };
 
 /** a spell that does no damage (it lowers a number, it confuses): the type's shapes turn around the foe and sink */
-function hex(to: number, t: TypeName, mc: string, k: number) {
+export function hex(to: number, t: TypeName, mc: string, k: number) {
   const b = body(to, 0.5, 0.45), f = anchor(to, 0.5, 0.88);
   for (let n = 0; n < 8; n++) {
     const el = piece(shape(t, n % 2 ? '#ffffff' : mc, 22), 'sp-star'), a0 = n / 8 * Math.PI * 2, fr: Keyframe[] = [];
@@ -735,7 +735,7 @@ function hex(to: number, t: TypeName, mc: string, k: number) {
 }
 
 /** a draining move: motes of light flow from the one hit back to the caster */
-function lifeBack(from: number, to: number, mc: string) {
+export function lifeBack(from: number, to: number, mc: string) {
   const a = body(to, 0.5, 0.5), b = body(from, 0.5, 0.5);
   for (let n = 0; n < 8; n++) {
     const cv = curve(a, b, (n % 2 ? 40 : 110) + n * 6), el = piece('<i class="sp-mote"></i>', 'sp-star');

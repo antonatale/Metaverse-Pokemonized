@@ -1469,7 +1469,7 @@ const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v
 
 /* fishing off the pier with the fisherman of Mola: three casts, a pull right after each bite */
 test('fishing off the pier', async ({ browser }) => {
-  const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 133, y: 65, dir: 'right' }) }, async (r) => {
+  const r = await play(browser, 'fishing', { seed: 6, storage: inTown({ x: 142, y: 66, dir: 'right' }) }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
@@ -1567,7 +1567,7 @@ test('the creatures\' powers', async ({ browser }) => {
   expect(String(get(climb, 'ask'))).toContain('mura');
   expect(get(climb, 'on the walls')).toMatchObject({ x: 88, y: 61, climb: true });
 
-  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 133, y: 65, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
+  const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 142, y: 66, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('hint', await p.textContent('.whint'));
@@ -1582,7 +1582,7 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   expect(String(get(fly, 'hint'))).toContain('V per guardare dall\'alto');
   expect(get(fly, 'up')).toMatchObject({ sky: true });
-  expect(get(fly, 'still')).toMatchObject({ x: 133, y: 65 });
+  expect(get(fly, 'still')).toMatchObject({ x: 142, y: 66 });
   expect(get(fly, 'down')).toMatchObject({ sky: false });
 });
 

@@ -132,3 +132,13 @@ div.pick { cursor: default; }
 .tt-city.on circle { fill: #ffd66b; }
 .tt-who { margin: -2px 0 0; font: 15px/1.2 var(--font-display); color: #bfe3ff; letter-spacing: .04em; }
 .tt-to { margin: 0; font: 18px/1.2 var(--font-display); color: #ffe9b8; }
+
+/* Nicola's van under way: the button that skips the drive (ui/nicola.ts) */
+.van-skip { position: absolute; z-index: 30; right: 14px; bottom: 96px; box-shadow: 0 4px 0 #1c2340; }
+/* what Nicola tells while he drives (ui/nicola.ts): a line at a time, low in the middle */
+.van-talk { position: absolute; z-index: 29; left: 50%; bottom: 150px; transform: translateX(-50%); width: min(620px, calc(100% - 32px)); padding: 10px 16px 12px;
+  border: 3px solid #1c2340; border-radius: 16px; background: #fffaf0; box-shadow: 0 5px 0 #1c2340; font: 17px/1.35 var(--font-hand, Georgia, serif); color: #1c2340; }
+.van-talk b { display: block; margin-bottom: 2px; font: 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: #1f7fb5; }
+.van-talk.in { animation: van-talk .35s ease-out; }
+@keyframes van-talk { from { opacity: 0; transform: translate(-50%, 10px); } }
+@media (prefers-reduced-motion: reduce) { .van-talk.in { animation: none; } }

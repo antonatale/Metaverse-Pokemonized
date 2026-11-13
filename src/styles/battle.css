@@ -46,8 +46,11 @@
 .bob { animation: bob 2.8s ease-in-out infinite; }
 .opp .bob { animation-duration: 3.4s; animation-delay: -1.2s; }
 /* a legend is bigger than everyone else */
-.bob > .spr-legend { transform: scale(1.28); transform-origin: 50% 88%; }
-.opp .bob > .spr-legend { transform: scale(1.22); transform-origin: 62% 30%; }
+/* the legends are drawn bigger, and their wings and crowns go past the 200 × 200 box: they grow away from the edges
+   of the arena (up and to the right for yours, down and to the left for the other), so that nothing of them is cut */
+.bob > .spr-legend { transform: scale(1.2); transform-origin: -22% 100%; }
+.opp .bob > .spr-legend { transform: scale(1.14); transform-origin: 126% 0%; }
+.spr-wrap.me:has(.spr-legend) { bottom: 10px; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 .mover.lunge-me { animation: lungeMe .34s ease-out; }
 .mover.lunge-opp { animation: lungeOpp .34s ease-out; }
@@ -397,3 +400,25 @@
 .mover.statdown .spr { animation: statDown .76s ease-out; }
 @keyframes statUp { 25%, 60% { filter: brightness(1.25) drop-shadow(0 0 14px var(--mc)); } }
 @keyframes statDown { 25%, 60% { filter: grayscale(.6) brightness(.8); } }
+
+/* ---------- the friends' moves (ui/friend-moves.ts): their pieces and their words ---------- */
+.fx.fm { will-change: transform, opacity; }
+.fx.fm-back { z-index: 1; }
+.fx.fm-txt { z-index: 10; }
+.fm svg { display: block; overflow: visible; filter: drop-shadow(0 3px 0 rgba(28, 35, 64, .25)); }
+.fm-boom > svg { width: 100%; height: 100%; filter: drop-shadow(0 0 14px #ffffff); }
+.fm-word { display: block; white-space: nowrap; font: 1em/1 var(--font-display); letter-spacing: .03em; color: var(--c); -webkit-text-stroke: .09em #1c2340; paint-order: stroke fill;
+  text-shadow: 0 .08em 0 #1c2340, 0 0 .4em rgba(255, 255, 255, .7); }
+.fm-bubble { display: block; white-space: nowrap; padding: .3em .7em .35em; border: 3px solid #1c2340; border-radius: 1.2em; background: #ffffff; color: #1c2340; font: 1em/1 var(--font-display);
+  box-shadow: 0 4px 0 #1c2340, inset 0 -4px 0 color-mix(in srgb, var(--c) 45%, transparent); }
+.fm-heat { display: block; width: 170px; height: 190px; border-radius: 46%; background: radial-gradient(circle at 50% 40%, #fff6b0 0, #ffb300 22%, #ff5a3c 42%, color-mix(in srgb, var(--mc) 70%, #3a2a8a) 64%, transparent 74%); mix-blend-mode: screen; }
+.fm-scan { display: block; width: 170px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, #ffffff 20%, var(--mc) 50%, #ffffff 80%, transparent); box-shadow: 0 0 14px var(--mc), 0 0 4px #ffffff; }
+.fm-flat > svg { transform: perspective(300px) rotateX(58deg); }
+.fm-robot > svg { width: 100%; height: auto; }
+.fm-fox > svg { width: 100%; height: auto; }
+.fm-speed { display: block; width: 70px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--mc)); }
+.fm-cell { display: block; width: 26px; height: 15px; border: 2px solid #1c2340; border-radius: 2px; background: var(--mc); }
+.fm-cell.big { width: 52px; height: 80px; background: color-mix(in srgb, var(--mc) 60%, transparent); box-shadow: 0 0 12px var(--mc); }
+.fm-bubble-o { display: block; width: 14px; height: 14px; border: 2.5px solid #7cc8f2; border-radius: 50%; background: rgba(255, 255, 255, .5); }
+.fm-sun { display: block; width: 280px; height: 280px; }
+.fm-orb { width: 34px; height: 34px; }

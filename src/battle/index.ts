@@ -21,7 +21,7 @@ export function clock(s: BattleState): string { const m = (s.maxTurns - s.turn +
 export function planName(s: BattleState, i: number): string | null { const p = s.plan[i]; return p && !isSwitch(p) ? mv(s.sides[i], p)!.name : null; }
 /** who is on a side: the character, with the moves it has come to know */
 export function charOf(s: BattleState, i: number) { return ch(s.sides[i]); }
-/** a side's type right now (Costanzo's Personaggismo changes it) */
+/** a side's type right now (Costanzo's Personaggiame changes it) */
 export function sideType(s: BattleState, i: number): TypeName { return typeOf(s, s.sides[i], s.sides[1 - i]); }
 /** all of a side's types: two for some creatures */
 export function sideTypes(s: BattleState, i: number): TypeName[] { return typesOf(s, s.sides[i], s.sides[1 - i]); }

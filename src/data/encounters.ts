@@ -13,6 +13,8 @@ export interface Hiding {
   rise?: number;
   /** a place meant to be a challenge: its levels aim at the team's (see wildLevel) instead of staying in the band */
   follow?: { off: number; slack: number };
+  /** how often a creature jumps out at a step, against the usual: under 1 where there is a lot of room (the open gulf) */
+  rate?: number;
 }
 
 export const HIDINGS: Record<string, Hiding> = {
@@ -54,6 +56,13 @@ export const HIDINGS: Record<string, Hiding> = {
     night: [{ sp: 'riccetto', lv: [8, 12], w: 3 }, { sp: 'polpino', lv: [7, 10], w: 2 }, { sp: 'granchione', lv: [18, 20], w: 1 },
       { sp: 'medusella', lv: [8, 12], w: 4 }, { sp: 'medusaurora', lv: [20, 22], w: 1 }, { sp: 'cefalino', lv: [6, 10], w: 2 }],
     follow: { off: 0, slack: 4 } },
+  /* far out in the gulf, past the shallow water: the big ones of the sea, met less often (the gulf is wide) */
+  largo: { id: 'largo', name: 'Il largo del golfo', on: 'acqua', rate: 0.55,
+    day: [{ sp: 'cefalino', lv: [10, 14], w: 4 }, { sp: 'delfi', lv: [11, 15], w: 4 }, { sp: 'medusella', lv: [10, 14], w: 3 }, { sp: 'murenaccia', lv: [12, 16], w: 2 },
+      { sp: 'gabbianotto', lv: [16, 19], w: 1 }, { sp: 'cefaldrago', lv: [20, 23], w: 1, after: 'pietra-mare' }, { sp: 'delfaro', lv: [21, 24], w: 1, after: 'pietra-mare' }],
+    night: [{ sp: 'medusella', lv: [11, 15], w: 4 }, { sp: 'medusaurora', lv: [20, 23], w: 1 }, { sp: 'murenaccia', lv: [12, 16], w: 3 }, { sp: 'delfi', lv: [11, 15], w: 2 },
+      { sp: 'delfaro', lv: [21, 24], w: 2, after: 'pietra-mare' }],
+    follow: { off: 0, slack: 5 } },
   mura: { id: 'mura', name: 'Le mura di Castellone', on: 'mura',
     day: [{ sp: 'ramarrino', lv: [7, 10], w: 3 }, { sp: 'cicalina', lv: [6, 9], w: 2 }, { sp: 'gabbi', lv: [7, 10], w: 1 }, { sp: 'micetto', lv: [7, 10], w: 3 }, { sp: 'lumacotta', lv: [7, 9], w: 2 }],
     night: [{ sp: 'civettina', lv: [8, 11], w: 3 }, { sp: 'ramarrino', lv: [8, 10], w: 1 }, { sp: 'pipistrillo', lv: [8, 11], w: 3 }, { sp: 'micetto', lv: [7, 10], w: 1 }],

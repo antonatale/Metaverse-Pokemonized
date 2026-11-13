@@ -77,5 +77,17 @@ export const MISSIONS: Mission[] = [
       { q: 'Qual è il colmo per un elettricista?', a: ['Prendere la scossa', 'Avere le bollette', 'Restare folgorato da una ragazza'], ok: 2, yes: 'Stavolta ridono tutti!', no: '…nessuno ride. Però un cane abbaia.' }
     ],
     done: ['Non ci credo: hanno riso. Tieni, questa ginestra è cresciuta nel vaso del palco. È tua.'],
-    pay: { money: 80, items: { fetta: 1 }, mon: 'ginestrella' } }
+    pay: { money: 80, items: { fetta: 1 }, mon: 'ginestrella' } },
+  /* Claudia: two at a table of Morgana fighting over nothing, as Costanzo and she do over everything; she knows how it
+     ends well: one at a time, or two tables for one evening */
+  { id: 'tavolo', who: 'claudia', npc: 'avventore', name: 'Il tavolo che litiga', where: 'Birreria Morgana',
+    wait: ['Qui al tavolo litighiamo da un\'ora sul quiz: chi ha ragione su Mamurra. Ci vorrebbe Claudia: lei li mette d\'accordo tutti, anche quando non sono d\'accordo.'],
+    ask: ['Claudia! Meno male. Io dico che la villa di Gianola era di Mamurra, lui dice di Cicerone, e ormai urliamo.', 'Come se ne esce?'],
+    quiz: [
+      { q: 'Al tavolo parlano in due insieme, sempre più forte. Cosa fai?', a: ['Parli più forte di loro', 'Uno alla volta: prima tu, poi tu', 'Te ne vai al bancone'], ok: 1, yes: 'Si guardano. Il primo comincia, l\'altro aspetta. Incredibile.', no: 'Il volume sale. Al bancone qualcuno alza il boccale per protesta.' },
+      { q: 'Il primo ha finito. Il secondo vuole rispondere subito. Tu?', a: ['«Puoi sentire anche il suo?»', '«Ha ragione lui, fine»', '«Facciamo il quiz?»'], ok: 0, yes: 'Ascolta. Annuisce. Poi risponde, ma senza urlare.', no: 'Ricominciano tutti e due insieme.' },
+      { q: 'Non sono d\'accordo neanche adesso. Come chiudi la serata?', a: ['Chi perde paga il giro', 'Tavoli separati, per stasera: domani se ne riparla', 'Chiami Costanzo a decidere'], ok: 1, yes: 'Ognuno al suo tavolo, e ognuno con la sua idea. Ma a fine serata brindano insieme.', no: 'Ci vorrebbe un\'altra ora. E Costanzo ne vorrebbe tre.' }
+    ],
+    done: ['Grazie, Claudia. Mamurra o Cicerone, ne riparliamo domani. Uno alla volta.', 'Tieni: questo Micetto dorme sotto il nostro tavolo da settimane. Con te sta meglio.'],
+    pay: { money: 70, items: { tiella: 2 }, mon: 'micetto' } }
 ];

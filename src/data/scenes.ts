@@ -8,7 +8,7 @@ const BY_AREA: Record<string, string> = {
   'Mola': 'mola', 'Birreria Morgana': 'mola', 'Piazza San Giovanni': 'mola',
   'Centro': 'centro', 'Piazza della Vittoria': 'centro', 'Stazione': 'centro', 'Gelateria Lavezzi': 'centro',
   'Castellone': 'castellone',
-  'Monti Aurunci': 'maranola', 'Rio Fresco': 'maranola', 'Campagna': 'maranola', 'Tomba di Cicerone': 'maranola',
+  'Monti Aurunci': 'maranola', 'Rio Fresco': 'maranola', 'San Giulio': 'maranola', 'Campagna': 'maranola', 'Tomba di Cicerone': 'maranola',
   'Via Amendola': 'castellonorato', 'Acqualonga': 'castellonorato', 'Santo Janni': 'castellonorato', 'Parco la Fontana': 'castellonorato',
   'Bruno Zauli': 'castellonorato', 'Parco Gramsci': 'castellonorato', 'Villaggio Don Bosco': 'castellonorato',
   'Gianola': 'gianola', 'Lido Oriente': 'gianola', 'Scauri': 'gianola'

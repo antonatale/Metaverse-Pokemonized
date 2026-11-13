@@ -54,6 +54,15 @@ export interface Side {
   anx: number;
   zen: number;
   used: Record<string, boolean>;
+  /* Claudia (missing in a side made before her: every check reads them as off) */
+  /** the Padre has already taken her first blow (it did half) */
+  padre?: boolean;
+  /** the turn it last took a blow (Puoi Sentire Anche il Mio? answers it in the same turn) */
+  hurtAt?: number;
+  /** Tavoli Separati: that move is on the other table until that turn */
+  banned?: { move: string; until: number } | null;
+  /** La Cattiva Strada: lost until that turn, it now and then does something else */
+  astray?: number;
   /** times each limited move has been used */
   uses: Record<string, number>;
   st: { dmg: number; crits: number; lost: number; fails: number; heals: number };
@@ -212,6 +221,9 @@ export interface MoveLabel {
   eff?: number;
   power?: number;
   acc?: number;
+  /** a person's move: the person's type of the moment; how many blows it strikes, when more than one */
+  ptype?: string;
+  hits?: number;
 }
 
 /** someone on a side's bench, for the screen that picks who comes in */

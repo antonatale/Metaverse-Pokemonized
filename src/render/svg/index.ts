@@ -3,7 +3,7 @@ import type { ExprName } from './types';
 import { SHARED, GRADIENTS } from './palette';
 import { CH } from './looks';
 import { lookOf } from './forms';
-import { hairCurls, hairWavy, hairQuiff, hairBuzz } from './hair';
+import { hairCurls, hairWavy, hairLong, hairQuiff, hairBuzz } from './hair';
 import { outfit } from './outfit';
 import { ears, face, faceD, mouths, exprGroup } from './face';
 import { glasses, props, hood } from './extras';
@@ -24,9 +24,15 @@ function buildChar(c: Look): string {
   if (c.hair.style === 'quiff') s += '<linearGradient id="' + P + 'FadeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.hair.out + '"/><stop offset=".4" stop-color="' + c.hair.body[0] + '" stop-opacity=".95"/><stop offset=".78" stop-color="' + c.hair.body[0] + '" stop-opacity=".4"/><stop offset="1" stop-color="' + c.hair.body[0] + '" stop-opacity="0"/></linearGradient>';
   s += '<clipPath id="' + P + 'FaceClip"><path d="' + faceD(c) + '"/></clipPath>';
   var st = c.hair.style;
-  s += st === 'wavy' ? hairWavy(c) : st === 'quiff' ? hairQuiff(c) : st === 'buzz' ? hairBuzz(c) : hairCurls(c);
+  s += st === 'wavy' ? hairWavy(c) : st === 'long' ? hairLong(c) : st === 'quiff' ? hairQuiff(c) : st === 'buzz' ? hairBuzz(c) : hairCurls(c);
   s += outfit(c) + ears(c) + face(c) + glasses(c) + props(c) + hood(c);
   if (c.head) s += '<g id="' + P + 'Head">' + c.head + '</g>';
+  /* big hoops at the ears, hanging in front of the hair */
+  if (c.hoops) {
+    var hm = c.hoops.metal === 'gold' ? ['#9c7629', 'url(#gGold)'] : ['#6f7680', 'url(#gSilver)'], hr = c.hoops.r, hoop = '';
+    [[73, 176], [187, 176]].forEach(function (q) { hoop += '<circle cx="' + q[0] + '" cy="' + (q[1] + hr) + '" r="' + hr + '" fill="none" stroke="' + hm[0] + '" stroke-width="3"/><circle cx="' + q[0] + '" cy="' + (q[1] + hr) + '" r="' + hr + '" fill="none" stroke="' + hm[1] + '" stroke-width="1.8"/>'; });
+    s += '<g id="' + P + 'Hoops">' + hoop + '</g>';
+  }
   var M = mouths(c);
   EXPRS.forEach(function (x) { s += exprGroup(c, x, M); });
   return s;
@@ -46,10 +52,11 @@ export function person(id: string, expr?: string, cls?: string, vb?: string, loo
   if (c.props && c.props.phones) s += '<use class="ph-neck" href="#' + P + 'PhNeck"/>';
   s += '<use class="' + (hoodKo ? 'nohood' : '') + '" href="#' + P + 'Ears"/><use href="#' + P + 'Face"/>';
   EXPRS.forEach(function (x) { s += '<use class="ex ex-' + x + '" href="#' + P + 'Ex-' + x + '"/>'; });
-  if (H.fshadow || H.style === 'wavy' || H.style === 'quiff') s += '<use href="#' + P + 'FShadow"/>';
+  if (H.fshadow || H.style === 'wavy' || H.style === 'long' || H.style === 'quiff') s += '<use href="#' + P + 'FShadow"/>';
   s += '<use class="' + (hoodKo ? 'nohood' : '') + '" href="#' + P + 'Top"/>';
   if (hoodKo) s += '<use class="hood" href="#' + P + 'HairHood"/>';
   if (H.rings) s += '<use href="#' + P + 'Fringe"/>';
+  if (c.hoops) s += '<use href="#' + P + 'Hoops"/>';
   if (c.glasses) {
     if (c.glasses.when === 'always') {
       s += '<use class="' + (c.glasses.koTilt ? 'gl-norm' : '') + '" href="#' + P + 'Gl"/>';

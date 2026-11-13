@@ -21,6 +21,37 @@ La mappa è 320×128 caselle (`W`, `H`, `X_ANCHORS` in `formia-projection.ts`), 
 - **Misure** (`density.ts`): 8 schermate vuote su 85, ai bordi; 10% di caselle deserte; 216 case; quattro belvedere. `density.test.ts` le tiene come tetto.
 - **Salvataggi:** `formia8` riporta a casa chi era sulla mappa di prima.
 
+## Le cortine, la Torre di Mola, il parco chiuso (12 novembre 2026)
+
+Dalle foto di Antonio di via Abate Tosti e di Largo Paone: in centro e a Mola le strade sono corridoi tra palazzi alti, non casette sparse.
+
+- **`ROWS` in `network.ts`:** file di impronte con la facciata sul lato basso. Il generatore le taglia in palazzi larghi 2–4 caselle, attaccati, intorno ai luoghi che ci stanno già (Morgana, il barbiere, il tabacchi, Telaro, il bar, casa di Forchetta: `kind: 'cortina'` con `look`), mai due intonaci uguali vicini. `up` è quanto il palazzo sale sopra l'impronta, in caselle: una fila che dà le spalle a un vicolo lo tiene basso, così il vicolo resta visibile; `shops` è la quota di botteghe al piano terra. Le botteghe senza negozio dicono che è chiuso; i negozi di `SHOPS` in `formia.ts` prendono la bottega più vicina.
+- **Disegno:** `render/canvas/cortina.ts` (`cortina`, `castello`, `anchor`). Tetto visto dall'alto, cornicione, piani di portefinestre con persiane e balconi di ferro (fiori, panni stesi), piano terra ad archi con portone, serrande, vetrine e tende; il palazzo alto di Largo Paone (`look: 'alto'`) ha balconi continui e tredici piani. Tre colori d'intonaco nuovi: `--m-wall-f/g/h`.
+- **Via Abate Tosti:** vicolo largo una casella, lastricato (`v`), da Largo Paone alla piazzetta dell'Ancora sotto la Torre di Mola (`ANCHOR`, `BENCHES`). La torre è il luogo `torre-mola`, `kind: 'castello'`, 4×3 caselle e 5 di altezza: non è più uguale a quella di Maranola (`tower`).
+- **Largo Paone:** piazza di 14×4 caselle con due aiuole (`BEDS`) e i pini sul lungomare (`PINES`); la rientranza di mare accanto è riempita da una banchina (`QUAYS`). `KEEP_OPEN` tiene vuoto il retro del palazzo alto.
+- **Parco la Fontana chiuso:** `FENCES` (ringhiera `|`), `GATES` (cancelli chiusi `+`, che si leggono), `CLOSED` (dentro, i controlli di raggiungibilità non valgono). Si entra solo dalla porta sul retro di casa di Antonio: lo spot `porta-parco` è un warp verso `casa` (porta `D` sul muro destro del salotto) e torna nel parco. La vicina ora sta sul marciapiede di via Amendola, davanti al giardino.
+- **Salvataggi:** `formia9` riporta a casa solo chi era su una casella dove ora c'è un palazzo, una ringhiera, un albero o l'ancora.
+- **Misure dopo:** 8 schermate vuote su 85, 10% di caselle deserte, 217 case.
+
+## Largo Paone, Mola e piazza Risorgimento come sono (12 novembre 2026, seconda revisione)
+
+Dalle indicazioni di Antonio, dai dati OSM/Overpass (`/ref/poi` del lavoro: Zanzibar, Altieri, Farmacia S. Anna, Telaro, Morgana, le Cinque Cannelle, i due parcheggi, la chiesa, le scuole, l'ospedale), dalla ricognizione di Codex «astra» (le posizioni relative erano buone) e da Street View per l'atmosfera.
+
+- **La sequenza:** via Vitruvio → rotonda di Largo Paone (`Largo Domenico Paone`, anello 4×4) → la strada del Largo lungo l'enorme parcheggio (`fill: 'parking'`: corsie `!`, stalli `$`, auto parcheggiate `-`, colori a caso) dove il giovedì c'è il mercato → il porto con i traghetti (biglietteria, Bar del Porto, Zi' Anna Mare). Il marciapiede largo davanti alla fila di Zanzibar, Tabacchi Altieri e Farmacia S. Anna separa i negozi dal parcheggio; le Cinque Cannelle (`cannelle`) e piazza Tommaso Testa sono all'angolo. Il palazzo altissimo (`palazzo-alto`) è a ovest della rotonda, a sinistra del tabacchi guardando i negozi.
+- **Telaro** è su via Tullia (x 132), perpendicolare a via Vitruvio e a via Abate Tosti: da via Abate Tosti si gira a destra, c'è Telaro e si sale verso Largo Paone.
+- **Via Abate Tosti** è il vicolo `v` a y 65: a nord Telaro, il bar, Barber May, casa di Forchetta; a sud Morgana accanto alla pescheria (lato mare, `up` basso: si vede il tetto dal vicolo, la facciata sulla Pinetina). La Pinetina (`fill: 'pinetina'`) è il parcheggio sotto i pini.
+- **La Torre di Mola sta sul porticciolo interno:** `DARSENA` in `network.ts` (x 148–150, y 59–79) è acqua, il lungomare le passa sopra sul ponticello; lungo le due banchine i gozzi (`9`, `gozzo`, colori a caso). Davanti alla torre le mura del castello (`castello-mura`, `castlewall`: merli, portale di conci con lo stemma, la lanterna, il cortile con l'ulivo e il pozzo).
+- **Mola alta:** via Emanuele Filiberto sale dalla rotonda, passa San Giovanni (ora con canonica bianca a loggia, timpano e campanile; `collegiata`), via Solaro con la Vitruvio Pollione e il Castellum Aquae, la De Amicis (`school` con `look: 'deamicis'`: anni Trenta, ocra, portale e balcone con le bandiere) di fronte a piazza Risorgimento. Da lì via Ferrucci sale lungo il lato ovest dell'ospedale Dono Svizzero (OSM: lo costeggia a ovest e poi gli gira sopra; uscendo dall'ospedale verso via Appia è a destra), che ora è un blocco anni Settanta con piano terra in mattoni, finestre a nastro, pronto soccorso con pensilina e ambulanza.
+- **Da Street View:** le luminarie a zigzag sopra via Abate Tosti (`festoons` nella mappa, oggetto `festoon`: dai primi piani di Telaro, del bar e di Barber May ai tetti di Morgana e della pescheria; ci si passa sotto, di notte le lampadine si accendono) e tre motorini parcheggiati sul bordo del marciapiede largo di Largo Paone (`SCOOTERS` in `network.ts`, carattere `;`, colori a caso).
+- **Visto attraverso:** quello che è alto e sta davanti ad Antonio (la torre, un palazzo) non lo nasconde: lui e la sua creatura vengono ridisegnati sopra in trasparenza (`drawSorted` in `world-view.ts`).
+- **Salvataggi:** `formia10` riporta a casa chi era sotto un palazzo, un'auto o una barca; il motorino parcheggiato dove ora c'è un'auto torna al suo posto.
+
+## San Giulio, le targhe delle vie, il mare aperto (13 novembre 2026)
+
+- **San Giulio** (area propria fra Ferrucci e via Verdi, sopra l'Appia): in via Palazzo la scuola Mattej (`scuola-mattej`, a nord), e di fronte, a sud, il parchetto con alberi, altalene e scivolo (`parchetto-mattej`, oggetti `swings` e `slide`) e la palazzina di Claudia (`casa-claudia`). Indicazione di Antonio: fra il CONI e piazza Risorgimento, su una via interna.
+- **Case degli amici:** sopra la casa c'è «Casa di …», non più il nome della via. Il nome della via è su una targa all'angolo, larga tre caselle e leggibile (`streetPlate` in `render/canvas/objects.ts`): via Palazzo, via Adalgiso Ferrucci, via Solaro, piazza Pasquale Mattei, oltre a quelle che c'erano (via Abate Tosti, via Amendola…). Per Zendavid a Scauri non c'è targa: la via non è stata detta.
+- **Mare aperto:** le caselle di mare sono raggiungibili a nuoto o in SUP; boe, bottiglie e tre allenatori al largo sono punti `on: 'sea'`, esclusi dai controlli di raggiungibilità a piedi.
+
 ## Rilievo
 
 La mappa ha gradoni sugli Aurunci, all'Acervara e a Gianola, muraglione dell'Appia, la salita di via Solaro, tre sentieri, cinque salti verso sud e quattro belvedere registrati nel diario. I fianchi sono caselle solide; una quota numerica per casella non è implementata. Castellone richiede ancora un intervento specifico per diventare visibilmente più alto dell'Appia.
@@ -39,7 +70,7 @@ Il disegno è in `render/canvas/ground.ts` e `objects.ts`: texture continue, con
 
 `tools/formia/audit.ts`: rete stradale, ferrovia, vicoli e percorsi. `drift.ts`: spostamenti dei luoghi. `density.ts`: distanza dalle attività e schermate vuote. `show.ts x0 x1 y0 y1`: dettaglio della mappa.
 
-Test pertinenti: `maps.test.ts`, `relief.test.ts`, `density.test.ts`, `place.test.ts` e golden del canvas. Cambiando coordinate salvate aggiungere una migrazione; non riutilizzare `formia8` per un layout nuovo. Le mappe con enigmi hanno un validatore in `story/place.ts`.
+Test pertinenti: `maps.test.ts`, `relief.test.ts`, `density.test.ts`, `place.test.ts` e golden del canvas. Cambiando coordinate salvate aggiungere una migrazione; non riutilizzare `formia10` per un layout nuovo. Le mappe con enigmi hanno un validatore in `story/place.ts`.
 
 ## Riferimenti
 

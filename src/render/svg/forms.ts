@@ -25,6 +25,15 @@ const ears2 = '<path d="M86 84L84 26L124 58Z" fill="#d0702c" ' + line + '/><path
 const partyHat = '<path d="M102 44L130 0L158 44C146 50 114 50 102 44Z" fill="#e8588a" ' + line + '/><path d="M114 26L150 34M122 14L140 18" stroke="#ffe45c" stroke-width="4"/><circle cx="130" cy="4" r="7" fill="#ffe45c" ' + line + '/>';
 const crown = '<path d="M86 44L78 4L108 24L130 0L152 24L182 4L174 44C146 52 114 52 86 44Z" fill="#f2c14e" ' + line + '/><circle cx="130" cy="30" r="6" fill="#2f8f4e" stroke="' + INK + '" stroke-width="1.5"/><circle cx="102" cy="34" r="4" fill="#c0392b" stroke="' + INK + '" stroke-width="1.5"/><circle cx="158" cy="34" r="4" fill="#c0392b" stroke="' + INK + '" stroke-width="1.5"/>';
 const phones = '<path d="M72 136C70 44 190 44 188 136" fill="none" stroke="#111216" stroke-width="10"/><path d="M72 136C70 44 190 44 188 136" fill="none" stroke="#e8a33d" stroke-width="3"/><rect x="58" y="118" width="24" height="44" rx="10" fill="#1f2027" ' + line + '/><rect x="178" y="118" width="24" height="44" rx="10" fill="#1f2027" ' + line + '/>';
+/** Diabolica: a red hairband with two little horns */
+const horns = '<path d="M76 100C92 70 112 60 130 60C148 60 168 70 184 100" fill="none" stroke="' + INK + '" stroke-width="9" stroke-linecap="round"/><path d="M76 100C92 70 112 60 130 60C148 60 168 70 184 100" fill="none" stroke="#d6403a" stroke-width="5.5" stroke-linecap="round"/>' +
+  '<path d="M98 70C94 54 96 42 104 34C106 46 110 56 114 64Z" fill="#d6403a" ' + line + '/><path d="M162 70C166 54 164 42 156 34C154 46 150 56 146 64Z" fill="#d6403a" ' + line + '/>' +
+  '<path d="M101 60C100 52 101 46 104 41M159 60C160 52 159 46 156 41" fill="none" stroke="#ff9a8b" stroke-width="2" stroke-linecap="round"/>';
+/** the Padre: a thin gold band in the hair, a little triangle at its middle */
+const circlet = '<path d="M80 96C96 76 112 68 130 68C148 68 164 76 180 96" fill="none" stroke="#8a6a1e" stroke-width="5" stroke-linecap="round"/><path d="M80 96C96 76 112 68 130 68C148 68 164 76 180 96" fill="none" stroke="#f2c14e" stroke-width="2.6" stroke-linecap="round"/>' +
+  '<path d="M130 54L140 72L120 72Z" fill="#f2c14e" ' + line + '/><circle cx="130" cy="66" r="2.6" fill="#ffffff"/>';
+/** a gold chain with a triangle on it: the Trinità */
+const trinity = '<path d="M108 236C112 252 120 262 130 268C140 262 148 252 152 236" fill="none" stroke="#b08a3e" stroke-width="2.4"/><path d="M130 264L142 286L118 286Z" fill="#f2c14e" stroke="' + INK + '" stroke-width="1.8" stroke-linejoin="round"/><path d="M130 272L135 282L125 282Z" fill="#fff4c4"/>';
 const halo = '<ellipse cx="130" cy="44" rx="50" ry="11" fill="none" stroke="#b08a3e" stroke-width="9"/><ellipse cx="130" cy="44" rx="50" ry="11" fill="none" stroke="#ffe08a" stroke-width="4"/>';
 
 export const FORMS: Record<FriendId, [Partial<Look>, Partial<Look>]> = {
@@ -47,6 +56,10 @@ export const FORMS: Record<FriendId, [Partial<Look>, Partial<Look>]> = {
   forchetta: [
     { head: band('#f4f1ea', '#2f8f4e'), outfit: { style: 'tee', base: '#f2f0ea', dark: '#cfccc2', light: '#ffffff', line: '#6e6c63', collar: '#2f8f4e' } },
     { outfit: { style: 'stripes', base: '#1f5fa8', dark: '#164a85', light: '#3a7cc7', line: '#14161f', collar: '#1f5fa8', stripes: ['#1f5fa8', '#f4f1ea', '#1f5fa8', '#f4f1ea'] }, head: cap('#1f5fa8', '#164a85', 'F') }
+  ],
+  claudia: [
+    { head: horns, outfit: { style: 'jacket', base: '#c0392b', dark: '#8e2a20', light: '#e05a4a', line: '#4a120c', tee: '#1f1d24', fold: '#7a2219' } },
+    { head: circlet, outfit: { style: 'jacket', base: '#f2ead8', dark: '#d6c9a8', light: '#fffaf0', line: '#7a6a48', tee: '#2a2f45', fold: '#c9b88f', over: trinity } }
   ],
   zendavid: [
     { head: phones, outfit: { style: 'jacket', base: '#1f2027', dark: '#111216', light: '#34363f', line: '#07080b', tee: '#e8a33d', fold: '#0c0d11' } },

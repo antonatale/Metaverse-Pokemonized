@@ -60,7 +60,15 @@ function eye(c: Look, side: number, o: EyePose, id: string): string {
     s += '<path d="M' + pt([inner[0], inner[1] - 0.3]) + 'C' + pt([cx - side * w * 0.45, le + 2.1]) + ' ' + pt([cx + side * w * 0.45, le + 1.7]) + ' ' + pt([outer[0] + side * 0.6, outer[1] - 0.2]) + '" fill="none" stroke="' + c.brow.color + '" stroke-width="2" stroke-linecap="round"/>';
     s += '<path d="M' + pt([cx - side * 10, cy - 5.6]) + 'C' + pt([cx - side * 4, cy - 8.4]) + ' ' + pt([cx + side * 5, cy - 8.4]) + ' ' + pt([cx + side * 11, cy - 5.4]) + '" fill="none" stroke="' + S.line + '" stroke-width=".9" opacity=".5"/>';
   } else {
-    s += '<path d="' + top + '" fill="none" stroke="' + c.brow.color + '" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += '<path d="' + top + '" fill="none" stroke="' + c.brow.color + '" stroke-width="' + (c.lashes ? 3 : 2.3) + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (c.lashes) {
+      /* the liner flicks out at the corner, a few lashes along the outer half of the lid */
+      s += '<path d="M' + pt(outer) + 'l' + r1(side * 3.6) + ' -2.6" stroke="' + c.brow.color + '" stroke-width="2.2" stroke-linecap="round"/>';
+      for (var q = 0; q < 4; q++) {
+        var t = 0.45 + q * 0.16, lx0 = cx + side * w * (t * 2 - 1) * 0.95, ly0 = cy - hT * 1.18 * Math.sin(Math.PI * (0.5 + (t - 0.5) * 0.9)) - 0.6;
+        s += '<path d="M' + r1(lx0) + ' ' + r1(ly0) + 'q' + r1(side * 1.2) + ' -2 ' + r1(side * 2.6) + ' -3.2" fill="none" stroke="' + c.brow.color + '" stroke-width="1.1" stroke-linecap="round"/>';
+      }
+    }
     s += '<path d="M' + pt([cx - side * 10.5, cy - hT - 1.8]) + 'C' + pt([cx - side * 4, cy - hT - 5]) + ' ' + pt([cx + side * 6, cy - hT - 4.6]) + ' ' + pt([cx + side * 12.6, cy - hT - 0.4]) + '" fill="none" stroke="' + S.line + '" stroke-width="1.05" opacity=".6"/>';
     s += '<path d="M' + pt(outer) + bottom.slice(0, -1) + '" fill="none" stroke="' + S.line + '" stroke-width=".85" opacity=".45"/>';
   }
@@ -215,6 +223,9 @@ export function face(c: Look): string {
   f += '<ellipse cx="125.2" cy="173.6" rx="2.5" ry="1.2" fill="' + S.deep + '" opacity=".9" transform="rotate(12 125.2 173.6)"/>';
   f += '<ellipse cx="135.8" cy="173.6" rx="2.5" ry="1.2" fill="' + S.deep + '" opacity=".9" transform="rotate(-12 135.8 173.6)"/>';
   f += '<path d="M127.4 175Q130.5 176.8 133.6 175" fill="none" stroke="' + S.line + '" stroke-width="1" opacity=".55"/>';
-  f += '<path d="M126.6 178.8C127.6 181.6 128.6 183.2 130.4 183.4C132.2 183.2 133.2 181.6 134.2 178.8" fill="' + S.shade + '" opacity=".35"/></g>';
+  f += '<path d="M126.6 178.8C127.6 181.6 128.6 183.2 130.4 183.4C132.2 183.2 133.2 181.6 134.2 178.8" fill="' + S.shade + '" opacity=".35"/>';
+  /* a little ring in the septum */
+  if (c.septum) f += '<path d="M127.6 174.4A3 3 0 0 0 133.4 174.4" fill="none" stroke="#6f7680" stroke-width="1.9" stroke-linecap="round"/><path d="M127.8 174.6A2.8 2.8 0 0 0 133.2 174.6" fill="none" stroke="url(#gSilver)" stroke-width="1.1" stroke-linecap="round"/>';
+  f += '</g>';
   return f;
 }

@@ -18,8 +18,13 @@ export interface Tune {
   talk: number;
   /** critical hit multiplier against Andrea */
   critAndrea: number;
+  /** Claudia: the first blow she takes (Il Padre), what she gives and takes under a third of her health (Diabolica),
+      her answer in the same turn (Puoi Sentire Anche il Mio?) */
+  padre: number;
+  diabolica: number;
+  ascolta: number;
 }
-export const TUNE: Tune = { zenBoost: 1.2, healBase: 20, healPer: 12, K: 0.3, se: 1.12, nve: 0.9, regen: 5, calc: 0.8, talk: 0.25, critAndrea: 2 };
+export const TUNE: Tune = { zenBoost: 1.2, healBase: 20, healPer: 12, K: 0.3, se: 1.12, nve: 0.9, regen: 5, calc: 0.8, talk: 0.25, critAndrea: 2, padre: 0.5, diabolica: 1.2, ascolta: 1.5 };
 
 /** damage scale of the exam, and the fallback when a battle has none */
 export const K = 0.42;

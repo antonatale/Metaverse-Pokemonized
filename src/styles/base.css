@@ -11,6 +11,8 @@ body.in-battle { overflow: hidden; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .spr { display: block; width: 100%; height: auto; }
+/* a creature can reach past its 200 × 200 box (a dragon's wings, a crown): it is not cut there */
+.spr-c { overflow: visible; }
 
 /* ---------- shared bits ---------- */
 .type {

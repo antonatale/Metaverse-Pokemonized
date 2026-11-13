@@ -69,6 +69,10 @@ function parts(s: BattleState, i: number, id: string): Parts {
     if (id === 'stronger' && zenOn(s, me)) mult *= TUNE.zenBoost;
   }
   if (foe.id === 'andrea' && foe.seen[id]) { mult *= TUNE.calc; notes.push('calc'); }
+  /* Claudia: the first blow she takes does half (Il Padre); under a third of her health she gives and takes more (Diabolica) */
+  if (foe.id === 'claudia' && !foe.padre) mult *= TUNE.padre;
+  if (me.id === 'claudia' && me.hp < me.max / 3) mult *= TUNE.diabolica;
+  if (foe.id === 'claudia' && foe.hp < foe.max / 3) mult *= TUNE.diabolica;
   mult *= modMult(s, foe, 'guard');
   if (foe.fresh) mult *= SWITCH_TUNE.guard;
   mult *= dealtBy(s, me, foe) * takenBy(s, foe, me, type);
@@ -115,13 +119,15 @@ export function applyHit(s: BattleState, i: number, id: string, ev: BattleEvent[
   if (foe.endure && !foe.sturdy && dmg >= foe.hp && foe.hp > 1 && rand(s) < foe.endure) { dmg = foe.hp - 1; foe.sturdy = true; held = true; }
   if (foe.stages) dmg = Math.min(dmg, foe.hp - stageFloor(foe));
   foe.hp = Math.max(0, foe.hp - dmg);
+  /* Claudia keeps track of the blows she takes (Puoi Sentire Anche il Mio?), and the first one is the Padre's */
+  if (foe.id === 'claudia') { foe.hurtAt = s.turn; if (!foe.padre) { foe.padre = true; ev.push(anim(j, 'abil', { text: 'Il Padre' })); } }
   spendHit(s, me, foe, p.type);
   me.st.dmg += dmg; if (crit) me.st.crits++;
   if (!opt.noLunge) ev.push(anim(i, 'lunge'));
   ev.push({ k: 'hp', who: j, hp: foe.hp, dmg: dmg, crit: crit, eff: p.eff });
   ev.push(expr(j, foe.hp > 0 ? 'pout' : 'sleepy'));
   if (crit) ev.push(say(p.forceCrit ? 'La fissa di Costanzo: colpo critico sicuro!' : 'Colpo critico!'));
-  const lvl = effLevel(p.eff);
+  const lvl = opt.quiet ? 0 : effLevel(p.eff);
   if (lvl === 2) ev.push(say('Doppio vantaggio di tipo: è superefficace!'));
   else if (lvl === 1) ev.push(say('È superefficace!'));
   else if (lvl === -2) ev.push(say('Non è per niente efficace…'));
@@ -169,6 +175,6 @@ export function confuse(s: BattleState, j: number, turns: number, ev: BattleEven
   const foe = s.sides[j];
   foe.conf = Math.max(foe.conf, turns);
   ev.push(anim(j, 'confused'));
-  ev.push(say(ch(foe).name + ' è confuso!'));
+  ev.push(say(ch(foe).name + (ch(foe).fem ? ' è confusa!' : ' è confuso!')));
   return true;
 }

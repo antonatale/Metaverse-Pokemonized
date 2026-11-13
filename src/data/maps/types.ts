@@ -31,6 +31,10 @@ export interface Building {
   to?: string; tx?: number; ty?: number; tdir?: Dir;
   /** the houses of the town: a variation seed for their look (facade colour, roof, shutters, sun tents) */
   v?: number;
+  /** a palazzo of a cortina: how far it rises over its footprint, in tiles (HEIGHT of its kind when missing), and
+      what its ground floor is (a shop, the pub, the tobacconist…; a portone when missing) */
+  up?: number;
+  look?: string;
   /** a shop: after its message, you can buy (data/growth.ts SHOPS) */
   shop?: string;
 }
@@ -60,6 +64,8 @@ export interface GroundObject {
     plates are the street-name plates at the corners */
 export interface Sign {
   x: number; y: number; text: string[]; quiet?: boolean; ride?: boolean; plate?: boolean; sleep?: boolean;
+  /** a buoy out at sea, read swimming up to it */
+  buoy?: boolean;
   /** a belvedere: read from there, Formia is seen from above (the id of the view, for the diary, and its name) */
   view?: { id: string; name: string };
   /** a way in that opens with the story: once one of these flags is there the sign offers to go in (a place under the town) */
@@ -114,6 +120,10 @@ export interface Npc {
   pet?: number;
   /** a guard of a place: at every step of Antonio's it looks the next way of this list */
   patrol?: Dir[];
+  /** out at sea: swimming (the water to the waist), standing on a paddle board or a windsurf, or sitting in a gozzo */
+  float?: 'swim' | 'sup' | 'boat' | 'windsurf';
+  /** someone's own creature, tame (Nicola's Delfaro at the Eclipse): drawn as that creature, leaping when in the sea */
+  mon?: SpeciesId;
 }
 /** one of the things Antonio lost around town: found, it is never lost again in story battles */
 export interface LostItem {
@@ -170,6 +180,9 @@ export interface MapDef {
   objects?: MapObject[];
   groundObjects?: GroundObject[];
   signs?: Sign[];
+  /** strings of lights hung across a lane, from the palazzi on one side to those on the other (via Abate Tosti):
+      over the tiles x0..x1 of row y, drawn over whoever walks under them */
+  festoons?: { x0: number; x1: number; y: number }[];
   npcs?: Npc[];
   items?: LostItem[];
   areas?: Area[];
