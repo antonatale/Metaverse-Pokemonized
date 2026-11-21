@@ -24,12 +24,15 @@ import { vanStart, windsurfLanded, leadFrame, companionTalk, nicolaTalk, onTheWa
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
 import { offerActivity, startActivity } from './activities';
+import { seaFrame, seaTalk, seaJobsHtml, seaStop } from './sea';
+import { sea } from '../story/sea';
 import { checkRun, cancelRun } from './run';
 import { ACTIVITIES, activity, timesDone, bestOf, record } from '../story/activities';
 import { TOURNEY, roundsOf } from '../data/tourney';
 import { myStops, nextStop, stopsDone, heading } from '../story/goals';
 import { run } from '../story/run';
-import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, type DayMode } from '../story/daytime';
+import { DAY_MODES, dayMode, setDayMode, sunTimes, darkness, sunset, type DayMode } from '../story/daytime';
+import { openPanorama } from './panorama';
 import { SPECIES, isSpecies, type SpeciesId } from '../data/creatures';
 import { HIDINGS, RATE, CALM, pickMeet, wildLevel, type Hiding } from '../data/encounters';
 import { SHOPS, WARES, HELD_IDS, meetChance, luck, lastStand, coins, moneyFor } from '../data/growth';
@@ -78,7 +81,7 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="wframe" aria-hidden="true"></div>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn wphone" type="button" id="wphone" aria-label="Telefono: il caminetto (T)" title="Il caminetto (T)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><span class="wwind" id="wwind" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn wphone" type="button" id="wphone" aria-label="Telefono: il caminetto (T)" title="Il caminetto (T)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
@@ -200,7 +203,9 @@ function chapterTip() {
   if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
 }
 export function renderGoal() {
-  var el = $('wgoal'), h = heading(M.id);
+  var el = $('wgoal'), h = heading(M.id), rc = sea.race, nx = rc && !M.inside ? rc.marks[rc.got] : null;
+  /* in a race at sea the arrow points to the next mark */
+  if (rc) h = nx ? { x: nx[0], y: nx[1], exact: true, stop: { id: 'boa-' + rc.got, text: 'Boa ' + (rc.got + 1) + ' di ' + rc.marks.length, where: 'in mare', label: 'Gara a vela' } } as unknown as typeof h : null;
   if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
   var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
   var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = h.stop.id + '|' + turn;
@@ -208,7 +213,7 @@ export function renderGoal() {
   var fresh = lastGoal !== '' && lastGoal.split('|')[0] !== h.stop.id;
   lastGoal = k; el.hidden = false;
   el.innerHTML = '<span class="wgoal-ic"' + (here ? '' : ' style="transform:rotate(' + turn * 45 + 'deg)"') + '>' + (here ? GOAL_HERE : GOAL_ARROW) + '</span>' +
-    '<span class="wgoal-t"><small>Prossima tappa</small>' + esc(h.stop.text) + '</span>';
+    '<span class="wgoal-t"><small>' + ((h.stop as { label?: string }).label || 'Prossima tappa') + '</small>' + esc(h.stop.text) + '</span>';
   el.setAttribute('aria-label', 'Prossima tappa: ' + h.stop.text + ', ' + h.stop.where + (here ? ': sei arrivato' : '') + '. Apri il menu');
   if (fresh && !reduced) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); clearTimeout(goalFlash); goalFlash = setTimeout(function () { el.classList.remove('new'); }, 1600); }
 }
@@ -472,6 +477,7 @@ onRideStop(function (x, y) {
   var why = a && a.kind === 'door' ? 'Prima parcheggia: premi Invio per scendere dal motorino.'
     : c.g === 'steps' ? 'Le scale no: il motorino resta giù.'
     : c.g === 'sand' ? 'Sulla sabbia il motorino si pianta. Lascialo sul lungomare.'
+    : c.g === 'rock' ? 'Sugli scogli il motorino non ci va: si scende a piedi.'
     : c.deco === 'tall' || c.deco === 'pools' ? 'Lì dentro col motorino non si passa.'
     : c.deco === 'ledge' ? 'Dal gradone si salta a piedi, non in motorino.' : '';
   if (why && now - rideSaid > 4000) { rideSaid = now; notify(why); }
@@ -485,6 +491,7 @@ function pickUp(it: LostItem) {
       : 'Hai ritrovato tutto: nelle lotte della Storia Antonio non perde più niente.']);
 }
 /** talking to someone: the plot first, unless it has just had its say (past), and then what that one always does */
+var seaAside = false;
 function talkTo(p: Person, past?: boolean) {
   p.dir = OPP[st.dir];
   var n = p.n;
@@ -493,6 +500,8 @@ function talkTo(p: Person, past?: boolean) {
   /* who sends the player to a covo, and why (data/covo-places.ts); who asks the questions at its door */
   if (n.hook && hookTalk(n)) return;
   if (n.quiz) { quizTalk(p); return; }
+  /* a mission at sea (data/sea.ts): asked for, how it goes, done; what that one always does stays beside it */
+  if (!seaAside && seaTalk(n, function () { seaAside = true; talkTo(p, true); seaAside = false; })) return;
   if (n.covo) leaderTalk(n.covo, n);
   else if (n.tourney) tourneyTalk(n.name || '', n.lines || []);
   else if (n.wild) wildTalk(p);
@@ -576,8 +585,14 @@ onPlace(function (a) {
   if (a.hit) { sfx('weak'); notify(w ? w.hit : 'Si torna indietro.'); }
 });
 onEdge(function (kind, d) {
-  var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
   if (dialog || busy || run) return false;
+  if (kind === 'shore') {
+    say([sea.race ? 'Scendi a terra? La gara finisce qui.' : 'Scendi a terra? Il ragazzo col materassino è ancora al largo.'], null, [
+      { label: 'Sì, a riva', fn: function () { seaStop(); stepNow(d); } }, { label: 'No, resto in mare', fn: null }
+    ]);
+    return true;
+  }
+  var who = powerOf(kind === 'swim' ? 'nuoto' : 'scalata');
   /* no creature that swims, but Nicola's windsurf: the whole gulf, with the wind */
   if (!who && kind === 'swim' && st.seen.tavola) {
     say(['Il windsurf di Nicola è lì, pronto. Il vento c\'è.'], null, [
@@ -650,15 +665,19 @@ function flyUp() {
   skyWho = who; skyFrom = performance.now();
   sfx('whoosh');
 }
-/** a belvedere (VISIONE.md, V4): what it says, then Formia from above, as with a winged creature but with one's own
-    eyes. The first time, the view goes in the diary (st.seen['veduta-…']) */
+/** a belvedere (VISIONE.md, V4): what it says, then what one sees from there, in first person and wide enough to
+    look around (ui/panorama.ts, 21 November 2026); from it one can go on to Formia from above, as with a winged
+    creature. The first time, the view goes in the diary (st.seen['veduta-…']) */
 function lookOut(s: Sign) {
   var v = s.view!, k = 'veduta-' + v.id;
   say(s.text, null, null, function () {
     if (!running || M.inside || busy || run || skyFrom) return;
     halt();
-    skyWho = ''; skyFrom = performance.now();
+    var now = new Date(), light = darkness(now) > 0.6 ? 'night' as const : sunset(now) > 0.35 || darkness(now) > 0.25 ? 'dusk' as const : 'day' as const;
     sfx('whoosh');
+    openPanorama(v, light, function (fromAbove) {
+      if (fromAbove && running && !M.inside) { skyWho = ''; skyFrom = performance.now(); sfx('whoosh'); }
+    });
     if (!st.seen[k]) { st.seen[k] = true; save(); sfx('found'); notify('<b>Una veduta nuova nel Diario:</b> ' + esc(v.name) + '.'); }
   });
 }
@@ -846,6 +865,8 @@ export function stepped(): boolean {
   var h = hidingAt(st.x, st.y);
   /* Valentin's mărțișor at the wrist: the wild ones keep away (not in a place with creatures of its own, like the Cisternone) */
   if (!h || (charmOn() && !M.meet)) return false;
+  /* nothing jumps out in the middle of a race at sea, or while racing to the kid adrift */
+  if (sea.race || sea.kid) return false;
   if (calm > 0) { calm--; return false; }
   if (Math.random() >= meetChance(RATE, st.skills || {}) * (h.rate || 1)) return false;
   calm = CALM;
@@ -1195,7 +1216,7 @@ function openMenu(tab?: string) {
       var done = s0.done(), next = s0 === nextStop();
       return '<li class="' + (done ? 'got' : next ? 'next' : 'secret') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '?') + '</span><span><b>' + esc(done || next ? s0.text : '???') + '</b><small>' +
         esc(done ? s0.where + ' · fatto' : next ? s0.where + ' · prossima tappa' : 'da scoprire') + '</small></span></li>';
-    }).join('') + '</ul></div>' + stonesHtml() + missionsHtml() +
+    }).join('') + '</ul></div>' + stonesHtml() + missionsHtml() + seaJobsHtml() +
       '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>',
     diario: '<div class="pickrow"><h3>Diario di Formia</h3><ul class="wbadge-list diary">' + ACTIVITIES.map(function (a) {
       var n = timesDone(a.id), b = bestOf(a.id);
@@ -1287,6 +1308,7 @@ function frame(now: number) {
   if (clickTo) arriveClick();
   walkPeople(now);
   leadFrame(now);
+  seaFrame(now);
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {

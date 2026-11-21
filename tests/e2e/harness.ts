@@ -166,6 +166,9 @@ export async function goStory(page: Page, who = 'antonio') {
   await page.click('#go-story');
   const pick = page.locator('[data-hero="' + who + '"]');
   if (await pick.count()) await pick.click();
+  /* a new story opens on the prologue (the night before, 13 November 2026): past it, to the morning */
+  await page.clock.runFor(300);
+  if (await page.locator('#pr-go').count()) await page.click('#pr-go', { force: true });
 }
 
 /** plays a battle to the end, choosing what the computer would choose, with a screenshot of the first turns */

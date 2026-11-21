@@ -208,7 +208,7 @@ export function vanAt(m: PreparedMap, x: number, y: number): boolean {
 /** a tile the scooter can go on (it must be free too: see blocked) */
 export function rideable(m: PreparedMap, x: number, y: number): boolean {
   var c = m.cell(x, y), a = m.at[key(x, y)];
-  if (c.g === 'steps' || c.g === 'sand' || c.g === 'sea' || c.g === 'mura' || c.g === 'pier') return false;
+  if (c.g === 'steps' || c.g === 'sand' || c.g === 'rock' || c.g === 'sea' || c.g === 'mura' || c.g === 'pier') return false;
   if (c.deco === 'tall' || c.deco === 'pools' || c.deco === 'ledge' || c.deco === 'ford') return false;
   return !(a && (a.kind === 'door' || a.kind === 'warp'));
 }

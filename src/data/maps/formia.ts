@@ -1,5 +1,5 @@
 import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign, Dir } from './types';
-import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES } from './formia-ground';
+import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES, FORMIA_PORTICCIOLO } from './formia-ground';
 import { PLACES } from './formia-places';
 import { tile, W, H } from './formia-projection';
 
@@ -96,7 +96,8 @@ const buildings: Building[] = [
   building('covo-zendavid', { label: 'TEMPIO DEL BASSO', to: 'covo-zendavid', tx: 7, ty: 12, tdir: 'up' }),
   building('covo-antonio', { label: 'LA CUPOLA', to: 'covo-antonio', tx: 7, ty: 10, tdir: 'up' }),
   /* across via Palazzo from Claudia's: the Mattej school, and the little park with the swings in front of it */
-  building('scuola-mattej', { label: 'SCUOLA MATTEJ', msg: ['Scuola Mattej, in via Palazzo: le elementari e le medie dell\'Istituto comprensivo «Pasquale Mattej».', 'Davanti, il parchetto con gli alberi e le altalene. Di fronte abita Claudia.'] }),
+  building('scuola-mattej', { label: 'SCUOLA MATTEJ', msg: ['Scuola Mattej, in via Palazzo: le elementari e le medie dell\'Istituto comprensivo «Pasquale Mattej».', 'Davanti, il parchetto con gli alberi e le altalene.'] }),
+  building('scuola-rodari', { label: 'GIANNI RODARI', msg: ['Scuola elementare «Gianni Rodari», in via Palazzo.', 'Il cancello è chiuso. Proprio accanto c\'è il castello di Claudia.'] }),
   building('casa-zendavid', { label: 'CASA DI ZENDAVID', v: 33, to: 'casa-zendavid', tx: 5, ty: 6, tdir: 'up' }),
   building('stazione-scauri', { label: 'MINTURNO-SCAURI', msg: ['Stazione di Minturno-Scauri, sulla linea Roma–Napoli che passa per Formia.', 'Da qui a Formia è una fermata.'] }),
   building('casa-andrea', { label: 'CASA DI ANDREA', v: 58, to: 'covo-andrea', tx: 6, ty: 12, tdir: 'up' }),
@@ -113,6 +114,9 @@ const buildings: Building[] = [
   building('bar-porto', { label: 'BAR DEL PORTO', msg: ['Il bar del porto, accanto all\'imbarco dei traghetti.', 'Caffè al volo prima dell\'aliscafo per Ponza.'] }),
   building('zianna', { label: 'ZI\' ANNA MARE', msg: ['Ristorante sul porto, «Largo Paone lato mare».', 'Dalla cucina arriva odore di frittura di paranza.'] }),
   building('palazzo-alto', { v: 1, msg: ['Il palazzo alto di Largo Paone, all\'angolo della rotonda.', 'Dai piani di sopra si vede tutto il golfo, fino a Gaeta.'] }),
+  /* the Rotonda dei Carabinieri (21 November 2026): the Comando Compagnia and the Bar Elsa across the Appia */
+  building('caserma', { label: 'COMANDO COMPAGNIA CARABINIERI', msg: ['Comando Compagnia Carabinieri di Formia, via Appia Lato Napoli 1.', 'È per lei che a Formia la rotonda qui davanti la chiamano tutti «dei Carabinieri».', 'Il portone è chiuso. Per le emergenze c\'è il 112.'] }),
+  building('bar-elsa', { label: 'BAR ELSA', v: 8, msg: ['Bar Elsa, via Appia Lato Napoli 3, all\'angolo della rotonda dei Carabinieri.', 'È aperto anche di notte: chi torna tardi passa di qui per il cornetto caldo.'] }),
   building('ospedale', { label: 'OSPEDALE DONO SVIZZERO', msg: ['Ospedale «Dono Svizzero», in via Appia Lato Napoli: il presidio ospedaliero sud della ASL di Latina.', '«Dono svizzero» si chiamavano gli aiuti che la Svizzera mandò alle vittime della guerra.', 'Il pronto soccorso è aperto. Per fortuna, oggi non ti serve.'] }),
   building('san-michele', { msg: ['L\'eremo di San Michele Arcangelo, dentro una cavità della roccia: è ricordato già nell\'830.', 'La facciata con il rosone e il portale a sesto acuto è del 1895.', 'Una tradizione dice che la statua del santo stesse prima in una grotta di Gianola, giù al mare.'] }),
   building('castello-miramare', { label: 'CASTELLO MIRAMARE', v: 34, msg: ['Il Castello Miramare, sulla collina sopra la stazione.', 'Sembra un castello, con le torrette: è un albergo, e dalla terrazza si vede tutto il golfo.'] }),
@@ -149,9 +153,14 @@ const objects: MapObject[] = [
   { kind: 'slide', x: at('parchetto-mattej').x + 3, y: at('parchetto-mattej').y + 2, w: 1, h: 1 }
 ].concat(FORMIA_TUNNELS.map(([x, y]): MapObject => ({ kind: 'tunnel', x, y, w: 1, h: 2 })));
 
-const pz = at('piazza'), cam = at('campo-amendola'), track = at('pista');
+const pz = at('piazza'), cam = at('campo-amendola'), track = at('pista'), isl = at('rotonda-carabinieri'), port = FORMIA_PORTICCIOLO;
 const groundObjects: GroundObject[] = [
   { kind: 'banner', x: pz.x + 2, y: pz.y + 1, w: 6, text: 'COMIZIO' },
+  /* the Rotonda dei Carabinieri: the ring is the street around the lawn (tools/formia/network.ts, ROTONDA), its west
+     side a lane wider for Nicola's van */
+  { kind: 'rotonda', x: isl.x - 3, y: isl.y - 2, w: isl.w + 5, h: isl.h + 4, island: { x: isl.x, y: isl.y, w: isl.w, h: isl.h } },
+  /* the Porticciolo romano of Gianola, its quays drawn over the tiles they stand on */
+  { kind: 'porticciolo', x: port.x, y: port.y, w: port.w, h: port.h, rows: FORMIA_ROWS.slice(port.y, port.y + port.h).map((r) => r.slice(port.x, port.x + port.w)) },
   { kind: 'court', x: cam.x, y: cam.y, w: cam.w, h: cam.h },
   { kind: 'track', x: track.x, y: track.y, w: track.w, h: track.h },
   /* the cavea of the Roman theatre, south of Sant'Erasmo; Maranola up in the Aurunci */
@@ -191,6 +200,7 @@ const signs: Sign[] = [
   sign('sign-tomba', ['Tomba di Cicerone, sull\'Appia verso Itri.', 'La tradizione dice che qui riposa Marco Tullio Cicerone, ucciso vicino alla sua villa di Formia il 7 dicembre del 43 a.C.']),
   sign('sign-vindicio', ['Spiaggia di Vindicio: più di un chilometro di sabbia, dal porto fino a Gaeta. Bandiera Blu.', 'D\'estate qui c\'è tutta Formia.', '← La Scogliera, la Tomba di Cicerone · → La pineta, il centro, Mola']),
   sign('sign-pineta', ['Pineta di Vindicio, accanto al Lido Frungillo, all\'inizio di via Tito Scipione.', 'Pini domestici, ombra e tavoli per il picnic, a due passi dalla spiaggia.']),
+  sign('sign-rotonda', ['Rotonda dei Carabinieri: qui si incontrano via Appia Lato Napoli e il lungomare.', 'Da questa rotonda comincia anche la superstrada per Cassino.', '← Mola, il porto, il centro · → Il Bruno Zauli, via Amendola, Gianola']),
   sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli», via Appia Lato Napoli.', 'Nato nel 1955 da un\'idea di Bruno Zauli, presidente della federazione di atletica. Qui il professor Carlo Vittori allenava Pietro Mennea.', '← Mola, il centro · → Via Amendola, casa']),
   sign('sign-gianola', ['Parco regionale di Gianola e del Monte di Scauri, nato nel 1987.', 'Sul promontorio la villa di Mamurra, con l\'edificio ottagonale detto «Tempio di Giano». Sotto, il porticciolo romano.']),
   sign('sign-caposele', ['Porticciolo di Caposele.', 'Da qui parte la spiaggia di Vindicio, verso Gaeta.']),
@@ -291,6 +301,9 @@ const npcs: Npc[] = [
   npc('pensionato', { name: 'Pensionato', seed: 106, dir: 'down', lines: ['Qui sotto passa la ferrovia: entra in galleria e sbuca alla stazione.', 'Quando passa il merci tremano i bicchieri nella credenza.'] }),
   npc('pittore', { name: 'Pittore', seed: 107, dir: 'down', lines: ['Dipingo il golfo da trent\'anni.', 'Non viene mai uguale: cambia la luce, cambio io.'] }),
   npc('pescatore-molo', { name: 'Pescatore del molo', seed: 108, dir: 'down', lines: ['Le barche escono di notte e rientrano all\'alba.', 'Il faro lo vedi da tutto il golfo: quando lo vedi, sei a casa.'] }),
+  /* the sea of 21 November 2026 (data/sea.ts): who offers the races on the windsurf */
+  npc('istruttrice', { name: 'Istruttrice di windsurf', seed: 113, dir: 'down', activity: 'slalom', lines: ['Ciao! Insegno windsurf qui a Vindicio, d\'estate.', 'Ho messo in mare le boe dello slalom: ti va una prova a tempo?'] }),
+  npc('velista', { name: 'Velista', seed: 114, dir: 'down', activity: 'traversata', lines: ['Dal Lido Oriente parto per la traversata del golfo: fino a Vindicio, a vela.', 'Te la senti? Il tempo buono lo fa il vento del giorno: col vento contro ci vuole di più, e va bene così.'] }),
   npc('bagnina-scauri', { name: 'Bagnina di Scauri', seed: 109, dir: 'down', lines: ['Benvenuto a Scauri! La spiaggia è lunga: comincia sotto il Monte di Scauri e non finisce più.', 'Il parco di Gianola, da questa parte, comincia dove finisce la sabbia.'] }),
   npc('pescatore-scauri', { name: 'Ragazzo con il retino', seed: 110, dir: 'left', lines: ['Tra questi scogli ne ho viste di strane. Non pesci: creature.'] }),
   npc('signora-vindicio', { name: 'Signora di Vindicio', seed: 111, dir: 'down', lines: ['D\'inverno a Vindicio ci siamo solo noi e i gabbiani.', 'È il periodo che preferisco.'] }),

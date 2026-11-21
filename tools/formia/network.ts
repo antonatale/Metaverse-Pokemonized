@@ -58,6 +58,9 @@ export const STREETS: Line[] = [
   /* from the roundabout up behind the row of Piazza Tommaso Testa, then along the top of Mola: San Giovanni, the
      Vitruvio Pollione and De Amicis schools, Piazza Risorgimento, the roundabout of the Appia */
   { name: 'Via Emanuele Filiberto', w: 2, pts: [[120, 66], [120, 57], [142, 57], [142, 54], [159, 54]] },
+  /* the Rotonda dei Carabinieri (21 November 2026): a ring round a big lawn (ROTONDA), where the Appia from Mola,
+     the lungomare and the Appia toward Gianola meet */
+  { name: 'Rotonda dei Carabinieri', w: 2, pts: [[159, 46], [168, 46], [168, 55], [159, 55], [159, 46]] },
   /* east along the bay: Rio Fresco, the Zauli, Via Amendola, Santo Janni */
   { name: 'Via Appia Lato Napoli', w: 2, pts: [[159, 54], [159, 46], [252, 46], [252, 38], [272, 38]] },
   /* and on to Scauri, the railway on its left all the way */
@@ -146,7 +149,9 @@ export const PATHS: Line[] = [
   { name: 'Viale del parco', w: 1, pts: [[238, 40], [240, 40]] },
   { name: 'Viale del parco', w: 1, pts: [[224, 44], [224, 45]] },
   { name: 'Sentiero della pineta', w: 1, pts: [[54, 98], [54, 102]] },
-  { name: 'Sentiero della pineta', w: 1, pts: [[47, 100], [61, 100]] }
+  { name: 'Sentiero della pineta', w: 1, pts: [[47, 100], [61, 100]] },
+  /* from the trail of Gianola down through the macchia to the cove of pebbles under the villa */
+  { name: 'Sentiero della caletta', w: 1, pts: [[271, 104], [261, 104]] }
 ];
 
 /* ---------- Formia on three levels (VISIONE.md, V3 and V4) ----------
@@ -163,7 +168,9 @@ export const TRAILS: Line[] = [
   /* from the Appia up the slope of the Acervara, where the tomb of Tulliola is */
   { name: 'Sentiero dell\'Acervara', w: 1, pts: [[12, 83], [12, 76], [4, 76]] },
   /* across the promontory of Gianola, through the terraces of the villa and down its covered stairs to the point */
-  { name: 'Sentiero di Gianola', w: 1, pts: [[267, 96], [272, 96], [272, 104], [278, 104], [278, 121]] }
+  { name: 'Sentiero di Gianola', w: 1, pts: [[267, 96], [272, 96], [272, 104], [278, 104], [278, 121]] },
+  /* from the trail down to the Porticciolo romano, in its cove on the east side (PORTICCIOLO) */
+  { name: 'Discesa al porticciolo', w: 1, pts: [[278, 107], [280, 107]] }
 ];
 /** the terraces: both corners included */
 export const TERRACES: (Rect & { name: string; olives?: boolean })[] = [
@@ -179,7 +186,7 @@ export const SCARPS: { name: string; ch: '^' | '['; pts: XY[] }[] = [
   { name: 'Acervara', ch: '^', pts: [[0, 80], [19, 80]] },
   { name: 'Il muraglione dell\'Appia', ch: '[', pts: [[26, 94], [43, 94]] },
   { name: 'La salita di Via Solaro', ch: '[', pts: [[125, 48], [137, 48]] },
-  { name: 'Gianola, la terrazza bassa', ch: '^', pts: [[268, 110], [282, 110]] }
+  { name: 'Gianola, la terrazza bassa', ch: '^', pts: [[268, 110], [279, 110]] }
 ];
 /** dry-stone walls drawn by hand: the one that closes the terrace of the Acervara on its east side */
 export const MACERE: XY[][] = [[[19, 73], [19, 79]]];
@@ -198,6 +205,8 @@ export const WILD: (Rect & { kind: 'hill' | 'wood' | 'grove'; keep: number })[] 
   /* the woods toward Gaeta, the Monte di Scauri */
   { kind: 'wood', x0: 0, y0: 86, x1: 25, y1: 127, keep: 1 },
   { kind: 'wood', x0: 283, y0: 64, x1: 296, y1: 127, keep: 1 },
+  /* the macchia of the promontory of Gianola, west of the terraces of the villa, down to its rocks (21 November 2026) */
+  { kind: 'wood', x0: 254, y0: 97, x1: 267, y1: 127, keep: 2 },
   /* the olive groves of the east, between the roads and behind the beaches */
   { kind: 'grove', x0: 254, y0: 40, x1: 271, y1: 77, keep: 2 },
   { kind: 'grove', x0: 262, y0: 78, x1: 284, y1: 94, keep: 2 },
@@ -230,7 +239,52 @@ export const BEACHFRONT: { x0: number; x1: number; y: number }[] = [
 ];
 /** the same along a road that runs down the map: the promenade is the column west of it */
 export const BEACHSIDE: { x: number; y0: number; y1: number }[] = [];
-/** the Porticciolo romano of Gianola: the top-left tile of its tanks in the sea */
+/* ---------- Gianola as it is (Antonio, 21 November 2026; the satellite view) ----------
+   The lungomare Città di Ferrara is one long beach cut by groynes of rocks into crescents of sand. From the mouth of the
+   Rio Santa Croce on, the promontory is cliff: rocks at the water, then the macchia, green down to the sea; no sand and
+   no promenade. Under the villa, on the west, a little cove of pebbles where one comes ashore; on the east, the
+   Porticciolo romano in a cove of its own; at the head of the bay of Scauri, the Spiaggia dei Sassolini. */
+/** where the shore is cliff and rocks (a cove inside one keeps its pebbles) */
+export const CLIFFS: Rect[] = [{ x0: 252, y0: 94, x1: 296, y1: 127 }];
+/** coves of pebbles in the cliffs: the one under the villa where Nicola's windsurf comes ashore, and the Sassolini */
+export const COVES: Rect[] = [{ x0: 253, y0: 102, x1: 262, y1: 113 }, { x0: 283, y0: 80, x1: 298, y1: 97 }];
+/** the groynes of the lungomare Città di Ferrara: the tile on the waterline each one starts from; it runs out to sea,
+    to the west, `len` tiles, and the sea bites a crescent into the beach between two of them */
+export const GROYNES: { at: XY; len: number }[] = [
+  { at: [233, 66], len: 5 }, { at: [236, 71], len: 5 }, { at: [239, 76], len: 5 }, { at: [248, 87], len: 5 }, { at: [253, 93], len: 5 }
+];
+/** the Porticciolo romano of Gianola (Ente Parco: quays of about 1930 over the tanks of a Roman fishpond): a cove cut
+    into the east side of the promontory. Top-left tile, then the rows: '~' water, '_' the stone quays, '&' rock,
+    ' ' left as it is. The ground object 'porticciolo' draws it over these tiles */
+export const PORTICCIOLO: { x: number; y: number; rows: string[] } = {
+  x: 280, y: 105, rows: [
+    '&&&&&&&&&&&&RR',
+    '&___________&R',
+    '__~~~_~~~_~~~~',
+    '&_~~~_~~~_~~~~',
+    '&_~~~_~~~_~~~~',
+    '&_____~____~~~',
+    '&&&&&&~~~~~~~~',
+    '&&&&&&&R~~~~~~',
+    ' &&&&&RRR~~~~~'
+  ]
+};
+/** where the sea is kept open by hand, after the shore is drawn: the mouth of the porticciolo */
+export const OPEN_SEA: Rect[] = [{ x0: 288, y0: 107, x1: 296, y1: 112 }];
+
+/* ---------- the Rotonda dei Carabinieri (Antonio, 21 November 2026; OpenStreetMap «Rotonda dei carabinieri», the
+   satellite view and Street View) ----------
+   Where via Appia Lato Napoli, via Giacomo Matteotti and the lungomare della Repubblica meet, by the sea: a big round
+   lawn with its shrubs in the middle of the ring. Across the Appia, to the north, the Comando Compagnia Carabinieri
+   (white, a base of stone, red roof) and next to it the pale yellow palazzo with the Bar Elsa on its corner
+   (via Appia Lato Napoli 3, open all night). Below the ring, toward the sea, a walk on the rocks and the breakwaters */
+/** land where the smoothed coast left sea: the ring (a street, see STREETS; its west side carries Nicola's van; the lawn
+    in the middle is the place 'rotonda-carabinieri'), and the walk on the rocks below it */
+export const ROTONDA_LAND: Rect = { x0: 159, y0: 46, x1: 172, y1: 58 };
+/** sea rocks laid by hand: the two breakwaters off the rotonda, running east */
+export const BREAKWATERS: XY[][] = [[[170, 60], [177, 60]], [[180, 58], [189, 58]]];
+
+/** the Porticciolo romano of Gianola before 21 November 2026, in the sea off the beach: no longer drawn */
 export const POND: XY = [245, 98];
 /** where the sea is: the middle of the gulf, and the bay of Scauri beyond the promontory (lat, lon) */
 export const SEAS: XY[] = [[41.2445, 13.620], [41.2469, 13.7093]];

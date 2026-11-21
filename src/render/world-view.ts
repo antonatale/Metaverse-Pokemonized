@@ -17,6 +17,9 @@ import type { Dir } from '../data/maps/types';
 import { mk } from './canvas/draw';
 import { run } from '../story/run';
 import { lead, pump, PUMP } from '../story/lead';
+import { sea } from '../story/sea';
+import { drawSeaMarks, wake, seaGlints } from './canvas/sea-marks';
+import { sailing } from '../story/movement';
 import { placeNow } from '../story/place-run';
 import { drawThings } from './canvas/place';
 import { heading, nextStop } from '../story/goals';
@@ -25,11 +28,13 @@ import { creature, MAGIC } from './svg/creatures';
 import { cicero, mamurra } from './svg/cicero';
 import { SPECIES } from '../data/creatures';
 import type { SpeciesId } from '../data/creatures';
-import { FORMIA_AT, FORMIA_SPOT, FORMIA_HIDING } from '../data/maps/formia-ground';
+import { FORMIA_AT, FORMIA_SPOT, FORMIA_HIDING, FORMIA_RAILS } from '../data/maps/formia-ground';
 import { BOTTLES } from '../data/maps/formia';
+/** the way of the ferry for Ponza (render/atmosphere.ts) */
+const FERRY_WAY = ['traghetto-molo', 'traghetto-rotta', 'traghetto-largo'].map(function (id) { return FORMIA_SPOT[id]; }).filter(function (p) { return !!p; });
 import { reduced } from '../ui/dom';
 import { rich } from '../ui/gfx';
-import { shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
+import { ferry, trains, shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
 import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS } from '../ui/story-screen';
 
 /* Drawing the story map: camera, cached pictures, everything sorted so people walk behind trees and roofs.
@@ -825,6 +830,12 @@ function drawFrame(now: number, sk: number) {
   var date = new Date(), dk = M.dark ? 1 : M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
   var fx = rich() && !M.inside && !M.dark, sun = fx ? sunAt(date) : { x: 0, y: 0, k: 0 }, cam = { x: camX, y: camY, w: vw, h: vh }, tiles = fx ? tilesOf(M) : null;
   if (tiles) seaLife(ctx, tiles, x0, x1, y0, y1, now, reduced, 1 - dk * 0.8, P);
+  if (tiles && M.id === 'formia') { ferry(ctx, FERRY_WAY, cam, now, reduced, 1 - dk); trains(ctx, FORMIA_RAILS, cam, now, reduced, 1 - dk); }
+  /* the marks of a race at sea, the things the missions at sea send one to find (story/sea.ts); the windsurf's wake */
+  if (M.id === 'formia' && !M.inside) {
+    if (sea.marks.length) drawSeaMarks(ctx, sea.marks, now, reduced, { x0: x0, x1: x1, y0: y0, y1: y1 });
+    if (moveMode.board && moveMode.swim && !reduced) { var dv = DV[st.dir]; wake(ctx, pp.x, pp.y, dv[0], dv[1], mover ? gear : 0, now, Math.max(0, sailing.fallUntil - now)); }
+  }
   var people: Drawn[] = [], alerts: [number, number, number][] = [];
   M.people.filter(present).forEach(function (p) {
     if (p.n.ghost) {
@@ -948,8 +959,12 @@ function drawFrame(now: number, sk: number) {
     ctx.lineTo(gx, gy + r * 1.8); ctx.lineTo(gx - r * 0.5, gy + r * 0.5); ctx.lineTo(gx - r * 1.8, gy); ctx.lineTo(gx - r * 0.5, gy - r * 0.5); ctx.closePath();
     ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
   });
+  if (M.id === 'formia' && !M.inside && sea.marks.length) seaGlints(ctx, sea.marks, now, reduced, dk);
   /* the next stop of the tour: a bouncing arrow over the person, the thing or the door */
-  var hd = run ? null : heading(M.id), Ld = lead.now && !lead.now.back && M.id === 'formia' ? lead.now : null;
+  var hd = run || sea.race ? null : heading(M.id), Ld = lead.now && !lead.now.back && !lead.now.race && M.id === 'formia' ? lead.now : null;
+  /* in a race at sea, the arrow is over the next mark */
+  var nx = sea.race ? sea.race.marks[sea.race.got] : null;
+  if (nx && !M.inside) hd = { x: nx[0], y: nx[1] - 1 } as typeof hd;
   if (hd || Ld) {
     /* while Nicola leads the way to Gianola, the arrow is over him, high over his sail */
     var ax = Ld ? Ld.x * T + T / 2 : hd!.x * T + T / 2, ay = (Ld ? Ld.y * T - 52 : hd!.y * T - 16) + (reduced ? 0 : Math.sin(now / 220) * 3);

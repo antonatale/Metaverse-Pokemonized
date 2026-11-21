@@ -29,7 +29,11 @@ export const ACTIVITIES: Activity[] = [
   { id: 'quiz', name: 'Quiz su Formia da Morgana', where: 'Birreria Morgana, Mola', verb: 'Siediti al tavolo', score: (n) => n + ' risposte giuste su 5' },
   { id: 'gelato', name: 'Gelato da Lavezzi', where: 'Piazza Marconi, centro', verb: 'Prendi un gelato' },
   { id: 'pesca', name: 'Pesca dal molo', where: 'Porto di Formia, Mola', verb: 'Pesca dal molo', score: grams },
-  { id: 'torneo', name: 'Torneo degli amici', where: 'Centro Bruno Zauli', verb: 'Iscriviti!', score: (n) => n + (n === 1 ? ' incontro vinto' : ' incontri vinti') }
+  { id: 'torneo', name: 'Torneo degli amici', where: 'Centro Bruno Zauli', verb: 'Iscriviti!', score: (n) => n + (n === 1 ? ' incontro vinto' : ' incontri vinti') },
+  /* the races at sea, on the windsurf (data/sea.ts, 21 November 2026) */
+  { id: 'slalom', name: 'Lo slalom di Vindicio', where: 'Il mare di Vindicio', verb: 'Prendi il via', score: secs, lower: true },
+  { id: 'regata', name: 'La regata del golfo con Nicola', where: 'Da Vindicio a Gianola', verb: 'Regata!', score: secs, lower: true },
+  { id: 'traversata', name: 'La traversata del golfo', where: 'Da Gianola a Vindicio', verb: 'Prendi il via', score: secs, lower: true }
 ];
 export function activity(id: string): Activity { const a = ACTIVITIES.find((x) => x.id === id); if (!a) throw new Error('no activity ' + id); return a; }
 export function timesDone(id: string): number { return (st.done && st.done[id]) || 0; }
@@ -41,7 +45,10 @@ const PAY: Record<string, (score: number) => number> = {
   canoa: (s) => Math.max(2, Math.min(10, Math.round(240 / Math.max(20, s)))),
   volley: (n) => Math.min(10, n), padel: (n) => Math.min(10, n), quiz: (n) => 2 * n, windsurf: (n) => Math.min(12, Math.floor(n / 20)), corsa: () => 4,
   /* the fisherman buys the catch: a sesterzio every 300 g */
-  pesca: (g) => Math.min(12, Math.floor(g / 300))
+  pesca: (g) => Math.min(12, Math.floor(g / 300)),
+  /* the races at sea: the same for any finish, since the wind of the day makes a time (ui/sea.ts adds a prize for a
+     good one, measured on that wind: story/regatta.ts) */
+  slalom: () => 5, regata: () => 8, traversata: () => 8
 };
 /** the story screen shows what an activity brought (set by ui/story-screen.ts) */
 let rewardHook: ((g: Growth, money: number, joined: FriendId | null) => void) | null = null;

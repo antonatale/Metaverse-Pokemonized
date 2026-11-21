@@ -234,3 +234,28 @@ div.pick { cursor: default; }
 .prologo .btn { align-self: center; margin-top: 10px; opacity: 0; animation: pr-in 1s ease forwards; animation-delay: var(--d); }
 @keyframes pr-in { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 @media (prefers-reduced-motion: reduce) { .prologo p, .prologo .btn { animation: none; opacity: 1; } }
+
+/* ---------- a belvedere in first person (ui/panorama.ts, 21 November 2026) ---------- */
+.overlay.pano-ov { align-items: stretch; padding: 0; background: #05060d; }
+.pano { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; animation: panoIn .6s ease-out; }
+@keyframes panoIn { from { opacity: 0; } to { opacity: 1; } }
+.pano-view { flex: 1; min-height: 0; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; cursor: grab; scrollbar-width: none; touch-action: pan-x; outline: none; }
+.pano-view::-webkit-scrollbar { display: none; }
+.pano-view.grab { cursor: grabbing; }
+.pano-pic { position: relative; flex: none; }
+.pano-canvas, .pano-labels { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+.pano-labels { transition: opacity .3s; pointer-events: none; }
+.pano-view.no-names .pano-labels { opacity: 0; }
+.pano-wait { margin: auto; font: 22px/1.2 var(--font-hand); color: #e9ecff; opacity: .8; }
+.pano-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--paper, #fffdf6); border-top: 2px solid var(--ink, #1c2340); }
+.pano-bar b { font: 22px/1.1 var(--font-display); color: var(--ink, #1c2340); }
+.pano-hint { flex: 1; min-width: 140px; font: 15px/1.3 var(--font-hand); color: var(--ink, #1c2340); opacity: .7; }
+.pano-names[aria-pressed="false"] { opacity: .6; }
+@media (max-width: 600px) { .pano-hint { display: none; } .pano-bar b { flex-basis: 100%; font-size: 19px; } }
+@media (prefers-reduced-motion: reduce) { .pano { animation: none; } .pano-labels { transition: none; } }
+
+/* the sea (ui/sea.ts): the wind over the water, the clock of a race */
+.wwind { position: absolute; top: 46px; right: 0; padding: 4px 10px 3px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); font: 14px/1.15 var(--font-display); color: var(--ink); white-space: nowrap; }
+.wwind .wclock { display: block; margin-top: 2px; color: var(--red); font-variant-numeric: tabular-nums; }
+.wwind b { display: inline-block; min-width: 1em; color: var(--ink); }
+.wwind em { font-style: normal; color: var(--red); }

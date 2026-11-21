@@ -152,6 +152,14 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
     if (v.map === 'formia' && walled(v.x, v.y, /[-9|+8BiT#KLY]/)) { backHome(v); delete v.sella; }
     if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT#KLY]/)) delete v.moto;
     if (v.van && v.van.map === 'formia' && walled(v.van.x, v.van.y, /[-9|+8BiT#KLY]/)) delete v.van;
+  } },
+  /* 21 November 2026: the Rotonda dei Carabinieri with the caserma and the Bar Elsa, Claudia's castle by the Rodari
+     school, the coast of Gianola redrawn (scogli, groynes, the porticciolo in its cove) */
+  { id: 'formia13', what: 'la rotonda dei Carabinieri e la costa di Gianola', run: function (v) {
+    var stuck = function (x: number, y: number) { return walled(x, y, /[-9|+8BiT#KLY]/); };
+    if (v.map === 'formia' && stuck(v.x, v.y)) { backHome(v); delete v.sella; }
+    if (v.moto && v.moto.map === 'formia' && stuck(v.moto.x, v.moto.y)) delete v.moto;
+    if (v.van && v.van.map === 'formia' && stuck(v.van.x, v.van.y)) delete v.van;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a

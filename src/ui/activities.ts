@@ -1,5 +1,6 @@
 import type { Npc } from '../data/maps/types';
 import { activity, record, bestOf, timesDone } from '../story/activities';
+import { courseOf, offerCourse } from './sea';
 import { sfx } from '../audio';
 import { say, sheet, closeSheet } from './story-screen';
 import { $ } from './dom';
@@ -21,6 +22,7 @@ function play(id: string, n: Npc) {
   else if (id === 'volley') playRally(n, VOLLEY);
   else if (id === 'padel') playRally(n, PADEL);
   else if (id === 'windsurf') windsurf(n);
+  else if (courseOf(id)) offerCourse(id, n);
   else if (id === 'canoa') canoe(n);
   else if (id === 'lettino') lettino(n);
   else if (id === 'gelato') gelato(n);

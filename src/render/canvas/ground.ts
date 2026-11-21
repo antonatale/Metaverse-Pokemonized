@@ -15,11 +15,11 @@ type GroundObjFn = (c: Ctx, o: Placed, P: Palette) => void;
 /* ---------- ground: what each map character is made of (see data/maps/legend.ts) ---------- */
 /** kinds of ground that get no outline between them */
 const GROUP: Record<string, string> = { grass: 'g', path: 'p', road: 'r', sand: 's', sea: 'w', pier: 'd', stone: 'st', steps: 'st', clay: 'c', floor: 'f', wall: 'x', rail: 'rl',
-  hill: 'h', paving: 'pv', mura: 'mu', far: 'fr', scarp: 'sc' };
+  hill: 'h', paving: 'pv', mura: 'mu', far: 'fr', scarp: 'sc', rock: 'rk' };
 
 function groundFill(P: Palette, g: string): string {
   return ({ grass: P.grass, path: P.path, road: P.road, sand: P.sand, sea: P.sea, pier: P.wood, stone: P.stone, steps: P.stone, clay: P.clay, floor: P.wood,
-    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far, scarp: P.rock } as Record<string, string>)[g] || P.paper;
+    wall: P.wall, rail: P.path, hill: P.hill, paving: P.stone, mura: P.rock, far: P.far, scarp: P.rock, rock: P.rock } as Record<string, string>)[g] || P.paper;
 }
 /** the same kind of ground (its group) at a tile of the map */
 function same(map: GroundMap, x: number, y: number, g: string): boolean {
@@ -244,6 +244,24 @@ function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     }
     if (r < 0.2) { ell(c, X + 8 + r * 70, Y + 24, 3.6, 2.4); fillStroke(c, P.rock, P.ink, 1.1); }
     c.globalAlpha = 1;
+  } else if (L.g === 'rock') {
+    /* the scogli of Gianola: grey limestone in slabs tilted toward the sea, laid on the whole shore and not on the tiles
+       (like the flagstones), cracked; darker and wet where the water reaches, a tuft of samphire in the cracks */
+    var wet = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(function (d) { var q2 = x + d[0], u2 = y + d[1]; return q2 >= 0 && u2 >= 0 && q2 < map.w && u2 < map.h && map.cell(q2, u2).g === 'sea'; });
+    for (var sr2 = Math.floor(Y / 13) - 1; sr2 * 13 < Y + T + 13; sr2++) for (var sc2 = Math.floor(X / 17) - 1; sc2 * 17 < X + T + 17; sc2++) {
+      var j1 = hash(sc2, sr2, 501), j2 = hash(sc2, sr2, 502), j3 = hash(sc2, sr2, 503);
+      var ox = sc2 * 17 + (sr2 % 2) * 8 + (j1 - 0.5) * 5, oy = sr2 * 13 + (j2 - 0.5) * 4, ow = 13 + j3 * 6, oh = 9 + j1 * 4;
+      c.beginPath();
+      c.moveTo(ox + 1, oy + oh * 0.3); c.lineTo(ox + ow * 0.4, oy); c.lineTo(ox + ow, oy + oh * 0.2 + j2 * 2);
+      c.lineTo(ox + ow - 1, oy + oh); c.lineTo(ox + ow * 0.3, oy + oh + 1); c.closePath();
+      c.fillStyle = j3 < 0.3 ? P.rock2 : P.rock; c.globalAlpha = j3 < 0.3 ? 0.5 : 0.85; c.fill(); c.globalAlpha = 1;
+      /* the south face of each slab in shadow, the top catching the light */
+      c.strokeStyle = P.rock3; c.lineWidth = 1; c.beginPath(); c.moveTo(ox + ow - 1, oy + oh); c.lineTo(ox + ow * 0.3, oy + oh + 1); c.lineTo(ox + 1, oy + oh * 0.3); c.stroke();
+      c.strokeStyle = '#ffffff'; c.globalAlpha = 0.35; c.beginPath(); c.moveTo(ox + 2, oy + oh * 0.3); c.lineTo(ox + ow * 0.4, oy + 1); c.lineTo(ox + ow - 1, oy + oh * 0.2 + j2 * 2); c.stroke(); c.globalAlpha = 1;
+      if (j2 < 0.25) { c.strokeStyle = P.rock3; c.lineWidth = 0.8; c.beginPath(); c.moveTo(ox + ow * 0.5, oy + 2); c.lineTo(ox + ow * 0.55, oy + oh * 0.6); c.lineTo(ox + ow * 0.75, oy + oh - 1); c.stroke(); }
+    }
+    if (wet) { c.fillStyle = P.sea2; c.globalAlpha = 0.14; c.fillRect(X, Y, T, T); c.globalAlpha = 1; }
+    if (r > 0.82) { c.strokeStyle = P.weed; c.lineWidth = 1.3; for (k = 0; k < 3; k++) { var tx2 = X + 8 + r * 14 + k * 3; c.beginPath(); c.moveTo(tx2, Y + 24); c.quadraticCurveTo(tx2 - 1 + k, Y + 19, tx2 - 3 + k * 2, Y + 16); c.stroke(); } }
   } else if (L.g === 'steps') {
     c.fillStyle = P.shadow;
     for (k = 1; k < 4; k++) c.fillRect(X + 1, Y + k * 8, T - 2, 2.5);
@@ -380,7 +398,7 @@ function relief(c: Ctx, map: GroundMap, P: Palette, x0: number, y0: number, x1: 
    square reads as a shape and not as a staircase of squares. Railways, walls, floors, piers and the polygonal walls
    keep their square corners. Every vertex draws half of each edge that ends on it, so pieces of the map drawn
    apart meet exactly. */
-const ROUND: Record<string, boolean> = { g: true, p: true, r: true, s: true, w: true, st: true, h: true, pv: true, c: true, fr: true };
+const ROUND: Record<string, boolean> = { g: true, p: true, r: true, s: true, w: true, st: true, h: true, pv: true, c: true, fr: true, rk: true };
 function outlines(c: Ctx, map: GroundMap, P: Palette, x0: number, y0: number, x1: number, y1: number) {
   var G = function (x: number, y: number) { return x < 0 || y < 0 || x >= map.w || y >= map.h ? null : GROUP[map.cell(x, y).g]; };
   var ink = function (a: string | null, b: string | null) { return a === 'fr' || b === 'fr' ? P.far2 : P.ink; };
@@ -946,6 +964,131 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
     c.lineWidth = 1; c.globalAlpha = 0.5;
     for (var a = 1; a < 6; a++) { var ang = Math.PI + a * Math.PI / 6; c.beginPath(); c.moveTo(cx + Math.cos(ang) * (R - 36), cy + Math.sin(ang) * (R - 36)); c.lineTo(cx + Math.cos(ang) * (R + 4), cy + Math.sin(ang) * (R + 4)); c.stroke(); }
     c.globalAlpha = 1; c.lineCap = 'round';
+  },
+  /* the Rotonda dei Carabinieri (satellite view, 21 November 2026): the ring of asphalt with its dashed lane and the
+     arrows of the way round (counter-clockwise), the big round lawn with its kerb, mown in stripes, the round beds of
+     oleanders on the tiles the generator made solid, a bed of flowers in the middle */
+  rotonda: function (c, o, P) {
+    var I = o.island!, cx = (I.x + I.w / 2) * T, cy = (I.y + I.h / 2) * T, rx = I.w / 2 * T - 1, ry = I.h / 2 * T - 1, k;
+    /* asphalt all round the lawn, over the square corners of its tiles and the van's lane on the west */
+    c.fillStyle = P.road; c.fillRect((I.x - 1) * T - 1.5, I.y * T - 1.5, (I.w + 1) * T + 3, I.h * T + 3);
+    /* the lane of the ring, dashed, and the arrows on it */
+    c.save(); c.beginPath(); c.rect(o.x * T, o.y * T, o.w * T, o.h * T); c.clip();
+    c.strokeStyle = P.line; c.lineWidth = 2; c.globalAlpha = 0.85; c.setLineDash([10, 9]);
+    ell(c, cx, cy, rx + T * 0.95, ry + T * 0.95); c.stroke(); c.setLineDash([]);
+    c.lineWidth = 2.4; c.globalAlpha = 0.8;
+    [0.25, 0.75, 1.25, 1.75].forEach(function (a) {
+      var ang = a * Math.PI, ax = cx + Math.cos(ang) * (rx + T * 0.45), ay = cy + Math.sin(ang) * (ry + T * 0.45);
+      /* counter-clockwise, as one drives round a roundabout in Italy: on the map, the tangent the other way */
+      var tx = Math.sin(ang), ty = -Math.cos(ang);
+      c.beginPath(); c.moveTo(ax - tx * 9, ay - ty * 9); c.lineTo(ax + tx * 7, ay + ty * 7); c.stroke();
+      c.beginPath(); c.moveTo(ax + tx * 9 + ty * 0, ay + ty * 9); c.lineTo(ax + tx * 2 - ty * 5, ay + ty * 2 + tx * 5); c.lineTo(ax + tx * 2 + ty * 5, ay + ty * 2 - tx * 5); c.closePath();
+      c.fillStyle = P.line; c.fill();
+    });
+    c.globalAlpha = 1; c.restore();
+    /* the kerb and the lawn */
+    ell(c, cx + 2, cy + 4, rx, ry); c.fillStyle = P.shadow; c.fill();
+    ell(c, cx, cy, rx, ry); fillStroke(c, P.stone, P.ink, 1.8);
+    c.save(); c.setLineDash([7, 7]); c.strokeStyle = P.stone2; c.lineWidth = 2.6; ell(c, cx, cy, rx - 2.5, ry - 2.5); c.stroke(); c.restore();
+    ell(c, cx, cy, rx - 6, ry - 6); fillStroke(c, P.grass, P.ink, 1.2);
+    c.save(); ell(c, cx, cy, rx - 7, ry - 7); c.clip();
+    c.fillStyle = P.grass2; c.globalAlpha = 0.22;
+    for (k = -12; k < 12; k += 2) { c.beginPath(); c.moveTo(cx + k * 14, cy - ry); c.lineTo(cx + k * 14 + 14, cy - ry); c.lineTo(cx + k * 14 + 14 - ry, cy + ry); c.lineTo(cx + k * 14 - ry, cy + ry); c.closePath(); c.fill(); }
+    c.globalAlpha = 1;
+    /* the irrigation heads, little grey dots in a ring */
+    c.fillStyle = P.stone2;
+    for (k = 0; k < 10; k++) { var ia = k / 10 * Math.PI * 2; circle(c, cx + Math.cos(ia) * (rx - 20), cy + Math.sin(ia) * (ry - 20), 1.6); c.fill(); }
+    c.restore();
+    /* the beds of oleanders, round, on the solid tiles */
+    [[1, 1], [4, 2], [2, 4], [4, 5]].forEach(function (b, i) {
+      var bx = (I.x + b[0] + 0.5) * T, by = (I.y + b[1] + 0.5) * T;
+      ell(c, bx, by + 2, 15, 12); fillStroke(c, P.clay, P.ink, 1.2);
+      blobs(c, [[bx - 6, by - 1, 7], [bx + 5, by - 3, 7.5], [bx + 1, by + 4, 7], [bx - 1, by - 7, 6]], i % 2 ? P.hedge : P.leaf2, P.ink, 1.3);
+      for (var f = 0; f < 7; f++) { circle(c, bx - 9 + hash(i, f, 610) * 18, by - 9 + hash(i, f, 611) * 14, 1.7); c.fillStyle = f % 3 ? P['flower-b'] : '#ffffff'; c.fill(); }
+    });
+    /* in the middle a round bed of flowers, edged with stone */
+    var mx = cx + 4, my = cy - 2;
+    ell(c, mx, my, 21, 15); fillStroke(c, P.stone, P.ink, 1.4);
+    ell(c, mx, my, 17, 11.5); fillStroke(c, P.clay, P.ink, 0.9);
+    for (k = 0; k < 22; k++) {
+      var fa = hash(k, 3, 612) * Math.PI * 2, fr = Math.sqrt(hash(k, 4, 613)) * 0.85;
+      circle(c, mx + Math.cos(fa) * 16 * fr, my + Math.sin(fa) * 10.5 * fr, 2); c.fillStyle = [P['flower-a'], P['flower-b'], '#ffffff', P.leaf][k % 4]; c.fill();
+    }
+  },
+  /* the Porticciolo romano of Gianola: the quays of about 1930 in big squared blocks, over the tanks of the Roman
+     fishpond, whose walls still show under the water; mooring rings, a bollard, steps down into the water, weed on
+     the wet stone. o.rows are the map's characters under it: '_' quay, '~' water */
+  porticciolo: function (c, o, P) {
+    var R = o.rows || [], at = function (u: number, v: number) { return v >= 0 && v < R.length && u >= 0 && u < R[v].length ? R[v][u] : ''; };
+    var u: number, v: number, X: number, Y: number, k: number;
+    /* a tank is water closed by quays to the left and to the right on its row */
+    var tank = function (u0: number, v0: number) { return at(u0, v0) === '~' && R[v0].slice(0, u0).indexOf('_') >= 0 && R[v0].slice(u0 + 1).indexOf('_') >= 0; };
+    for (v = 0; v < R.length; v++) for (u = 0; u < R[v].length; u++) {
+      if (!tank(u, v) || tank(u - 1, v) || tank(u, v - 1)) continue;
+      /* each tank once, from its top-left tile: greener water, the Roman walls under it, the shadow of the quays */
+      var tw = 1, th = 1;
+      while (tank(u + tw, v)) tw++;
+      while (tank(u, v + th)) th++;
+      X = (o.x + u) * T; Y = (o.y + v) * T;
+      c.fillStyle = P.weed; c.globalAlpha = 0.2; c.fillRect(X, Y, tw * T, th * T);
+      c.fillStyle = P.ink; c.globalAlpha = 0.12; c.fillRect(X, Y, tw * T, 6); c.fillRect(X, Y, 6, th * T);
+      c.globalAlpha = 0.4; c.strokeStyle = P.rock2; c.lineWidth = 3; c.setLineDash([7, 5]);
+      rr(c, X + 9, Y + 9, tw * T - 18, th * T - 18, 3); c.stroke();
+      c.beginPath(); c.moveTo(X + tw * T / 2, Y + 9); c.lineTo(X + tw * T / 2, Y + th * T - 9); c.stroke(); c.setLineDash([]);
+      /* a few fish, dark shapes in the green */
+      c.globalAlpha = 0.45; c.fillStyle = P.sea2;
+      for (k = 0; k < 3; k++) { var fx = X + 14 + hash(u, v + k, 621) * (tw * T - 28), fy = Y + 14 + hash(u + k, v, 622) * (th * T - 28); ell(c, fx, fy, 4, 1.6); c.fill(); poly(c, [[fx + 3.5, fy], [fx + 7, fy - 2.5], [fx + 7, fy + 2.5]]); c.fill(); }
+      c.globalAlpha = 1;
+    }
+    for (v = 0; v < R.length; v++) for (u = 0; u < R[v].length; u++) {
+      X = (o.x + u) * T; Y = (o.y + v) * T;
+      if (at(u, v) !== '_') continue;
+      /* the quay: two rows of big blocks to a tile, joints staggered */
+      c.save(); c.beginPath(); c.rect(X, Y, T, T); c.clip();
+      c.fillStyle = P.stone; c.fillRect(X, Y, T, T);
+      for (k = 0; k < 2; k++) {
+        var by = Y + k * 16, off = ((u + v + k) % 2) * 10;
+        c.strokeStyle = P.stone2; c.lineWidth = 1.2;
+        c.beginPath(); c.moveTo(X, by); c.lineTo(X + T, by); c.stroke();
+        for (var jx = X - 20 + off; jx < X + T; jx += 20) { c.beginPath(); c.moveTo(jx, by); c.lineTo(jx, by + 16); c.stroke(); }
+        if (hash(u * 2 + k, v, 623) < 0.3) { c.fillStyle = P.stone2; c.globalAlpha = 0.35; c.fillRect(X + off, by + 1, 18, 14); c.globalAlpha = 1; }
+      }
+      /* the edge over the water: a coping, wet and weedy below */
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+        if (at(u + d[0], v + d[1]) !== '~') return;
+        c.fillStyle = P.stone2; c.strokeStyle = P.ink; c.lineWidth = 1.3;
+        if (d[1] === 1) { c.fillRect(X, Y + T - 5, T, 5); c.beginPath(); c.moveTo(X, Y + T - 5); c.lineTo(X + T, Y + T - 5); c.stroke(); c.fillStyle = P.weed; c.globalAlpha = 0.7; for (k = 0; k < 4; k++) { c.fillRect(X + 3 + k * 8, Y + T - 3, 4, 3); } c.globalAlpha = 1; }
+        if (d[1] === -1) { c.fillRect(X, Y, T, 4); c.beginPath(); c.moveTo(X, Y + 4); c.lineTo(X + T, Y + 4); c.stroke(); }
+        if (d[0] === 1) { c.fillRect(X + T - 4, Y, 4, T); c.beginPath(); c.moveTo(X + T - 4, Y); c.lineTo(X + T - 4, Y + T); c.stroke(); }
+        if (d[0] === -1) { c.fillRect(X, Y, 4, T); c.beginPath(); c.moveTo(X + 4, Y); c.lineTo(X + 4, Y + T); c.stroke(); }
+        /* now and then an iron ring to tie a boat to */
+        if (hash(u, v, 624 + d[0] * 3 + d[1]) < 0.3) { c.strokeStyle = '#6b5a4a'; c.lineWidth = 1.6; circle(c, X + T / 2 + d[0] * 11, Y + T / 2 + d[1] * 11, 3.2); c.stroke(); }
+      });
+      c.restore();
+    }
+    /* the outline of the quays, in pen */
+    c.strokeStyle = P.ink; c.lineWidth = 1.6;
+    for (v = 0; v < R.length; v++) for (u = 0; u < R[v].length; u++) {
+      if (at(u, v) !== '_') continue;
+      X = (o.x + u) * T; Y = (o.y + v) * T;
+      [[0, -1, X, Y, X + T, Y], [0, 1, X, Y + T, X + T, Y + T], [-1, 0, X, Y, X, Y + T], [1, 0, X + T, Y, X + T, Y + T]].forEach(function (e) {
+        if (at(u + e[0], v + e[1]) === '_') return;
+        c.beginPath(); c.moveTo(e[2], e[3]); c.lineTo(e[4], e[5]); c.stroke();
+      });
+    }
+    /* steps down into the water from the first quay tile that has water below it, and a bollard on the last */
+    var first: number[] | null = null, last: number[] | null = null;
+    for (v = 0; v < R.length; v++) for (u = 0; u < R[v].length; u++) if (at(u, v) === '_' && at(u, v + 1) === '~') { if (!first) first = [u, v]; last = [u, v]; }
+    if (first) {
+      X = (o.x + first[0]) * T; Y = (o.y + first[1] + 1) * T;
+      for (k = 0; k < 3; k++) { rr(c, X + 6, Y + k * 5 - 2, T - 12, 5, 1); fillStroke(c, k === 2 ? P.stone2 : P.stone, P.ink, 1); }
+    }
+    if (last && last !== first) {
+      X = (o.x + last[0]) * T + T / 2; Y = (o.y + last[1]) * T + T / 2 - 2;
+      ell(c, X, Y + 4, 6, 3); c.fillStyle = P.shadow; c.fill();
+      rr(c, X - 4, Y - 6, 8, 10, 3); fillStroke(c, '#4a4f5c', P.ink, 1.2);
+      ell(c, X, Y - 6, 5, 2.4); fillStroke(c, '#5d6372', P.ink, 1);
+    }
   },
   /* a name written on the map in ballpoint */
   text: function (c, o, P) {

@@ -59,6 +59,10 @@ export interface GroundObject {
   color?: string;
   /** a hill village inside a range of peaks, in tiles from its corner */
   village?: [number, number];
+  /** the map's characters under it, one string per row (the Porticciolo romano draws its quays on them) */
+  rows?: string[];
+  /** the lawn inside a ring, in tiles from the map's corner (the Rotonda dei Carabinieri) */
+  island?: { x: number; y: number; w: number; h: number };
 }
 /** something to read or use on a tile; quiet ones are not drawn as a signpost (furniture, a parked scooter),
     plates are the street-name plates at the corners */

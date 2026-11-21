@@ -74,3 +74,11 @@ Le fonti e le coordinate verificate qui sotto vengono in buona parte dal lavoro 
 **Non verificati, quindi detti senza fatti:** le persone nuove (l'infermiere, il signore di Largo Paone, la signora di Maranola per la parte che non riguarda San Michele, il pellegrino per la sorgente, il postino, i pescatori, la contadina, il pensionato, il pittore, le bagnine) dicono cose loro. I belvedere si chiamano come il posto da cui si guarda.
 
 **Tolto perché non vero:** via Penitro e via Rubino a nord della ferrovia (nella mappa di prima erano strade di comodo: via Rubino è a Castellone, e ora è lì); il villaggio di Maranola disegnato in lontananza (adesso ci si arriva).
+
+## 21 novembre 2026: la rotonda dei Carabinieri, il Bar Elsa, la Rodari, la costa di Gianola
+
+- **Rotonda dei Carabinieri:** in OpenStreetMap è l'area «Rotonda dei carabinieri» (41.2606, 13.6197). È chiamata così da tutti, vicino c'è un distributore, e da lì comincia la superstrada Formia–Cassino (tuttogolfo.it, latinatu.it). Vista satellitare e Street View di Google Maps (maggio 2025) per il prato con le aiuole, il tetto rosso della caserma e il palazzo giallo chiaro.
+- **Comando Compagnia Carabinieri di Formia:** via Appia Lato Napoli 1 (amministrazionicomunali.it).
+- **Bar Elsa:** via Appia Lato Napoli 3 (Tripadvisor, Restaurant Guru: 41.26101, 13.62030); la pagina Facebook si chiama «Bar Elsa Cornight h24» e le recensioni parlano dei cornetti fino a tarda notte.
+- **Scuola elementare Gianni Rodari:** via Palazzo 70 (tuttitalia.it) o 68 (Google Maps, che la dà chiusa), 41.26367, 13.62472.
+- **Gianola:** vista satellitare (pennelli e mezzelune del lungomare Città di Ferrara, foce del Rio Santa Croce, il porticciolo nella sua caletta a sud-est del promontorio, Oasi Blu); la Spiaggia dei Sassolini, lunga circa 110 metri, di sabbia e ciottoli, è dalla parte di Scauri (beachsearcher.com). La «caletta sotto la villa» è un nome del gioco.

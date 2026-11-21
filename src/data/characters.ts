@@ -114,7 +114,7 @@ export const CHARS: Record<CharId, Character> = {
   andrea: {
     id: 'andrea', name: 'Andrea', full: 'Andrea Albino Vento', nick: 'Volpino Alato', type: 'Cervello', tagline: 'Furbo, scaltro, calcolatore',
     stats: { hp: 100, atk: 98, def: 85, spe: 100 },
-    passive: { name: 'Calcolatore', text: 'Registra ogni colpo: la seconda volta che subisce la stessa mossa, prende il 30% di danno in meno.' },
+    passive: { name: 'Calcolatore', text: 'Registra ogni colpo: la seconda volta che subisce la stessa mossa, prende il 20% di danno in meno.' },
     weakness: { name: 'Senza sentimenti', text: 'Macchina razionale: non ha mosse per curarsi, e i colpi critici lo colpiscono dove fa male: fanno il doppio invece del 50% in più.' },
     moves: [
       { id: 'analisi', name: 'Analisi Statistica', kind: 'atk', power: 45, crit: 0.25, text: 'Colpo calcolato: non sbaglia mai e fa critico il 25% delle volte.' },
