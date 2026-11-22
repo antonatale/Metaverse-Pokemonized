@@ -116,7 +116,9 @@ export interface Member extends SideOpts { id: FighterId }
 /** one foe of a team battle: who fought it, and who brought it down. The story pays out from these */
 export interface Bout { key: string; foe: FighterId; lv: number; who: string[]; ko: boolean; by: string | null }
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
-export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string }
+/** a story battle: where it comes from, and (for the battle screen) its place and who stands behind the foe's creatures
+    (`coach`, ui/coaches.ts) */
+export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string; coach?: string }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }

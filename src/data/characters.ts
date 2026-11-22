@@ -138,13 +138,14 @@ export const CHARS: Record<CharId, Character> = {
     lines: { entry: 'Weee!', crit: 'WEEEEE!', win: 'Weee! Si fa festa da me.', ko: 'Weee… ok, mi siedo un attimo.', anomalo: 'Cambio di programma!', back: 'Saluti da Copenhagen!' }
   },
   forchetta: {
-    id: 'forchetta', name: 'Forchetta', full: 'Antonio Forcina', nick: 'Forchetta', type: 'Calma', tagline: 'Il più formiano di tutti',
+    /* tennis player, painter with a brush and biomedical engineer (Antonio, 13 November 2026): not only the courts */
+    id: 'forchetta', name: 'Forchetta', full: 'Antonio Forcina', nick: 'Forchetta', type: 'Calma', tagline: 'Racchetta, pennello e protesi',
     stats: { hp: 108, atk: 96, def: 92, spe: 75 },
     passive: { name: 'Poteva andare peggio', text: 'La prima volta che un colpo lo manderebbe KO, resta in piedi con 1 PS.' },
     weakness: { name: 'Criptico', text: 'Risponde quando vuole lui: agisce sempre per ultimo, anche se è più veloce.' },
     moves: [
       { id: 'servizio', name: 'Servizio Vincente', kind: 'atk', power: 55, crit: 0.25, text: 'Ace al primo servizio: danno medio e 25% di colpo critico.' },
-      { id: 'pitstop', name: 'Pit Stop', kind: 'heal', uses: 3, text: 'Cambio gomme in due secondi: recupera 20 PS e la Difesa sale del 25% per 3 turni.' },
+      { id: 'pitstop', name: 'Protesi su Misura', kind: 'heal', uses: 3, text: 'Da ingegnere biomedico: progetta e stampa la protesi giusta in due secondi. Recupera 20 PS e la Difesa sale del 25% per 3 turni.' },
       { id: 'criptico', name: 'Messaggio Criptico', kind: 'status', text: 'Manda un messaggio che nessuno capisce: l\'avversario resta confuso per 2 turni.' },
       { id: 'formia', name: 'Forza Formia', kind: 'atk', power: 55, drain: 0.4, text: 'Il più formiano di tutti: danno medio e recupera il 40% del danno inflitto.' }
     ],

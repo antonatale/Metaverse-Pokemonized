@@ -13,7 +13,7 @@ export const LEGEND: Record<string, Ground> = {
   'n': { g: 'clay', deco: 'net', solid: true, reach: true }, 'k': { g: 'floor', deco: 'counter', solid: true, reach: true },
   /* Formia, second edition: mountains, olive trees, cypresses, steps, cobbles, the old polygonal walls, rocks in the sea */
   'M': { g: 'hill', solid: true }, 'O': { g: 'grass', obj: 'olive', solid: true }, 'C': { g: 'grass', obj: 'cypress', solid: true },
-  'H': { g: 'steps' }, 'v': { g: 'paving' }, ';': { g: 'paving', obj: 'scooter', solid: true }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
+  'H': { g: 'steps' }, '>': { g: 'steps', deco: 'gradoni' }, 'v': { g: 'paving' }, ';': { g: 'paving', obj: 'scooter', solid: true }, 'W': { g: 'mura', solid: true }, 'R': { g: 'sea', deco: 'rocks', solid: true },
   'z': { g: 'road', deco: 'zebra' }, 'G': { g: 'far', solid: true }, 'B': { g: 'stone', deco: 'bench', solid: true },
   'L': { g: 'stone', obj: 'lamp', solid: true }, 'Y': { g: 'paving', obj: 'lamp', solid: true }, 'K': { g: 'grass', obj: 'lamp', solid: true },
   'Q': { g: 'hill', obj: 'tree', solid: true }, 'J': { g: 'hill', obj: 'cypress', solid: true },

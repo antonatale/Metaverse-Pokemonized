@@ -1,29 +1,57 @@
 import { st, save } from '../save/story-progress';
 import type { Npc, Sign } from '../data/maps/types';
+import { FORMIA_SPOT } from '../data/maps/formia-ground';
+import { cisterna } from '../data/maps/cisterna';
 import { CICERO } from '../story/mentor';
 import { STONES, flag, type Stone } from '../story/plot';
 import type { LegendDef } from '../data/legends';
-import { CHOICES } from '../data/choices';
+import { CHOICES, STONES_AFTER_RESCUE } from '../data/choices';
 import { HELD } from '../data/passives';
 import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
 import { rivalSpeaker } from '../story/rival-who';
-import { addCreature, creatureOf, has, nameOf, own, prizeText, heroText } from '../story/growth';
+import { addCreature, creatureOf, firstHuman, has, monsOf, nameOf, own, prizeText, heroText } from '../story/growth';
 import type { Mission } from '../data/missions';
 import { CHARS } from '../data/characters';
+import { COVI } from '../data/covi';
+import { COVO_NOTES } from '../data/finale';
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly, myMissions } from '../story/missions';
 import { esc, $ } from './dom';
 import { say, sheet, closeSheet, renderHud, dexNotice, trainerFight, foesLine, type DialogOpt } from './story-screen';
 import { sfx } from '../audio';
 import { travel } from '../story/movement';
+import { archiveScene, cisternScene, seaStoneScene, voiceStoneScene, recordedVoice, stonesReturnedScene } from './finale';
+import { REUNION, friendFreed } from '../story/finale';
 
 /* What the people of the plot say (story/plot.ts): the archivist of the Torre di Mola, the lady of the Roman theatre,
    Cicero at his tomb, and what happens after the battles with Mamurra's men and with Mamurra himself. */
 
+const ARCHIVE_CORRECTED = 'archivio-lamo';
+
 /** someone of the plot has something to say now: true when the plot takes the talk. again goes on with the talk as
     usual, without the plot */
 export function plotTalk(n: Npc, again: () => void): boolean {
+  if (n.id === 'guardaparco' && flag(REUNION) && !st.seen['saluto-guardaparco']) {
+    const first = monsOf(firstHuman())[0];
+    const greeting = first ? 'Mi ricordo di ' + nameOf(first.uid) + '. Quando vi siete incontrati qui, dopo il boato, avevate paura tutti e due.' : 'Stamattina ho riaperto il sentiero.';
+    say([greeting, 'Da quando siete tornati, si sentono di nuovo i versi dalle tane. Mi ero dimenticata di quanto casino fanno prima dell’alba.'], n.name, null, () => {
+      st.seen['saluto-guardaparco'] = true; save();
+    });
+    return true;
+  }
+  if (n.id === 'archivista' && flag(REUNION)) {
+    if (flag(ARCHIVE_CORRECTED)) say('Ho rimesso il disegno al suo posto, con la tua testimonianza. Chi lo chiederà potrà leggere entrambe le versioni.', n.name);
+    else say(['Mi hanno detto che hai raggiunto la Porta. Nel disegno la mano di Lamo sembra sollevare la lastra. Da secoli leggiamo così questa storia.',
+      'L’hai vista davvero quella mano?'], n.name, [
+      { label: 'Lamo teneva chiuso il passaggio', fn: () => {
+        st.seen[ARCHIVE_CORRECTED] = true; save();
+        say(['E quelle creature che si vedono tra le pietre si erano rifugiate lì. Aspetta, prendo un foglio nuovo.',
+          'Ci scrivo quello che hai visto e lo conservo con il disegno. Così chi verrà dopo potrà capire cosa stava facendo Lamo.'], n.name);
+      } }, { label: 'Te lo racconto più tardi', fn: null }
+    ]);
+    return true;
+  }
   if (n.id === 'archivista' && flag('tr-mamurr-scavi') && !flag('trama-archivio')) { archive(n.name || ''); return true; }
   if (n.id === 'teatro' && flag('tr-mamurr-cisterna') && !flag('pietra-mura') && !flag('porta-cisterna')) { riddle(n.name || ''); return true; }
   return missionTalk(n, again);
@@ -71,21 +99,27 @@ export function missionsHtml(): string {
 }
 /** a sign of the plot: Cicero's tomb, once Antonio has the other two stones */
 export function plotSign(s: Sign): boolean {
-  var t = s.text.join(' ');
   /* a way in that the story has opened */
   if (s.enter && s.enter.after.some(flag)) {
     var e = s.enter;
-    say(s.text, null, [{ label: e.label, fn: function () { travel(e.to, e.tx, e.ty, e.tdir); } }, { label: 'Non ora', fn: null }]);
+    const enter = () => travel(e.to, e.tx, e.ty, e.tdir);
+    say(s.text, null, [{ label: e.label, fn: () => e.to === 'cisterna' ? cisternScene([s.x, s.y], enter) : enter() }, { label: 'Non ora', fn: null }]);
     return true;
   }
   /* the Pietra delle Mura, on the still water at the bottom of the Cisternone */
-  if (t.indexOf('Pietra delle Mura') >= 0) {
+  const [wallX, wallY] = cisterna.place!.goal;
+  if (st.map === 'cisterna' && s.x === wallX && s.y === wallY) {
     if (flag('pietra-mura')) { say(['Sull\'acqua ferma è rimasto solo un cerchio di luce.']); return true; }
     st.seen['pietra-mura'] = true; save();
-    award('pietra-mura', function () { say(['La prima pietra! Quella del mare, dicono, sta tra le peschiere romane di Caposele. E là c\'è già qualcuno che si immerge.'], CICERO); });
+    sfx('finaleEcho');
+    award('pietra-mura', () => {
+      if (flag('pietra-mare')) say(['Accosti le Pietre delle Mura e del Mare. Nel silenzio del Cisternone si sente lo stesso suono registrato a Caposele, e in mezzo c’è una voce.'], null, null, hearStoneVoice);
+      else say(['Ascolta. La Pietra fa lo stesso rumore del boato, però dura meno.', 'Portala alle peschiere di Caposele. Se il sub ha trovato quella del Mare, vediamo come rispondono messe insieme.'], CICERO);
+    });
     return true;
   }
-  if (t.indexOf('Tomba di Cicerone') < 0 || !flag('pietra-mura') || !flag('pietra-mare') || flag('pietra-voce')) return false;
+  const [tombX, tombY] = FORMIA_SPOT['sign-tomba'];
+  if (st.map !== 'formia' || s.x !== tombX || s.y !== tombY || !flag('pietra-mura') || !flag('pietra-mare') || flag('pietra-voce')) return false;
   tomb();
   return true;
 }
@@ -99,7 +133,7 @@ export function plotBefore(id: string): string[] {
 /** a question of the story, once: who speaks speaks, the last one asks, the player answers and the answer stays */
 export function askChoice(id: string, then?: () => void) {
   if (chosen(id)) { if (then) then(); return; }
-  var c = CHOICES[id], k = 0;
+  var c = id === 'pietre' && flag(REUNION) ? STONES_AFTER_RESCUE : CHOICES[id], k = 0;
   var next = function () {
     var part = c.ask[k++], who = part.who === '{rv}' ? rivalSpeaker() : part.who;
     if (k < c.ask.length) { say(part.say, who, null, next); return; }
@@ -153,13 +187,14 @@ export function legendPact(L: LegendDef, lv: number) {
 
 /** after a battle won against someone of the plot (a trainer's id), with who stood by for it (who asked for a mission) */
 export function plotAfter(id: string, who: string, then?: () => void) {
-  if (id === 'mamurr-scavi') say(['Mamurra… Lucio Mamurra! Lo conoscevo: cavaliere di Formia, prefetto del genio di Cesare, il più ricco di tutti. La villa qui a Gianola era la sua.',
-    'Catullo lo chiamava «lo scialacquatore di Formia». Se il suo fantasma cerca le Pietre di Telepilo, vuole qualcosa di grosso.',
-    'All\'Archivio della Torre di Mola sanno tutto delle leggende di Formia. Andiamo a chiedere.'], CICERO);
+  if (id === 'mamurr-scavi') {
+    sfx('finaleCoin');
+    say(['Ho sentito la moneta anche io. Quando ha vibrato, le due creature si sono voltate nello stesso istante.',
+      'Il suo capo dev’essere Lucio Mamurra. Lo conoscevo. La villa qui a Gianola era la sua e adesso cerca le Pietre nascoste a Formia.',
+      'Gli scavi hanno fatto tremare il golfo. Ora pulsa una luce in città. Apri il caminetto appena squilla.'], CICERO);
+  }
   else if (id === 'mamurr-cisterna') say(['L\'uomo con la torcia scappa giù per i vicoli di Castellone.', 'Una parola per aprire il Cisternone… La signora che abita dentro il teatro romano saprà qualcosa.']);
-  else if (id === 'mamurr-peschiere') { st.seen['pietra-mare'] = true; save(); award('pietra-mare', function () {
-    say(['Due pietre su tre. Per la terza, vieni a trovarmi alla mia tomba, sull\'Appia verso Gaeta.', 'Sì: la Pietra della Voce la custodisco io. Da duemila anni.'], CICERO);
-  }); }
+  else if (id === 'mamurr-peschiere') collectSeaStone();
   else if (id === 'mamurra') { st.seen['cic-lamo'] = true; save(); askChoice('pietre'); }
   /* the first two meetings with Tullio: what the player says to him stays */
   else if (id === 'rivale-1') askChoice('tullio1', then);
@@ -167,35 +202,78 @@ export function plotAfter(id: string, who: string, then?: () => void) {
   else { var m = missionOfTrainer(id); if (m) missionDoneNow(m, who); }
 }
 
+/** The diver's defeat is saved before the dialogue, so the award must survive closing the game there. */
+export function resumePlot(): boolean {
+  if (!flag('tr-mamurr-peschiere') || flag('pietra-mare')) return false;
+  collectSeaStone();
+  return true;
+}
+
+function collectSeaStone() {
+  st.seen['pietra-mare'] = true; save();
+  seaStoneScene(() => award('pietra-mare', () => {
+    if (flag('pietra-mura')) hearStoneVoice();
+    else say('Salva la registrazione. Dal rumore coperto dall’acqua capisco poco. Quando avrai la Pietra delle Mura, accostale: vediamo come si rispondono.', CICERO);
+  }));
+}
+
+function hearStoneVoice() {
+  const voice = recordedVoice();
+  say(voice.line, voice.speaker, null, () => say('Quella voce è la mia. Per la Pietra della Voce, vieni alla mia tomba, sull’Appia verso Itri.', CICERO));
+}
+
 /* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */
 export function legendWay(L: LegendDef) {
   var key = 'enigma-' + L.id, t = L.trial!, R = L.riddle;
+  const afterRescue = L.id === 'lamo' && flag(REUNION);
   var down = function () { travel(t.to, t.x, t.y, t.dir); };
   var offer = function (text: string[]) { say(text, null, [{ label: 'Scendi', fn: down }, { label: 'Non ora', fn: null }]); };
   if (L.angry && stonesKept()) { offer(L.angry.way); return; }
   if (!R || flag(key)) { offer(t.again); return; }
   var ask = function (k: number) {
-    if (k >= R!.steps.length) { st.seen[key] = true; save(); sfx('magic'); offer(R!.solved); return; }
+    if (k >= R!.steps.length) {
+      st.seen[key] = true; save(); renderHud();
+      if (afterRescue) stonesReturnedScene(() => offer(t.again));
+      else { sfx('magic'); offer(R!.solved); }
+      return;
+    }
     var q = R!.steps[k];
     say([q.ask], null, q.options.map(function (label, i) {
       return { label: label, fn: function () { if (i === q.ok) ask(k + 1); else say(R!.wrong, null, null, function () { ask(0); }); } };
     }));
   };
-  say(R.intro, null, null, function () { ask(0); });
+  const intro = afterRescue ? ['HO CHIUSO LA PORTA CON LA MIA MANO. FINCHÉ LE NICCHIE RESTANO VUOTE, NON POSSO TOGLIERLA.', R.intro[R.intro.length - 1]] : R.intro;
+  say(intro, null, null, function () { ask(0); });
 }
 
 /* ---------- the archivist: the legend of the stones ---------- */
 function archive(who: string) {
+  const fragment = firstHuman() === 'forchetta'
+    ? 'Dici che al Zauli hai visto le stesse tre tacche vicino alla rete? Allora quel segno dev’essere finito anche nei covi.'
+    : friendFreed('forchetta') ? 'Avvicina il frammento del campo al disegno. Le tre tacche combaciano con le sedi del sigillo.'
+      : 'Le tre tacche sul margine segnano le sedi del sigillo.';
   say(['Le Pietre di Telepilo? Allora l\'hai visto anche tu, quello che scava a Gianola.',
     'Cicerone, in una lettera all\'amico Attico, chiamava Formia «la Telepilo dei Lestrigoni»: la città dei giganti dell\'Odissea e del loro re, Lamo.',
-    'La leggenda dice che le porte di Telepilo erano chiuse da un sigillo di tre pietre: una delle mura, una del mare e una della voce. Finché stanno a Formia, i giganti dormono.',
-    'Quando l\'antica Formiae fu abbandonata, ai tempi dei Saraceni, sulle sue rovine nacquero due paesi: Castellone in alto e Mola sul mare. Le pietre furono nascoste.',
-    'La Pietra delle Mura sta a Castellone, nel Cisternone romano. Quella del mare, dicono, tra le peschiere di Caposele. Della terza si sa solo che la custodisce un oratore.',
-    'Castellone e Mola sono stati due paesi per quasi mille anni: nel 1819 li unirono, e il 13 marzo 1862 ripresero il nome antico, Formia. Le pietre, invece, non si sono mai riunite.',
-    'Se quegli uomini le trovano prima di te, chissà cosa può succedere. Trovale tu.'], who, null, function () {
-    st.seen['trama-archivio'] = true; save(); renderHud();
-    say(['Un oratore che custodisce una pietra… Mi viene in mente qualcuno, ma ne parliamo quando avrai le altre due.', 'Prima Castellone: il Cisternone.'], CICERO);
+    'Qui si vede come tenevano chiusa la Porta. Guarda il disegno sul margine.'], who, null, () => archiveScene(who, () => {
+    say([fragment,
+      'Quando Formiae fu abbandonata, nacquero due paesi sulle sue rovine. La Pietra delle Mura finì nel Cisternone a Castellone, quella del Mare tra le peschiere di Caposele.',
+      'Della Pietra della Voce sappiamo solo che la affidavano a un oratore. Nel 1862 i due paesi tornarono a chiamarsi Formia. Le Pietre restarono separate.'], who, null, () => {
+      st.seen['trama-archivio'] = true; save(); renderHud();
+      say(['Un oratore che custodisce una pietra… Mi viene in mente qualcuno, ma ne parliamo quando avrai le altre due.', 'Prima Castellone: il Cisternone.'], CICERO);
+    });
+  }));
+}
+
+export function cluesHtml(): string {
+  const clues = st.badges.flatMap(badge => {
+    const covo = Object.values(COVI).find(c => c.badge.id === badge);
+    if (!covo || covo.leader === firstHuman()) return [];
+    const [title, description] = COVO_NOTES[covo.leader];
+    return ['<li class="got"><span><b>' + esc(title) + '</b><small>' + esc(CHARS[covo.leader].name + ' · ' + description) + '</small></span></li>'];
   });
+  if (flag(ARCHIVE_CORRECTED)) clues.push('<li class="got"><span><b>La mano sulla Porta</b><small>La tua testimonianza è conservata alla Torre di Mola accanto al disegno. Lamo chiudeva il passaggio per proteggere le creature.</small></span></li>');
+  else if (flag('trama-archivio')) clues.push('<li class="got"><span><b>Il disegno della Torre di Mola</b><small>Sul margine una mano tocca la Porta. Sei luci sono dentro il sigillo, una resta fuori.</small></span></li>');
+  return clues.length ? '<div class="pickrow"><h3>Indizi sull’eco</h3><ul class="wbadge-list diary">' + clues.join('') + '</ul></div>' : '';
 }
 /* ---------- the lady of the theatre: the word that opens the Cisternone ---------- */
 function riddle(who: string) {
@@ -209,13 +287,16 @@ function riddle(who: string) {
     st.seen['porta-cisterna'] = true; save(); renderHud();
     say(['Dodici! Intera ne è rimasta solo una, quella ottagonale: le altre se le è prese la guerra.', 'Ecco: la porta del Cisternone è aperta. Sull\'acqua ferma, in fondo, c\'è una pietra che brilla.', 'Là sotto è buio, e l\'acqua si muove. Guarda bene dove metti i piedi.'], who);
   };
-  say(['Hai mandato via quello con la torcia? Bravo: ha svegliato mezzo teatro.', 'La Pietra delle Mura sta nel Cisternone da quando è nato Castellone. La porta si apre solo a chi conosce le mura.'], who, null, ask);
+  say(['Hai mandato via quello con la torcia? Ha battuto una moneta contro la porta. Per un attimo ho sentito rispondere qualcosa dal fondo.', 'Chi ha custodito la Pietra mi ha insegnato la parola per aprire. Te la dico se sai contare le vecchie torri di Castellone.'], who, null, ask);
 }
-/* ---------- Cicero at his tomb: three questions, like an exam ---------- */
-const QUESTIONS: { q: string; a: string[]; ok: number; why: string }[] = [
-  { q: 'In che anno sono morto, qui vicino alla mia villa di Formia?', a: ['Nel 44 avanti Cristo', 'Nel 43 avanti Cristo', 'Nel 79 dopo Cristo'], ok: 1, why: 'Nel 43 avanti Cristo. Il 44 è l\'anno di Cesare, il 79 quello del Vesuvio.' },
-  { q: 'Come si chiamava il comune prima di riprendere il nome di Formia, nel 1862?', a: ['Gianola e Maranola', 'Vindicio e Trivio', 'Mola e Castellone'], ok: 2, why: 'Mola e Castellone: i due paesi nati sulle rovine di Formiae, uniti nel 1819.' },
-  { q: 'Chi è il patrono di Formia, il protettore dei marinai?', a: ['Sant\'Erasmo', 'San Giovanni', 'San Lorenzo'], ok: 0, why: 'Sant\'Erasmo, morto a Formia nel 303: il fuoco di Sant\'Elmo porta il suo nome.' }
+/* Cicero opens the Stone of the Voice with three memories of Formia. */
+const QUESTIONS: { q: string; a: string[]; ok: number; why: string; hint: string }[] = [
+  { q: 'In che anno sono morto, qui vicino alla mia villa di Formia?', a: ['Nel 44 avanti Cristo', 'Nel 43 avanti Cristo', 'Nel 79 dopo Cristo'], ok: 1,
+    why: 'Nel 43 avanti Cristo. Il 44 è l’anno di Cesare, il 79 quello del Vesuvio.', hint: 'La Pietra rimane fredda. Ricordi? Cesare era già morto da un anno.' },
+  { q: 'Come si chiamava il comune prima di riprendere il nome di Formia, nel 1862?', a: ['Gianola e Maranola', 'Vindicio e Trivio', 'Mola e Castellone'], ok: 2,
+    why: 'Mola e Castellone. I due paesi nati sulle rovine di Formiae si unirono nel 1819.', hint: 'Si sente appena un filo di voce. Pensa ai due paesi nominati dall’archivista della Torre.' },
+  { q: 'Chi è il patrono di Formia, il protettore dei marinai?', a: ['Sant\'Erasmo', 'San Giovanni', 'San Lorenzo'], ok: 0,
+    why: 'Sant’Erasmo. Il fuoco di Sant’Elmo porta il suo nome.', hint: 'La luce si ferma. Il nome che cerchi è sopra la chiesa vicino alla torre di Castellone.' }
 ];
 function tomb() {
   sfx('magic');
@@ -223,7 +304,7 @@ function tomb() {
     if (k >= QUESTIONS.length) {
       say(['Promosso, e con lode. Tieni: la Pietra della Voce.'], CICERO, null, function () {
         st.seen['pietra-voce'] = true; save();
-        award('pietra-voce', function () { say(['Tre pietre. Adesso Mamurra verrà a cercarti: alla sua villa, a Gianola. Lo aspetto da duemila anni anch\'io.'], CICERO); });
+        voiceStoneScene(() => award('pietra-voce', () => say(['Le tre Pietre rispondono allo stesso impulso. A Gianola Mamurra avrà visto la luce. Quando tutto il caminetto sarà libero, ritrovatevi alla villa.'], CICERO)));
       });
       return;
     }
@@ -231,11 +312,12 @@ function tomb() {
     say([Q.q], CICERO, Q.a.map(function (t, i) {
       return { label: t, fn: function () {
         if (i === Q.ok) say(['Giusto. ' + Q.why], CICERO, null, function () { ask(k + 1); });
-        else say(['No, no, no. Riprova: un oratore non si arrende mai.'], CICERO, null, function () { ask(k); });
+        else say([Q.hint], CICERO, null, function () { ask(k); });
       } };
     }));
   };
-  say(['Eccoti alla mia tomba. Hai la Pietra delle Mura e la Pietra del Mare: la Pietra della Voce la custodisco io, da duemila anni.', 'Ma non la do a chi non conosce Formia. Tre domande, come all\'esame.'], CICERO, null, function () { ask(0); });
+  say(['Mamurra ha imparato a ripetere la mia voce con le sue monete. La Pietra della Voce però risponde ai ricordi di questa città.',
+    'Ti faccio tre domande su Formia. Rispondi ad alta voce e tieni vicine le altre due Pietre.'], CICERO, null, function () { ask(0); });
 }
 
 /* ---------- a stone found: its picture, and what it is ---------- */

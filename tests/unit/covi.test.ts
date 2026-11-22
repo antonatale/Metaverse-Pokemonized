@@ -5,7 +5,7 @@ import { MAPS } from '../../src/data/maps';
 import { SECOND_CITY, gateFor } from '../../src/data/gates';
 import { st, resetProgress } from '../../src/save/story-progress';
 import { cityCovi, covoLevel } from '../../src/story/maps';
-import { myStops } from '../../src/story/goals';
+import { heading, myStops } from '../../src/story/goals';
 import { chapterOf, typeWord } from '../../src/story/mentor';
 
 /* The seven covi (data/covi.ts): one per friend, in Formia; whoever is played meets the other six, in any order (the
@@ -63,6 +63,19 @@ describe('the seven covi', () => {
     expect(covi()[covi().length - 1]).toBe('covo-palamendola');
     play('antonio', 'zendavid');
     expect(covi()[covi().length - 1]).toBe('covo-pineta');
+  });
+  it('leads to Antonio’s front door, then to the park exit and the dome', () => {
+    play('zendavid');
+    st.seen = { starter: true, 'invito-palamendola': true };
+    st.beaten['tr-mamurr-scavi'] = true;
+    st.mons = [{ uid: 'c1', sp: 'polpino' }, { uid: 'c2', sp: 'ramarrino' }];
+    const house = MAPS.formia.buildings!.find(b => b.id === 'casa')!, dome = MAPS.formia.buildings!.find(b => b.id === 'covo-antonio')!;
+    const rear = MAPS.casa.warps!.find(w => w.tx !== house.door[0])!;
+    [st.x, st.y] = MAPS.formia.starts!.zendavid;
+    expect(heading('formia')).toMatchObject({ x: house.door[0], y: house.door[1] });
+    expect(heading('casa')).toMatchObject({ x: rear.x, y: rear.y });
+    [st.x, st.y] = [rear.tx, rear.ty];
+    expect(heading('formia')).toMatchObject({ x: dome.door[0], y: dome.door[1] });
   });
   it('lead to Torino, Milano or Perugia, as each one\'s life does', () => {
     expect(SECOND_CITY).toEqual({ antonio: 'torino', zendavid: 'torino', forchetta: 'torino', valentin: 'torino', costanzo: 'rogoredo', andrea: 'milano', claudia: 'perugia' });

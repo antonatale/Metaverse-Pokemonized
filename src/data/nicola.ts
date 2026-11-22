@@ -28,21 +28,21 @@ export const PICKUP = {
     'Io torno all\'Eclipse, che il vento gira. Il windsurf tienilo tu: con quello giri tutto il golfo. Quando ti serve un passaggio col furgone, mi trovi là!'],
   early: 'Gianola sta più a est, uagliò: rimettiti in acqua e seguimi!'
 };
-/** the way to Gianola on the windsurf, behind Nicola: past the buoys of Vindicio, along the port, up to Mola, along the
+/** the way to Gianola on the windsurf, behind Nicola (every point on the water: build.ts checks it): past the buoys of Vindicio, along the port, up to Mola, along the
     coast of Acqualonga and down to the beach of the Sassolini; what he shouts at some of the points */
 export const WS_ROUTE: { at: [number, number]; say?: string }[] = [
-  { at: [50, 114], say: 'Stammi dietro, uagliò! Facciamo il giro largo: Formia dal mare non l\'hai mai vista così. Ahahah!' },
+  { at: [52, 119], say: 'Stammi dietro, uagliò! Facciamo il giro largo: Formia dal mare non l\'hai mai vista così. Ahahah!' },
   { at: [64, 114] }, { at: [74, 109], say: 'Tra le boe, uagliò! Destra, sinistra… così!' },
-  { at: [86, 107], say: 'Qua sotto ci sono le peschiere romane di Caposele: le vasche dove i Romani tenevano i pesci.' },
-  { at: [100, 104] }, { at: [128, 101], say: 'Il porto! Traghetti e aliscafi per Ponza e Ventotene. Occhio alle barche!' },
-  { at: [148, 93] }, { at: [158, 86], say: 'Mola, il borgo dei pescatori. La vedi la torre? Era il castello. La sera, sulla banchina, odore di polpo. Ahahah!' },
-  { at: [160, 74] }, { at: [170, 60], say: 'Adesso giù il boma e dritti verso est: qua il vento entra pulito!' },
-  { at: [200, 58], say: 'Acqualonga: tra l\'Appia e il mare ci stanno calette che conoscono in pochi. Io sì. Ahahah.' },
-  { at: [228, 72] }, { at: [238, 92], say: 'Lo vedi il promontorio? È Gianola: lassù ci stanno le rovine della villa di Mamurra.' },
-  { at: [242, 106] }, { at: [254, 109], say: 'La spiaggia dei Sassolini! Vai a riva, uagliò: io ti guardo da qua.' }
+  { at: [90, 107], say: 'Qua sotto ci sono le peschiere romane di Caposele: le vasche dove i Romani tenevano i pesci.' },
+  { at: [118, 104] }, { at: [158, 101], say: 'Il porto! Traghetti e aliscafi per Ponza e Ventotene. Occhio alle barche!' },
+  { at: [178, 93] }, { at: [188, 86], say: 'Mola, il borgo dei pescatori. La vedi la torre? Era il castello. La sera, sulla banchina, odore di polpo. Ahahah!' },
+  { at: [190, 74] }, { at: [200, 60], say: 'Adesso giù il boma e dritti verso est: qua il vento entra pulito!' },
+  { at: [230, 58], say: 'Acqualonga: tra l\'Appia e il mare ci stanno calette che conoscono in pochi. Io sì. Ahahah.' },
+  { at: [258, 72] }, { at: [268, 92], say: 'Lo vedi il promontorio? È Gianola: lassù ci stanno le rovine della villa di Mamurra.' },
+  { at: [272, 106] }, { at: [284, 109], say: 'La spiaggia dei Sassolini! Vai a riva, uagliò: io ti guardo da qua.' }
 ];
 /** the way back, alone, once the player has landed */
-export const WS_BACK: [number, number][] = [[244, 112], [226, 114]];
+export const WS_BACK: [number, number][] = [[274, 112], [256, 114]];
 /** when the player falls behind, one of these, in turn */
 export const WS_WAIT = ['Uagliò! Di qua! Ti aspetto, ahahah.', 'Oh, stai dietro? Il vento non aspetta, io sì. Ahahah!', 'Segui la vela rossa, uagliò!'];
 /** what he tells on the way to the Eclipse, in the van: Formia, the story, and what is about to happen. Each line
@@ -84,7 +84,7 @@ const door = (id: string): [number, number] => { const a = FORMIA_AT[id]; return
 export const RIDES: Ride[] = [
   { id: 'eclipse', label: 'Vindicio, all\'Eclipse', at: door('eclipse') },
   { id: 'gianola', label: 'Gianola, al parco', at: FORMIA_SPOT.guardaparco },
-  { id: 'mola', label: 'Mola, Largo Paone', at: [125, 72] },
+  { id: 'mola', label: 'Mola, Largo Paone', at: [155, 72] },
   { id: 'centro', label: 'Piazza della Vittoria', at: FORMIA_SPOT.costanzo },
   { id: 'stazione', label: 'La stazione', at: door('stazione') },
   { id: 'zauli', label: 'Il Bruno Zauli', at: door('zauli') },

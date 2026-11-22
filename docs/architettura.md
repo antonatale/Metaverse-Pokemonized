@@ -16,12 +16,12 @@ Leggere i file della parte interessata; i numeri e gli elenchi completi restano 
 | Mappa generata di Formia | `tools/formia/`; risultato `src/data/maps/formia-ground.ts` |
 | Incontri, catture, attività | `src/data/encounters.ts`, `nets.ts`; `src/story/activities.ts`, `run.ts`, `growth.ts` |
 | Salvataggi e trasferimento | `src/save/story-progress.ts`, `transfer.ts` |
-| Mappa a schermo | `src/render/world-view.ts`, `atmosphere.ts`, `src/render/canvas/` |
+| Mappa a schermo | `src/render/world-view.ts`, `atmosphere.ts`, `tall-grass.ts` (erba alta), `src/render/canvas/` |
 | Ritratti e forme | `src/render/svg/looks.ts`, `forms.ts`, `hair.ts`, `outfit.ts`, `face.ts`, `extras.ts`, `index.ts` |
 | Omini sulla mappa | `src/render/canvas/walkers.ts`: `PEOPLE`, `PEOPLE_FORMS`, `LOOKS`, `townsperson` |
-| Creature, rune e sfondi | `src/render/svg/creatures.ts`, `type-shapes.ts`, `scenes.ts` |
+| Creature, rune e sfondi | `src/render/svg/creatures.ts`, `type-shapes.ts`; sfondi in `src/render/scenes.ts` e `src/assets/scenes/` |
 | Titolo e storia a schermo | `src/ui/home.ts`, `story-screen.ts`, `plot.ts`, `team.ts`, `train.ts`, `activities.ts` |
-| Lotta a schermo | `src/ui/battle-screen.ts`, `move-card.ts`, `person-scenes.ts`, `move-scenes.ts`, `self-scenes.ts`, `move-props.ts`, `safe-show.ts` |
+| Lotta a schermo | `src/ui/battle-screen.ts`, `coaches.ts`, `move-card.ts`, `person-scenes.ts`, `move-scenes.ts`, `self-scenes.ts`, `move-props.ts`, `safe-show.ts` |
 | Grafica, velocità, audio UI | `src/ui/gfx.ts`, `speed.ts`, `sound.ts`; stili in `src/styles/`, colori in `tokens.css` |
 | Audio sintetizzato | `src/audio/context.ts`, `synth.ts`, `music.ts`, `tracks.ts`, `zones.ts`, `sfx.ts`, `cues.ts`, `cries.ts` |
 

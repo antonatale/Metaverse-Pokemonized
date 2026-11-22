@@ -259,7 +259,7 @@ export const covoCostanzo: MapDef = {
   warps: out('covo-costanzo', COSTANZO_ROWS),
   npcs: [
     keeper('costanzo-palazzo', 'costanzo', 'piazza', 7, 2),
-    gatekeeper('presidente-seggio', 'Il Presidente di seggio', 181, 7, 10, 'costituzione', ['Documento e tessera. Bene. Nella Repubblica di piazza della Vittoria entra solo chi conosce quella vera: l\'esame di educazione civica.'], [6, 11]),
+    gatekeeper('presidente-seggio', 'Il Presidente di seggio', 181, 7, 10, 'costituzione', ['Sei qui per parlare a nome della piazza. Prima fammi vedere se conosci le regole di quella vera.'], [6, 11]),
     gatekeeper('costituzionalista', 'La Costituzionalista', 182, 7, 4, 'repubblica', ['Costanzo mi ha nominata garante del comizio: al balcone si sale solo conoscendo le regole.'], [6, 3]),
     adept('usciere', 'L\'usciere', 183, 3, 11, 'right', ['Silenzio in aula!']),
     adept('portaborse', 'Il portaborse', 184, 12, 7, 'left', ['Porto le borse del presidente da dodici ore.']),

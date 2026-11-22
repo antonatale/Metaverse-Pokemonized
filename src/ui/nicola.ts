@@ -14,7 +14,7 @@ import { startActivity } from './activities';
 import { activity } from '../story/activities';
 import { areaName, route } from '../story/maps';
 import { sfx } from '../audio';
-import { esc, $ } from './dom';
+import { esc, $, reduced } from './dom';
 import { runs, richHtml, voiceOf, speak } from './rich';
 
 /* Nicola Spadea and his van (data/nicola.ts). At the start of every story he comes up the player's street: the
@@ -39,7 +39,9 @@ function skipOn() {
   root.appendChild(skipBtn);
 }
 function skipOff() { if (skipBtn) { skipBtn.remove(); skipBtn = null; } }
-window.addEventListener('keydown', function (e) { if (van && van.carry && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); vanSkip(); } });
+window.addEventListener('keydown', function (e) {
+  if (van && van.carry && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); e.stopImmediatePropagation(); vanSkip(); }
+}, true);
 
 /** the van comes up the street to the tile `at` (from where it is parked, if it is near, or from further down the
     road), and stops; then `then` */
@@ -239,6 +241,18 @@ function ride(r: Ride) {
   var go = function () { st.van = undefined; driveTo(at!, to!, r.at, function () { say(RIDE.here, NICOLA); }); };
   if (v && v.map === M.id && v.x === at[0] && v.y === at[1]) { go(); return; }
   say(RIDE.far, NICOLA, null, function () { comeTo(at!, function (dir) { park(at!, dir); go(); }); });
+}
+export function finaleRide(destination: Tile, then: () => void) {
+  const from = nearRoad(M, st.x, st.y, 24);
+  const to = from && nearRoad(M, destination[0], destination[1], 24, false, from);
+  if (!from || !to) { then(); return; }
+  st.van = undefined;
+  root.classList.add('finale-ride');
+  driveTo(from, to, destination, () => { root.classList.remove('finale-ride'); then(); }, [
+    [0.08, 'Vi ricordate il primo giro? Quella volta eravamo in due.'],
+    [0.57, 'Ce le riportiamo a casa, le vostre creature. Tutte quante.']
+  ]);
+  if (reduced) vanSkip();
 }
 function rideMenu() {
   var here = areaName();

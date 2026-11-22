@@ -2,7 +2,7 @@ import { CHARS as C, type Character, type FighterId, type Move } from '../data/c
 import { fighter } from '../data/fighters';
 import { SPECIES, isSpecies } from '../data/creatures';
 import { cry, cryEventOf } from '../audio';
-import { scene, sceneInfo } from '../render/svg/scenes';
+import { placeScene, sceneInfo } from '../render/scenes';
 import { darkness } from '../story/daytime';
 import { MAGIC_CHART, MAGIC_ORDER, type TypeName } from '../data/types';
 import { COVI } from '../data/covi';
@@ -25,6 +25,7 @@ import { friendScene, hasFriendScene } from './friend-moves';
 import { colOf } from './spell-kit';
 import { soundButton } from './sound';
 import { music, cueBattle, typeBlip } from '../audio';
+import { mountCoaches, coachAnim, coachHit, coachSwap, coachTurn, coachExpr, coachHand } from './coaches';
 
 /* The battle screen. It knows no rules: it asks the engine for events, labels and chips, and plays them back. */
 
@@ -50,16 +51,14 @@ function boxHtml(i: number): string {
 function marksHtml(i: number): string { return (S.sides[i].stages || []).slice(1).map(function (p) { return '<i class="hpmark" style="left:' + p.at * 100 + '%"></i>'; }).join(''); }
 /** a side's types, one tag each: two for the creatures' last forms */
 function typesHtml(i: number, types?: TypeName[]): string { return (types || E.sideTypes(S, i)).map(function (t) { return '<span class="type t-' + t.toLowerCase() + '">' + t + '</span>'; }).join(''); }
-/* a story battle happens somewhere in Formia: that part of town, drawn, over the whole screen (by night at night);
-   the fighters stand on platforms of its ground */
+/* A story battle happens in its illustrated location; both fighters stand on the painted foreground. */
 function sceneHtml(): string {
   var id = S.story && S.story.scene;
   battle.classList.toggle('has-scene', !!id);
-  if (!id) { battle.style.removeProperty('--plat'); return ''; }
+  if (!id) { battle.classList.remove('night'); return ''; }
   var info = sceneInfo(id), dark = darkness(new Date()) > 0.5;
-  battle.style.setProperty('--plat', info.ground);
   battle.classList.toggle('night', dark);
-  return '<div class="scene" role="img" aria-label="' + esc(info.title) + '">' + scene(id, dark) + '</div>';
+  return '<div class="scene" role="img" aria-label="' + esc(info.title) + '" data-scene="' + esc(id) + '"' + (dark ? ' data-dark="1"' : '') + '></div>';
 }
 function renderShell() {
   var a = S.sides[0].id, b = S.sides[1].id;
@@ -75,6 +74,9 @@ function renderShell() {
     '<div class="console"><div class="dialog" id="dialog" role="status" aria-live="polite"><span class="who" id="who" hidden></span><span class="txt" id="txt"></span><span class="caret" aria-hidden="true"></span></div>' +
     '<div class="turnbar" id="turnbar" hidden></div>' +
     '<div class="pad off" id="pad">' + [0, 1, 2, 3].map(function (k) { return '<button class="mv" type="button" data-k="' + k + '" disabled></button>'; }).join('') + '<div class="bagrow" id="bagrow" hidden></div></div></div>';
+  /* the illustrated place: the picture already decoded, put in as an element (render/scenes.ts) */
+  var holder = battle.querySelector<HTMLElement>('.scene');
+  if (holder) placeScene(holder, holder.dataset.scene || '', holder.dataset.dark === '1');
   arena = $('arena'); dialog = $('dialog'); whoEl = $('who'); txtEl = $('txt'); pad = $('pad'); turnbar = $('turnbar');
   dialog.addEventListener('click', advance);
   arena.addEventListener('click', advance);
@@ -357,6 +359,7 @@ function animSign(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], n
     case 'enter': {
       /* a creature comes on in a burst of its magic; a person just walks in */
       var eid = S.sides[i].id;
+      m.classList.remove('gone');
       if (isSpecies(eid)) arrive(i, SPECIES[eid].type, SPECIES[eid].type2);
       else sleep(380).then(function () { var e = anchor(i, 0.5, 0.86); ring(e[0], e[1], '#ffffff', 180, 520, true); });
       return pulse(m, 'enter', 560);
@@ -395,7 +398,7 @@ function animSign(ev: Extract<BattleEvent, { k: 'anim' }>, evs: BattleEvent[], n
       if (svg) svg.setAttribute('data-ph', ev.a === 'phOn' ? 'on' : 'off');
       return pulse(m, 'glow', 500);
     case 'notes': notes(i); return sleep(300).then(function () { return pulse(m, i === 0 ? 'lunge-me' : 'lunge-opp', 340); });
-    case 'net': return throwNet(i, j, ev.item || 'retino', ev.shakes || 0, outcomeHeld(evs, next));
+    case 'net': return throwNet(i, j, ev.item || 'retino', ev.shakes || 0, outcomeHeld(evs, next), coachHand(i));
     /* the creatures' magic, as a show of its type (ui/spells.ts): it resolves on the hit, so the damage lands on it */
     case 'magic': {
       var t = ev.style as TypeName, mv = moveOf(i, ev.move), o = outcomeOf(evs, next, j), sid = S.sides[i].id;
@@ -444,16 +447,23 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
   switch (ev.k) {
     case 'say': return say(ev.text, null, spellNext(evs, next));
     case 'line': return say(ev.text, ev.who);
-    case 'expr': setExpr(ev.who, ev.v); return Promise.resolve();
-    case 'anim': return safeShow(function () { return animEvent(ev, evs, next); }, ev.a);
+    case 'expr': setExpr(ev.who, ev.v); quietly(function () { coachExpr(ev); }); return Promise.resolve();
+    /* who stands behind the creature throws it in first (ui/coaches.ts) */
+    case 'anim': return safeShow(function () { return coachFirst(ev).then(function () { return animEvent(ev, evs, next); }); }, ev.a);
     case 'hp':
+      quietly(function () { coachHit(ev); });
       /* a blow of a friend's scene that hits more than once: each one is drawn as it lands */
       if (acting && acting.beforeHit && ev.who !== acting.who && ev.dmg) { var bh = acting.beforeHit; return bh(acting.hits++).then(function () { return hpEvent(ev); }); }
       return hpEvent(ev);
     case 'sync': renderSync(ev); return Promise.resolve();
-    case 'swap': swapEvent(ev); return Promise.resolve();
+    case 'swap': swapEvent(ev); quietly(function () { coachSwap(ev); }); return Promise.resolve();
     default: return Promise.resolve();
   }
+}
+/** the trainers' part never stops the battle: if it fails, the battle goes on without it */
+function quietly(run: () => void) { try { run(); } catch (e) { console.error('coach failed:', e); } }
+function coachFirst(ev: Extract<BattleEvent, { k: 'anim' }>): Promise<unknown> {
+  try { var w = coachAnim(ev); return w ? w.catch(function (e) { console.error('coach failed:', e); }) : Promise.resolve(); } catch (e) { console.error('coach failed:', e); return Promise.resolve(); }
 }
 /** the player has won: the creature is beaten, or in the net */
 function wonNow(): boolean { return (S.result === 'win' && S.winner === 0) || S.result === 'catch'; }
@@ -510,7 +520,7 @@ function onMove(id: string) {
   var my = ++flow;
   resolveTurn(my).then(function () { if (my === flow) runFlow(); }).catch(caught);
 }
-function resolveTurn(my: number) { return play(E.playTurn(S, pending), my); }
+function resolveTurn(my: number) { var mine = pending[0]; quietly(function () { coachTurn(mine); }); return play(E.playTurn(S, pending), my); }
 
 /* =================== WHO COMES IN =================== */
 /** the bench in a sheet: a card for each of the team, with its health and how it stands against the one it would face */
@@ -709,6 +719,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   window.scrollTo(0, 0);
   onField = [S.sides[0].key || S.sides[0].id, S.sides[1].key || S.sides[1].id];
   renderShell();
+  quietly(function () { mountCoaches(!restore); });
   if (!restore && cfg && cfg.story && (cfg.wild || cfg.trainer)) curtain(!!cfg.trainer);
   music(S.boss ? 'boss' : 'battle');
   uiHp = [S.sides[0].hp, S.sides[1].hp];
@@ -778,7 +789,7 @@ export function resumeBattle(b: BattleState) {
 /** the battle's keys; registered after the story's, which stop the keys that belong to the map */
 export function installBattleKeys() {
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !overlay.hidden && !overlay.classList.contains('result') && !overlay.classList.contains('pass') && !overlay.classList.contains('bench')) { closeOverlay(); return; }
+    if (e.key === 'Escape' && !overlay.hidden && !overlay.matches('.result, .pass, .bench, .finale-overlay')) { closeOverlay(); return; }
     if (view.screen !== 'battle' || !overlay.hidden) return;
     if (e.key === ' ' || e.key === 'Enter') { if (tapHandler) { e.preventDefault(); advance(); } return; }
     if (/^[1-9]$/.test(e.key) && padOn) { var m = padMoves(padSide).concat(bagMoves(padSide))[+e.key - 1]; if (m) onMove(m.id); }

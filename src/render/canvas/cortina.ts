@@ -454,3 +454,189 @@ export function cannelle(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) {
     c.strokeStyle = P.sea2; c.lineWidth = 1.6; c.beginPath(); c.moveTo(px, py + 4); c.quadraticCurveTo(px + 0.6, wb, px + 0.3, wb + 4); c.stroke();
   }
 }
+
+/* ---------- Castellone (17 November 2026) ----------
+   The houses of the borgo on the hill of the acropolis: small, two or three floors, wall to wall along the lanes,
+   stone showing through the plaster, arched doors under stone voussoirs, little windows with wooden shutters, outside
+   stairs up to the first floor, a niche with a saint, bougainvillea, washing; roofs of coppi seen from above, now and
+   then a terrace with a parapet. Drawn like the palazzi of the cortina: the front on the bottom of the footprint, the
+   roof above it, `up` px over the footprint. */
+var BORGO_WALLS = ['wall-c', 'wall-f', 'stone', 'wall-b', 'wall-g', 'wall-d', 'wall-h'];
+/* the roofs of the borgo: coppi in the colours of old terracotta */
+var TERRACOTTA = ['#d9785a', '#c96a4f', '#e08b62', '#b9624a', '#d58a6a'];
+function stones(c: Ctx, P: Palette, x0: number, y0: number, x1: number, y1: number, v: number, n: number) {
+  c.strokeStyle = P.stone2; c.lineWidth = 0.9;
+  for (var k = 0; k < n; k++) {
+    var sx = x0 + hash(v, k, 640) * (x1 - x0 - 8), sy = y0 + hash(v, k, 641) * (y1 - y0 - 6), a = 4 + hash(v, k, 642) * 4;
+    poly(c, [[sx, sy + 1], [sx + a, sy], [sx + a + 1, sy + 4], [sx + 1, sy + 5]]); c.stroke();
+  }
+}
+function coppi(c: Ctx, P: Palette, x0: number, y0: number, x1: number, y1: number, col: string, v: number) {
+  rr(c, x0, y0, x1 - x0, y1 - y0, 2); fillStroke(c, col, P.ink, 1.5);
+  c.save(); c.beginPath(); c.rect(x0 + 1, y0 + 1, x1 - x0 - 2, y1 - y0 - 2); c.clip();
+  c.strokeStyle = P.ink; c.globalAlpha = 0.28; c.lineWidth = 1;
+  for (var y = y0 + 4, r = 0; y < y1; y += 5, r++) {
+    c.beginPath();
+    for (var x = x0 + (r % 2) * 3 - 3; x < x1 + 3; x += 6) { c.moveTo(x, y); c.arc(x + 3, y, 3, Math.PI, 0); }
+    c.stroke();
+  }
+  c.globalAlpha = 0.18; c.fillStyle = '#ffffff';
+  for (k = 0; k < 4; k++) { var px = x0 + 4 + hash(v, k, 650) * (x1 - x0 - 12); c.fillRect(px, y0 + 3 + hash(v, k, 651) * (y1 - y0 - 8), 6, 2); }
+  c.restore(); c.globalAlpha = 1;
+  var k: number;
+}
+function smallWindow(c: Ctx, P: Palette, x: number, y: number, ww: number, wh: number, shutter: string, open: number, lit: boolean) {
+  rr(c, x - 2, y - 2, ww + 4, wh + 4, 1); fillStroke(c, P.stone, P.ink, 1);
+  rr(c, x, y, ww, wh, 1); fillStroke(c, lit ? '#ffe9a8' : DARK, P.ink, 0.9);
+  if (open === 0) { rr(c, x, y, ww, wh, 1); fillStroke(c, shutter, P.ink, 0.9); c.strokeStyle = P.ink; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x + ww / 2, y); c.lineTo(x + ww / 2, y + wh); for (var k = 3; k < wh; k += 3) { c.moveTo(x + 1, y + k); c.lineTo(x + ww - 1, y + k); } c.stroke(); }
+  else { rr(c, x - 4, y, 4, wh, 0.6); fillStroke(c, shutter, P.ink, 0.7); rr(c, x + ww, y, 4, wh, 0.6); fillStroke(c, shutter, P.ink, 0.7); }
+}
+function archDoor(c: Ctx, P: Palette, x: number, bot: number, dw: number, dh: number, fill: string) {
+  var r = dw / 2, top = bot - dh;
+  /* the voussoirs of the stone arch */
+  c.beginPath(); c.moveTo(x - 3, bot); c.lineTo(x - 3, top + r); c.arc(x + r, top + r, r + 3, Math.PI, 0); c.lineTo(x + dw + 3, bot); c.closePath();
+  fillStroke(c, P.stone, P.ink, 1.2);
+  c.strokeStyle = P.stone2; c.lineWidth = 0.8;
+  for (var a = 0; a <= 6; a++) { var t = Math.PI + a * Math.PI / 6; c.beginPath(); c.moveTo(x + r + Math.cos(t) * r, top + r + Math.sin(t) * r); c.lineTo(x + r + Math.cos(t) * (r + 3), top + r + Math.sin(t) * (r + 3)); c.stroke(); }
+  c.beginPath(); c.moveTo(x, bot); c.lineTo(x, top + r); c.arc(x + r, top + r, r, Math.PI, 0); c.lineTo(x + dw, bot); c.closePath();
+  fillStroke(c, fill, P.ink, 1.1);
+  if (fill === P.wood2 || fill === P.wood) { c.strokeStyle = P.ink; c.globalAlpha = 0.35; c.lineWidth = 0.7; c.beginPath(); for (var k = x + 3; k < x + dw - 1; k += 3) { c.moveTo(k, top + r * 0.4); c.lineTo(k, bot - 1); } c.stroke(); c.globalAlpha = 1; circle(c, x + dw - 3, bot - dh * 0.45, 0.9); c.fillStyle = P.ink; c.fill(); }
+}
+export function casale(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) {
+  var v = o.v || 0, up = o.up == null ? T * 0.8 : o.up, shop = o.look === 'bottega';
+  var dx = o.doorX != null && o.x != null ? (o.doorX - o.x) * T : Math.floor(w / T / 2) * T;
+  var cols = Math.round(w / T), floors = h >= T * 3 ? 2 : 1, FLOOR = 22, GROUND = 30;
+  var stoneWall = v % 5 === 2, wall = stoneWall ? P.stone : P[BORGO_WALLS[v % BORGO_WALLS.length]] || P.wall;
+  var shutter = [P['shutter-a'], P['shutter-b'], '#8a5a3c', '#6f8f5a'][Math.floor(v / 7) % 4];
+  var stagger = (Math.floor(v / 3) % 3) * 3, top = -up + stagger;
+  var groundTop = h - 2 - GROUND, frontTop = groundTop - floors * FLOOR - 4;
+  ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+  /* the roof: coppi, or a terrace with its parapet, the washing and the plants */
+  var terrace = v % 4 === 3 && frontTop - top > 18;
+  if (frontTop - top > 4) {
+    if (terrace) {
+      rr(c, 2, top, w - 4, frontTop - top + 4, 2); fillStroke(c, P.stone, P.ink, 1.5);
+      rr(c, 5, top + 3, w - 10, frontTop - top - 3, 1.5); c.strokeStyle = P.stone2; c.lineWidth = 1.1; c.stroke();
+      if (frontTop - top > 24) {
+        c.strokeStyle = P.ink; c.lineWidth = 0.7; c.beginPath(); c.moveTo(8, top + 9); c.lineTo(w - 8, top + 11); c.stroke();
+        for (var j = 0; 10 + j * 8 < w - 12; j += 2) { rr(c, 10 + j * 8, top + 9 + j * 0.15, 5, 7, 0.8); fillStroke(c, ['#ffffff', P['tent-a'], '#ffd166', P['flower-b']][(j / 2 + v) % 4], P.ink, 0.6); }
+      }
+      blobs(c, [[w - 12, frontTop - 3, 3.6], [w - 18, frontTop - 4, 3]], P.leaf, P.ink, 1);
+    } else {
+      /* a deep footprint is a cluster of houses one behind the other: each its own roof, a little of its front wall
+         showing over the roof in front of it */
+      var depth = frontTop + 4 - top, parts = Math.max(1, Math.round(depth / (T * 1.6))), ph = depth / parts;
+      for (var pi = 0; pi < parts; pi++) {
+        var py0 = top + pi * ph, py1 = pi === parts - 1 ? frontTop + 4 : top + (pi + 1) * ph + 3, split = pi < parts - 1 && w >= T * 3 && hash(v, pi, 655) < 0.6;
+        var cuts = split ? [2, Math.round((w * (0.35 + hash(v, pi, 656) * 0.3)) / 4) * 4, w - 2] : [2, w - 2];
+        for (var ci = 0; ci + 1 < cuts.length; ci++) {
+          var col = TERRACOTTA[(v + pi * 3 + ci) % TERRACOTTA.length];
+          if (pi < parts - 1) { rr(c, cuts[ci], py1 - 9, cuts[ci + 1] - cuts[ci], 9, 1); fillStroke(c, P[BORGO_WALLS[(v + pi + ci) % BORGO_WALLS.length]] || P.wall, P.ink, 1.1); }
+          coppi(c, P, cuts[ci], py0, cuts[ci + 1], pi < parts - 1 ? py1 - 8 : py1, col, v + pi * 5 + ci);
+        }
+      }
+      /* the chimney */
+      if (v % 3 !== 1 && frontTop - top > 14) { var chx = 8 + hash(v, 5, 660) * (w - 26); rr(c, chx, top + 3, 9, 9, 1); fillStroke(c, P.stone, P.ink, 1.1); rr(c, chx - 1, top + 1, 11, 4, 1); fillStroke(c, P.stone2, P.ink, 0.9); }
+    }
+  }
+  /* the front */
+  rr(c, 2, frontTop + 2, w - 4, h - 4 - frontTop, 1.5); fillStroke(c, wall, P.ink, 1.8);
+  if (stoneWall) stones(c, P, 4, frontTop + 4, w - 4, h - 4, v, Math.round(w * (h - frontTop) / 180));
+  else {
+    /* where the plaster has fallen, the stones of the old walls */
+    c.save(); var px = 6 + hash(v, 7, 661) * (w - 30), py = frontTop + 8 + hash(v, 8, 662) * (h - frontTop - 30);
+    c.beginPath(); c.ellipse(px + 9, py + 7, 10, 7, 0.3, 0, Math.PI * 2); c.fillStyle = P.stone; c.fill(); c.clip(); stones(c, P, px - 2, py - 2, px + 20, py + 16, v + 3, 4); c.restore();
+  }
+  /* the stone footing, and a string course under the upper floors */
+  c.fillStyle = P.stone2; c.globalAlpha = 0.5; c.fillRect(3, h - 9, w - 6, 6); c.globalAlpha = 1;
+  stones(c, P, 3, h - 10, w - 3, h - 3, v + 9, cols * 2);
+  /* the floors above */
+  for (var f = 0; f < floors; f++) {
+    var fy = groundTop - (f + 1) * FLOOR + 3;
+    for (var k = 0; k < cols; k++) {
+      var cx = k * T + T / 2, s1 = hash(v, f * 11 + k, 663);
+      if (s1 < 0.12 && cols > 1) continue;
+      smallWindow(c, P, cx - 5, fy, 10, 12, shutter, s1 < 0.55 ? 0 : 1, s1 > 0.75);
+      if (hash(v, f * 7 + k, 664) < 0.35) { rr(c, cx - 7, fy + 13, 14, 3, 1); fillStroke(c, P.stone, P.ink, 0.8); blobs(c, [[cx - 4, fy + 12, 2.4], [cx + 1, fy + 11.5, 2.6], [cx + 5, fy + 12.3, 2.2]], hash(v, k, 665) < 0.5 ? P['flower-a'] : P['flower-b'], P.ink, 0.7); }
+    }
+  }
+  /* washing across, between two windows */
+  if (cols >= 2 && v % 5 === 1) {
+    var ly = groundTop - FLOOR + 1; c.strokeStyle = P.ink; c.lineWidth = 0.6; c.beginPath(); c.moveTo(T / 2 + 6, ly); c.quadraticCurveTo(w / 2, ly + 4, w - T / 2 - 6, ly); c.stroke();
+    for (var q = 0; q < 3; q++) { var qx = T / 2 + 10 + q * (w - T - 24) / 2; rr(c, qx, ly + 1.5, 5, 6, 0.8); fillStroke(c, ['#ffffff', P['tent-b'], '#9ec5ff'][q], P.ink, 0.6); }
+  }
+  /* the niche with the saint, now and then */
+  if (v % 7 === 3) {
+    var nx = dx > w / 2 ? 8 : w - 18, ny = groundTop - 16;
+    c.beginPath(); c.moveTo(nx, ny + 12); c.lineTo(nx, ny + 4); c.arc(nx + 5, ny + 4, 5, Math.PI, 0); c.lineTo(nx + 10, ny + 12); c.closePath(); fillStroke(c, '#3d5a9c', P.ink, 0.9);
+    circle(c, nx + 5, ny + 5, 1.6); c.fillStyle = '#ffe9a8'; c.fill(); rr(c, nx + 3.5, ny + 6.5, 3, 5, 1); c.fillStyle = '#ffffff'; c.fill();
+    blobs(c, [[nx + 2, ny + 13, 1.6], [nx + 8, ny + 13, 1.6]], P['flower-a'], P.ink, 0.5);
+  }
+  /* the ground floor: the arched door, a window, or the little shop with its goods */
+  for (k = 0; k < cols; k++) {
+    var x0 = k * T, door = x0 === dx;
+    if (door) archDoor(c, P, x0 + 8, h - 3, T - 16, 24, shop ? '#ffd98a' : v % 2 ? P.wood2 : P.wood);
+    else if (shop && k === (cols > 1 ? (dx ? 0 : 1) : -1)) { archDoor(c, P, x0 + 5, h - 3, T - 10, 21, GLASS); for (var g = 0; g < 3; g++) { rr(c, x0 + 9 + g * 5, h - 12 - (g % 2) * 3, 4, 5, 0.8); fillStroke(c, ['#ffd166', '#ff9a8b', '#9ec5ff'][g], P.ink, 0.6); } }
+    else if (hash(v, k, 666) < 0.6) smallWindow(c, P, x0 + T / 2 - 5, groundTop + 7, 10, 11, shutter, 1, false);
+  }
+  if (shop) { var sx = dx + T - 6; c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(sx, groundTop + 4); c.lineTo(sx + 8, groundTop + 4); c.stroke(); rr(c, sx + 2, groundTop + 5, 9, 7, 1); fillStroke(c, '#ffd166', P.ink, 0.8); }
+  /* the outside stair up to the first floor, with its iron rail and its pots */
+  if (floors && cols >= 2 && v % 4 === 1) {
+    var sl = dx > w / 2 ? 4 : w - 30, sr = sl + 26;
+    for (var st = 0; st < 5; st++) { rr(c, sl + (dx > w / 2 ? st * 4 : 0), h - 7 - st * 5, 26 - st * 4, 5, 0.6); fillStroke(c, P.stone, P.ink, 0.8); }
+    c.strokeStyle = P.ink; c.lineWidth = 0.9; c.beginPath(); c.moveTo(dx > w / 2 ? sl : sr, h - 8); c.lineTo(dx > w / 2 ? sl + 20 : sr - 20, groundTop - 6); c.stroke();
+    rr(c, (dx > w / 2 ? sl + 18 : sr - 26), groundTop - 10, 8, 10, 1); fillStroke(c, v % 2 ? P.wood : P.wood2, P.ink, 0.9);
+    blobs(c, [[sl + 4, h - 10, 2.6], [sr - 4, h - 10, 2.6]], P.leaf, P.ink, 0.7);
+  }
+  /* bougainvillea up a corner */
+  if (v % 6 === 2) {
+    var bx = dx > w / 2 ? 5 : w - 9;
+    c.strokeStyle = P.trunk; c.lineWidth = 1.4; c.beginPath(); c.moveTo(bx, h - 4); c.quadraticCurveTo(bx + 3, (h + frontTop) / 2, bx - 1, frontTop + 8); c.stroke();
+    blobs(c, [[bx, frontTop + 8, 4], [bx + 4, frontTop + 14, 3.5], [bx - 2, frontTop + 20, 3.2], [bx + 3, frontTop + 4, 3]], '#d9408f', P.ink, 0.8);
+  }
+  /* a lamp on the wall */
+  if (v % 3 === 0) wallLamp(c, P, dx > w / 2 ? 5 : w - 5, groundTop - 6, dx > w / 2 ? 1 : -1);
+}
+
+/** the Roman theatre of Castellone (first century BC): the cavea leant on the hill and turned south, the houses built
+    into it, «where three hundred people live today»; in their walls the arches and the opus reticulatum. A ring of
+    roofs round the orchestra, the curved front with its arches below them */
+export function teatro(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) {
+  var cx = w / 2, cy = h + 4, ro = w / 2 - 2, ri = ro - 46, F = 24, n = 9;
+  ell(c, cx, h - 2, w / 2, 6); c.fillStyle = P.shadow; c.fill();
+  /* the orchestra: a half round of old paving */
+  c.beginPath(); c.moveTo(cx - ri + 6, h - 2); c.arc(cx, cy, ri - 6, Math.PI, 0); c.closePath(); fillStroke(c, P.stone, P.ink, 1.2);
+  c.strokeStyle = P.stone2; c.lineWidth = 0.9; for (var r = ri - 18; r > 6; r -= 10) { c.beginPath(); c.arc(cx, cy, r, Math.PI, 0); c.stroke(); }
+  /* the curved front, house by house: plaster or stone, an arch of the theatre, a door, a window */
+  for (var k = 0; k < n; k++) {
+    var a0 = Math.PI + k * Math.PI / n, a1 = a0 + Math.PI / n, v = (o.v || 0) + k * 13;
+    var p = function (a: number, rad: number, dy: number) { return [cx + Math.cos(a) * rad, cy + Math.sin(a) * rad + dy]; };
+    poly(c, [p(a0, ri, -F), p(a1, ri, -F), p(a1, ri, 0), p(a0, ri, 0)]);
+    var stone = k % 3 === 1;
+    fillStroke(c, stone ? P.stone : P[BORGO_WALLS[v % BORGO_WALLS.length]] || P.wall, P.ink, 1.3);
+    var m = p((a0 + a1) / 2, ri, 0);
+    if (stone) {
+      /* the opus reticulatum: little squares set on the diagonal */
+      c.save(); poly(c, [p(a0, ri, -F), p(a1, ri, -F), p(a1, ri, 0), p(a0, ri, 0)]); c.clip();
+      c.strokeStyle = P.stone2; c.lineWidth = 0.7; c.beginPath();
+      for (var d = -40; d < 40; d += 4) { c.moveTo(m[0] + d - 20, m[1] - F - 2); c.lineTo(m[0] + d + 20, m[1] + 2); c.moveTo(m[0] + d + 20, m[1] - F - 2); c.lineTo(m[0] + d - 20, m[1] + 2); }
+      c.stroke(); c.restore();
+      c.beginPath(); c.moveTo(m[0] - 6, m[1]); c.lineTo(m[0] - 6, m[1] - 10); c.arc(m[0], m[1] - 10, 6, Math.PI, 0); c.lineTo(m[0] + 6, m[1]); c.closePath(); fillStroke(c, DARK, P.ink, 1);
+    } else {
+      rr(c, m[0] - 3.5, m[1] - 12, 7, 11, 3); fillStroke(c, k % 2 ? P.wood : P.wood2, P.ink, 0.9);
+      var wp = p((a0 * 2 + a1) / 3, ri, -F + 6); rr(c, wp[0] - 3, wp[1], 6, 6, 0.8); fillStroke(c, hash(v, 1, 670) < 0.5 ? '#ffe9a8' : DARK, P.ink, 0.7);
+      if (hash(v, 2, 671) < 0.4) blobs(c, [[m[0] + 6, m[1] - 4, 2.3], [m[0] + 8, m[1] - 6, 2]], P['flower-a'], P.ink, 0.6);
+    }
+  }
+  /* the roofs of the cavea, wedge after wedge, up the hill */
+  for (k = 0; k < n; k++) {
+    var b0 = Math.PI + k * Math.PI / n, b1 = b0 + Math.PI / n;
+    c.beginPath(); c.arc(cx, cy - F, ro, b0, b1); c.arc(cx, cy - F, ri, b1, b0, true); c.closePath();
+    fillStroke(c, TERRACOTTA[k % TERRACOTTA.length], P.ink, 1.3);
+    c.save(); c.clip(); c.strokeStyle = P.ink; c.globalAlpha = 0.22; c.lineWidth = 0.8;
+    for (var rr2 = ri + 5; rr2 < ro; rr2 += 5) { c.beginPath(); c.arc(cx, cy - F, rr2, b0, b1); c.stroke(); }
+    c.restore(); c.globalAlpha = 1;
+  }
+  /* the top of the cavea: the old wall of the summa cavea, in stone */
+  c.beginPath(); c.arc(cx, cy - F, ro + 3, Math.PI, 0); c.arc(cx, cy - F, ro, 0, Math.PI, true); c.closePath(); fillStroke(c, P.stone, P.ink, 1.2);
+}

@@ -1,10 +1,11 @@
 import { keysHolder, hasKeys } from '../story/lairs';
 import { COVI } from '../data/covi';
-import { myStops, nextStop } from '../story/goals';
+import { nextStop } from '../story/goals';
 import { st, save } from '../save/story-progress';
 import { flag } from '../story/plot';
 import { firstHuman, formNow } from '../story/growth';
 import { rivalFriend } from '../story/rival-who';
+import { creaturesMissing, friendFreed } from '../story/finale';
 import { CHATS, GROUP, type Chat } from '../data/chat';
 import { CHARS, ROSTER, type FriendId } from '../data/characters';
 import { busy } from '../story/movement';
@@ -21,13 +22,14 @@ import { sfx } from '../audio';
    any time (the button in the corner, or T) to read the chat again. A story opened after its moments had passed does
    not get them all at once: what was already due when it was opened is counted as read. */
 
-var primed = '';
-/* a chat of one covo comes once its invitation is the next stop (or past it), and never for one's own covo */
-const due = (c: Chat) => (c.covo ? COVI[c.covo].leader !== firstHuman() && myStops().some(function (q) { return q.id === 'invito-' + c.covo; }) && (nextStop().id === 'invito-' + c.covo || !!st.seen['invito-' + c.covo] || !!st.beaten[c.covo])
+let primed: typeof st | null = null;
+/* Announce a covo when its witness is the next stop. Once the player has found that witness, the directions are old news. */
+const due = (c: Chat, goal: string) => (c.covo ? COVI[c.covo].leader !== firstHuman() && goal === 'invito-' + c.covo
   : c.after ? flag(c.after) : c.badges != null ? (st.badges || []).length >= c.badges : false);
-/** the friend freed last: the keeper of the last pin won */
-function lastFreed(): FriendId | null {
-  var b = (st.badges || [])[(st.badges || []).length - 1];
+/** The friend who gave the pin commemorated by this chat. */
+function lastFreed(c: Chat): FriendId | null {
+  const badges = st.badges || [];
+  var b = badges[(c.badges ?? badges.length) - 1];
   for (var k in COVI) if (COVI[k].badge.id === b) return COVI[k].leader;
   return null;
 }
@@ -37,8 +39,9 @@ function linesOf(c: Chat): [FriendId, string][] {
   var source = c.loss && !won ? c.loss : c.lines;
   var me = firstHuman(), rv = rivalFriend(), hasRival = source.some(function (l) { return l[0] === 'rival'; });
   return source.map(function (l): [FriendId, string] | null {
-    var who = l[0] === 'rival' ? rv : l[0] === 'keys' ? keysHolder() : l[0] === 'last' ? lastFreed() : l[0];
+    var who = l[0] === 'rival' ? rv : l[0] === 'keys' ? keysHolder() : l[0] === 'last' ? lastFreed(c) : l[0];
     if (!who || who === me || (hasRival && l[0] !== 'rival' && who === rv)) return null;
+    if (c.freeOnly && !friendFreed(who)) return null;
     /* the keys are told of in the chat of the covo of the one who has them, until they are back */
     if (l[0] === 'keys' && (hasKeys() || !c.covo || COVI[c.covo].leader !== who)) return null;
     return [who as FriendId, heroText(l[1])];
@@ -46,10 +49,17 @@ function linesOf(c: Chat): [FriendId, string][] {
 }
 /** the next chat, if its moment has come; `quiet` says nothing else is going on */
 export function groupChat(quiet: boolean) {
-  var slot = String(st.first) + '|' + (st.squad || []).join(',');
-  if (primed !== slot) { primed = slot; CHATS.forEach(function (c) { if (due(c)) st.seen['chat-' + c.id] = true; }); return; }
-  if (!quiet || busy) return;
-  var c = CHATS.filter(function (x) { return !st.seen['chat-' + x.id] && due(x); })[0];
+  if (primed !== st) {
+    primed = st;
+    CHATS.forEach(c => {
+      const past = c.covo ? st.seen['invito-' + c.covo] || st.beaten[c.covo] : due(c, '');
+      if (past && (!c.freeOnly || linesOf(c).length)) st.seen['chat-' + c.id] = true;
+    });
+    return;
+  }
+  if (!quiet || busy || creaturesMissing()) return;
+  const goal = nextStop().id;
+  const c = CHATS.find(x => !st.seen['chat-' + x.id] && due(x, goal) && (!x.freeOnly || linesOf(x).length > 0));
   if (c) playChat(c.id);
 }
 
@@ -87,6 +97,21 @@ function phone(): HTMLElement {
 }
 var playing: { skip: () => void; done: () => void } | null = null;
 function scrollDown(el: HTMLElement) { el.scrollTop = el.scrollHeight; }
+
+function rememberChat(c: Chat) {
+  const at = Date.now(), lines = linesOf(c);
+  st.seen['chat-' + c.id] = true;
+  st.chats = st.chats || {};
+  st.chats[c.id] = { at, lines, won: c.loss ? !!st.beaten['tr-rivale-1'] : undefined };
+  save();
+  return { at, lines };
+}
+
+/** Put a message in the history during a scene, without stopping it to open the phone. */
+export function recordChat(id: string) {
+  const chat = CHATS.find(c => c.id === id);
+  if (chat && !st.seen['chat-' + id]) rememberChat(chat);
+}
 function closePhone(then?: () => void) {
   playing = null; document.removeEventListener('keydown', keys, true);
   closeSheet(); sfx('click');
@@ -102,11 +127,14 @@ function keys(e: KeyboardEvent) {
 /** the history of the chat, as it was: every chat had so far, with what the player answered */
 function history(el: HTMLElement, skip?: string) {
   var html = '';
-  CHATS.forEach(function (c) {
-    if (!st.seen['chat-' + c.id] || c.id === skip) return;
-    var rec = (st.chats || {})[c.id], at = rec ? rec.at : Date.now(), prev = '';
+  const saved = st.chats || {};
+  const chats = CHATS.filter(c => st.seen['chat-' + c.id] && c.id !== skip).sort((a, b) => (saved[a.id]?.at ?? 0) - (saved[b.id]?.at ?? 0));
+  chats.forEach(function (c) {
+    var rec = saved[c.id], at = rec ? rec.at : Date.now(), prev = '';
+    const lines = rec?.lines ?? linesOf(c);
+    if (!lines.length && !rec?.reply) return;
     html += pill(c.label, at);
-    linesOf(c).forEach(function (l) { html += bubble(l[0], l[1], at, l[0] !== prev); prev = l[0]; });
+    lines.forEach(function (l) { html += bubble(l[0], l[1], at, l[0] !== prev); prev = l[0]; });
     if (rec && rec.reply) html += mine(rec.reply, at);
   });
   el.innerHTML = html || (skip ? '' : '<p class="ph-empty">Ancora niente: il gruppo si sveglia quando succede qualcosa.</p>');
@@ -128,12 +156,7 @@ export function playChat(id: string, then?: () => void) {
   if (st.seen['chat-' + id]) { if (then) then(); return; }
   var c = CHATS.filter(function (x) { return x.id === id; })[0];
   if (!c || playing) { if (then) then(); return; }
-  st.seen['chat-' + c.id] = true;
-  st.chats = st.chats || {};
-  var at = Date.now();
-  st.chats[c.id] = { at: at, won: c.loss ? !!st.beaten['tr-rivale-1'] : undefined };
-  save();
-  var ls = linesOf(c);
+  const { at, lines: ls } = rememberChat(c);
   if (!ls.length) { if (then) then(); return; }
   sfx('buzz');
   var el = phone(), sub = $('ph-sub'), replies = $('ph-replies'), k = 0, timer = 0, tick = 0, typing: HTMLElement | null = null, prev = '';

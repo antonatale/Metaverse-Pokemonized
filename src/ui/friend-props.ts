@@ -255,6 +255,38 @@ export function net(s: number): string {
   for (let k = 0; k <= 3; k++) g += '<path d="M10 ' + (14 + k * 17) + 'H150"/>';
   return svg(160, 80, s, '<path d="M6 8V78M154 8V78" stroke-width="6"/><g stroke-width="2" opacity=".85">' + g + '</g><rect x="6" y="8" width="148" height="9" rx="3" fill="' + W + '" stroke-width="3"/>');
 }
+/** a painter's brush, bristles to the right, the paint on them */
+export function brush(col: string, s: number): string {
+  return svg(160, 40, s, '<path d="M6 20Q40 13 92 15L96 25Q40 27 6 20Z" fill="#b5703c" stroke-width="4"/><path d="M18 18Q50 15 86 16" fill="none" stroke="#d99a62" stroke-width="3"/>' +
+    '<rect x="92" y="11" width="22" height="18" rx="3" fill="#c9d3e3" stroke-width="4"/><path d="M114 12Q138 6 156 20Q138 34 114 28Z" fill="' + col + '" stroke-width="4"/>' +
+    '<path d="M120 16Q134 15 146 20" fill="none" stroke="' + W + '" stroke-width="2.5" opacity=".7"/>');
+}
+/** a splash of paint, with its drops */
+export function splat(col: string, s: number, k: number): string {
+  const r = (n: number) => (Math.sin(k * 12.9898 + n * 78.233) * 43758.5453) % 1;
+  let d = 'M50 18';
+  for (let q = 1; q <= 9; q++) { const a = q / 9 * Math.PI * 2 - Math.PI / 2, rr0 = 26 + Math.abs(r(q)) * 14; d += 'Q' + (50 + Math.cos(a - 0.35) * (rr0 + 8)).toFixed(1) + ' ' + (50 + Math.sin(a - 0.35) * (rr0 + 8)).toFixed(1) + ' ' + (50 + Math.cos(a) * rr0).toFixed(1) + ' ' + (50 + Math.sin(a) * rr0).toFixed(1); }
+  return svg(100, 100, s, '<path d="' + d + 'Z" fill="' + col + '" stroke-width="4"/><circle cx="' + (84 + r(11) * 6).toFixed(1) + '" cy="22" r="5" fill="' + col + '" stroke-width="3"/><circle cx="16" cy="' + (78 + r(12) * 6).toFixed(1) + '" r="4" fill="' + col + '" stroke-width="3"/>' +
+    '<path d="M38 40Q44 34 52 36" fill="none" stroke="' + W + '" stroke-width="4" opacity=".7"/>');
+}
+/** a painter's palette with its blobs of colour, the hole for the thumb */
+export function palette(s: number): string {
+  const blobs = [['#e23a4f', 30, 34], ['#ffd84d', 52, 26], ['#3b8fd9', 74, 32], ['#57c968', 84, 52], ['#c96a3c', 70, 70]];
+  return svg(110, 96, s, '<path d="M54 6C88 6 106 26 104 50C102 74 84 90 60 90C46 90 40 82 42 72C44 62 34 58 24 62C12 66 4 58 6 44C10 22 28 6 54 6Z" fill="#e9c98f" stroke-width="5"/>' +
+    '<ellipse cx="28" cy="70" rx="7" ry="6" fill="' + INK + '" stroke="none" opacity=".25"/>' + blobs.map(function (b) { return '<circle cx="' + b[1] + '" cy="' + b[2] + '" r="8" fill="' + b[0] + '" stroke-width="3"/>'; }).join(''));
+}
+/** a prosthetic leg, printed to measure: the socket, the knee joint with its bolt, the pylon, the foot */
+export function prosthesis(s: number): string {
+  return svg(70, 150, s, '<path d="M14 6H56L52 54Q35 62 18 54Z" fill="#e7d4c0" stroke-width="5"/><path d="M20 14H50" stroke="#c9a98a" stroke-width="3"/><path d="M22 30H48" stroke="#c9a98a" stroke-width="3"/>' +
+    '<circle cx="35" cy="66" r="12" fill="#c9d3e3" stroke-width="5"/><circle cx="35" cy="66" r="4" fill="#3b8fd9" stroke-width="2.5"/>' +
+    '<rect x="29" y="78" width="12" height="46" rx="4" fill="#c9d3e3" stroke-width="4.5"/><path d="M33 84V118" stroke="' + W + '" stroke-width="2.5" opacity=".8"/>' +
+    '<path d="M24 124H44Q62 126 64 140V144H20Q18 132 24 124Z" fill="#2c3146" stroke-width="4.5"/>');
+}
+/** a monitor with a heartbeat on it */
+export function ecg(col: string, s: number): string {
+  return svg(150, 90, s, '<rect x="4" y="4" width="142" height="74" rx="8" fill="#1f2738" stroke-width="5"/><rect x="12" y="12" width="126" height="58" rx="3" fill="#0f1a24" stroke="none"/>' +
+    '<path d="M14 44H48L56 32L64 58L74 18L84 50L92 44H136" fill="none" stroke="' + col + '" stroke-width="4"/><path d="M62 80H88L94 88H56Z" fill="#c9d3e3" stroke-width="3.5"/>');
+}
 /** a game pad */
 export function gamepad(col: string, s: number): string {
   return svg(140, 90, s, '<path d="M30 14H110C128 14 136 34 136 56C136 76 126 86 114 82L94 66H46L26 82C14 86 4 76 4 56C4 34 12 14 30 14Z" fill="' + col + '" stroke-width="5"/>' +

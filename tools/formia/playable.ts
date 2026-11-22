@@ -8,7 +8,8 @@ const N4: XY[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 function cut(rows: string[]) {
   const H = rows.length, W = rows[0].length;
   const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < W && y < H ? rows[y][x] : '');
-  const street = (x: number, y: number) => /[=vz]/.test(at(x, y));
+  /* the stone stairs of Castellone ('>') are lanes made of steps */
+  const street = (x: number, y: number) => /[=vz>]/.test(at(x, y));
   const rail = (x: number, y: number) => at(x, y) === 'r';
   const edge = (x: number, y: number) => x === 0 || y === 0 || x === W - 1 || y === H - 1;
   return { W, H, at, street, rail, edge };

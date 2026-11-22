@@ -43,6 +43,37 @@
 .spr-wrap.me { left: max(4px, env(safe-area-inset-left, 0px)); bottom: -6px; width: min(46%, 220px); }
 .spr-wrap.opp { right: max(6px, env(safe-area-inset-right, 0px)); top: 14px; width: min(38%, 168px); }
 .spr-wrap.opp::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -2px; height: 16px; border-radius: 50%; background: var(--shadow); z-index: -1; }
+/* who stands behind the creatures (ui/coaches.ts): the foe's trainer back on the right, facing us, Antonio in
+   profile on the left when he steps in. Their sizes and the creatures' strips are set by `fit` there, so that nobody
+   stands on anybody; these are only the places before it runs */
+.coach { position: absolute; display: none; pointer-events: none; }
+.coach.on { display: block; }
+.coach canvas { display: block; height: 100%; width: auto; transform-origin: 50% 92%; }
+.coach.opp { z-index: 1; right: 0; top: 0; height: min(46%, 150px); }
+.coach.me { z-index: 3; left: 0; bottom: 0; height: 54%; }
+#battle.has-scene .coach.opp { top: auto; bottom: 16%; }
+@media (max-width: 600px) { #battle.has-scene .coach.opp { bottom: 11%; } }
+.coach.on canvas { animation: coach-idle 2.8s ease-in-out infinite; }
+.coach.me.on canvas { animation-duration: 2.2s; }
+@keyframes coach-idle { 50% { transform: translateY(-0.8%) scaleY(1.012); } }
+.fx.coach-fly { left: 0; top: 0; }
+.coach-orb { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 38%, #ffffff 0 24%, var(--mc, #ffe45c) 55%, transparent 72%);
+  box-shadow: 0 0 16px 6px color-mix(in srgb, var(--mc, #ffe45c) 55%, transparent), 0 0 3px 1px #ffffff inset; }
+.coach-spark { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #ffffff 0 30%, var(--mc, #ffe45c) 70%); opacity: .85; }
+.coach-item { position: absolute; transform: translate(-50%, -50%); }
+.fx.coach-bubble { z-index: 7; }
+.coach-say { position: absolute; padding: 5px 11px 4px; border: 2.5px solid #1b1f2e; border-radius: 14px; background: #fffdf6; color: #1b1f2e;
+  font: 19px/1.1 var(--font-display); white-space: nowrap; box-shadow: 3px 3px 0 rgba(0, 0, 0, .22); transform-origin: 30% 100%; }
+.coach-say::after { content: ""; position: absolute; left: 18%; bottom: -10px; width: 12px; height: 12px; background: #fffdf6;
+  border-right: 2.5px solid #1b1f2e; border-bottom: 2.5px solid #1b1f2e; transform: skewX(-25deg) rotate(45deg); transform-origin: center; }
+.coach-say.opp { transform-origin: 70% 100%; }
+.coach-say.opp::after { left: auto; right: 18%; transform: skewX(25deg) rotate(45deg); }
+.coach-mark { position: absolute; display: block; color: #e2453c; font: 34px/1 var(--font-display); -webkit-text-stroke: 2px #1b1f2e; paint-order: stroke; }
+.coach-star { position: absolute; display: block; color: #ffd23f; font: 22px/1 var(--font-display); -webkit-text-stroke: 1.5px #1b1f2e; paint-order: stroke; }
+.mover.enter.thrown { animation: thrown .5s cubic-bezier(.2, .9, .3, 1.25); }
+@keyframes thrown { from { transform: translateY(18%) scale(.12); opacity: 0; } 35% { opacity: 1; } 70% { transform: translateY(-4%) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .coach.on canvas { animation: none; } }
 .bob { animation: bob 2.8s ease-in-out infinite; }
 .opp .bob { animation-duration: 3.4s; animation-delay: -1.2s; }
 /* a legend is bigger than everyone else */

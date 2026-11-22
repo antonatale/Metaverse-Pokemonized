@@ -875,10 +875,11 @@ export function bagIcon(id: string): string {
 }
 /** a net thrown at a wild creature: it flies, closes on it, falls to the ground and shakes; then it holds (stars, and
     the creature stays in it) or it bursts and the creature jumps out. Resolves when it is decided */
-export function throwNet(from: number, to: number, id: string, shakes: number, held: boolean): Promise<void> {
+export function throwNet(from: number, to: number, id: string, shakes: number, held: boolean, hand?: number[] | null): Promise<void> {
   const m = $('m-' + to);
   if (reduced || !arena) { if (held && m) m.classList.add('innet'); return Promise.resolve(); }
-  const a = anchor(from, from === 0 ? 0.78 : 0.22, 0.3), b = body(to, 0.5, 0.5), g = anchor(to, 0.5, 0.8), w = 100;
+  /* from Antonio's hand when he is there to throw it (ui/coaches.ts), else from his creature */
+  const a = hand || anchor(from, from === 0 ? 0.78 : 0.22, 0.3), b = body(to, 0.5, 0.5), g = anchor(to, 0.5, 0.8), w = 100;
   const net = piece(netSVG(id, w), 'sp-net', w), cv = curve(a, b, 150);
   let shrink: Animation | null = null;
   return animate(net, along(cv.at, 12, function (t) { return 'rotate(' + (t * 600 - 40).toFixed(0) + 'deg) scale(' + lerp(0.55, 1.15, t).toFixed(2) + ')'; }), { duration: 540, easing: 'cubic-bezier(.3,.2,.5,1)', fill: 'both' }).then(function () {

@@ -3,9 +3,11 @@ import { SPECIES } from '../data/creatures';
 import { CHARS } from '../data/characters';
 import { LEGENDS } from '../data/legends';
 import { flag } from './plot';
+import { REUNION } from './finale';
 import { allItems, foundItems } from './maps';
 import { dexHad, firstHuman, monsOf, nameOf } from './growth';
 import { chosen, endFlag, pactOpen, stonesKept, tullioMood } from './choices';
+import { rivalFriend } from './rival-who';
 
 /* The story told back to the player, before leaving Formia: every line comes from what has really happened, and from what
    the player has decided (data/choices.ts), so that two games have two different stories. */
@@ -14,14 +16,19 @@ const list = (a: string[]) => a.length < 2 ? a.join('') : a.slice(0, -1).join(',
 export function epilogue(): string[] {
   const out: string[] = [], mons = st.mons || [], dex = st.dex || {}, kinds = Object.keys(SPECIES).length;
   const seen = Object.keys(dex).filter(function (k) { return dex[k] >= 1; }).length, had = dexHad();
-  const given = monsOf('antonio')[0];
+  const given = monsOf(firstHuman())[0];
   if (given) out.push('Al Parco di Gianola la guardaparco ti ha affidato una creatura: ' + nameOf(given.uid) + ' è ancora con te.');
-  if (flag('tr-mamurra')) out.push('Hai trovato le tre Pietre di Telepilo prima del fantasma di Mamurra, e l\'hai fermato alla sua villa.');
+  if (flag(REUNION)) out.push('Alla Porta di Telepilo, tutti e sette avete affrontato Mamurra di persona. Lamo ha tenuto aperto il passaggio e avete riportato a casa le creature.');
+  else if (flag('tr-mamurra')) out.push('Hai trovato le tre Pietre di Telepilo prima del fantasma di Mamurra, e l\'hai fermato alla sua villa.');
   const stones = chosen('pietre');
   if (stones === 'sigillo') out.push(flag('enigma-lamo') ? 'Hai rimesso le pietre nelle nicchie: il sigillo di Telepilo è chiuso, e a Formia si dorme tranquilli.' : 'Hai promesso di rimettere le pietre al loro posto. Le nicchie sotto le mura di Castellone le aspettano ancora.');
   else if (stones === 'tenute') out.push(stonesKept() ? 'Le Pietre di Telepilo sono ancora nella tua borsa, insieme alle tielle. Cicerone fa finta di niente.' : 'Le pietre le avevi tenute tu. Le hai rese a Lamo, e hai fatto bene.');
   const mood = tullioMood();
-  if (mood === 'ally') out.push(flag('tr-rivale-3') ? '{rv} è venut{rv-a} a salutarti alla stazione, con una tiella per il viaggio. Comprata al forno, ma conta il pensiero.' : '{rv} si allena ancora con te. Non lo dite in giro.');
+  if (flag(REUNION) && rivalFriend() && mood) {
+    if (mood === 'ally') out.push('Avevi proposto a {rv} di allenarvi insieme. Sul ponte vi è bastato uno sguardo per partire nello stesso istante.');
+    else if (flag('tr-rivale-3')) out.push('Tu e {rv} vi siete sfidati di nuovo a Gianola. Da quel giorno riuscite a parlarvi della prima lotta.');
+    else out.push('Tu e {rv} avete ancora una rivincita in sospeso. Sul ponte vi siete tenuti in piedi a vicenda.');
+  } else if (mood === 'ally') out.push(flag('tr-rivale-3') ? '{rv} è venut{rv-a} a salutarti alla stazione, con una tiella per il viaggio. Comprata al forno, ma conta il pensiero.' : '{rv} si allena ancora con te. Non lo dite in giro.');
   else if (mood === 'bitter') out.push('{rv} non ti saluta più. Dalla banchina, da lontano, qualcuno ti guarda partire.');
   else if (flag('tr-rivale-3')) out.push('{rv} voleva essere il più forte di Formia. Ha dovuto dire che lo sei tu.');
   const friends = st.squad.filter(function (f) { return f !== firstHuman(); }).map(function (f) { return CHARS[f].name; });

@@ -20,6 +20,28 @@ export const VOICE: Record<FriendId, { hi: string; won: string; beaten: string }
 export const PARTNER: Record<FriendId, string> = { antonio: 'cicalina', costanzo: 'cicalina', forchetta: 'lumacotta', andrea: 'stellina', valentin: 'cinghialetto', zendavid: 'olivella', claudia: 'lumacotta' };
 
 type Words = Pick<Trainer, 'intro' | 'win' | 'lose' | 'after'>;
+
+export const RIVAL_AFTER_RESCUE: Record<'ordinary' | 'ally' | 'bitter', Words> = {
+  ordinary: {
+    intro: ['Al parco doveva essere solo la nostra prima sfida. Chi pensava che saremmo finiti su quel ponte?', 'Ti va una rivincita qui, come il primo giorno? Il mio {rival} è pronto.'],
+    win: ['Bella lotta, {hero}. Quando torni a Formia, rifacciamola.'],
+    lose: ['Questa me la segno. Quando vuoi, ti do la rivincita.'],
+    after: ['È passato {rival} davanti al cancello e si è piantato qui. Mi sa che vuole un’altra lotta.']
+  },
+  ally: {
+    intro: ['Sul ponte è bastato guardarci. Quando ho visto che partivi, ho mollato la ringhiera anch’io.', 'Ci alleniamo ancora, come mi avevi proposto sull’Appia? Io e {rival} siamo pronti.'],
+    win: ['Ho perso. Domani mi fai vedere come hai fatto quel cambio?'],
+    lose: ['Oggi è toccata a me. Domani facciamo a parti invertite.'],
+    after: ['Ci alleniamo? Ho riprovato il cambio di ieri.']
+  },
+  bitter: {
+    intro: ['Sul ponte ti ho dato la mano perché stavi per cadere. Lo rifarei.', 'In campo ci dobbiamo ancora una rivincita. Ti ricordi «Tutto qui?» Ti risponde {rival}.'],
+    win: ['Oggi hai vinto tu. La prossima volta risparmiami il «Tutto qui?». Sono venut{rv-a} perché ci tenevo.'],
+    lose: ['Avevo preparato la battuta. Sai che c’è? Bella lotta, {hero}.'],
+    after: ['Se vuoi un’altra sfida, chiedimela.']
+  }
+};
+
 export const RIVAL_LINES: Record<string, Words & { title: string; moods?: Trainer['moods'] }> = {
   'rivale-1': {
     title: '{rv}, il tuo rivale',

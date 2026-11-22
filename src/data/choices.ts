@@ -33,3 +33,15 @@ export const CHOICES: Record<string, Choice> = {
       'Formia è nata due volte, e non è mai stata tranquilla. Poi il treno: Torino, e un giorno Chicago. Ricordati da dove vieni. E di chi hai fatto arrabbiare.'] }
   ] }
 };
+
+export const STONES_AFTER_RESCUE: Choice = {
+  id: 'pietre',
+  ask: [
+    { who: 'Lamo', say: ['LE CREATURE SONO A CASA. LE PIETRE POSSONO TORNARCI ANCHE LORO.'] },
+    { who: 'Cicerone', say: ['Le nicchie sono ancora qui sotto. Tocca a te decidere, {hero}. Io l’esame te l’ho già fatto.'] }
+  ],
+  options: [
+    { id: 'sigillo', label: 'Le rimetto al loro posto', who: 'Cicerone', say: ['Le tre Pietre aspettano le loro nicchie. Torna qui di notte: Lamo ha preparato una prova per quando vorrai riportargliele.'] },
+    { id: 'tenute', label: 'Le tengo io', who: 'Cicerone', say: ['Le Pietre danno alle tue creature un punto di Slancio e permettono la Risonanza anche senza legame. Lamo le rivorrà indietro. Di notte puoi tornare a parlargli.'] }
+  ]
+};

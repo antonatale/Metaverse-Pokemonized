@@ -6,7 +6,9 @@ const out = FORMIA_AT.tennis.door!;
 
 /* Inside the covered courts of the Bruno Zauli, Forchetta's covo: since the night of the echo, the Tempio della Terra
    Rossa (13 November 2026). First the hall where the clay slides like ice and carries whoever steps on it back to the
-   door, but for a winding line of good ground; then his court, the net, and Forchetta on the far side, who never misses. */
+   door, but for a winding line of good ground; then his court, the net, and Forchetta on the far side, who never misses.
+   The terra rossa is the clay of the court and a pigment of his palette: around the court his atelier (the easel, the
+   palette, the canvases) and his lab of biomedical engineering (the microscope, a prosthetic leg, the heart monitor) */
 const ROWS = [
   'xxxxxxxxxxxxxx',
   'x@FFFFFFFFFF@x',
@@ -40,21 +42,25 @@ export const circolo: MapDef = {
   theme: 'forchetta',
   rows: ROWS,
   groundObjects: [{ kind: 'court', x: 2, y: 2, w: 10, h: 6 }, { kind: 'scoreboard', x: 5, y: 0, w: 4, text: '15 – 0' },
-    { kind: 'covo-prop', x: 1, y: 1, w: 1, h: 1, text: 'ballmachine' }, { kind: 'covo-prop', x: 12, y: 1, w: 1, h: 1, text: 'ballmachine' },
-    { kind: 'covo-prop', x: 1, y: 8, w: 1, h: 1, text: 'ballbasket' }, { kind: 'covo-prop', x: 12, y: 8, w: 1, h: 1, text: 'umpire' },
-    { kind: 'covo-prop', x: 1, y: 14, w: 1, h: 1, text: 'trophy' }, { kind: 'covo-prop', x: 12, y: 14, w: 1, h: 1, text: 'trophy' },
-    { kind: 'covo-prop', x: 1, y: 5, w: 1, h: 1, text: 'ballbasket' }, { kind: 'covo-prop', x: 12, y: 5, w: 1, h: 1, text: 'ballmachine' }],
+    { kind: 'covo-prop', x: 1, y: 1, w: 1, h: 1, text: 'trophy' }, { kind: 'covo-prop', x: 12, y: 1, w: 1, h: 1, text: 'ballmachine' },
+    { kind: 'covo-prop', x: 1, y: 8, w: 1, h: 1, text: 'easel' }, { kind: 'covo-prop', x: 12, y: 8, w: 1, h: 1, text: 'umpire' },
+    { kind: 'covo-prop', x: 1, y: 14, w: 1, h: 1, text: 'canvases' }, { kind: 'covo-prop', x: 12, y: 14, w: 1, h: 1, text: 'microscope' },
+    { kind: 'covo-prop', x: 1, y: 5, w: 1, h: 1, text: 'palette' }, { kind: 'covo-prop', x: 12, y: 5, w: 1, h: 1, text: 'prosthesis' }],
   signs: [
     { x: 12, y: 8, quiet: true, text: ['La sedia dell\'arbitro. Sopra, un cartello: «Poteva andare peggio».'] },
-    { x: 1, y: 14, quiet: true, text: ['Le coppe del circolo. Sulla più grande c\'è scritto un nome solo, ripetuto dodici volte.'] }
+    { x: 1, y: 8, quiet: true, text: ['Il cavalletto di Forchetta. Sulla tela, il campo da tennis visto dall\'alto: la terra rossa è dipinta con la terra rossa vera.'] },
+    { x: 1, y: 5, quiet: true, text: ['La tavolozza, appoggiata al palo della rete. Tra i colori, la terra rossa del campo: per Forchetta è anche un pigmento.'] },
+    { x: 1, y: 14, quiet: true, text: ['Tre tele appoggiate al muro: il golfo da Mola, la Torre al tramonto, un ritratto di Faro il Delfaro.', 'Dietro, in piccolo: «A. Forcina». Il colore è ancora fresco.'] },
+    { x: 12, y: 14, quiet: true, text: ['Un microscopio, e sotto un vetrino con scritto «cartilagine, prova 12». Accanto, appunti di ingegneria biomedica fitti fitti.'] },
+    { x: 12, y: 5, quiet: true, text: ['Una protesi di gamba stampata in 3D, appena uscita dalla stampante. Il cartellino dice: «Per il raccattapalle. Poteva andare peggio».'] }
   ],
   warps: [{ x: 6, y: 16, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }, { x: 7, y: 16, to: 'formia', tx: out[0], ty: out[1] + 1, tdir: 'down' }],
   npcs: [
     /* Forchetta on the far side of the net: he is talked to across it; his defenders see whoever comes in, crosses the
        clay or steps in front of the net */
     { id: 'forchetta', person: 'forchetta', x: 6, y: 4, dir: 'down', covo: 'circolo', unless: 'forchetta' },
-    { id: 'raccattapalle', trainer: 'raccattapalle', name: 'Raccattapalle', seed: 71, x: 10, y: 15, dir: 'left', lines: ['Sono qui dentro da dodici ore. Raccatto e basta.'] },
-    { id: 'maestro', trainer: 'maestro', name: 'Il maestro del circolo', seed: 73, x: 2, y: 15, dir: 'up', lines: ['La terra rossa stanotte è diventata ghiaccio. Guarda bene dove è asciutta.'] },
+    { id: 'raccattapalle', trainer: 'raccattapalle', name: 'Il modello in posa', seed: 71, x: 10, y: 15, dir: 'left', lines: ['Sono in posa da dodici ore. Se mi muovo, ricomincia il ritratto da capo.'] },
+    { id: 'maestro', trainer: 'maestro', name: 'La tecnica di laboratorio', seed: 73, x: 2, y: 15, dir: 'up', lines: ['La terra rossa stanotte è diventata ghiaccio. Guarda bene dove è asciutta.'] },
     { id: 'giudice', trainer: 'giudice', name: 'Giudice di sedia', seed: 72, x: 10, y: 6, dir: 'left', lines: ['Silenzio, prego.'] }
   ],
   start: [6, 15, 'up'],

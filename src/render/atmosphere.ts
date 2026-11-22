@@ -18,7 +18,10 @@ export interface View { x: number; y: number; w: number; h: number }
     (a building: its footprint in map px and how high it stands) */
 export interface Caster { x: number; yb: number; w: number; h: number; img?: CanvasImageSource; box?: { x: number; y: number; w: number; h: number; up: number };
   /** a flat picture: how many px of it lie under its foot (yb is the foot); how much it leans in the wind */
-  foot?: number; lean?: number }
+  foot?: number; lean?: number;
+  /** a building whose roof is not a box (a dome, a tower, a gable, a spire): its outline stands as a flat picture, its
+      heights times `k`, swept back `sweep` px from its front, so that the shadow takes the shape of the roof */
+  k?: number; sweep?: number }
 /** what the layers need to know about a tile, without knowing the map: its ground, its decoration, whether someone
     can stand on it */
 export interface Tiles { w: number; h: number; ground(x: number, y: number): string; deco(x: number, y: number): string | undefined; free(x: number, y: number): boolean }
@@ -58,10 +61,15 @@ export function shade(ctx: CanvasRenderingContext2D, W: number, H: number, vs: n
       else { lc.moveTo(b.x, b.y); lc.lineTo(b.x + b.w, b.y); lc.lineTo(b.x + b.w, b.y + b.h); lc.lineTo(b.x + b.w + dx, b.y + b.h + dy); lc.lineTo(b.x + dx, b.y + b.h + dy); lc.lineTo(b.x + dx, b.y + dy); }
       lc.closePath(); lc.fill();
     } else if (c0.img) {
-      /* a flat picture: laid on the ground from its foot, a point h px up falls (sun.x, sun.y) × h away */
-      var sx = sun.x + (c0.lean || 0);
-      lc.transform(1, 0, -sx, -sun.y, sx * c0.yb, c0.yb * (1 + sun.y));
-      lc.drawImage(c0.img, c0.x, c0.yb - c0.h + (c0.foot || 0), c0.w, c0.h);
+      /* a flat picture: laid on the ground from its foot, a point h px up falls (sun.x, sun.y) × h away; a shaped
+         building is the same picture standing again a few px further back, down to the back of its footprint */
+      var sx = sun.x + (c0.lean || 0), k = c0.k || 1, n = c0.sweep ? Math.max(1, Math.ceil(c0.sweep / 5)) : 0;
+      for (var j = 0; j <= n; j++) {
+        var yb = c0.yb - (n ? c0.sweep! * j / n : 0);
+        lc.setTransform(s, 0, 0, s, -cam.x * s, -cam.y * s);
+        lc.transform(1, 0, -sx * k, -sun.y * k, sx * k * yb, yb * (1 + sun.y * k));
+        lc.drawImage(c0.img, c0.x, yb - c0.h + (c0.foot || 0), c0.w, c0.h);
+      }
     }
   });
   lc.setTransform(1, 0, 0, 1, 0, 0); lc.globalCompositeOperation = 'source-in';

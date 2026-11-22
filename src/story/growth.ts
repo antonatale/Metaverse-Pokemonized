@@ -10,6 +10,7 @@ import type { Bout, SideOpts } from '../battle';
 import { NET_IDS } from '../data/nets';
 import { HELD, type HeldId } from '../data/passives';
 import { stonesKept } from './choices';
+import { creaturesMissing } from './finale';
 
 /* Growing up in the story: the level and experience of every fighter, Antonio's abilities, his money, his bag,
    his creatures. Rules and state only; the story screen shows them. A fighter is known by a key: 'antonio',
@@ -45,13 +46,13 @@ export const TEAM_MAX = 6;
 function ownerOf(m: Mon): string { return m.owner || 'antonio'; }
 /** the creatures of someone of the company */
 export function monsOf(who: string): Mon[] { return (st.mons || []).filter(function (m) { return ownerOf(m) === who; }); }
-export function teamMons(): Mon[] { return monsOf(firstHuman()).filter(function (m) { return !m.home; }); }
+export function teamMons(): Mon[] { return creaturesMissing() ? [] : monsOf(firstHuman()).filter(function (m) { return !m.home; }); }
 /** the average level of the three best creatures of the team (0 with none): what a place that follows the team aims at */
 export function teamRef(): number {
   var top = teamMons().map(function (m) { return level(m.uid).lv; }).sort(function (a, b) { return b - a; }).slice(0, 3);
   return top.length ? top.reduce(function (n, x) { return n + x; }, 0) / top.length : 0;
 }
-export function homeMons(): Mon[] { return monsOf(firstHuman()).filter(function (m) { return !!m.home; }); }
+export function homeMons(): Mon[] { return creaturesMissing() ? [] : monsOf(firstHuman()).filter(function (m) { return !!m.home; }); }
 /** home and back: the team keeps at least one creature and never more than TEAM_MAX */
 export function sendHome(uid: string): boolean {
   var m = creatureOf(uid);

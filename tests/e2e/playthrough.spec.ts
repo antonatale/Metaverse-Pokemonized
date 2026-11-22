@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { play, until, toPrompt, battleOver, walk, goStory, fight, type Run } from './harness';
+import { FORMIA_SPOT } from '../../src/data/maps/formia-ground';
+import { cisterna } from '../../src/data/maps/cisterna';
 
 /* Whole games played to the end: the title and its stories, the story, its battles, saves.
    Each must finish without errors; the saves they leave are checked where it matters. */
@@ -65,7 +67,7 @@ test('a story exported and imported', async ({ browser }) => {
   expect(get('code')).toBe('TELEPILO1:');
   expect(String(get('bad'))).toMatch(/Non è un codice di Telepilo/);
   expect(String(get('slot3'))).toMatch(/Gioca/);
-  expect(get('stored')).toEqual({ badges: ['gialosai'], money: 40, x: 215 });
+  expect(get('stored')).toEqual({ badges: ['gialosai'], money: 40, x: 245 });
 });
 
 for (const dark of [false, true]) {
@@ -96,11 +98,9 @@ test('the intro, and three stories at once', async ({ browser }) => {
     await p.click('[data-play="2"]'); await p.clock.runFor(300);
     await r.shot('who');
     await p.click('[data-hero="andrea"]'); await p.clock.runFor(1500);
-    await until(p, () => window.WORLD._debug.pos().dialog);
+    await expect(p.getByRole('dialog', { name: 'Prologo', exact: true })).toBeVisible();
     r.keep('second', await p.evaluate(() => { const s = window.WORLD.state() as { badges: string[]; mons: unknown[]; money: number; squad: string[]; first?: string }; return { badges: s.badges.length, mons: s.mons.length, money: s.money, squad: s.squad, first: s.first }; }));
-    await talkThrough(p, 20);
-    await p.keyboard.press('m'); await p.clock.runFor(300);
-    await p.click('[data-tab="mappa"]'); await p.click('#wm-home'); await p.clock.runFor(500);
+    await p.goto('/'); await p.clock.runFor(1000);
     /* back on the title: the way in goes on with the second; the first is still there as it was */
     r.keep('go', await p.locator('#go-story').innerText());
     await p.click('#go-slots'); await p.clock.runFor(300);
@@ -120,71 +120,78 @@ test('the intro, and three stories at once', async ({ browser }) => {
   expect(get('title')).toBe(true);
   expect(get('second'), 'a new story, from nothing, Andrea alone in his company').toEqual({ badges: 0, mons: 0, money: 0, squad: ['andrea'], first: 'andrea' });
   expect(String(get('go'))).toContain('Storia 2');
-  expect(get('first')).toMatchObject({ badges: 1, x: 215, y: 42, money: 40 });
+  expect(get('first')).toMatchObject({ badges: 1, x: 245, y: 42, money: 40 });
   expect(get('after-delete')).toBe(2);
   expect(get('keys')).toEqual([true, null, '1']);
 });
 
-test('story', async ({ browser }) => {
-  await play(browser, 'story', { seed: 3, gfx: 'bassa' }, async (r) => {
+test('the passport detour leaves the investigation at Gianola active', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true },
+    mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'polpino' }] };
+  await play(browser, 'passaporto', { seed: 3, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await goStory(p);
-    await until(p, () => window.WORLD._debug.pos().dialog);
-    await r.shot('intro');
-    await talkThrough(p);
-    await r.shot('start');
+    await goStory(p); await p.clock.runFor(900);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x + 2, y + 1, 'left'), FORMIA_SPOT.passaporto); await p.clock.runFor(300);
     await goTo(p, 'item', 'passaporto');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
-    await r.shot('item');
+    await expect(p.locator('#wtxt')).toContainText('Hai ritrovato');
     await talkThrough(p);
-    await goTo(p, 'sign', 'Tomba di Cicerone');
+    await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
-    await r.shot('sign');
+    await expect(p.locator('#wtxt')).toContainText('Tomba di Cicerone');
     await talkThrough(p);
-    /* a covo is fought with creatures: one, as from the park keeper */
-    await p.evaluate(() => (window.WORLD._debug as unknown as { adopt(sp: string, lv: number): string }).adopt('ramarrino', 8));
-    await goTo(p, 'npc', 'costanzo');
-    await p.keyboard.press('Enter'); await p.clock.runFor(200);
-    await r.shot('costanzo');
-    await talkThrough(p);
-    await r.shot('challenge');
-    await p.click('#wopts .btn.primary');
-    await fight(r, 'covo', 2);
-    await p.click('#st-go, #st-retry');
-    await p.clock.runFor(800);
-    await r.shot('back');
-    await talkThrough(p);
-    await p.clock.runFor(300);
-    await r.shot('after');
-    await saves(r, 'saves');
-    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+    expect(await p.evaluate(() => (window.WORLD.state() as { found: Record<string, boolean> }).found.passaporto)).toBe(true);
+    await expect(p.locator('#wgoal')).toContainText('Chi scava tra le rovine di Gianola?');
   });
 });
-test('story: circolo and menu', async ({ browser }) => {
-  await play(browser, 'circolo', { seed: 4, dark: true, viewport: { width: 1280, height: 800 } }, async (r) => {
+test('the tennis player opens Forchetta’s covo and he finds the fragment', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
+    seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 75, xp: 0 } }, money: 0, bag: {}, rivalFriend: 'claudia' };
+  await play(browser, 'circolo', { seed: 4, gfx: 'bassa', dark: true, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
-    await goStory(p);
-    await until(p, () => window.WORLD._debug.pos().dialog);
-    await talkThrough(p);
-    await goTo(p, 'door', 'tennis');
-    await walk(p, ['up']);
-    await p.clock.runFor(600);
-    await r.shot('inside');
-    await goTo(p, 'npc', 'forchetta');
+    await goStory(p); await p.clock.runFor(1200);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y + 1, 'up'), FORMIA_SPOT.tennista); await p.clock.runFor(300);
+    await goTo(p, 'npc', 'tennista');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
-    await r.shot('forchetta');
+    await expect(p.locator('#wtxt')).toContainText('Forchetta palleggia');
     await talkThrough(p);
-    await p.click('#wopts .btn:not(.primary)');
-    await p.clock.runFor(200);
-    await p.keyboard.press('m'); await p.clock.runFor(200);
-    await r.shot('menu');
-    r.keep('state', await p.evaluate(() => window.WORLD.state()));
+    expect(await p.evaluate(() => (window.WORLD.state() as typeof save & { seen: Record<string, boolean> }).seen['invito-circolo'])).toBe(true);
+    await expect(p.locator('#wtoast')).not.toContainText('Hai l’invito');
+    await goTo(p, 'door', 'tennis');
+    await walk(p, [await p.evaluate(() => (window.WORLD.state() as typeof save).dir)]);
+    await p.clock.runFor(600);
+    expect(await p.evaluate(() => window.WORLD._debug.pos().map)).toBe('circolo');
+    await r.shot('inside');
+    await p.evaluate(() => (window.WORLD._debug as unknown as { covo(id: string): void }).covo('circolo'));
+    await p.clock.runFor(500); await fight(r, 'forchetta', 0);
+    await p.click('#st-go'); await p.clock.runFor(500); await talkThrough(p);
+    await p.click('#aw-ok'); await p.clock.runFor(300); await talkThrough(p);
+    const film = p.locator('[data-scene="prima-spilla"]');
+    await expect(film).toBeVisible();
+    await p.clock.fastForward(5000);
+    await expect(film.locator('.film-fragment i')).toHaveCount(3);
+    await film.getByRole('button', { name: 'Salta' }).click(); await p.clock.runFor(300);
+    if (!(await p.locator('#wtxt').innerText()).includes('Archivio')) await talkThrough(p, 1);
+    await expect(p.locator('#wtxt')).toContainText('Archivio');
+    await talkThrough(p);
+    expect(await p.evaluate(() => (window.WORLD.state() as { beaten: Record<string, boolean> }).beaten.circolo)).toBe(true);
   });
 });
 test('story on a phone with the touch pad', async ({ browser }) => {
   await play(browser, 'touch', { seed: 5, touch: true }, async (r) => {
-    await goStory(r.page);
-    await until(r.page, () => window.WORLD._debug.pos().dialog);
+    const p = r.page;
+    await goStory(p);
+    const prologue = p.getByRole('dialog', { name: 'Prologo', exact: true });
+    await expect(prologue).toContainText('Alle 3:12 un boato');
+    await expect(prologue).toContainText('una mano enorme');
+    await p.reload(); await goStory(p); await p.clock.runFor(900);
+    await expect(prologue).toBeVisible();
+    await prologue.getByRole('button', { name: 'Il mattino' }).click();
+    await until(p, () => window.WORLD._debug.pos().dialog);
+    await p.reload(); await goStory(p); await p.clock.runFor(900);
+    await expect(prologue).toHaveCount(0);
+    await expect(p.locator('#wtxt')).toContainText('Salve, Antonio');
     await r.shot('pad');
   });
 });
@@ -323,16 +330,25 @@ test('the shops of the town', async ({ browser }) => {
   expect(after.mons[0].bond).toBeGreaterThan(10);
 });
 
-/* Andrea, with the pins of the other five, takes his train: Milano Centrale, the hall closed by the clouds, and back */
-test('Andrea takes the train to Milano', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'statoarte'], squad: ['andrea'], first: 'andrea',
-    beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, palamendola: true }, found: {}, seen: { intro: true, starter: true, protagonisti: true }, mons: [], lv: {}, money: 0, bag: {} };
-  const r = await play(browser, 'train', { seed: 2, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+/* Andrea can leave in both a completed old story and one with the new reunion. */
+for (const reunion of [false, true]) test('Andrea takes the train to Milano' + (reunion ? ' after saying goodbye' : ''), async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'statoarte', 'tavoli'], squad: ['andrea'], first: 'andrea',
+    beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, palamendola: true, morgana: true, 'tr-mamurra': true }, found: {}, seen: { intro: true, starter: true, protagonisti: true, 'sc-pietre-sigillo': true, 'finale-riunione': reunion }, mons: [], lv: {}, money: 0, bag: {} };
+  const r = await play(browser, reunion ? 'train-farewell' : 'train', { seed: 2, gfx: 'bassa', viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
+    await expect(p.locator('#wgoal')).toContainText('Milano');
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y + 1, 'up'), FORMIA_SPOT.capotreno); await p.clock.runFor(300);
     await talkTo(p, 'capotreno');
     r.keep('offer', await p.locator('#wopts button').allInnerTexts());
-    await choose(p, 'Sali sul treno'); await p.clock.runFor(1500);
+    await choose(p, 'Sali sul treno');
+    if (reunion) {
+      const scene = p.locator('[data-scene="saluti-stazione"]');
+      await expect(scene).toContainText('Gli amici arrivano');
+      await scene.getByRole('button', { name: 'Salta' }).click();
+      expect(await p.evaluate(() => (window.WORLD.state() as { chats?: { saluti?: unknown } }).chats?.saluti)).toBeTruthy();
+    }
+    await p.clock.runFor(1500);
     r.keep('there', await p.evaluate(() => window.WORLD._debug.pos().map));
     await r.shot('milano');
     await talkTo(p, 'capotreno-milano');
@@ -579,11 +595,8 @@ test('the tour of Formia', async ({ browser }) => {
     await r.page.clock.runFor(1500);
     return (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' ');
   };
-  const first = await play(browser, 'tour-start', {}, async (r) => {
-    await goStory(r.page);
-    await until(r.page, () => window.WORLD._debug.pos().dialog);
-    await talkThrough(r.page);
-    r.keep('goal', (await r.page.locator('#wgoal').innerText()).replace(/\s+/g, ' '));
+  const first = await play(browser, 'tour-start', { gfx: 'bassa', storage: story({}) }, async (r) => {
+    r.keep('goal', await goal(r));
     /* the neighbour knows where to go next */
     await goTo(r.page, 'npc', 'vicina');
     await r.page.keyboard.press('Enter'); await r.page.clock.runFor(200);
@@ -600,8 +613,11 @@ test('the tour of Formia', async ({ browser }) => {
   });
   const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'riccetto' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
-    await r.page.keyboard.press('m'); await r.page.clock.runFor(300);
-    r.keep('title', await r.page.locator('.pickrow h3', { hasText: 'Giro di Formia' }).innerText());
+    await r.page.click('#wgoal'); await r.page.clock.runFor(300);
+    await expect(r.page.locator('.tour .next')).toContainText('Chi scava tra le rovine di Gianola?');
+    await expect(r.page.locator('.tour')).not.toContainText('Gelato');
+    await expect(r.page.locator('.pickrow', { hasText: 'Deviazioni' })).toContainText('Gelato');
+    await expect(r.page.locator('.pickrow', { hasText: 'Indizi sull’eco' })).toContainText('Le tre tacche');
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => String(run.data.find((x) => x.name === n)!.value);
   expect(get(first, 'goal')).toContain('La tua prima creatura');
@@ -610,8 +626,6 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(first, 'menu')).toContain('???');
   expect(get(first, 'menu')).not.toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Chi scava tra le rovine di Gianola?');
-  /* the second creature is a stop too (R10), done with two */
-  expect(get(later, 'title').toLowerCase()).toContain('4 su 24');
 });
 
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
@@ -953,7 +967,7 @@ test('walking with a click', async ({ browser }) => {
     type W = { WORLD: { _debug: { route(x: number, y: number): string[] | null; screenOf(x: number, y: number): [number, number]; pos(): { x: number; y: number; dialog: boolean } } } };
     const to = await p.evaluate(() => {
       const d = (window as unknown as W).WORLD._debug;
-      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 134 + dx, y = 56 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
+      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 164 + dx, y = 56 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
       return null;
     });
     r.keep('to', to);
@@ -1003,17 +1017,15 @@ test('the two teams and Antonio\'s abilities', async ({ browser }) => {
   expect((get('state') as { skills: Record<string, number> }).skills).toEqual({ svelto: 1, passo: 1 });
 });
 
-/* the plot: the lady of the theatre's riddle gives the stone of the walls, Cicero's three questions at his tomb the
-   stone of the voice; then Mamurra is waiting at his villa */
+/* The riddles of the theatre and the tomb, with a walk through the Cisternone between them. */
 test('the stones of Telepilo', async ({ browser }) => {
-  /* long as activities: the riddle, the three questions and two battles, about four minutes on Bassa without a graphics card */
-  test.slow();
-  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurr-scavi': true, 'tr-mamurr-cisterna': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: { 'tr-mamurr-scavi': true, 'tr-mamurr-cisterna': true }, found: { passaporto: true },
     seen: { intro: true, starter: true, 'trama-archivio': true, 'pietra-mare': true, 'cap-starter': true }, mons: [{ uid: 'c1', sp: 'ramarrone' }], lv: { c1: { lv: 20, xp: 0 } }, money: 0, bag: {} };
   const r = await play(browser, 'plot', { seed: 14, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y + 1, 'up'), FORMIA_SPOT.teatro); await p.clock.runFor(300);
     await talkTo(p, 'teatro');
     await r.shot('riddle');
     await choose(p, 'Dodici');
@@ -1024,6 +1036,7 @@ test('the stones of Telepilo', async ({ browser }) => {
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     await talkThrough(p);
     await choose(p, 'Scendi nel Cisternone');
+    await p.locator('[data-scene="cisternone"] .film-skip').click();
     await p.clock.runFor(500);
     r.keep('inside', await p.evaluate(() => window.WORLD._debug.pos().map));
     await r.shot('cisterna-in');
@@ -1031,7 +1044,7 @@ test('the stones of Telepilo', async ({ browser }) => {
     const way = await p.evaluate(() => window.WORLD._debug.way());
     r.keep('way', way.length);
     for (let k = 0; k < way.length; k++) {
-      await walk(p, [way[k]]);
+      await walk(p, [way[k]], 100);
       if (k === Math.floor(way.length / 2)) await r.shot('cisterna-mid');
       /* the bats of the dark: he slips away */
       if ((await p.evaluate(() => window.WORLD._debug.pos())).dialog) { await talkThrough(p); await choose(p, 'Scappa'); await talkThrough(p); }
@@ -1045,12 +1058,13 @@ test('the stones of Telepilo', async ({ browser }) => {
     await talkThrough(p);
     /* the tomb is at the far west of the big map: start from the Appia below it, not from home */
     await p.evaluate(() => window.WORLD._debug.travel('formia', 30, 92, 'left')); await p.clock.runFor(500);
-    await goTo(p, 'sign', 'Tomba di Cicerone');
+    await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
     await p.keyboard.press('Enter'); await p.clock.runFor(300);
     await talkThrough(p);
     for (const a of ['Nel 43 avanti Cristo', 'Mola e Castellone', 'Sant\'Erasmo']) { await choose(p, a); await talkThrough(p); }
     await p.clock.runFor(300);
     await r.shot('voice');
+    await p.locator('[data-scene="pietra-voce"] .film-skip').click();
     await p.click('#st-ok'); await p.clock.runFor(300);
     await talkThrough(p);
     await p.keyboard.press('m'); await p.clock.runFor(300);
@@ -1069,10 +1083,94 @@ test('the stones of Telepilo', async ({ browser }) => {
   expect(st.seen['pietra-voce']).toBe(true);
 });
 
+for (const first of ['antonio', 'forchetta']) test('the archive shows six seals and one light outside for ' + first, async ({ browser }) => {
+  const freedForchetta = first !== 'forchetta';
+  const save = { v: 1, map: 'formia', x: 175, y: 66, dir: 'up', first, badges: freedForchetta ? ['peggio'] : [], squad: [first],
+    beaten: { 'tr-mamurr-scavi': true, circolo: freedForchetta }, found: {},
+    seen: { intro: true, starter: true, protagonisti: true, 'cap-starter': true, 'dono-retini': true }, mons: [{ uid: 'c1', sp: 'polpino', owner: first }], bag: {} };
+  await play(browser, 'archive-seal-' + first, { seed: 21, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(900); await talkThrough(p);
+    const archive = await p.evaluate(() => window.WORLD._debug.who('archivista'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [archive!.x, archive!.y + 1]); await p.clock.runFor(300);
+    await talkTo(p, 'archivista');
+    const film = p.locator('[data-scene="disegno-sigillo"]');
+    await expect(film.locator('.film-seal-inside i')).toHaveCount(6);
+    await expect(film.locator('.film-seal-outside')).toHaveCount(1);
+    await r.shot('disegno');
+    await film.getByRole('button', { name: 'Salta' }).click(); await p.clock.runFor(300);
+    await expect(p.locator('#wtxt')).toContainText(freedForchetta ? 'il frammento del campo' : 'al Zauli hai visto le stesse tre tacche');
+    await talkThrough(p);
+    expect(await p.evaluate(() => (window.WORLD.state() as { seen: Record<string, boolean> }).seen['trama-archivio'])).toBe(true);
+  });
+});
+
+test('Claudia lights the approach to the Cisternone', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: ['tavoli'], squad: ['antonio'], beaten: { morgana: true }, found: {},
+    seen: { intro: true, starter: true, 'porta-cisterna': true }, mons: [{ uid: 'c1', sp: 'polpino' }], lv: {}, money: 0, bag: {} };
+  await play(browser, 'lanterna', { gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async ({ page: p }) => {
+    await goStory(p); await p.clock.runFor(1200);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y + 1, 'up'), FORMIA_SPOT['sign-cisternone']);
+    await p.clock.runFor(300);
+    await goTo(p, 'sign', 'Il Cisternone romano');
+    await p.keyboard.press('Enter'); await p.clock.runFor(200); await talkThrough(p);
+    await choose(p, 'Scendi nel Cisternone');
+    const film = p.locator('[data-scene="cisternone"]');
+    await expect(film).toContainText('La lanterna di Claudia');
+    await film.getByRole('button', { name: 'Salta' }).click(); await p.clock.runFor(300);
+    expect(await p.evaluate(() => window.WORLD._debug.pos().map)).toBe('cisterna');
+  });
+});
+
+test('the sea stone survives a reload and its voice waits for the walls', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 175, y: 66, dir: 'up', badges: [], squad: ['antonio'], beaten: {}, found: { passaporto: true },
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true },
+    mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 75, xp: 0 } }, bag: {} };
+  await play(browser, 'sea-first', { seed: 21, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    const state = () => p.evaluate(() => window.WORLD.state() as typeof save & { beaten: Record<string, boolean>; seen: Record<string, boolean> });
+    await goStory(p); await p.clock.runFor(900); await talkThrough(p);
+    const diver = await p.evaluate(() => window.WORLD._debug.who('mamurr-peschiere'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y + 1, 'up'), [diver!.x, diver!.y]); await p.clock.runFor(300);
+    await talkTo(p, 'mamurr-peschiere');
+    await choose(p, 'Sfida!');
+    await fight(r, 'sub', 0);
+    await p.click('#st-go'); await p.clock.runFor(500);
+    for (let i = 0; i < 8 && !(await state()).beaten['tr-mamurr-peschiere']; i++) await talkThrough(p, 1);
+    expect((await state()).beaten['tr-mamurr-peschiere']).toBe(true);
+    expect((await state()).seen['pietra-mare']).toBeUndefined();
+    await p.reload(); await goStory(p); await p.clock.runFor(900);
+    const film = p.locator('[data-scene="pietra-mare"]');
+    await expect(film).toContainText('Il telefono registra un suono regolare');
+    await p.clock.fastForward(5000);
+    await expect(film).toHaveCount(0);
+    await p.click('#st-ok'); await p.clock.runFor(300);
+    await expect(p.locator('#wtxt')).toContainText('Quando avrai la Pietra delle Mura');
+    await talkThrough(p);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('cisterna', x, y + 1, 'up'), cisterna.place!.goal); await p.clock.runFor(300);
+    await p.keyboard.press('Enter'); await p.clock.runFor(300);
+    await p.click('#st-ok'); await p.clock.runFor(300);
+    await expect(p.locator('#wtxt')).toContainText('Accosti le Pietre delle Mura e del Mare');
+    await talkThrough(p, 2);
+    await expect(p.locator('#wtxt')).toContainText('Quella voce è la mia');
+    await talkThrough(p);
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x + 2, y + 1, 'left'), FORMIA_SPOT['sign-tomba']); await p.clock.runFor(300);
+    await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
+    await p.keyboard.press('Enter'); await p.clock.runFor(300); await talkThrough(p);
+    await choose(p, 'Nel 44 avanti Cristo');
+    await expect(p.locator('#wtxt')).toContainText('La Pietra rimane fredda'); await talkThrough(p);
+    for (const answer of ['Nel 43 avanti Cristo', 'Mola e Castellone', 'Sant\'Erasmo']) { await choose(p, answer); await talkThrough(p); }
+    const voice = p.locator('[data-scene="pietra-voce"]');
+    await expect(voice.locator('.film-carried-stones .stone')).toHaveCount(3);
+    await voice.getByRole('button', { name: 'Salta' }).click(); await p.click('#st-ok'); await p.clock.runFor(300);
+    expect((await state()).seen).toMatchObject({ 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true });
+  });
+});
+
 /* a legend: the riddle of the niches, the walk under the walls with the validator's own way, the fight in three parts, and
    the net that holds only at the end */
 test('Lamo, in three parts', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 89, y: 63, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 96, y: 63, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true, 'sc-pietre-sigillo': true },
     mons: [{ uid: 'c1', sp: 'gabbiammiraglio' }, { uid: 'c2', sp: 'muraglione' }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: { oro: 6 } };
   const r = await play(browser, 'legend', { seed: 21, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
@@ -1179,12 +1277,12 @@ test('the magic of a place, and Risonanza', async ({ browser }) => {
   expect(get('gone'), 'once in a battle').toBe(0);
 });
 
-/* the choices of the story, in the game: the stones after Mamurra, and what they do from there on */
-test('keeping the stones', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
-    seen: { 'cic-change': true,  intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
-    mons: [{ uid: 'c1', sp: 'gabbiammiraglio', bond: 70 }, { uid: 'c2', sp: 'muraglione', bond: 70 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
-  const r = await play(browser, 'stones-kept', { seed: 12, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+test('the seven rescue their creatures at Telepilo and keep the stones', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato', 'tavoli'], squad: ['antonio'], rivalFriend: 'claudia',
+    beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, padel: true, morgana: true }, found: {},
+    seen: { 'cic-change': true, intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'trama-archivio': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'sc-tullio1-amico': true, 'sc-tullio2-amico': true },
+    mons: [{ uid: 'c1', sp: 'gabbiammiraglio', nick: 'Vela', bond: 70 }, { uid: 'c2', sp: 'muraglione', home: true, bond: 58 }], lv: { c1: { lv: 60, xp: 0 }, c2: { lv: 60, xp: 0 } }, money: 0, bag: {} };
+  const r = await play(browser, 'stones-kept', { seed: 12, touch: true, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p);
     await p.clock.runFor(1500);
@@ -1192,15 +1290,74 @@ test('keeping the stones', async ({ browser }) => {
     const m = await p.evaluate(() => window.WORLD._debug.who('mamurra'));
     await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [m!.x, m!.y + 1]); await p.clock.runFor(500);
     await talkTo(p, 'mamurra');
-    r.keep('column', await p.evaluate(() => window.WORLD._debug.pos().text));
-    await choose(p, 'Sfida!');
-    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
-    await toPrompt(p);
-    r.keep('ricchezza', await p.locator('#chips-1 .chip', { hasText: 'Ricchezza' }).innerText());
-    await fight(r, 'mamurra', 0);
-    for (let k = 0; k < 6 && !await battleOver(p); k++) await fight(r, 'mamurra', 0);
-    await p.click('#st-go'); await p.clock.runFor(500);
+    await choose(p, 'Entra nella villa con gli amici');
+    const abduction = p.locator('[data-scene="mamurra-gianola"]');
+    await expect(abduction).toBeVisible();
+    for (let i = 0; i < 2; i++) await p.clock.fastForward(8000);
+    await expect(abduction.locator('.film-carried-stones .stone')).toHaveCount(3);
+    for (let i = 0; i < 2; i++) await p.clock.fastForward(8000);
+    await expect(p.locator('.film-visor i')).toHaveCount(8);
+    await expect(p.locator('.film-visor span')).toHaveCount(7);
+    await r.shot('visore');
+    await p.clock.fastForward(8000);
+    await p.clock.runFor(200); await talkThrough(p);
+    expect(await p.evaluate(() => (window.WORLD.state() as typeof save).mons)).toEqual(save.mons);
+    expect(await p.evaluate(() => (window.WORLD.state() as { chats?: { rapimento?: unknown } }).chats?.rapimento)).toBeTruthy();
+    await choose(p, 'Sali sul furgone');
+    await p.clock.runFor(700);
+    expect(await p.evaluate(() => window.WORLD._debug.pos().x)).toBeLessThan(120);
+    await p.keyboard.press('m'); await p.clock.runFor(200);
+    await p.locator('#tab-squadra').click();
+    await expect(p.locator('.party.people .team li')).toHaveCount(7);
+    await expect(p.locator('.party.mons')).toContainText('Mamurra ha rapito tutte le creature');
+    await expect(p.locator('.party.mons .team li')).toHaveCount(0);
+    await p.locator('#wm-x').click();
+    await talkTo(p, 'selv-lamo');
+    await choose(p, 'Scendi a Telepilo');
+    expect(await p.evaluate(() => window.WORLD._debug.pos().map)).toBe('telepilo');
+    await talkTo(p, 'selv-lamo');
+    const reveal = p.locator('[data-scene="porta-telepilo"]');
+    await expect(reveal).toBeVisible();
+    for (let i = 0; i < 3; i++) await p.clock.fastForward(8000);
+    await expect(reveal).toContainText('chiama sei custodi');
+    await expect(reveal.locator('.film-seals i')).toHaveCount(7);
+    await p.clock.fastForward(8000);
+    await expect(reveal).toContainText('Mamurra ha bloccato i custodi dentro');
+    await p.locator('.film-skip').click();
+    const arena = p.locator('.finale-arena');
+    await expect(arena.locator('[data-friend]')).toHaveCount(7);
+    await r.shot('scontro');
+    await p.setViewportSize({ width: 1300, height: 810 });
+    await r.shot('scontro-desktop');
+    await p.setViewportSize({ width: 390, height: 844 });
+    for (let i = 0; i < 4; i++) {
+      await p.locator('[data-command="advance"]').click(); await p.clock.runFor(120);
+    }
+    await p.getByRole('button', { name: 'Torna all’ingresso' }).click(); await p.clock.runFor(300);
+    await talkTo(p, 'selv-lamo');
+    const cageClues = ['prima serratura', 'seconda gabbia', 'ultima gabbia'];
+    let cage = 0;
+    for (const command of ['guard', 'advance', 'guard', 'open', 'distract', 'open', 'guard', 'open', 'center', 'strike']) {
+      if (command === 'open') await expect(p.locator('.finale-tell')).toContainText(cageClues[cage++]);
+      await p.locator(`[data-command="${command}"]`).click(); await p.clock.runFor(120);
+      if (command === 'center') await expect(p.locator('.finale-last')).toContainText('Incroci lo sguardo di Claudia');
+    }
+    const victory = p.locator('[data-scene="vittoria-telepilo"]');
+    await expect(victory).toContainText('nessuna creatura si volta');
+    await p.reload(); await goStory(p); await p.clock.runFor(700);
+    await expect(victory).toContainText('nessuna creatura si volta');
+    for (let i = 0; i < 2; i++) await p.clock.fastForward(8000);
+    await expect(victory).toContainText('Vela sente la tua voce');
+    await p.clock.fastForward(8000);
+    await expect(victory.locator('.film-carried-stones .stone')).toHaveCount(3);
+    await victory.getByRole('button', { name: 'Salta' }).click(); await p.clock.runFor(400);
+    const reunited = await p.evaluate(() => window.WORLD.state() as typeof save);
+    expect(reunited.beaten).toMatchObject({ 'tr-mamurra': true });
+    expect(reunited.mons).toEqual(save.mons);
+    expect(reunited.money).toBe(200);
     await talkThrough(p, 40);
+    await expect(p.locator('#wopts')).toContainText('Le tengo io');
+    expect(await p.evaluate(() => (window.WORLD.state() as { chats?: { mamurra?: unknown } }).chats?.mamurra)).toBeTruthy();
     await r.shot('stones');
     r.keep('asked', await p.evaluate(() => window.WORLD._debug.pos().text));
     await choose(p, 'Le tengo io');
@@ -1209,17 +1366,70 @@ test('keeping the stones', async ({ browser }) => {
     await p.evaluate(() => window.WORLD._debug.wild('cicalina', 12)); await p.clock.runFor(300);
     await talkThrough(p);
     await choose(p, 'Lotta!');
-    await p.locator('.pick[data-key="c1"]').click({ timeout: 5000 });
     await toPrompt(p);
     r.keep('slancio', await p.locator('#sg-0 i.on').count());
     r.keep('state', await p.evaluate(() => window.WORLD.state()));
   });
   const get = (n: string) => r.data.find((x) => x.name === n)!.value;
-  expect(String(get('ricchezza')), 'Tullio, a friend, has cracked it').toContain('2/2');
-  expect(String(get('asked'))).toContain('l\'esame');
+  expect(String(get('asked'))).toContain('l’esame');
   expect(get('slancio')).toBe(1);
   const st = get('state') as { seen: Record<string, boolean> };
   expect(st.seen['sc-pietre-tenute']).toBe(true);
+});
+
+test('Claudia leads the animated fight and her rival reaches for her hand', async ({ browser }) => {
+  const save = { v: 1, map: 'telepilo', x: 9, y: 2, dir: 'up', first: 'claudia', squad: ['claudia'], rivalFriend: 'andrea', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato', 'statoarte'],
+    beaten: { piazza: true, circolo: true, eclipse: true, pineta: true, padel: true, palamendola: true },
+    found: {}, seen: { intro: true, starter: true, protagonisti: true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true,
+      'finale-rapimento': true, 'finale-castellone': true, 'finale-soglia': true, 'sc-tullio1-sfotto': true, 'sc-tullio2-sfotto': true },
+    mons: [{ uid: 'c1', sp: 'polpino', owner: 'claudia' }], bag: {} };
+  await play(browser, 'claudia-at-telepilo', { seed: 12, reduced: false, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(900); await talkThrough(p);
+    await talkTo(p, 'selv-lamo');
+    const arena = p.locator('.finale-arena');
+    await expect(arena.locator('[data-protagonist]')).toHaveAttribute('data-friend', 'claudia');
+    await p.locator('[data-command="guard"]').click();
+    await expect(arena.locator('[data-friend="claudia"] canvas')).toHaveCSS('animation-name', 'group-step');
+    await p.clock.fastForward(1500);
+    for (const command of ['advance', 'guard', 'open', 'distract', 'open', 'guard', 'open', 'center']) {
+      await p.locator(`[data-command="${command}"]`).click(); await p.clock.fastForward(1500);
+    }
+    await expect(p.locator('.finale-last')).toContainText('Andrea ti porge la mano');
+    await expect(p.locator('[data-command="strike"]')).toBeEnabled();
+  });
+});
+
+test('Lamo lets go of the door when the stones return to their niches', async ({ browser }) => {
+  const save = { v: 1, map: 'formia', x: 96, y: 63, dir: 'up', badges: [], squad: ['antonio'], beaten: { 'tr-mamurra': true }, found: {},
+    seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'pietra-mura': true, 'pietra-mare': true, 'pietra-voce': true, 'cic-lamo': true, 'finale-riunione': true, 'sc-pietre-sigillo': true },
+    mons: [{ uid: 'c1', sp: 'cicalina' }], money: 200, bag: {} };
+  await play(browser, 'stones-returned', { seed: 21, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save), 'lotte-tra-amici:ora:v1': 'notte' } }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(900); await talkThrough(p);
+    const lamo = await p.evaluate(() => window.WORLD._debug.who('selv-lamo'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [lamo!.x, lamo!.y + 1]); await p.clock.runFor(300);
+    await talkTo(p, 'selv-lamo');
+    await choose(p, 'Pietra delle Mura');
+    await choose(p, 'Pietra del Mare');
+    const film = p.locator('[data-scene="pietre-al-sigillo"]');
+    await expect(film.locator('.film-niches i')).toHaveCount(3);
+    await r.shot('nicchie');
+    await p.clock.fastForward(4500);
+    await expect(film).toContainText('ADESSO POSSO LEVARE LA MANO');
+    await film.getByRole('button', { name: 'Salta' }).click(); await p.clock.runFor(300);
+    await talkThrough(p); await choose(p, 'Non ora');
+    expect(await p.evaluate(() => (window.WORLD.state() as { seen: Record<string, boolean> }).seen['enigma-lamo'])).toBe(true);
+    expect(await p.evaluate(() => window.WORLD._debug.pos().map)).toBe('formia');
+    const archive = await p.evaluate(() => window.WORLD._debug.who('archivista'));
+    await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x, y, 'up'), [archive!.x, archive!.y + 1]); await p.clock.runFor(300);
+    await talkTo(p, 'archivista');
+    await choose(p, 'Lamo teneva chiuso il passaggio');
+    await talkThrough(p);
+    await p.click('#wgoal'); await p.clock.runFor(300);
+    await expect(p.locator('#pane-viaggio')).toContainText('La mano sulla Porta');
+    await expect(p.locator('#pane-viaggio')).toContainText('Rimetti le Pietre nelle nicchie');
+  });
 });
 
 /* a legend on its knees: what becomes of it is up to the player. Here the most ridiculous of the ways: three tielle */
@@ -1409,7 +1619,7 @@ test('playing as a friend', async ({ browser }) => {
 
 /* the end of the story so far: at the train, the game told back */
 test('looking back, before the train', async ({ browser }) => {
-  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
+  const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato', 'tavoli'], squad: ['antonio', 'costanzo', 'forchetta'], beaten: { 'tr-mamurra': true }, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true, 'cic-lamo': true, 'sc-pietre-sigillo': true }, mons: [{ uid: 'c1', sp: 'ramarrone', nick: 'Pino', bond: 90 }], lv: { c1: { lv: 20, xp: 0 } }, dex: { ramarrino: 2, lamo: 1 }, money: 0, bag: {} };
   const r = await play(browser, 'epilogue', { seed: 8, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
@@ -1431,7 +1641,8 @@ test('looking back, before the train', async ({ browser }) => {
   expect(r.data.find((x) => x.name === 'closed')!.value).toBe(0);
 });
 
-/* a save already in town, with Formia as it is now (positions kept) */
+/* a save already in town, with Formia as it was before the redrawings of 12–17 November (positions kept: formia18
+   moves them 30 columns right east of Castellone, so the expectations read today's columns) */
 const inTown = (o: object) => ({ 'lotte-tra-amici:storia:v1': JSON.stringify({ v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
   seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true }, mons: [{ uid: 'c1', sp: 'polpino' }], ...o }) });
 
@@ -1518,11 +1729,11 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => run.data.find((x) => x.name === n)!.value;
   expect(String(get(swim, 'ask'))).toContain('a nuoto');
-  expect(get(swim, 'in the water')).toMatchObject({ x: 246, y: 99, swim: true });
+  expect(get(swim, 'in the water')).toMatchObject({ x: 276, y: 99, swim: true });
   expect(String((get(swim, 'in the water') as P).text)).toContain('vasca romana');
   expect((get(swim, 'state') as { money: number; seen: Record<string, boolean> }).money).toBe(60);
 
-  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 88, y: 62, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
+  const climb = await play(browser, 'powers-climb', { seed: 22, storage: inTown({ x: 77, y: 71, dir: 'up', mons: [{ uid: 'c1', sp: 'ramarrino' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowUp'); await p.clock.runFor(400);
@@ -1533,7 +1744,7 @@ test('the creatures\' powers', async ({ browser }) => {
     await r.shot('walls');
   });
   expect(String(get(climb, 'ask'))).toContain('mura');
-  expect(get(climb, 'on the walls')).toMatchObject({ x: 88, y: 61, climb: true });
+  expect(get(climb, 'on the walls')).toMatchObject({ x: 77, y: 70, climb: true });
 
   const fly = await play(browser, 'powers-fly', { seed: 23, storage: inTown({ x: 142, y: 66, dir: 'down', mons: [{ uid: 'c1', sp: 'gabbi' }], seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
@@ -1550,7 +1761,7 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   expect(String(get(fly, 'hint'))).toContain('V per guardare dall\'alto');
   expect(get(fly, 'up')).toMatchObject({ sky: true });
-  expect(get(fly, 'still')).toMatchObject({ x: 142, y: 66 });
+  expect(get(fly, 'still')).toMatchObject({ x: 172, y: 66 });
   expect(get(fly, 'down')).toMatchObject({ sky: false });
 });
 
@@ -1567,10 +1778,10 @@ test('opened again in the sea', async ({ browser }) => {
     await r.shot('opened');
   })).data.find((x) => x.name === 'pos')!.value as P;
   /* a sea creature in the team: it carries him on, where he was */
-  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 246, y: 99, swim: true });
+  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 276, y: 99, swim: true });
   /* none: back to the shore, next to where he was */
   const ashore = await open('sea-none', [{ uid: 'c1', sp: 'ramarrino' }]);
   expect(ashore.swim).toBe(false);
-  expect(Math.abs(ashore.x - 246) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
-  expect(Math.abs(ashore.x - 246) + Math.abs(ashore.y - 99)).toBeLessThan(6);
+  expect(Math.abs(ashore.x - 276) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
+  expect(Math.abs(ashore.x - 276) + Math.abs(ashore.y - 99)).toBeLessThan(6);
 });

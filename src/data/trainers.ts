@@ -133,7 +133,7 @@ export const TRAINERS: Record<string, Trainer> = {
     id: 'mamurr-scavi', title: 'L\'uomo con la pala', prize: 30,
     team: [{ sp: 'riccetto', lv: 6 }, { sp: 'granchietto', lv: 7 }],
     intro: ['Il capo ci paga per cercare le Pietre di Telepilo, nella sua vecchia villa. E tu qui non ci devi stare.', 'Vuoi lottare? Queste le ho prese tra gli scogli, qui sotto.'],
-    win: ['Va bene, va bene! Me ne vado.', 'Ma il capo non è uno che si arrende. È qui da duemila anni.'],
+    win: ['Va bene, va bene! Me ne vado.', 'La moneta che mi ha dato il capo chiama due creature alla volta. Spero che a te non serva mai scoprire quante ne può chiamare lui.'],
     lose: ['Te l\'avevo detto. Torna a casa, ragazzino.'],
     after: ['Ancora tu?']
   },
@@ -149,7 +149,7 @@ export const TRAINERS: Record<string, Trainer> = {
     id: 'mamurr-peschiere', title: 'Il sub con la muta', prize: 60, smart: 1,
     team: [{ sp: 'riccetto', lv: 13 }, { sp: 'granchietto', lv: 14 }],
     intro: ['Questa l\'ho tirata su da una peschiera romana: è fredda come il mare d\'inverno, e brilla.', 'La Pietra del Mare. Il capo me la pagherà oro. Prova a prenderla.'],
-    win: ['Tienila, tienila! Mi scotta le mani.', 'Il capo dice che la terza la tiene un morto. Uno che parlava tanto.'],
+    win: ['La Pietra mi è scivolata in acqua. Prendila tu, a me scotta anche attraverso la muta.', 'Avevo una moneta del capo. L’ho sentita vibrare anche sott’acqua. Qui il rumore diventava quasi una voce.'],
     lose: ['Il mare è mio, ragazzino.'],
     after: ['Ancora tu?']
   },

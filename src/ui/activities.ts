@@ -277,7 +277,7 @@ function canoe(n: Npc) {
     const off = (t * 12) % 40;
     for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) { const wx = 40 + k * 36 - off + (r % 2) * 18, wy = 38 + r * 20; c.beginPath(); c.moveTo(wx, wy); c.quadraticCurveTo(wx + 7, wy - 4, wx + 14, wy); c.stroke(); }
     /* the red buoy */
-    const bxy = [292, 70];
+    const bxy = [322, 70];
     c.fillStyle = col.warn; c.beginPath(); c.arc(bxy[0], bxy[1], 7, 0, Math.PI * 2); c.fill(); c.strokeStyle = col.ink; c.lineWidth = 1.6; c.stroke();
     c.fillStyle = '#ffffff'; c.fillRect(bxy[0] - 7, bxy[1] - 1.5, 14, 3);
     /* the canoe: out to the right, back to the left; it leans with the yaw */

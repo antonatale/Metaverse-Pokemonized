@@ -42,7 +42,39 @@ export function walker(spec: PersonLook, s: number): Record<Dir, HTMLCanvasEleme
   });
   return out;
 }
-function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
+/** how a trainer stands in a battle (ui/coaches.ts): still, the arm drawn back before a throw (`wind`), the arm out
+    with the throw, cheering, or pointing at the creature to call it back */
+export type Pose = 'stand' | 'wind' | 'throw' | 'cheer' | 'point';
+/** one still of a person in a pose: a little wider than a walker (8 each side), for the arm that goes out. Facing
+    the camera (`down`) or seen from behind (`up`) the arm that moves is the one on the left of the picture or on the
+    right; in profile it is the one we see, forward. `f` is the step, as for a walker (0 still, 1 and 2 walking) */
+export function posed(spec: PersonLook, s: number, d: Dir, pose: Pose, f?: number): HTMLCanvasElement {
+  var cv = mk((T + 16) * s, 44 * s), c = cv.getContext('2d')!;
+  c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round';
+  c.translate(8, 0);
+  if (d === 'right') { c.translate(T, 0); c.scale(-1, 1); }
+  drawWalker(c, spec, d === 'right' ? 'left' : d, f || 0, pose);
+  return cv;
+}
+/** in profile the one arm we see turns from straight up by this angle: forward is negative, back positive */
+export const SIDE_ARM: Record<Pose, number> = { stand: 0, wind: 0.95, throw: -1.3, point: -1.8, cheer: -1.05 };
+/** facing or from behind, the arm towards the creature turns out from straight up by this angle (below 0: it hangs) */
+export const NEAR_ARM: Record<Pose, number> = { stand: -1, wind: 0.08, throw: 0.8, point: 1.2, cheer: 0.42 };
+/** where the hand that moves is, as a fraction of the picture `posed` draws (its own arithmetic, so the light thrown
+    leaves from the hand) */
+export function handAt(d: Dir, pose: Pose): number[] {
+  var x: number, y: number;
+  if (d === 'left' || d === 'right') {
+    var th = SIDE_ARM[pose];
+    if (pose === 'stand') { x = 16.2; y = 30.5; } else { x = 16.2 + 11 * Math.sin(th); y = 22 - 11 * Math.cos(th); }
+    if (d === 'right') x = T - x;
+  } else {
+    var a = NEAR_ARM[pose], l = d === 'down';
+    if (a < 0) { x = l ? 7.4 : 24.6; y = 30; } else { x = l ? 8 - 11 * Math.sin(a) : 24 + 11 * Math.sin(a); y = 22 - 11 * Math.cos(a); }
+  }
+  return [(x + 8) / (T + 16), (y + 4) / 44];
+}
+function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number, pose?: Pose) {
   var ink = STICKER_INK, bob = f ? -1 : 0, side = d === 'left', back = d === 'up';
   c.translate(0, 4);
   ell(c, 16, 38, 9, 3); c.fillStyle = 'rgba(20,24,40,.22)'; c.fill();
@@ -70,9 +102,17 @@ function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
   rr(c, bx, 19, bw, 12.5, 4.5); fillStroke(c, S.top, ink, 1.6);
   torsoDetail(c, S, d, bx, bw);
   /* arms */
-  var sw = f === 1 ? 1.5 : f === 2 ? -1.5 : 0;
-  if (side) { rr(c, 14 + sw, 21, 4.5, 9, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4); circle(c, 16.2 + sw, 30.5, 2); fillStroke(c, S.skin, ink, 1.2); }
-  else {
+  var sw = f === 1 ? 1.5 : f === 2 ? -1.5 : 0, up: (() => void) | null = null;
+  if (side && pose && pose !== 'stand') { var th = SIDE_ARM[pose]; up = function () { sideArm(c, S, th); }; }
+  else if (side) { rr(c, 14 + sw, 21, 4.5, 9, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4); circle(c, 16.2 + sw, 30.5, 2); fillStroke(c, S.skin, ink, 1.2); }
+  else if (pose && pose !== 'stand') {
+    /* the arm towards the creature: on the left of the picture facing the camera, on the right from behind; both up
+       to cheer. An arm that hangs is drawn now, one that is up after the head, so that big hair does not hide it */
+    var near = back ? 'r' : 'l', na = NEAR_ARM[pose], aL = pose === 'cheer' || near === 'l' ? na : -1, aR = pose === 'cheer' || near === 'r' ? na : -1;
+    if (aL < 0) raisedArm(c, S, 'l', aL);
+    if (aR < 0) raisedArm(c, S, 'r', aR);
+    up = function () { if (aL >= 0) raisedArm(c, S, 'l', aL); if (aR >= 0) raisedArm(c, S, 'r', aR); };
+  } else {
     rr(c, 5.2, 20.5 + sw, 4.4, 9, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4);
     rr(c, 22.4, 20.5 - sw, 4.4, 9, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4);
     circle(c, 7.4, 30 + sw, 1.9); fillStroke(c, S.skin, ink, 1.2); circle(c, 24.6, 30 - sw, 1.9); fillStroke(c, S.skin, ink, 1.2);
@@ -84,6 +124,29 @@ function drawWalker(c: Ctx, S: PersonLook, d: Dir, f: number) {
   if (S.beard && !back) { c.save(); circle(c, 16, 12, 9.6); c.clip(); c.fillStyle = S.beard; c.globalAlpha = 0.42; c.beginPath(); c.ellipse(side ? 12 : 16, 19, side ? 6 : 8.5, 5.2, 0, 0, Math.PI * 2); c.fill(); c.restore(); c.globalAlpha = 1; }
   hairFront(c, S, d);
   if (!back) face(c, S, d);
+  if (up) up();
+}
+function sideArm(c: Ctx, S: PersonLook, th: number) {
+  c.save();
+  c.translate(16.2, 22); c.rotate(th);
+  rr(c, -2.2, -10.4, 4.4, 11.4, 2.2); fillStroke(c, S.sleeve || S.top, STICKER_INK, 1.4);
+  circle(c, 0, -11, 2.1); fillStroke(c, S.skin, STICKER_INK, 1.2);
+  c.restore();
+}
+/** an arm from the shoulder: hanging (a < 0), or turned out and up by `a` radians from straight up */
+function raisedArm(c: Ctx, S: PersonLook, which: 'l' | 'r', a: number) {
+  var ink = STICKER_INK, l = which === 'l';
+  if (a < 0) {
+    rr(c, l ? 5.2 : 22.4, 20.5, 4.4, 9, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4);
+    circle(c, l ? 7.4 : 24.6, 30, 1.9); fillStroke(c, S.skin, ink, 1.2);
+    return;
+  }
+  c.save();
+  c.translate(l ? 8 : 24, 22);
+  c.rotate(l ? -a : a);
+  rr(c, -2.2, -10.4, 4.4, 11.4, 2.2); fillStroke(c, S.sleeve || S.top, ink, 1.4);
+  circle(c, 0, -11, 2.1); fillStroke(c, S.skin, ink, 1.2);
+  c.restore();
 }
 function torsoDetail(c: Ctx, S: PersonLook, d: Dir, bx: number, bw: number) {
   var ink = STICKER_INK;

@@ -5,7 +5,7 @@ import { T, rr, fillStroke, circle, ell, poly, plaque, hash, type Ctx } from './
    them, the aura that rises from them and the mood inside. A covo is a home of Formia turned into something out of a
    fantasy by the echo of Telepilo, in the shape of its keeper: a black castle for Claudia, a green wooden tower of the
    Carpathians for Valentin, a tower of dice for Andrea, a glass dome with a telescope for Antonio, a palace of the
-   people for Costanzo, a temple of speakers for Zendavid, a dome like a tennis ball for Forchetta.
+   people for Costanzo, a temple of speakers for Zendavid, a dome like a tennis ball for Forchetta, with his easel and a bionic hand on top.
 
    States (story/lairs.ts covoState): `waiting` and `next` are lit (the aura says which one is next); `beaten`: the
    windows dark, the colours washed out, a white flag on top: the keeper is free; `mine`: the keeper is the one played
@@ -199,7 +199,8 @@ function antonio(c: Ctx, w: number, h: number, P: Palette, o: CovoOpts, free: bo
   c.fillStyle = free ? 'rgba(220,226,240,.6)' : 'rgba(225,212,255,.75)'; c.fill(); c.strokeStyle = INK; c.lineWidth = 1.6; c.stroke();
   c.beginPath(); c.moveTo(dx, base - 1); c.lineTo(dx, base - 26); c.stroke();
   if (free) whiteFlag(c, cx, top - 12);
-  sign(c, P, o, w, base + 1);
+  /* the name on the glass, over the doors: at the foot of the dome it went under the ground of the tile below */
+  sign(c, P, o, w, base - 42);
 }
 
 /* ---------- Costanzo: the palace of the people ---------- */
@@ -290,31 +291,64 @@ function zendavid(c: Ctx, w: number, h: number, P: Palette, o: CovoOpts, free: b
   sign(c, P, o, w, colTop - 6);
 }
 
-/* ---------- Forchetta: the dome like a tennis ball ---------- */
+/* ---------- Forchetta: the dome like a tennis ball, the atelier and the lab ----------
+   Tennis player, painter with a brush and biomedical engineer (Antonio, 13 November 2026): the ball-dome on its band of
+   red clay still, but the line of the court along the band beats like a heart on a monitor, an easel with his picture
+   of the gulf stands in front of it with the palette at its foot, and on top a bionic hand holds up a brush */
 function forchetta(c: Ctx, w: number, h: number, P: Palette, o: CovoOpts, free: boolean) {
   var up = o.up || T * 2.6, base = h - 4, ball = free ? '#c8cf9a' : '#d7f04a', ball2 = free ? '#b0b884' : '#b9d22e';
   ell(c, w / 2, base + 2, w / 2 + 4, 7); c.fillStyle = P.shadow; c.fill();
   rr(c, 4, h - T * 1.3, w - 8, T * 1.3 - 4, 2); fillStroke(c, '#c96a3c', INK, 2);
-  c.strokeStyle = '#fffdf6'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(6, h - T * 0.9); c.lineTo(w - 6, h - T * 0.9); c.stroke();
+  /* the line of the court, beating like a heart */
+  var ly = h - T * 0.9, beat = w * 0.3;
+  c.strokeStyle = free ? '#fffdf6' : '#eafff0'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(6, ly); c.lineTo(beat - 8, ly); c.lineTo(beat - 4, ly - 5); c.lineTo(beat, ly + 6); c.lineTo(beat + 4, ly - 12); c.lineTo(beat + 8, ly + 3); c.lineTo(beat + 11, ly); c.lineTo(w - 6, ly); c.stroke();
   var cy = h - T * 1.3, r = (w - 12) / 2, ry = Math.min(up + T * 0.2, r);
   c.beginPath(); c.moveTo(6, cy); c.ellipse(w / 2, cy, r, ry, 0, Math.PI, 0); c.closePath();
   var g = c.createLinearGradient(0, cy - ry, 0, cy); g.addColorStop(0, ball); g.addColorStop(1, ball2); c.fillStyle = g; c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke();
-  /* the white seam of the ball */
+  /* the white seam of the ball, and three strokes of paint where his brush went over it */
   c.save(); c.beginPath(); c.moveTo(6, cy); c.ellipse(w / 2, cy, r, ry, 0, Math.PI, 0); c.closePath(); c.clip();
   c.strokeStyle = '#fffdf6'; c.lineWidth = 3;
   c.beginPath(); c.moveTo(w * 0.18, cy); c.bezierCurveTo(w * 0.32, cy - ry * 0.9, w * 0.68, cy - ry * 0.2, w * 0.82, cy - ry * 1.1); c.stroke();
+  if (!free) [['#e23a4f', 0.58, 0.52], ['#3b8fd9', 0.64, 0.42], ['#ffd84d', 0.7, 0.32]].forEach(function (q) {
+    c.strokeStyle = q[0] as string; c.lineWidth = 4; c.globalAlpha = 0.85; c.beginPath();
+    c.moveTo(w * (q[1] as number), cy - ry * (q[2] as number)); c.quadraticCurveTo(w * ((q[1] as number) + 0.06), cy - ry * ((q[2] as number) + 0.1), w * ((q[1] as number) + 0.13), cy - ry * ((q[2] as number) - 0.02)); c.stroke(); c.globalAlpha = 1;
+  });
   c.restore();
-  /* the net drawn along the base, and a racket as tall as the dome leaning on its side */
   c.strokeStyle = 'rgba(255,253,246,.55)'; c.lineWidth = 0.8;
-  for (var nx = 8; nx < w - 6; nx += 5) { c.beginPath(); c.moveTo(nx, h - T * 1.25); c.lineTo(nx, h - T * 0.95); c.stroke(); }
+  for (var nx = 8; nx < w - 6; nx += 5) { c.beginPath(); c.moveTo(nx, h - T * 1.25); c.lineTo(nx, h - T * 1.05); c.stroke(); }
+  /* the bionic hand on top, holding up a brush */
+  var hx = w / 2 + 2, hy = cy - ry + 2;
+  c.save(); c.translate(hx, hy);
+  rr(c, -5, -4, 10, 8, 2); fillStroke(c, '#9aa3b2', INK, 1.3);
+  rr(c, -7, -16, 14, 13, 3); fillStroke(c, free ? '#c9ced8' : '#dfe6f2', INK, 1.5);
+  [-5, -1.7, 1.6, 4.9].forEach(function (fx, i) { rr(c, fx - 1.4, -25 + (i === 0 || i === 3 ? 2 : 0), 2.8, 10, 1.3); fillStroke(c, '#dfe6f2', INK, 1); });
+  circle(c, 0, -10, 1.8); fillStroke(c, free ? '#9aa3b2' : '#3b8fd9', INK, 0.8);
+  c.rotate(-0.5); rr(c, -1.6, -40, 3.2, 26, 1.4); fillStroke(c, '#b5703c', INK, 1.1); rr(c, -2.4, -44, 4.8, 6, 2); fillStroke(c, free ? '#c8b8b0' : '#e23a4f', INK, 1);
+  c.restore();
+  /* the racket leaning on the right */
   c.save(); c.translate(w - 14, base - 4); c.rotate(-0.35);
   c.strokeStyle = INK; c.lineWidth = 4; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -26); c.stroke();
   ell(c, 0, -44, 12, 18); fillStroke(c, free ? '#9ab0c8' : '#5fb8ff', INK, 1.8);
   c.strokeStyle = '#fffdf6'; c.lineWidth = 0.8; for (var q = -2; q <= 2; q++) { c.beginPath(); c.moveTo(q * 4.5, -58); c.lineTo(q * 4.5, -30); c.moveTo(-10, -44 + q * 6); c.lineTo(10, -44 + q * 6); c.stroke(); }
   c.restore();
+  /* the easel on the left, with his picture of the gulf, and the palette at its foot */
+  var ex = 34, et = base - 70;
+  c.strokeStyle = '#8a5a34'; c.lineWidth = 3; c.beginPath(); c.moveTo(ex - 14, base); c.lineTo(ex - 2, et); c.moveTo(ex + 14, base); c.lineTo(ex + 2, et); c.moveTo(ex, et + 4); c.lineTo(ex + 4, base - 2); c.stroke();
+  c.strokeStyle = INK; c.lineWidth = 1; c.stroke();
+  rr(c, ex - 19, et + 4, 38, 30, 1.5); fillStroke(c, '#fffdf6', INK, 1.6);
+  c.save(); rr(c, ex - 16, et + 7, 32, 24, 1); c.clip();
+  c.fillStyle = free ? '#c9d6e3' : '#ffd9a8'; c.fillRect(ex - 16, et + 7, 32, 12);
+  c.fillStyle = free ? '#a9b8c8' : '#5fb8ff'; c.fillRect(ex - 16, et + 19, 32, 12);
+  circle(c, ex + 7, et + 15, 4); c.fillStyle = free ? '#e0e0d8' : '#ff8a3c'; c.fill();
+  c.fillStyle = free ? '#9aa39a' : '#6a8f5a'; poly(c, [[ex - 16, et + 19], [ex - 8, et + 12], [ex - 1, et + 19]]); c.fill();
+  c.strokeStyle = '#fffdf6'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(ex - 12, et + 24); c.quadraticCurveTo(ex - 8, et + 22, ex - 4, et + 24); c.moveTo(ex + 2, et + 27); c.quadraticCurveTo(ex + 6, et + 25, ex + 10, et + 27); c.stroke();
+  c.restore();
+  rr(c, ex - 21, et + 33, 42, 3, 1); fillStroke(c, '#8a5a34', INK, 1);
+  ell(c, ex + 20, base - 3, 9, 4); fillStroke(c, '#e9c98f', INK, 1.2);
+  if (!free) [['#e23a4f', -4], ['#ffd84d', 0], ['#3b8fd9', 4]].forEach(function (b) { circle(c, ex + 20 + (b[1] as number), base - 4, 1.6); c.fillStyle = b[0] as string; c.fill(); });
   var dx = ((o.doorX || 0) - (o.x || 0)) * T + T / 2;
   door(c, dx - 10, base - 22, 20, 22, '#6b4a2e', free ? null : '#5fb8ff');
-  if (free) whiteFlag(c, w / 2, cy - ry);
+  if (free) whiteFlag(c, w / 2 - 18, cy - ry + 4);
   sign(c, P, o, w, cy + 8);
 }
 
@@ -554,6 +588,43 @@ export function covoProp(c: Ctx, o: { x: number; y: number; w?: number; h?: numb
     case 'vinyl':
       [0, 1, 2].forEach(function (i) { rr(c, -11 + i * 2, -12 + i * 3, 20, 20, 1); fillStroke(c, ['#2a1840', '#ff7ad9', '#fbfbf5'][i], INK, 1.2); });
       circle(c, 3, 3, 6); fillStroke(c, '#141018', INK, 1); circle(c, 3, 3, 1.6); fillStroke(c, '#ffd166', INK, 0.6);
+      break;
+    /* Forchetta's atelier and lab (13 November 2026): the painter's easel and palette, his canvases, the microscope,
+       the prosthetic leg on its stand and the monitor with the heartbeat of the biomedical engineer */
+    case 'easel':
+      c.strokeStyle = '#8a5a34'; c.lineWidth = 3; c.beginPath(); c.moveTo(-10, 13); c.lineTo(-2, -22); c.moveTo(10, 13); c.lineTo(2, -22); c.stroke();
+      rr(c, -13, -20, 26, 20, 1.5); fillStroke(c, '#fffdf6', INK, 1.5);
+      c.fillStyle = '#ffd9a8'; c.fillRect(-11, -18, 22, 8); c.fillStyle = '#5fb8ff'; c.fillRect(-11, -10, 22, 8);
+      circle(c, 5, -13, 3); c.fillStyle = '#ff8a3c'; c.fill(); poly(c, [[-11, -10], [-5, -15], [0, -10]]); c.fillStyle = '#6a8f5a'; c.fill();
+      rr(c, -15, 0, 30, 3, 1); fillStroke(c, '#8a5a34', INK, 1);
+      break;
+    case 'palette':
+      ell(c, 0, 2, 13, 9); fillStroke(c, '#e9c98f', INK, 1.5); ell(c, -6, 5, 2.2, 1.8); c.fillStyle = '#b08a5a'; c.fill();
+      [['#e23a4f', -5, -2], ['#ffd84d', 0, -4], ['#3b8fd9', 5, -2], ['#57c968', 8, 3]].forEach(function (b) { circle(c, b[1] as number, b[2] as number, 2.3); fillStroke(c, b[0] as string, INK, 0.8); });
+      c.save(); c.rotate(-0.7); rr(c, -1.2, -18, 2.4, 16, 1); fillStroke(c, '#b5703c', INK, 0.9); rr(c, -1.8, -21, 3.6, 4, 1.5); fillStroke(c, '#3b8fd9', INK, 0.8); c.restore();
+      break;
+    case 'canvases':
+      [[-8, 0.12, '#ffd9a8', '#e23a4f'], [2, -0.08, '#c9e8ff', '#3b8fd9'], [9, 0.18, '#f4e3ff', '#57c968']].forEach(function (q) {
+        c.save(); c.translate(q[0] as number, 2); c.rotate(q[1] as number); rr(c, -8, -16, 16, 20, 1); fillStroke(c, q[2] as string, INK, 1.3);
+        c.strokeStyle = q[3] as string; c.lineWidth = 2.5; c.beginPath(); c.moveTo(-5, -4); c.quadraticCurveTo(0, -12, 5, -6); c.stroke(); c.restore();
+      });
+      break;
+    case 'microscope':
+      rr(c, -11, 8, 22, 5, 2); fillStroke(c, '#3c4658', INK, 1.3);
+      c.strokeStyle = INK; c.lineWidth = 5; c.beginPath(); c.moveTo(6, 8); c.quadraticCurveTo(10, -6, 2, -14); c.stroke(); c.strokeStyle = '#dfe6f2'; c.lineWidth = 3; c.stroke();
+      c.save(); c.translate(-2, -10); c.rotate(-0.4); rr(c, -3, -10, 6, 16, 2); fillStroke(c, '#fbfbf5', INK, 1.3); rr(c, -2, -13, 4, 4, 1); fillStroke(c, '#3c4658', INK, 1); c.restore();
+      rr(c, -9, 0, 14, 3, 1); fillStroke(c, '#c9d3e3', INK, 1); circle(c, -2, 1.5, 1.2); c.fillStyle = '#57e08a'; c.fill();
+      break;
+    case 'prosthesis':
+      rr(c, -9, 10, 18, 4, 1.5); fillStroke(c, '#3c4658', INK, 1.2);
+      poly(c, [[-6, -22], [6, -22], [5, -8], [-5, -8]]); fillStroke(c, '#e7d4c0', INK, 1.3);
+      circle(c, 0, -5, 3.4); fillStroke(c, '#c9d3e3', INK, 1.2); circle(c, 0, -5, 1.1); c.fillStyle = '#3b8fd9'; c.fill();
+      rr(c, -1.8, -2, 3.6, 10, 1); fillStroke(c, '#c9d3e3', INK, 1); poly(c, [[-3, 8], [8, 8], [9, 11], [-4, 11]]); fillStroke(c, '#2c3146', INK, 1);
+      break;
+    case 'ecg':
+      rr(c, -13, -14, 26, 18, 2); fillStroke(c, '#1f2738', INK, 1.5); rr(c, -11, -12, 22, 14, 1); c.fillStyle = '#0f1a24'; c.fill();
+      c.strokeStyle = '#57e08a'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(-10, -4); c.lineTo(-4, -4); c.lineTo(-2, -9); c.lineTo(1, 0); c.lineTo(3, -6); c.lineTo(5, -4); c.lineTo(10, -4); c.stroke();
+      rr(c, -3, 4, 6, 7, 1); fillStroke(c, '#3c4658', INK, 1);
       break;
     case 'ballmachine':
       rr(c, -10, -6, 20, 16, 3); fillStroke(c, '#3c4658', INK, 1.5); circle(c, 0, -8, 7); fillStroke(c, '#c9d6e8', INK, 1.2);

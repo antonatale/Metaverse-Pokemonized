@@ -32,6 +32,14 @@ const FX: Record<string, Fx> = {
     hiss(c, out, t + 0.32, 0.8, { type: 'lowpass', freq: 500, gain: 0.2, attack: 0.02 });
   },
   splash(c, out, t) { hiss(c, out, t, 0.5, { type: 'lowpass', freq: 2400, to: 300, gain: 0.3, attack: 0.005 }); tone(c, out, 140, t, 0.18, { type: 'sine', to: 60, gain: 0.18, release: 0.08 }); },
+  finaleCoin(c, out, t) {
+    [0, 0.25, 0.43, 0.53, 0.6].forEach((at, i) => tone(c, out, 1680 + i * 92, t + at, 0.24, { type: 'triangle', gain: 0.095 - i * 0.012, release: 0.17 }));
+  },
+  finaleEcho(c, out, t) {
+    tone(c, out, 46, t, 0.95, { type: 'sine', to: 33, gain: 0.21, attack: 0.045, release: 0.38 });
+    hiss(c, out, t, 0.64, { type: 'bandpass', freq: 460, to: 1600, q: 0.7, gain: 0.18, attack: 0.055 });
+    arp(c, out, t + 0.12, ['C4', 'G4', 'C5'], 0.16, { type: 'triangle', gain: 0.08, release: 0.25 });
+  },
 
   /* ---------- battle ---------- */
   lunge(c, out, t) { hiss(c, out, t, 0.14, { freq: 500, to: 1800, q: 0.8, gain: 0.9 }); },
@@ -122,6 +130,11 @@ const FX: Record<string, Fx> = {
   /* its horn: two notes, a little out of tune, as on every Liberty */
   horn(c, out, t) { [0, 0.16].forEach(function (d) { tone(c, out, 415, t + d, 0.11, { type: 'square', gain: 0.07, cutoff: 1900, attack: 0.005, sustain: 0.9, release: 0.03 }); tone(c, out, 523, t + d, 0.11, { type: 'square', gain: 0.05, cutoff: 1900, attack: 0.005, sustain: 0.9, release: 0.03 }); }); },
   step(c, out, t) { hiss(c, out, t, 0.05, { type: 'lowpass', freq: 900 + wobble() * 300, gain: 0.5 }); },
+  /* a step into the tall grass: the blades brushing the legs, two soft swishes */
+  grass(c, out, t) {
+    hiss(c, out, t, 0.11, { type: 'bandpass', freq: 3200 + wobble() * 600, to: 1800, q: 0.9, gain: 0.16, attack: 0.02 });
+    hiss(c, out, t + 0.07, 0.13, { type: 'bandpass', freq: 4200 + wobble() * 500, to: 2400, q: 1.1, gain: 0.1, attack: 0.025 });
+  },
   door(c, out, t) { hiss(c, out, t, 0.25, { freq: 350, to: 1400, q: 0.7, gain: 0.3 }); tone(c, out, 200, t + 0.05, 0.08, { type: 'triangle', gain: 0.1 }); },
   pickup(c, out, t) { arp(c, out, t, ['E6', 'G6', 'C7'], 0.07, { type: 'square', gain: 0.06, cutoff: 6000, decay: 0.03, sustain: 0.6 }); },
   badge(c, out, t) {

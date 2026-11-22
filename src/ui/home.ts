@@ -10,8 +10,9 @@ import { home, face, bust, tc } from './common';
 import { WORLD } from './story-screen';
 import { soundButton } from './sound';
 import { sfx } from '../audio';
+import titleArt from '../assets/scenes/titolo-lamo.webp';
 
-/* The title of the game, full screen: Formia seen from above behind it, a short intro to skip, the name, and the way
+/* The title of the game, full screen: the illustrated gulf behind it, a short intro to skip, the name, and the way
    in. «Entra nel mondo» goes on with the story played last; «Salvataggi» shows the three stories of this device
    (save/story-progress.ts), to play another one or start a new one. There is nothing else: the game is the story. */
 
@@ -36,7 +37,7 @@ let introTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** the whole title, at the start of the game */
 export function renderHome() {
-  home.innerHTML = '<div class="ti-bg" aria-hidden="true"><div class="ti-map" id="ti-map"></div><div class="ti-shade"></div></div>' +
+  home.innerHTML = '<div class="ti-bg" aria-hidden="true"><img class="ti-art" src="' + titleArt + '" alt="" fetchpriority="high" draggable="false"><div class="ti-shade"></div></div>' +
     '<div class="ti-intro" id="ti-intro" hidden>' + INTRO.map(function (l, k) { return '<p class="ti-line" style="--d:' + (k * LINE_MS) + 'ms">' + esc(l) + '</p>'; }).join('') +
     '<button class="ti-skip" type="button" id="ti-skip">Salta <span aria-hidden="true">›</span></button></div>' +
     '<div class="ti-main" id="ti-main" hidden>' +
@@ -47,7 +48,6 @@ export function renderHome() {
       '<section class="ti-slots" id="ti-slots" aria-labelledby="ti-sl-t" hidden></section>' +
       '<p class="ti-foot">La mappa è la Formia vera, disegnata da OpenStreetMap.</p>' +
     '</div>';
-  paintMap();
   if (introDue()) playIntro(); else showTitle(false);
 }
 /** the name, drawn in SVG so that its outline is clean in every browser (a thick text-stroke breaks into spikes in
@@ -64,7 +64,6 @@ function logo(word: string): string {
 /** back on the title from the world: no intro, the menu as it is now */
 export function renderTitle() {
   if (!$('ti-main')) { renderHome(); return; }
-  paintMap();
   showTitle(false);
 }
 
@@ -268,10 +267,4 @@ function choose(n: number) {
     });
   });
   setTimeout(function () { const b = el.querySelector<HTMLElement>('[data-hero]'); if (b) b.focus(); }, 30);
-}
-/** Formia from above, behind the title: around where the story played last stands */
-function paintMap() {
-  const el = $('ti-map');
-  /* the old town, Centro and Mola, with the port at the bottom: Formia fills the screen, whatever its size */
-  if (el && WORLD) WORLD.preview(el, { at: [88, 31], span: 1500 });
 }

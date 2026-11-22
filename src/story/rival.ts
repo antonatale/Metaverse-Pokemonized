@@ -7,9 +7,10 @@ import { tullioMood } from './choices';
 import { monsOf } from './growth';
 import { rivalFriend, rivalName } from './rival-who';
 import { CHARS } from '../data/characters';
-import { VOICE, PARTNER, RIVAL_LINES } from '../data/rival-lines';
+import { VOICE, PARTNER, RIVAL_LINES, RIVAL_AFTER_RESCUE } from '../data/rival-lines';
 import { covoLevel } from './maps';
 import { grownAt, CREW_LATE } from './covo-crew';
+import { REUNION } from './finale';
 
 /* The rival, as in the Pokémon games: one of the friends, picked at random for each story (story/rival-who.ts; Tullio,
    the guardaparco's grandson, in the stories that met him before). The rival picks a creature right after Antonio,
@@ -71,6 +72,12 @@ export function trainerNow(id: string): Trainer {
   /* a friend as the rival: the same meetings, in the friend's words */
   if (f && RIVAL_LINES[id]) { var R = RIVAL_LINES[id]; tr = Object.assign({}, tr, { intro: R.intro, win: R.win, lose: R.lose, after: R.after, moods: R.moods, title: CHARS[f].name + (CHARS[f].fem ? ', la tua rivale' : ', il tuo rivale') }); }
   var m = tullioMood(), over = tr.moods && m ? tr.moods[m] : null;
+  if (id === 'rivale-3' && flag(REUNION)) {
+    const words = f ? RIVAL_AFTER_RESCUE[m || 'ordinary'] : {
+      intro: ['La nonna mi ha raccontato del ponte. Quando siete tornati, ha corso giù al parco a riaprire il cancello.', 'Io e {rival} siamo rimasti qui ad aspettarti. Mi concedi la rivincita, {hero}?']
+    };
+    return { ...tr, ...over, ...words };
+  }
   return over ? Object.assign({}, tr, over) : tr;
 }
 /** the magic that shields a trainer's side, as it stands: Tullio has cracked it, or has told Mamurra how Antonio fights */

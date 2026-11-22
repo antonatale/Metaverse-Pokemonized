@@ -605,19 +605,23 @@ const SCENES: Record<string, Scene> = {
       return fly(b, top, f.miss ? [f.b[0] + f.dir * 160, f.b[1] + 40] : f.b, 170, { ease: 'ease-in', s1: 1.3 });
     }).then(function () { bye(b, 140); if (f.hit) shout('ACE!', '#d8f04a', [f.b[0], f.foeHead[1] - 40], 40, 800); return strike(f, 'recoil', '#d8f04a'); });
   },
-  /* the pit stop: the tyres roll in and spin, the wrench sparks, two seconds on the clock */
+  /* the prosthesis made to measure (the biomedical engineer): the monitor with the heartbeat, the leg printed layer
+     after layer at his side, snapped on with a spark; the heartbeat steadies and the wounds close */
   pitstop: function (f) {
-    const l: P = [f.a[0] - 70, f.feet[1] - 30], r: P = [f.a[0] + 70, f.feet[1] - 30], t1 = put(A.tyre(60), l), t2 = put(A.tyre(60), r);
-    animate(t1, [{ transform: tr([l[0] - 160, l[1]]) + ' rotate(-720deg)', opacity: 0 }, { transform: tr(l) + ' rotate(0deg)', opacity: 1 }], { duration: 500, easing: 'ease-out', fill: 'both' });
-    animate(t2, [{ transform: tr([r[0] + 160, r[1]]) + ' rotate(720deg)', opacity: 0 }, { transform: tr(r) + ' rotate(0deg)', opacity: 1 }], { duration: 500, easing: 'ease-out', fill: 'both' });
-    const wr = put(A.wrench(80), [f.a[0], f.a[1] + 10]);
-    pop(wr, [f.a[0], f.a[1] + 10], 260, { delay: 400 }).then(function () { wiggle(wr, [f.a[0], f.a[1] + 10], 400, 30, 4); for (let q = 0; q < 3; q++) sleep(q * 120).then(function () { burstOf([f.a[0] + 30, f.a[1] + 10], 4, function () { return A.star('#ffd84d', 12); }, 50, 300); }); });
-    const tm = put(A.timer('#e23a4f', 60, '2.0s'), [f.head[0] + f.dir * 70, f.head[1] - 20]);
-    pop(tm, [f.head[0] + f.dir * 70, f.head[1] - 20], 300, { delay: 500 });
+    const mp: P = [f.head[0] + f.dir * 80, f.head[1] - 30], mon = put(A.ecg('#57e08a', 110), mp);
+    pop(mon, mp, 300, { r1: f.dir * 4 });
+    const lp: P = [f.a[0] - f.dir * 70, f.feet[1] - 70], leg = put(A.prosthesis(56), lp);
+    /* printed from the foot up: a mask that rises, the nozzle sparking along the top */
+    animate(leg, [{ transform: tr(lp), clipPath: 'inset(100% 0 0 0)' }, { transform: tr(lp), clipPath: 'inset(0% 0 0 0)' }], { duration: 700, delay: 200, easing: 'steps(7, end)', fill: 'both' });
+    for (let q = 0; q < 7; q++) sleep(220 + q * 100).then(function () { burstOf([lp[0], lp[1] + 60 - q * 18], 3, function () { return A.star('#8fd0f6', 10); }, 30, 260); });
     sfx('robotFix');
-    return sleep(1100).then(function () {
-      [t1, t2, wr, tm].forEach(function (el) { bye(el, 300); });
-      mend(f, '#3b8fd9'); ring(f.a[0], f.a[1], '#3b8fd9', 260, 700);
+    return sleep(1000).then(function () {
+      fly(leg, lp, [f.a[0], f.a[1] + 20], 260, { lift: 30, s1: 0.6, fadeEnd: true }).then(gone(leg));
+      return sleep(260);
+    }).then(function () {
+      flashAt(f.a[0], f.a[1] + 20, '#ffffff', 60, 160);
+      bye(mon, 300, 300);
+      mend(f, '#57e08a'); ring(f.a[0], f.a[1], '#3b8fd9', 260, 700);
       return sleep(500);
     });
   },
@@ -649,13 +653,24 @@ const SCENES: Record<string, Scene> = {
       return strike(f, 'lift', '#3b8fd9');
     });
   },
-  /* at the net, before you know it */
+  /* one stroke of the brush (the painter), before you know it: the palette, three bands of colour across the arena,
+     and the foe splashed with them */
   volee: function (f) {
-    const nt = put(A.net(130), [lerp(f.a[0], f.b[0], 0.5), Math.max(f.feet[1], f.foeFeet[1]) - 40]);
-    rise(nt, [lerp(f.a[0], f.b[0], 0.5), Math.max(f.feet[1], f.foeFeet[1]) - 40], 260);
-    streaks(f.from); sfx('ball');
-    const b = put(A.ball(26), [f.a[0] + f.dir * 40, f.a[1] - 10]);
-    return fly(b, [f.a[0] + f.dir * 40, f.a[1] - 10], f.miss ? [f.b[0] + f.dir * 160, f.b[1]] : f.b, 200, { lift: 20, ease: 'ease-in', s1: 1.3 }).then(function () { bye(b, 140); bye(nt, 300, 200); return strike(f, 'recoil', '#d8f04a'); });
+    const pp: P = [f.a[0] - f.dir * 40, f.head[1] + 10], pl = put(A.palette(64), pp);
+    pop(pl, pp, 220, { r1: -f.dir * 12 });
+    streaks(f.from);
+    const cols = ['#e23a4f', '#ffd84d', '#3b8fd9'], s0: P = [f.a[0] + f.dir * 40, f.head[1] + 20], br = put(A.brush(cols[0], 110), s0);
+    pop(br, s0, 160, { r1: f.dir < 0 ? 180 : 0 });
+    sfx('whoosh');
+    cols.forEach(function (col, q) {
+      const L = layer(beam(curve([s0[0], s0[1] + (q - 1) * 12], [f.b[0], f.b[1] + (q - 1) * 14], 18 + q * 6).d, col, 9));
+      sleep(q * 50).then(function () { trace(L, 180).then(function () { fade(L, 420, 200); }); });
+    });
+    return fly(br, s0, f.miss ? [f.b[0] + f.dir * 140, f.b[1] - 30] : [f.b[0] - f.dir * 20, f.b[1] - 10], 230, { ease: 'ease-in' }).then(function () {
+      bye(br, 200); bye(pl, 200, 100);
+      if (f.hit) for (let q = 0; q < 5; q++) { const sp = put(A.splat(cols[q % 3], 34 + (q % 2) * 12, q), f.b); fly(sp, f.b, [f.b[0] + (q - 2) * 28, f.b[1] - 10 + (q % 3) * 22], 260, { s0: 0.3, s1: 1, fadeEnd: true, delay: q * 30 }).then(gone(sp)); }
+      return strike(f, 'recoil', '#e23a4f');
+    });
   },
   /* a game on the Play: the pad, PLAYER 2, and the foe has no more fight in it */
   play: function (f) {

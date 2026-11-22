@@ -25,6 +25,8 @@ export interface LegendStage {
   self?: StatFx[];
   /** what it says instead if Antonio has kept its stones */
   angry?: string;
+  /** what it says instead after the rescue at the Door */
+  afterRescue?: string;
 }
 /** the legend is on its knees: what becomes of it. The flags are `sc-<id>-preso`, `-libero`, `-patto`, `-amico` */
 export interface LegendEnd {
@@ -80,9 +82,9 @@ export const LEGENDS: Record<string, LegendDef> = {
     },
     trial: { to: 'telepilo', x: 9, y: 13, dir: 'up', again: ['Le tre nicchie brillano. La scala sotto le mura scende nel buio.'] },
     stages: [
-      { at: 1, name: 'Il re di pietra', line: 'CHI OSA SVEGLIARE IL RE DI TELEPILO?', moves: ['ruggito', 'passogigante', 'telepilo', 'masso'] },
-      { at: 0.6, name: 'Il masso sopra la testa', line: 'LE NAVI DI ULISSE NON SONO ARRIVATE A CASA. NEMMENO TU.', angry: 'SENTO LE MIE PIETRE NELLA TUA BORSA, LADRO.', moves: ['naufragio', 'furia', 'passogigante', 'telepilo'] },
-      { at: 0.3, name: 'L\'ira dei Lestrigoni', line: 'BASTA! TREMATE TUTTI, DALLE MURA AL MARE!', angry: 'RIDAMMELE! TREMATE TUTTI, DALLE MURA AL MARE!', moves: ['naufragio', 'furia', 'masso', 'ruggito'], self: ['atkUp'] }
+      { at: 1, name: 'Il re di pietra', line: 'CHI OSA SVEGLIARE IL RE DI TELEPILO?', angry: 'SENTIVO LE PIETRE GIÀ DAL PRIMO GRADINO.', afterRescue: 'AVETE TENUTO INSIEME IL PONTE. VEDIAMO COME TI INTENDI CON LA TUA CREATURA.', moves: ['ruggito', 'passogigante', 'telepilo', 'masso'] },
+      { at: 0.6, name: 'Il masso sopra la testa', line: 'LE NAVI DI ULISSE NON SONO ARRIVATE A CASA. NEMMENO TU.', angry: 'SENTO LE MIE PIETRE NELLA TUA BORSA, LADRO.', afterRescue: 'BENE. GUARDA DOVE CADE L’OMBRA DEL MASSO. LA TUA CREATURA SA GIÀ DOVE ANDARE.', moves: ['naufragio', 'furia', 'passogigante', 'telepilo'] },
+      { at: 0.3, name: 'L\'ira dei Lestrigoni', line: 'BASTA! TREMATE TUTTI, DALLE MURA AL MARE!', angry: 'RIDAMMELE! TREMATE TUTTI, DALLE MURA AL MARE!', afterRescue: 'AVETE RETTO FIN QUI. ADESSO CI METTO TUTTO IL PESO DELLE MURA.', moves: ['naufragio', 'furia', 'masso', 'ruggito'], self: ['atkUp'] }
     ],
     angry: { more: 2, way: ['Le nicchie sono vuote, e la pietra intorno è spaccata: qualcuno l\'ha presa a pugni da dentro.', 'Sotto le mura si apre una scala che scende. Dal fondo arriva un ruggito, e le pietre nella tua borsa scottano.'] },
     end: {

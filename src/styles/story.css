@@ -227,10 +227,38 @@ div.pick { cursor: default; }
 @media (prefers-reduced-motion: reduce) { .phone, .ph-msg, .ph-chip.ph-away.go, .ph-msg.typing .ph-b i { animation: none; } }
 
 /* ---------- the prologue: the night before (ui/story-screen.ts, 13 November 2026) ---------- */
-.overlay.prologo-bg { background: radial-gradient(120% 90% at 50% 120%, #1a2350 0%, #05060d 70%); align-items: center; }
-.prologo { width: min(100% - 40px, 620px); display: flex; flex-direction: column; gap: 18px; text-align: center; color: #e9ecff; }
-.prologo p { margin: 0; font: 19px/1.5 var(--font-body); opacity: 0; animation: pr-in 1.6s ease forwards; animation-delay: var(--d); text-shadow: 0 0 18px rgba(140, 160, 255, .35); }
+.overlay.prologo-bg { background: radial-gradient(120% 90% at 50% 120%, #1a2350 0%, #05060d 70%); align-items: center; overflow: hidden; }
+.prologo { position: relative; isolation: isolate; width: min(100% - 40px, 620px); display: flex; flex-direction: column; gap: 18px; text-align: center; color: #e9ecff; }
+.prologo p { margin: 0; font: 19px/1.5 var(--font-body); opacity: 0; animation: pr-in 1.6s ease forwards; animation-delay: var(--d); text-shadow: 0 1px 3px #05060d, 0 0 12px #05060d; }
 .prologo p:first-child { font: 26px/1.2 var(--font-display); letter-spacing: .04em; color: #ffd166; }
+.prologo-lamo {
+  position: absolute; z-index: -1; left: 50%; top: 47%; width: min(104vw, 100dvh, 760px); max-width: none; height: auto;
+  transform: translate(-50%, -50%); pointer-events: none; opacity: 0;
+  filter: brightness(.69);
+  mask-image: linear-gradient(#000 38%, #000d 58%, transparent 95%);
+  animation: prologo-shadow 4.9s var(--d) ease-in-out both;
+}
 .prologo .btn { align-self: center; margin-top: 10px; opacity: 0; animation: pr-in 1s ease forwards; animation-delay: var(--d); }
 @keyframes pr-in { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
-@media (prefers-reduced-motion: reduce) { .prologo p, .prologo .btn { animation: none; opacity: 1; } }
+@keyframes prologo-shadow {
+  from { transform: translate(-50%, -47%) scale(.98); }
+  39%, 61% { opacity: .83; }
+  to { transform: translate(-50%, -52%); }
+}
+@media (min-width: 960px) and (min-height: 540px) {
+  .prologo { width: min(49vw, 620px); margin-right: 27vw; }
+  .prologo-lamo { left: calc(50% + 34vw); top: 52%; }
+}
+@media (max-width: 480px) and (min-height: 660px) {
+  .prologo-lamo { position: fixed; top: 55vw; }
+}
+@media (max-height: 420px) {
+  .overlay.prologo-bg { align-items: safe center; overflow-y: auto; }
+  .prologo { gap: 9px; padding-block: 10px; }
+  .prologo p { font-size: 16px; }
+  .prologo p:first-child { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prologo p, .prologo .btn { animation: none; opacity: 1; }
+  .prologo-lamo { animation: none; opacity: .57; }
+}

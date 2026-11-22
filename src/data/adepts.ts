@@ -40,11 +40,11 @@ export const ADEPTS: Record<string, Trainer> = {
     ['Andrea è il mio relatore. Mi ha detto: chi sale va campionato. Tu sei il mio campione.', 'Il 100% di quelli che passano di qui lotta con me.'], ['Il campione era troppo piccolo.'], ['Significativo!'], ['p < 0,05: sei forte.']),
   giocatore: A('giocatore', 'padel', 'Il giocatore d\'azzardo', [{ sp: 'granchietto', lv: 3 }, { sp: 'micetto', lv: 3 }],
     ['Ho scommesso con Andrea che nessuno arriva alla seconda porta. Se arrivi, perdo tutto.', 'Quindi non ci arrivi. Tutto sul rosso: cioè, su questa lotta.'], ['Ho perso. Come sempre. Statisticamente.'], ['Ho vinto! La prima volta in vita mia.'], ['La prossima volta punto su di te.']),
-  /* Forchetta's courts */
-  raccattapalle: A('raccattapalle', 'circolo', 'Il raccattapalle', [{ sp: 'ramarrino', lv: 4 }, { sp: 'riccetto', lv: 3 }],
-    ['Forchetta palleggia da dodici ore. Se sbaglia una palla, dicono, l\'eco lo lascia andare. Ma lui non sbaglia mai, e noi raccattiamo.', 'Nessuno disturba il campo: è la regola del circolo. Prima giochi con me.'], ['Palla fuori. La mia.'], ['Quindici a zero.'], ['Occhio alla terra rossa: dove è più scura, scivola.'], 20),
-  maestro: A('maestro', 'circolo', 'Il maestro del circolo', [{ sp: 'lumacotta', lv: 3 }, { sp: 'ramarrino', lv: 2 }],
-    ['Forchetta è il mio allievo migliore. Questo palleggio è la partita della sua vita: non lo interrompe nessuno.', 'La terra rossa stanotte è diventata ghiaccio. Ma prima: lezione pratica.'], ['Lezione imparata. Da me.'], ['Lezione numero due: riprovare.'], ['Su per la terra asciutta: a sinistra, poi dritto.']),
+  /* Forchetta's courts, his atelier and his lab: the model of his portrait, the technician of his prostheses, the umpire */
+  raccattapalle: A('raccattapalle', 'circolo', 'Il modello in posa', [{ sp: 'ramarrino', lv: 4 }, { sp: 'riccetto', lv: 3 }],
+    ['Forchetta mi fa il ritratto tra un palleggio e l\'altro, da dodici ore. Se sbaglia una pennellata, dicono, l\'eco lo lascia andare. Ma lui non sbaglia mai.', 'Io non mi posso muovere: se passi, mi muovo. Quindi prima giochi con me.'], ['Mi sono mosso. Il ritratto ricomincia da capo…'], ['Fermo così. Perfetto.'], ['Occhio alla terra rossa: dove è più scura, scivola. E non toccare le tele, sono fresche.'], 20),
+  maestro: A('maestro', 'circolo', 'La tecnica di laboratorio', [{ sp: 'lumacotta', lv: 3 }, { sp: 'ramarrino', lv: 2 }],
+    ['Forchetta stanotte ha stampato in 3D una protesi per ogni raccattapalle. Adesso palleggiano anche loro, e non si fermano più.', 'Prima di toccare la stampante, una prova pratica. Con le creature.'], ['Prova superata. La stampante è tua.'], ['Prova da ripetere. Ricalibra.'], ['Su per la terra asciutta: a sinistra, poi dritto.']),
   giudice: A('giudice', 'circolo', 'Il giudice di sedia', [{ sp: 'riccetto', lv: 3 }, { sp: 'lumacotta', lv: 2 }],
     ['Il match è ancora in corso: finché non finisce, il campo è chiuso. Lo dice il regolamento.', 'Si entra in campo solo battendo l\'arbitro. Silenzio, prego.'], ['Gioco, partita… e incontro a te.'], ['Fallo di piede. Riprova.'], ['Forchetta è dall\'altra parte della rete.']),
   /* Valentin's tower: the Carpathians */

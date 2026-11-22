@@ -9,11 +9,15 @@ describe('a story to take away and bring back', () => {
     s.mons = [{ uid: 'c1', sp: 'polpetto', nick: 'Polpo', bond: 60, moves: ['scintilla'] }];
     s.lv = { valentin: { lv: 9, xp: 12 }, c1: { lv: 11, xp: 3 } };
     s.money = 120; s.bag = { retino: 3 }; s.badges = ['pin-costanzo']; s.seen.intro = true; s.lead = 'c1';
+    s.rivalFriend = 'claudia';
+    s.chats = { 'spilla-1': { at: 1760130000000, lines: [['costanzo', 'Sono tornato.']], reply: 'Ci vediamo fuori' } };
     const code = toCode(s);
     expect(code.startsWith(CODE_PREFIX)).toBe(true);
     const back = fromCode(code);
     expect('story' in back && back.story).toEqual(cleanStory(JSON.parse(JSON.stringify(s))));
     expect('story' in back && back.story.mons![0]).toMatchObject({ uid: 'c1', sp: 'polpetto', nick: 'Polpo', bond: 60 });
+    expect('story' in back && back.story.chats).toEqual(s.chats);
+    expect('story' in back && back.story.rivalFriend).toBe('claudia');
   });
   it('says why a code is not a story', () => {
     expect(fromCode('ciao')).toHaveProperty('why');

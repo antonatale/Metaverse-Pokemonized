@@ -97,7 +97,7 @@ describe('Nicola’s van', () => {
   });
   it('keeps the first straight on the Appia centred through every side street', () => {
     const m = prepare('formia'), offsets = [];
-    for (let x = 164; x <= 214; x++) offsets.push(roadShift(m, x, 46, 'left').dy);
+    for (let x = 194; x <= 244; x++) offsets.push(roadShift(m, x, 46, 'left').dy);
     expect(new Set(offsets).size).toBe(1);
   });
 });

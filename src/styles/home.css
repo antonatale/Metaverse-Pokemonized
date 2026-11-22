@@ -1,12 +1,11 @@
-/* ---------- the title (ui/home.ts): full screen, Formia from above behind it, an intro to skip, the way in ---------- */
+/* ---------- the title (ui/home.ts): full screen, the illustrated gulf, an intro to skip, the way in ---------- */
 #home { position: fixed; inset: 0; z-index: 1; overflow: hidden; background: #0e1430; color: #ffffff; }
 #home[hidden] { display: none; }
 .ti-bg { position: absolute; inset: 0; overflow: hidden; }
-.ti-map { position: absolute; inset: -7%; animation: tiPan 70s ease-in-out infinite alternate; }
-.ti-map canvas { display: block; width: 100%; height: 100%; }
-@keyframes tiPan { from { transform: scale(1.03) translate(-1.6%, -1.2%); } to { transform: scale(1.12) translate(1.6%, 1.4%); } }
+.ti-art { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .ti-shade { position: absolute; inset: 0; transition: background-color 1.2s ease;
-  background: radial-gradient(ellipse 46% 26% at 50% 40%, rgba(14, 20, 48, .5), rgba(14, 20, 48, 0) 100%), radial-gradient(ellipse 70% 60% at 50% 42%, rgba(14, 20, 48, .22), rgba(14, 20, 48, .82) 100%), linear-gradient(180deg, rgba(255, 140, 80, .28), rgba(14, 20, 48, 0) 38%, rgba(14, 20, 48, .6)); }
+  background: radial-gradient(ellipse 60% 35% at 50% 40%, rgba(14, 20, 48, .16), transparent 100%), linear-gradient(180deg, rgba(14, 20, 48, .08), transparent 45%, rgba(14, 20, 48, .65)); }
+@media (max-aspect-ratio: 4/3) { .ti-art { object-position: min(4%, 44px) center; } }
 #home.intro .ti-shade { background-color: rgba(8, 10, 26, .82); }
 
 /* the intro: three lines, one after the other, then the name */

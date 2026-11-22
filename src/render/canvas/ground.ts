@@ -1,10 +1,10 @@
 import { covoProp } from './covo';
-import type { Ground, GroundObject } from '../../data/maps/types';
+import type { Ground, GroundObject, MapDef } from '../../data/maps/types';
 import type { Palette } from './palette';
 import { T, mk, rr, hash, fillStroke, circle, ell, poly, blobs, type Ctx } from './draw';
 
 /** what the ground painter needs of a map (the story mode prepares it) */
-export interface GroundMap { w: number; h: number; cell(x: number, y: number): Ground; groundObjects?: GroundObject[] }
+export interface GroundMap { w: number; h: number; cell(x: number, y: number): Ground; groundObjects?: GroundObject[]; roadLines?: MapDef['roadLines'] }
 /** a piece of the map, in tiles */
 export interface Rect { x: number; y: number; w: number; h: number }
 type DecoFn = (c: Ctx, X: number, Y: number, P: Palette, x: number, y: number, map: GroundMap) => void;
@@ -244,6 +244,18 @@ function texture(c: Ctx, map: GroundMap, P: Palette, x: number, y: number) {
     }
     if (r < 0.2) { ell(c, X + 8 + r * 70, Y + 24, 3.6, 2.4); fillStroke(c, P.rock, P.ink, 1.1); }
     c.globalAlpha = 1;
+  } else if (L.g === 'steps' && L.deco === 'gradoni') {
+    /* the stone stairs of Castellone: four treads of grey stone, each with its worn edge and the riser in shadow */
+    for (k = 0; k < 4; k++) {
+      var sy = Y + k * 8;
+      c.fillStyle = P.stone; c.fillRect(X, sy, T, 8);
+      c.fillStyle = P.shadow; c.fillRect(X, sy + 5.5, T, 2.5);
+      c.strokeStyle = P.stone2; c.lineWidth = 1; c.beginPath(); c.moveTo(X, sy + 5.5); c.lineTo(X + T, sy + 5.5); c.stroke();
+      c.strokeStyle = P.stone2; c.lineWidth = 0.7; c.beginPath();
+      for (var j2 = 0; j2 < 3; j2++) { var jx = X + 4 + hash(x * 4 + k, y * 3 + j2, 31) * (T - 8); c.moveTo(jx, sy + 0.5); c.lineTo(jx + (hash(x, y * 4 + k, 32 + j2) - 0.5) * 2, sy + 5); }
+      c.stroke();
+    }
+    c.strokeStyle = P.ink; c.globalAlpha = 0.35; c.lineWidth = 1; c.beginPath(); c.moveTo(X + 0.5, Y); c.lineTo(X + 0.5, Y + T); c.moveTo(X + T - 0.5, Y); c.lineTo(X + T - 0.5, Y + T); c.stroke(); c.globalAlpha = 1;
   } else if (L.g === 'steps') {
     c.fillStyle = P.shadow;
     for (k = 1; k < 4; k++) c.fillRect(X + 1, Y + k * 8, T - 2, 2.5);
@@ -423,6 +435,18 @@ export function paintGround(map: GroundMap, P: Palette, s: number, rect?: Rect):
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) texture(c, map, P, x, y);
   outlines(c, map, P, x0, y0, x1, y1);
   relief(c, map, P, x0, y0, x1, y1);
+  for (const road of map.roadLines || []) {
+    // Keep the dash phase continuous across turns and between cached map chunks.
+    const points = road.pts.map(([x, y]) => [(x + road.w / 2) * T, (y + road.w / 2) * T]);
+    c.save(); c.strokeStyle = P.line; c.lineWidth = 2.7; c.setLineDash([15, 12]);
+    c.beginPath(); c.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length - 1; i++) {
+      const [x, y] = points[i], [nx, ny] = points[i + 1];
+      c.arcTo(x, y, nx, ny, T * 0.46);
+    }
+    const end = points[points.length - 1];
+    c.lineTo(end[0], end[1]); c.stroke(); c.restore();
+  }
   /* low decorations, drawn flat into the ground */
   for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
     L = map.cell(x, y);
@@ -436,17 +460,13 @@ export function paintGround(map: GroundMap, P: Palette, s: number, rect?: Rect):
   return cv;
 }
 
-/** the blades of tall grass in front of someone standing in it, drawn over their feet (X, Y: the tile's corner) */
-export function tallFront(c: Ctx, X: number, Y: number, P: Palette) {
-  for (var k = 0; k < 3; k++) {
-    var bx = X + 6 + k * 10, by = Y + T + 1;
-    c.beginPath();
-    c.moveTo(bx - 5, by); c.quadraticCurveTo(bx - 4, by - 5, bx - 6, by - 9); c.quadraticCurveTo(bx - 1, by - 5, bx, by - 12);
-    c.quadraticCurveTo(bx + 2, by - 5, bx + 6, by - 9); c.quadraticCurveTo(bx + 4, by - 4, bx + 5, by); c.closePath();
-    fillStroke(c, k % 2 ? P.leaf2 : P.hedge, P.ink, 1.2);
-  }
-}
+/** the long blades of the tall grass in a still picture of the map (the overview, the town map): set by
+    render/tall-grass.ts while such a picture is painted; the live map draws them at every frame instead */
+export let tallStill: DecoFn | null = null;
+export function setTallStill(f: DecoFn | null) { tallStill = f; }
 const DECO: Record<string, DecoFn> = {
+  /* the stone stairs of Castellone are drawn with the ground itself (paintTile, 'steps') */
+  gradoni: function () { /* nothing over them */ },
   /* a retaining wall and a ledge are faces of a terrace: they are drawn with the relief */
   wall: function () { /* see scarp */ },
   tartan: function () { /* see GROUND_OBJ.track */ },
@@ -468,15 +488,42 @@ const DECO: Record<string, DecoFn> = {
     for (var k = 0; k < 3; k++) { ell(c, X + 5 + hash(x, y, 160 + k) * 22, Y + 5 + hash(x, y, 170 + k) * 22, 3 + hash(x, y, 180 + k) * 2, 2); c.fillStyle = P.stone; c.fill(); }
     c.globalAlpha = 1;
   },
-  /* tall grass, where the wild creatures hide: four tufts of long blades that fill the tile */
-  tall: function (c, X, Y, P, x, y) {
-    for (var k = 0; k < 4; k++) {
-      var bx = X + 8 + (k % 2) * 15 + (hash(x, y, 130 + k) - 0.5) * 4, by = Y + 15 + Math.floor(k / 2) * 14 + hash(x, y, 140 + k) * 2;
-      c.beginPath();
-      c.moveTo(bx - 6, by + 1); c.quadraticCurveTo(bx - 5, by - 6, bx - 8, by - 11); c.quadraticCurveTo(bx - 2, by - 6, bx - 1, by - 14);
-      c.quadraticCurveTo(bx + 2, by - 6, bx + 7, by - 11); c.quadraticCurveTo(bx + 5, by - 5, bx + 6, by + 1); c.closePath();
-      fillStroke(c, k % 3 ? P.hedge : P.leaf2, P.ink, 1.2);
+  /* tall grass, where the wild creatures hide: the bed of the patch, a mat of dark meadow joined with the tiles of the
+     same patch, the pen line only around the patch, short blades in it. The long blades over it lean with the wind and
+     part around whoever walks in (render/tall-grass.ts); in a still picture of the map they are drawn here instead */
+  tall: function (c, X, Y, P, x, y, map) {
+    var is = function (a: number, b: number) { return map.cell(a, b).deco === 'tall'; };
+    var up = is(x, y - 1), dn = is(x, y + 1), lf = is(x - 1, y), rt = is(x + 1, y), R = 10;
+    var x0 = X + (lf ? 0 : 3), x1 = X + T - (rt ? 0 : 3), y0 = Y + (up ? 0 : 5), y1 = Y + T - (dn ? 0 : 2);
+    var tl = !up && !lf ? R : 0, tr = !up && !rt ? R : 0, br = !dn && !rt ? R : 0, bl = !dn && !lf ? R : 0;
+    c.beginPath();
+    c.moveTo(x0 + tl, y0); c.lineTo(x1 - tr, y0); if (tr) c.arcTo(x1, y0, x1, y0 + tr, tr);
+    c.lineTo(x1, y1 - br); if (br) c.arcTo(x1, y1, x1 - br, y1, br);
+    c.lineTo(x0 + bl, y1); if (bl) c.arcTo(x0, y1, x0, y1 - bl, bl);
+    c.lineTo(x0, y0 + tl); if (tl) c.arcTo(x0, y0, x0 + tl, y0, tl);
+    c.closePath();
+    var g = c.createLinearGradient(0, Y, 0, Y + T);
+    g.addColorStop(0, P.hedge); g.addColorStop(1, P.leaf2);
+    c.fillStyle = g; c.globalAlpha = 0.92; c.fill(); c.globalAlpha = 1;
+    /* the pen line round the patch: only where it ends */
+    c.strokeStyle = P.ink; c.lineWidth = 1.5; c.beginPath();
+    if (!up) { c.moveTo(x0 + tl, y0); c.lineTo(x1 - tr, y0); }
+    if (tr) { c.moveTo(x1 - tr, y0); c.arcTo(x1, y0, x1, y0 + tr, tr); }
+    if (!rt) { c.moveTo(x1, y0 + tr); c.lineTo(x1, y1 - br); }
+    if (br) { c.moveTo(x1, y1 - br); c.arcTo(x1, y1, x1 - br, y1, br); }
+    if (!dn) { c.moveTo(x1 - br, y1); c.lineTo(x0 + bl, y1); }
+    if (bl) { c.moveTo(x0 + bl, y1); c.arcTo(x0, y1, x0, y1 - bl, bl); }
+    if (!lf) { c.moveTo(x0, y1 - bl); c.lineTo(x0, y0 + tl); }
+    if (tl) { c.moveTo(x0, y0 + tl); c.arcTo(x0, y0, x0 + tl, y0, tl); }
+    c.stroke();
+    /* the stubble of the bed, darker at the back of each tuft */
+    c.lineWidth = 1.1;
+    for (var k = 0; k < 9; k++) {
+      var bx = x0 + 3 + hash(x, y, 130 + k) * (x1 - x0 - 6), by = y0 + 6 + hash(x, y, 140 + k) * (y1 - y0 - 7), lean = (hash(x, y, 150 + k) - 0.5) * 4;
+      c.strokeStyle = k % 3 ? P.grass3 : P['grass-hi'];
+      c.beginPath(); c.moveTo(bx, by); c.quadraticCurveTo(bx + lean * 0.3, by - 3, bx + lean, by - 6); c.stroke();
     }
+    if (tallStill) tallStill(c, X, Y, P, x, y, map);
   },
   /* the scogli of the beach, where the wild creatures of the sea hide: slabs of grey limestone, flat on top and dark
      on their south side, with the pools of sea water between them, an urchin, a starfish, now and then a little crab */
@@ -708,9 +755,13 @@ const DECO: Record<string, DecoFn> = {
     if (st(x, y - 1)) c.fillRect(X, Y - 0.8, T, 1.6);
     c.globalAlpha = 1;
   },
-  zebra: function (c, X, Y, P) {
+  zebra: function (c, X, Y, P, x, y, map) {
+    const across = [x - 1, x + 1].some(nx => nx >= 0 && nx < map.w && map.cell(nx, y).deco === 'zebra');
+    c.save();
+    if (across) { c.translate(X + T, Y); c.rotate(Math.PI / 2); X = 0; Y = 0; }
     c.fillStyle = P.line;
     for (var k = 0; k < 3; k++) { rr(c, X + 4, Y + 3 + k * 10, T - 8, 5, 1); c.fill(); }
+    c.restore();
   },
   /* a sunbed of the lido, seen from above, with its towel */
   lounger: function (c, X, Y, P, x, y) {

@@ -41,7 +41,7 @@ export const QUIZZES: Record<string, Quiz> = {
     { q: 'Che nome si è dato ufficialmente Kanye nel 2021?', a: ['Ye', 'Yeezus', 'Pablo'], why: 'Ye: lo ha cambiato all\'anagrafe.' }
   ] },
   /* Costanzo's palace, the first door: the Constitution */
-  costituzione: { id: 'costituzione', trainer: 'presidente-seggio', ask: 3, wrong: 'Risposta errata. Il seggio non può accettarla.', ok: ['Promosso all\'esame. La tessera è valida: si passa.'], pool: [
+  costituzione: { id: 'costituzione', trainer: 'presidente-seggio', ask: 3, wrong: 'Risposta errata. Il seggio non può accettarla.', ok: ['Esame superato. Puoi prendere la parola.'], pool: [
     { q: 'In che anno è entrata in vigore la Costituzione italiana?', a: ['1948', '1946', '1861'], why: 'Il 1º gennaio 1948.' },
     { q: 'Con il referendum del 2 giugno 1946 gli italiani hanno scelto…', a: ['la Repubblica', 'la Monarchia', 'il voto alle donne'], why: 'La Repubblica. Le donne votavano già quel giorno, per la prima volta in un voto nazionale.' },
     { q: 'Quanti articoli ha la Costituzione, senza le disposizioni finali?', a: ['139', '100', '250'], why: '139 articoli.' },

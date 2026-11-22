@@ -64,9 +64,7 @@ test('sound is on by default, starts with the first tap, and switching it off is
   expect(await osc()).toBe(0);                                  /* nothing before a gesture */
   /* the first tap on the title: the saves */
   await page.click('#go-slots');
-  await page.waitForTimeout(800);
-  const playing = await osc();
-  expect(playing, 'the home music started').toBeGreaterThan(5);
+  await expect.poll(osc, { message: 'the home music started' }).toBeGreaterThan(5);
   await sw.click();
   await expect(sw).toHaveAttribute('aria-pressed', 'false');
   expect(await page.evaluate(() => localStorage.getItem('lotte-tra-amici:audio:v1'))).toBe('{"v":1,"on":false}');
@@ -74,6 +72,8 @@ test('sound is on by default, starts with the first tap, and switching it off is
   const after = await osc();
   await page.waitForTimeout(800);
   expect(await osc(), 'silence once switched off').toBe(after);
+  await page.evaluate(() => localStorage.setItem('lotte-tra-amici:storia:v1', JSON.stringify({ v: 1, map: 'formia', x: 215, y: 42, dir: 'down',
+    badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true } })));
   await page.reload();
   await expect(page.locator('#home .snd')).toHaveAttribute('aria-pressed', 'false');
   await goStory(page);
@@ -81,7 +81,6 @@ test('sound is on by default, starts with the first tap, and switching it off is
   expect(await osc(), 'still silent after a reload').toBe(0);
   /* back on from the map's bar: the music of the place plays */
   await page.click('.whud .snd');
-  await page.waitForTimeout(800);
-  expect(await osc()).toBeGreaterThan(5);
+  await expect.poll(osc).toBeGreaterThan(5);
   expect(await page.evaluate(() => localStorage.getItem('lotte-tra-amici:audio:v1'))).toBe('{"v":1,"on":true}');
 });

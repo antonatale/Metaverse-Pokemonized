@@ -99,6 +99,25 @@ export function cleanStory(raw: unknown): StoryProgress | null {
   if (leads) { s.leads = {}; Object.keys(leads).forEach(function (k) { const u = leads[k]; if (isFriendId(k) && typeof u === 'string' && seenUid[u]) s.leads![k] = u; }); }
   if (isFriendId(r.first)) s.first = r.first;
   if (isSpecies(r.rival)) s.rival = r.rival;
+  if (isFriendId(r.rivalFriend)) s.rivalFriend = r.rivalFriend;
+  const chats = obj(r.chats);
+  if (chats) {
+    s.chats = {};
+    for (const id of Object.keys(chats).slice(0, 100)) {
+      const entry = obj(chats[id]), at = entry && int(entry.at, 0, 4102444800000);
+      if (!ID.test(id) || !entry || at == null) continue;
+      const chat: NonNullable<StoryProgress['chats']>[string] = { at };
+      if (typeof entry.reply === 'string') chat.reply = entry.reply.slice(0, 160);
+      if (typeof entry.won === 'boolean') chat.won = entry.won;
+      if (Array.isArray(entry.lines)) {
+        chat.lines = [];
+        for (const line of entry.lines.slice(0, 20)) {
+          if (Array.isArray(line) && isFriendId(line[0]) && typeof line[1] === 'string') chat.lines.push([line[0], line[1].slice(0, 500)]);
+        }
+      }
+      s.chats[id] = chat;
+    }
+  }
   const books = int(r.books, 0, 99); if (books != null) s.books = books;
   const at = int(r.at, 0, 4102444800000); if (at != null) s.at = at;
   return s;

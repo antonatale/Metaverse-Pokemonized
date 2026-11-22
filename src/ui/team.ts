@@ -1,7 +1,7 @@
 import { st, save } from '../save/story-progress';
 import { beatersOf, isPersonType, type TypeName } from '../data/types';
 import { fighter } from '../data/fighters';
-import type { FriendId } from '../data/characters';
+import { ROSTER, type FriendId } from '../data/characters';
 import { PATHS, formAt, isFriend, withForm } from '../data/people';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
 import { SKILLS, WARES, SHOPS, MANUALS, marketToday, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
@@ -20,6 +20,7 @@ import { say, sheet, closeSheet, renderHud, mentorTip } from './story-screen';
 import { sfx } from '../audio';
 import { setPace } from '../story/movement';
 import { rivalFor } from '../story/rival';
+import { creaturesMissing } from '../story/finale';
 import { ABILITIES, HELD, type HeldId } from '../data/passives';
 
 /* Antonio's team on the story screen: the first creature, who goes into battle, what a battle brings (experience,
@@ -350,17 +351,20 @@ function slotsHtml(keys: string[], max: number): string {
 }
 export function teamHtml(): string {
   /* who is played, alone: nobody joins the company any more (8 November). An old save with friends in it still opens,
-     and they stay in st.squad, but the menu shows only who is played */
-  var people = [firstHuman()], mons = teamMons().map(function (m) { return m.uid; }), home = homeMons().length;
+     and they stay in st.squad. At Telepilo the seven friends are temporarily together. */
+  const rescue = creaturesMissing();
+  var people = rescue ? ROSTER : [firstHuman()], mons = teamMons().map(function (m) { return m.uid; }), home = homeMons().length;
   return '<div class="teams">' +
     /* who is played: he steps in last when his creatures are down, in a covo too */
-    '<section class="party people"><div class="party-h">' + ico('users') + '<h3>' + esc(nameOf(firstHuman())) + '</h3><small>scende in campo per ultimo</small></div>' +
+    '<section class="party people"><div class="party-h">' + ico('users') + (rescue ? '<h3>Il caminetto</h3><small>Sette amici verso Telepilo</small>'
+      : '<h3>' + esc(nameOf(firstHuman())) + '</h3><small>scende in campo per ultimo</small>') + '</div>' +
     '<ul class="team">' + people.map(memberRow).join('') + '</ul></section>' +
     /* the creatures: up to six travel with him, the others wait at home; they fight creatures */
     '<section class="party mons"><div class="party-h">' + ico('paw') + '<h3>Le creature di ' + esc(nameOf(firstHuman())) + '</h3><small>' + mons.length + ' su ' + TEAM_MAX + '</small>' + slotsHtml(mons, TEAM_MAX) + '</div>' +
     (mons.length ? '<ul class="team">' + mons.map(memberRow).join('') + '</ul>' : '') +
-    (st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola la guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
-    (home || M.id.indexOf('casa') === 0 ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
+    (rescue ? '<p class="hint">Mamurra ha rapito tutte le creature, anche quelle rimaste a casa. Il Visore indica il passaggio sotto le mura di Castellone.</p>'
+      : st.seen.starter ? '' : '<p class="hint">Al Parco di Gianola la guardaparco cerca qualcuno a cui affidare un cucciolo.</p>') +
+    (!rescue && (home || M.id.indexOf('casa') === 0) ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
       (M.id.indexOf('casa') === 0 ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
     '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + bagList().map(function (it) {

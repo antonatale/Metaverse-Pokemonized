@@ -1,6 +1,6 @@
 import type { Area, Building, GroundObject, LostItem, MapDef, MapObject, Npc, Sign, Dir } from './types';
 import { FORMIA_ROWS, FORMIA_AT, FORMIA_SPOT, FORMIA_TUNNELS, FORMIA_HOUSES } from './formia-ground';
-import { PLACES } from './formia-places';
+import { PLACES, LITORANEA, PINETA_COSTIERA } from './formia-places';
 import { tile, W, H } from './formia-projection';
 
 /* Formia as it is, made playable: the coast and the green come from OpenStreetMap, the streets are drawn by hand on the
@@ -53,10 +53,10 @@ const ROOFS = ['#ff9a8b', '#9ec5ff', '#ffd166', '#c3a6ff', '#ff9a8b', '#ffd166']
    data/growth.ts), at the shop fronts the generator leaves along the streets; the other shop fronts are homes. No shop
    bears the name of a private person: the names are of the places (Largo Paone, Mola) or of what they are */
 const SHOPS: { at: [number, number]; kind: string; label: string; shop: string; msg: string[] }[] = [
-  { at: [129, 61], kind: 'pharmacy', label: 'FARMACIA', shop: 'farmacia', msg: ['Farmacia S. Anna, in piazza Tommaso Testa. La croce verde è accesa.'] },
-  { at: [116, 64], kind: 'bookshop', label: 'LIBRERIA', shop: 'libreria', msg: ['La libreria. In vetrina, un libro su Cicerone e uno su Mennea.'] },
-  { at: [138, 67], kind: 'fishmonger', label: 'PESCHERIA', shop: 'pescheria', msg: ['La pescheria di Mola, accanto a Morgana: il pesce arriva la mattina dalle barche del borgo.'] },
-  { at: [93, 74], kind: 'newsstand', label: 'EDICOLA', shop: 'edicola', msg: ['L\'edicola. Il giornale di oggi è appeso davanti.'] }
+  { at: [159, 61], kind: 'pharmacy', label: 'FARMACIA', shop: 'farmacia', msg: ['Farmacia S. Anna, in piazza Tommaso Testa. La croce verde è accesa.'] },
+  { at: [146, 64], kind: 'bookshop', label: 'LIBRERIA', shop: 'libreria', msg: ['La libreria. In vetrina, un libro su Cicerone e uno su Mennea.'] },
+  { at: [168, 67], kind: 'fishmonger', label: 'PESCHERIA', shop: 'pescheria', msg: ['La pescheria di Mola, accanto a Morgana: il pesce arriva la mattina dalle barche del borgo.'] },
+  { at: [104, 74], kind: 'newsstand', label: 'EDICOLA', shop: 'edicola', msg: ['L\'edicola. Il giornale di oggi è appeso davanti.'] }
 ];
 /** each shop takes the shop front the generator left nearest to its place (a house of the shops, or a palazzo of a
     cortina with a shop below); no two take the same one */
@@ -116,6 +116,7 @@ const buildings: Building[] = [
   building('ospedale', { label: 'OSPEDALE DONO SVIZZERO', msg: ['Ospedale «Dono Svizzero», in via Appia Lato Napoli: il presidio ospedaliero sud della ASL di Latina.', '«Dono svizzero» si chiamavano gli aiuti che la Svizzera mandò alle vittime della guerra.', 'Il pronto soccorso è aperto. Per fortuna, oggi non ti serve.'] }),
   building('san-michele', { msg: ['L\'eremo di San Michele Arcangelo, dentro una cavità della roccia: è ricordato già nell\'830.', 'La facciata con il rosone e il portale a sesto acuto è del 1895.', 'Una tradizione dice che la statua del santo stesse prima in una grotta di Gianola, giù al mare.'] }),
   building('castello-miramare', { label: 'CASTELLO MIRAMARE', v: 34, msg: ['Il Castello Miramare, sulla collina sopra la stazione.', 'Sembra un castello, con le torrette: è un albergo, e dalla terrazza si vede tutto il golfo.'] }),
+  building('convento-irlanda', { label: 'VILLA IRLANDA', msg: ['Il Convento di Villa Irlanda, a Gaeta. Qui i novizi del Collegio Irlandese passavano parte dell’anno. Oggi il convento fa parte dell’albergo.'] }),
   building('villa-rubino', { label: 'VILLA RUBINO', v: 52, msg: ['Villa Rubino, a Caposele: fu la residenza d\'estate di Ferdinando II di Borbone.', 'Sotto ci sono i resti di una villa romana sul mare: la tradizione dice che fosse di Cicerone.', 'Il cancello è chiuso: è una casa privata.'] }),
   building('palamendola', { label: 'PALAMENDOLA', msg: ['Il Palamendola, il palazzetto dello sport di via Amendola.', 'Dentro si sentono i palloni rimbalzare.'] }),
   building('zauli', { label: 'CENTRO OLIMPICO', msg: ['Centro di Preparazione Olimpica «Bruno Zauli»: più di venti sport, all\'aperto e al coperto.', 'Si entra solo con il tesserino.'] }),
@@ -131,14 +132,21 @@ const buildings: Building[] = [
   building('stazione', { gate: 'torino' }),
   building('comune', { label: 'COMUNE · MUSEO', msg: ['Museo archeologico nazionale di Formia, nell\'ala sud del Palazzo comunale.', 'Due statue togate conservano ancora tracce del loro colore: le statue antiche erano dipinte.', 'Oggi è chiuso.'] }),
   building('forno', { label: 'FORNO', awning: '#ffd166', roof: '#ff9a8b', msg: ['Il forno di Castellone. Profumo di tiella: di polpo, di scarola, di cipolle.'], shop: 'forno' }),
+  building('santa-teresa', { msg: ['Chiesa di Santa Teresa, accanto al Comune: era la chiesa del convento dei Carmelitani, che oggi è il Palazzo comunale.', 'Davanti, piazza Marconi e la gelateria Lavezzi.'] }),
   building('erasmo', { msg: ['Chiesa di Sant\'Erasmo, patrono di Formia e protettore dei marinai, morto qui il 2 giugno del 303.', 'Sotto la chiesa gli scavi hanno trovato una necropoli romana, la sua tomba e una cripta carolingia.'] }),
   building('eclipse', { label: 'ECLIPSE', msg: ['Eclipse beach, via Tito Scipione 58.', 'Ombrelloni, gazebo, lettini, beach volley. E il windsurf con Nicola Spadea.'] }),
   building('scogliera', { label: 'LA SCOGLIERA', msg: ['Lido La Scogliera, in fondo a Vindicio, verso Gaeta.'] }),
+  /* the first two lidi of the lungomare, at the Formia end of via Tito Scipione, before the pineta (spiagge.it) */
+  building('frungillo', { label: 'FRUNGILLO', msg: ['Lido Frungillo, via Tito Scipione 3: il primo lido del lungomare, accanto alla pineta.', 'Bar, ombrelloni, l\'area giochi per i bambini e, d\'estate, l\'animazione. Il bagnino non si muove dalla torretta.'] }),
+  building('bodeguita', { label: 'BODEGUITA DEL MAR', msg: ['Il Bodeguita del Mar, il chiosco della pineta di Vindicio. I tavolini sono sotto gli ombrelloni di paglia.'] }),
+  building('bandiera', { label: 'BANDIERA', msg: ['Lido Bandiera, via Tito Scipione 7.', 'Il ristorante col pesce del giorno, beach volley, beach soccer e i pedalò.'] }),
   building('oriente', { label: 'LIDO ORIENTE', msg: ['Lido Oriente, sul lungomare di Formia che va verso Gianola: si chiama lungomare Città di Ferrara, al numero 128.', 'Uno stabilimento di famiglia: bar, ristorante con il pesce del giorno, canoe e pedalò, beach volley e beach soccer.'] })
 ].concat(houses);
 
 const objects: MapObject[] = [
-  object('fontana'), object('torre-mola'), object('cannelle'), object('torre-castellone'), object('tomba'), object('mamurra'), object('cisternone'), object('acquedotto'),
+  object('bodeguita-ombra-1'), object('bodeguita-ombra-2'), object('bodeguita-ombra-3'), object('bodeguita-tavolo'),
+  object('piscina-irlanda'), object('semaforo-vindicio'),
+  object('fontana'), object('torre-mola'), object('cannelle'), object('torre-castellone'), object('teatro-romano'), object('tomba'), object('mamurra'), object('cisternone'), object('acquedotto'),
   object('traghetto', { bob: true }),
   /* a train standing at the station, the monument in Piazza della Vittoria, the lighthouse at the end of the mole */
   { kind: 'train', x: at('stazione').x + 1, y: at('stazione').y - 1, w: 7, h: 1 },
@@ -154,21 +162,20 @@ const groundObjects: GroundObject[] = [
   { kind: 'banner', x: pz.x + 2, y: pz.y + 1, w: 6, text: 'COMIZIO' },
   { kind: 'court', x: cam.x, y: cam.y, w: cam.w, h: cam.h },
   { kind: 'track', x: track.x, y: track.y, w: track.w, h: track.h },
-  /* the cavea of the Roman theatre, south of Sant'Erasmo; Maranola up in the Aurunci */
-  { kind: 'cavea', x: at('erasmo').x - 1, y: at('erasmo').y + 4, w: 8, h: 2 },
-  label(134, 19, 'Maranola', 15, 0.7),
+  /* Maranola up in the Aurunci (the Roman theatre of Castellone is a place of its own since 17 November 2026) */
+  label(164, 19, 'Maranola', 15, 0.7),
   label(40, 40, 'Monti Aurunci', 22),
-  label(215, 12, 'Monti Aurunci', 19, 0.7),
+  label(245, 12, 'Monti Aurunci', 19, 0.7),
   text(41.24857, 13.58073, 'Vindicio', 20, 0.6),
   text(41.2470, 13.6050, 'Golfo di Gaeta', 26, 0.5),
   label(72, 66, 'Castellone', 17, 0.7),
-  label(138, 71, 'Mola', 18, 0.7),
-  label(268, 88, 'Gianola', 18, 0.7),
-  label(306, 100, 'Scauri', 18, 0.6),
+  label(168, 71, 'Mola', 18, 0.7),
+  label(298, 88, 'Gianola', 18, 0.7),
+  label(336, 100, 'Scauri', 18, 0.6),
   /* where the roads lead, past the edges of the map */
-  text(41.24347, 13.5734, 'verso Gaeta', 15, 0.6),
+  text(41.2400, 13.5705, 'verso Gaeta', 15, 0.6),
   text(41.25469, 13.5685, 'verso Itri e Roma', 15, 0.6),
-  label(308, 76, 'verso Napoli', 15, 0.6)
+  label(338, 76, 'verso Napoli', 15, 0.6)
 ];
 
 const signs: Sign[] = [
@@ -188,12 +195,17 @@ const signs: Sign[] = [
   { ...sign('boa-golfo', ['Il golfo di Gaeta, nel mezzo.', 'Da qui si vedono insieme il promontorio di Gaeta con la sua montagna spaccata, Formia stesa ai piedi degli Aurunci, e Gianola col suo monte.', 'Nelle giornate limpide, laggiù in fondo, Ponza e Ventotene.']), buoy: true, view: { id: 'golfo', name: 'Il golfo dal largo' } },
   sign('sign-morgana', ['Birreria Morgana, via Abate Tosti 105, nel borgo di Mola: l\'ingresso è qui, sulla Pinetina.', 'La sera ci si vede qui.', '↑ Via Abate Tosti: la pescheria, il bar, la Torre di Mola, l\'ancora · ← Largo Paone']),
   sign('sign-porto', ['Porto di Formia: l\'imbarco dei traghetti per le isole pontine.', 'Traghetti e aliscafi Laziomar per Ponza e Ventotene, tutto l\'anno: un\'ora circa con l\'aliscafo, più di due con il traghetto.']),
+  sign('confine-gaeta', ['Gaeta · Formia', 'Verso Gaeta la litoranea prende il nome di lungomare Giovanni Caboto. Villa Irlanda è sul lato di monte.', 'Per la Tomba di Cicerone risali via Canzatora fino all’Appia.']),
+  sign('ingresso-irlanda', ['Villa Irlanda · ingresso dal lungomare Caboto.', 'Il vialetto costeggia la piscina e porta al portico del Convento.']),
+  sign('fermata-irlanda', ['Fermata sulla litoranea, davanti a Villa Irlanda.', 'A sud si prosegue verso Gaeta. Nel senso opposto si torna a Vindicio e in centro a Formia.']),
   sign('sign-tomba', ['Tomba di Cicerone, sull\'Appia verso Itri.', 'La tradizione dice che qui riposa Marco Tullio Cicerone, ucciso vicino alla sua villa di Formia il 7 dicembre del 43 a.C.']),
   sign('sign-vindicio', ['Spiaggia di Vindicio: più di un chilometro di sabbia, dal porto fino a Gaeta. Bandiera Blu.', 'D\'estate qui c\'è tutta Formia.', '← La Scogliera, la Tomba di Cicerone · → La pineta, il centro, Mola']),
-  sign('sign-pineta', ['Pineta di Vindicio, accanto al Lido Frungillo, all\'inizio di via Tito Scipione.', 'Pini domestici, ombra e tavoli per il picnic, a due passi dalla spiaggia.']),
+  sign('sign-pineta', ['Pineta di Vindicio. Venendo da Caposele, qui la passeggiata entra fra i pini e si affaccia sul golfo.', 'Nella radura c’è il Tempio del Basso. Proseguendo oltre la pineta si arriva a via Tito Scipione e ai lidi.']),
+  sign('indicazioni-vindicio', ['Verso Gaeta si prosegue sulla litoranea fino a Villa Irlanda. Lungo la costa, verso il centro di Formia, si incontrano i lidi, la pineta e il porticciolo di Caposele.']),
   sign('sign-zauli', ['Centro di Preparazione Olimpica «Bruno Zauli», via Appia Lato Napoli.', 'Nato nel 1955 da un\'idea di Bruno Zauli, presidente della federazione di atletica. Qui il professor Carlo Vittori allenava Pietro Mennea.', '← Mola, il centro · → Via Amendola, casa']),
   sign('sign-gianola', ['Parco regionale di Gianola e del Monte di Scauri, nato nel 1987.', 'Sul promontorio la villa di Mamurra, con l\'edificio ottagonale detto «Tempio di Giano». Sotto, il porticciolo romano.']),
-  sign('sign-caposele', ['Porticciolo di Caposele.', 'Da qui parte la spiaggia di Vindicio, verso Gaeta.']),
+  sign('sign-caposele', ['Porticciolo di Caposele.', 'Seguendo il mare verso Gaeta attraversi prima la pineta, poi arrivi al lungomare di Vindicio.']),
+  sign('vista-pineta-mare', ['Sotto i pini, il sentiero si apre sul golfo. Guardando verso ponente si vede il promontorio di Gaeta.']),
   sign('sign-porticciolo', ['Il porticciolo romano di Gianola.', 'Le banchine che si vedono sono del 1930 circa: stanno sopra le vasche di una peschiera romana, quella della villa di Mamurra.', 'Oggi è area marina protetta.']),
   sign('sign-sangiovanni', ['Piazza San Giovanni, nel borgo di Mola.', 'La chiesa dei Santi Lorenzo e Giovanni Battista; a destra sale via Solaro e c\'è la scuola Vitruvio Pollione. Sopra, i resti dell\'acquedotto romano, il Castellum Aquae.', '← Largo Paone · → La scuola De Amicis, piazza Risorgimento, l\'ospedale']),
   /* the three trails of the relief (VISIONE.md, V3 and V4): what they pass, and the belvederi at their ends */
@@ -211,6 +223,8 @@ const signs: Sign[] = [
   sign('sign-largo-paone', ['Largo Paone.', 'Il parcheggio grande tra piazza Tommaso Testa e il porto: il sabato c\'è il mercato. Oltre i pini, i traghetti e Gaeta.', '← Via Vitruvio, il Comune · ↑ Via Emanuele Filiberto · → Via Tullia, via Abate Tosti, la Torre di Mola · ↓ il porto']),
   sign('sign-risorgimento', ['Piazza Risorgimento, in cima a Mola: di fronte la scuola De Amicis.', '↑ Via Ferrucci: l\'ospedale Dono Svizzero, e più su la Rotabile per Maranola · → Lo Zauli, via Amendola · ← Via Emanuele Filiberto: San Giovanni, Largo Paone · ↓ Il lungomare, la Torre di Mola']),
   sign('sign-maranola', ['Maranola, borgo di Formia sui primi Aurunci.', 'La torre è dei Caetani. A Natale tutto il paese diventa un presepe vivente.', '← La Strada della Statua: l\'eremo di San Michele, il belvedere']),
+  sign('sign-noce', ['Via Santa Maria la Noce.', '↓ La stazione e Castellone · → Il Castello Miramare']),
+  sign('sign-teatro', ['Il teatro romano di Castellone, di età augustea.', 'La cavea si appoggia alla collina e guarda il golfo: sopra ci hanno costruito le case, e nei muri si vedono ancora archi e opus reticulatum.']),
   sign('sign-mattej', ['Piazza Mattej.', 'Qui sotto c\'era il Foro di Formiae: le statue del museo le hanno trovate scavando qui.', '↑ Castellone · → Via Vitruvio, il Comune']),
   sign('sign-rotabile', ['Via Rotabile: sale a Maranola con due tornanti.', 'In motorino è un attimo. A piedi, meno.']),
   { ...sign('vista-rotabile', ['Il tornante della Rotabile.', 'Da quassù si vedono Mola, il porto e, in fondo al golfo, il promontorio di Gaeta.']), view: { id: 'rotabile', name: 'Formia dal tornante della Rotabile' } },
@@ -226,6 +240,11 @@ const signs: Sign[] = [
   .concat(([
     ['targa-vitruvio', 'Via Vitruvio', 'La strada dei negozi e del Comune. Porta il nome di Vitruvio, l\'architetto romano del «De architectura».'],
     ['targa-abate-tosti', 'Via Abate Tosti', 'Il vicolo di Mola: comincia dove finisce via Tullia e va fino alla torre, lastricato, stretto tra due file di palazzi. La sera è il cuore della movida.'],
+    ['targa-flacca', 'Viale Unità d’Italia', 'È la Flacca. Da una parte Gaeta, dall’altra il porto di Formia. Via Vindicio scende ai lidi.'],
+    ['targa-caboto', 'Lungomare G. Caboto', 'La litoranea continua verso il centro di Gaeta. Tornando lungo la costa si passa da Villa Irlanda.'],
+    ['targa-canzatora', 'Via Canzatora', 'A monte si ritrova l’Appia. Verso il mare si sbuca sulla Flacca, al confine con Gaeta.'],
+    ['targa-sem-benelli', 'Via Sem Benelli', 'Dall’Appia al viale, sul lato di Vindicio che guarda Gaeta.'],
+    ['targa-acervara', 'Via Acervara', 'Le case risalgono il pendio alle spalle di via Vindicio.'],
     ['targa-appia', 'Via Appia', 'La regina delle strade: da Roma passa per Formia e va verso Capua. Qui, verso Itri, c\'è la Tomba di Cicerone.'],
     ['targa-vindicio', 'Via Vindicio', 'La strada della spiaggia: lidi da una parte, case dall\'altra, fino a Gaeta.'],
     ['targa-tito-scipione', 'Via Tito Scipione', 'Il lungomare dei lidi: al 3 il Lido Frungillo e la pineta, al 58 l\'Eclipse.'],
@@ -248,10 +267,10 @@ const npcs: Npc[] = [
   npc('vigile', { name: 'Vigile di piazza della Vittoria', seed: 131, dir: 'up', hook: 'piazza', lines: ['Circolare, circolare! Anzi no: non circola niente.'] }),
   npc('vicino-pineta', { name: 'Il signore della pineta', seed: 132, dir: 'right', hook: 'pineta', lines: ['Bum, bum, bum. Da stanotte.'] }),
   /* Antonio's guards in his park, while he is still to be beaten (data/adepts.ts) */
-  npc('robot-parco-1', { trainer: 'robot-parco-1', name: 'Robot di Sim-to-Real', seed: 133, dir: 'up', guard: 'palamendola', aside: [219, 41], lines: ['BIP. Il parco è in modalità test.'] }),
-  npc('robot-parco-2', { trainer: 'robot-parco-2', name: 'Drone di sorveglianza', seed: 134, dir: 'left', guard: 'palamendola', aside: [230, 43], lines: ['Bzzz. Zona sorvegliata.'] }),
+  npc('robot-parco-1', { trainer: 'robot-parco-1', name: 'Robot di Sim-to-Real', seed: 133, dir: 'up', guard: 'palamendola', aside: [249, 41], lines: ['BIP. Il parco è in modalità test.'] }),
+  npc('robot-parco-2', { trainer: 'robot-parco-2', name: 'Drone di sorveglianza', seed: 134, dir: 'left', guard: 'palamendola', aside: [260, 43], lines: ['Bzzz. Zona sorvegliata.'] }),
   /* a friend once beaten comes out of his covo now and then, where the others hang out */
-  npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', beaten: 'circolo', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
+  npc('forchetta-eclipse', { person: 'forchetta', name: 'forchetta', dir: 'left', beaten: 'circolo', lines: ['Poteva andare peggio: sole, mare, Eclipse.', 'Ho portato i colori: il golfo, da qui, si dipinge da solo.', 'Dopo la spiaggia, una partita alla Play da te?'] }),
   npc('folla1', { name: 'Dalla folla', seed: 11, dir: 'up', lines: ['Comizio alle sei. Anzi alle sette. Insomma, quando arriva lui.'] }),
   npc('folla2', { name: 'Dalla folla', seed: 12, dir: 'up', lines: ['Daje!'] }),
   npc('folla3', { name: 'Dalla folla', seed: 13, dir: 'up', lines: ['Ho provato a interromperlo un\'ora fa. Sta ancora parlando.'] }),
@@ -293,6 +312,18 @@ const npcs: Npc[] = [
   npc('pescatore-molo', { name: 'Pescatore del molo', seed: 108, dir: 'down', lines: ['Le barche escono di notte e rientrano all\'alba.', 'Il faro lo vedi da tutto il golfo: quando lo vedi, sei a casa.'] }),
   npc('bagnina-scauri', { name: 'Bagnina di Scauri', seed: 109, dir: 'down', lines: ['Benvenuto a Scauri! La spiaggia è lunga: comincia sotto il Monte di Scauri e non finisce più.', 'Il parco di Gianola, da questa parte, comincia dove finisce la sabbia.'] }),
   npc('pescatore-scauri', { name: 'Ragazzo con il retino', seed: 110, dir: 'left', lines: ['Tra questi scogli ne ho viste di strane. Non pesci: creature.'] }),
+  npc('passeggiatrice-arcella', { name: 'Passeggiatrice', seed: 23, dir: 'right', lines: ['Ho lasciato il motorino su, all’Appia. Al bivio di Canzatora ho preso la discesa e sono arrivata al mare. Ora mi tocca risalire!'] }),
+  npc('pescatore-arcella', { name: 'Pescatore', seed: 29, dir: 'right', lines: ['Senti le macchine dietro di noi? Io tengo gli occhi sul galleggiante. Quando affonda, tutto il resto può aspettare.'] }),
+  /* Castellone and the centre, drawn again on 17 November 2026: who lives and works in the new streets */
+  npc('signora-porta', { name: 'Signora di Castellone', seed: 141, dir: 'down', lines: ['Qui le macchine non salgono: a Castellone si va a piedi, gradino dopo gradino.', 'Le scale le faccio da settant\'anni. Tu sei giovane: corri!'] }),
+  npc('ragazzo-mamurra', { name: 'Ragazzo col motorino', seed: 142, dir: 'left', lines: ['Il motorino lo lascio giù, su via Vitruvio: nei vicoli di Castellone non ci passa.', 'Una volta ci ho provato. Ha vinto il gradino.'] }),
+  npc('cameriere', { name: 'Cameriere', seed: 143, dir: 'down', lines: ['Stasera tiella e frittura di paranza.', 'Il tavolo in piazzetta è il migliore: tra le case si vede un pezzo di golfo.'] }),
+  npc('studentessa', { name: 'Studentessa', seed: 144, dir: 'up', lines: ['Dopo la scuola si va da Lavezzi: gelato al limone, come cent\'anni fa.', 'Poi un giro su via Vitruvio, fino a Largo Paone. Sempre lo stesso giro.'] }),
+  npc('tassista', { name: 'Tassista', seed: 145, dir: 'left', lines: ['Taxi! Per Gaeta, per Sperlonga, per dove vuoi.', 'Il treno da Roma arriva tra dieci minuti: aspetto qui.'] }),
+  npc('negoziante', { name: 'Negoziante di via Vitruvio', seed: 146, dir: 'down', lines: ['Via Vitruvio è il corso di Formia: da piazza Mattej a Largo Paone, tutta negozi.', 'Il sabato pomeriggio non si cammina, da quanta gente c\'è.'] }),
+  npc('pescatore-viale', { name: 'Pescatore del Viale', seed: 147, dir: 'down', lines: ['Da questo muretto si vede tutto il porto. E Gaeta, di fronte.', 'Pesci pochi, oggi. Ma il mare è bello lo stesso.'] }),
+  npc('ciclista-santantonio', { name: 'Ciclista', seed: 149, dir: 'down', lines: ['Via Sant\'Antonio sale dritta verso i monti: in bici è una salita vera.', 'Da lassù il treno sembra un giocattolo: lo vedi sparire verso Mola.'] }),
+  npc('signore-noce', { name: 'Signore di Santa Maria la Noce', seed: 148, dir: 'down', lines: ['Da quassù Castellone si vede tutto: la torre, i tetti, Sant\'Erasmo.', 'L\'acqua del Cisternone veniva da queste colline, dalle sorgenti di Santa Maria la Noce.'] }),
   npc('signora-vindicio', { name: 'Signora di Vindicio', seed: 111, dir: 'down', lines: ['D\'inverno a Vindicio ci siamo solo noi e i gabbiani.', 'È il periodo che preferisco.'] }),
   npc('tennista', { hook: 'circolo', name: 'Tennista', seed: 26, dir: 'down', lines: ['Forchetta? È dentro, nel campo coperto. Fuori non gioca mai.'] }),
   npc('cestista', { name: 'Cestista', seed: 62, dir: 'down', lines: ['Stasera al Palamendola c\'è la partita. Vieni?'] }),
@@ -334,7 +365,7 @@ const npcs: Npc[] = [
     lines: ['Il Cisternone è chiuso. Per te, almeno.'] }),
   npc('mamurr-peschiere', { trainer: 'mamurr-peschiere', look: 'mamurriano', name: 'Sub con la muta', dir: 'down', when: { after: 'trama-archivio', until: 'tr-mamurr-peschiere' },
     lines: ['Mi sono immerso tutta la mattina tra le peschiere romane. E guarda cosa ho trovato.'] }),
-  npc('mamurra', { trainer: 'mamurra', ghost: 'mamurra', name: 'Mamurra', dir: 'down', when: { after: 'pietra-voce', until: 'tr-mamurra' },
+  npc('mamurra', { ghost: 'mamurra', name: 'Mamurra', dir: 'down', when: { after: 'pietra-voce', until: 'tr-mamurra' },
     lines: ['Ah, il ragazzo di Cicerone. Ti aspettavo.'] }),
   /* the rival (story/rival.ts, story/rival-who.ts: one of the friends, or Tullio, the guardaparco's grandson, in a story
      that met him): at the park as soon as both have a creature, on the Appia on the way to Cicero's tomb, and at the
@@ -363,19 +394,41 @@ const clip = (name: string, x0: number, y0: number, x1: number, y1: number, note
 };
 const near = (name: string, id: string, m: number, note?: string): Area => { const p = at(id); return clip(name, p.x - m, p.y - m, p.x + p.w - 1 + m, p.y + p.h - 1 + m, note); };
 const areas: Area[] = [
+  ...LITORANEA.flatMap(road => road.pts.slice(1).map(([x, y], i) => {
+    const [px, py] = road.pts[i];
+    return clip(road.name, Math.min(px, x), Math.min(py, y), Math.max(px, x) + road.w - 1, Math.max(py, y) + road.w - 1);
+  })),
+  near('Villa Irlanda · Gaeta', 'convento-irlanda', 2, 'Il vecchio Collegio Irlandese, in località Arcella.'),
   /* the places */
   near('Parco la Fontana', 'casa', 3, 'Casa di Antonio, al numero 1 di via Giovanni Amendola.'),
   near('Lido Oriente', 'oriente', 5, 'Lo stabilimento del lungomare Città di Ferrara, a Formia, verso Gianola: canoe, pedalò, beach volley e beach soccer.'),
   near('Eclipse beach', 'eclipse-spiaggia', 2, 'Il lido di via Tito Scipione: ombrelloni, beach volley e il windsurf di Nicola Spadea.'),
-  near('Pineta di Vindicio', 'pineta', 1, 'Pini domestici e ombra accanto al Lido Frungillo, a due passi dalla spiaggia.'),
-  clip('Via Abate Tosti', 132, 65, 140, 65, 'Il vicolo di Mola tra due file di palazzi, da via Tullia alla torre: la sera, la movida.'),
-  clip('Via Tullia', 132, 59, 132, 64, 'Corta, tra via Emanuele Filiberto e via Abate Tosti: sull\'angolo l\'enoteca Telaro.'),
+  { ...near('Bodeguita del Mar', 'bodeguita', 1, 'Il chiosco della pineta, con tavolini e ombrelloni di paglia.'), not: ['sea', 'road'] },
+  { ...clip('Pineta di Vindicio', PINETA_COSTIERA.x0, PINETA_COSTIERA.y0, PINETA_COSTIERA.x1, PINETA_COSTIERA.y1,
+    'Il parco sul golfo, fra Caposele e l’inizio di via Tito Scipione. I sentieri uniscono il Tempio del Basso, il Bodeguita e l’affaccio sul mare.'), not: ['sand', 'sea', 'road'] },
+  near('Lido Frungillo', 'frungillo', 1, 'Via Tito Scipione 3: il primo lido del lungomare, appena oltre la pineta.'),
+  near('Lido Bandiera', 'bandiera', 2, 'Via Tito Scipione 7: pesce del giorno, beach volley e pedalò.'),
+  { ...clip('Lungomare di Vindicio', 26, 102, 62, 127, 'Da via Tito Scipione lungo i lidi, verso La Scogliera e Gaeta.'), not: ['road', 'sea'] },
+  clip('Via Abate Tosti', 162, 65, 170, 65, 'Il vicolo di Mola tra due file di palazzi, da via Tullia alla torre: la sera, la movida.'),
+  clip('Via Tullia', 162, 59, 162, 64, 'Corta, tra via Emanuele Filiberto e via Abate Tosti: sull\'angolo l\'enoteca Telaro.'),
   near('Torre di Mola', 'ancora-piazzetta', 0, 'La torre del castello angioino e la piazzetta con l\'ancora, sul porticciolo di Mola.'),
   near('Torre di Mola', 'castello-mura', 1, 'Il castello di Mola sul porticciolo: la torre, le mura, il portale.'),
   near('Pinetina di via Abate Tosti', 'pinetina', 0, 'Pini e macchine parcheggiate tra via Abate Tosti e il lungomare.'),
   near('Piazza Tommaso Testa', 'piazza-testa', 1, 'Il marciapiede largo davanti al tabacchi, a Zanzibar e alla farmacia, con la Fontana delle Cinque Cannelle.'),
   near('Birreria Morgana', 'morgana', 2, 'Via Abate Tosti 105, nel borgo di Mola: la sera ci si ritrova qui.'),
-  near('Piazza della Vittoria', 'piazza', 2, 'Il cuore di Formia, con il monumento ai caduti del 1926.'),
+  near('Piazza della Vittoria', 'piazza', 1, 'Il cuore di Formia, con il monumento ai caduti del 1926.'),
+  /* Castellone and the centre, drawn again on 17 November 2026 */
+  near('Piazza Sant\'Erasmo', 'piazza-erasmo', 1, 'In cima al borgo: la basilica del patrono e la torre ottagonale dei Caetani, del 1377.'),
+  near('Torre di Castellone', 'torre-castellone', 1, 'Venticinque metri di pietra: la base poligonale dell\'acropoli romana, sopra il torrione ottagonale.'),
+  near('Largo Sant\'Anna', 'largo-santanna', 1, 'Qui sotto c\'è il Cisternone: settemila metri cubi d\'acqua per la città romana.'),
+  near('Piazza del Castello', 'piazza-castello', 1, 'Dove c\'era una porta delle mura: delle dodici torri ne restano due.'),
+  near('Piazza della Porta', 'piazza-porta', 1, 'Una delle porte del borgo, sul lato del mare.'),
+  near('Teatro romano', 'teatro-romano', 1, 'Età augustea: la cavea guarda il golfo, e dentro ci abitano trecento persone.'),
+  near('Piazzetta don Antonio Forcina', 'piazzetta-forcina', 0, 'Davanti al teatro romano, dove c\'era l\'orchestra.'),
+  near('Piazza Marconi', 'marconi', 1, 'La gelateria Lavezzi, Santa Teresa e il Comune, a due passi da Castellone.'),
+  near('Piazza Aldo Moro', 'aldo-moro', 1, 'Tra via Vitruvio e il Viale, accanto a piazza della Vittoria.'),
+  near('Piazza IV Novembre', 'iv-novembre', 1, 'Il piazzale davanti alla stazione: taxi, autobus, valigie.'),
+  near('Largo Caduti Formiani', 'caduti-formiani', 0, 'Il giardino tra via Vitruvio e il lungomare.'),
   near('Stazione', 'stazione', 3, 'Formia-Gaeta, sulla linea Roma–Napoli.'),
   near('Tomba di Cicerone', 'tomba', 3, 'Sull\'Appia verso Itri: la tradizione dice che qui riposa Cicerone.'),
   near('Parco Gramsci', 'parco-gramsci', 1),
@@ -388,28 +441,29 @@ const areas: Area[] = [
   near('Piazza Mattej', 'mattej', 1, 'Ai piedi di Castellone: qui era il Foro della città romana.'),
   near('Maranola', 'torre-maranola', 6, 'Il borgo sopra Formia, con la torre dei Caetani: a Natale ci si fa il presepe vivente.'),
   /* the trails of the relief */
-  clip('Strada della Statua', 95, 0, 129, 13, 'La mulattiera che da Maranola sale all\'eremo di San Michele e alla Cima del Redentore, tra gli uliveti a terrazze.'),
+  clip('Strada della Statua', 108, 0, 159, 13, 'La mulattiera che da Maranola sale all\'eremo di San Michele e alla Cima del Redentore, tra gli uliveti a terrazze.'),
   clip('Acervara', 0, 71, 20, 83, 'Il pendio sopra l\'Appia: la Tomba di Tulliola, gli ulivi, il golfo davanti.'),
-  clip('Punta di Gianola', 266, 98, 284, 127, 'Le terrazze della villa di Mamurra, nel parco di Gianola.'),
+  clip('Punta di Gianola', 296, 98, 314, 127, 'Le terrazze della villa di Mamurra, nel parco di Gianola.'),
   /* the neighbourhoods */
-  clip('Porto', 112, 70, 140, 96, 'Il porto di Formia: traghetti e aliscafi per Ponza e Ventotene, le barche dei pescatori, il faro sul molo.'),
-  clip('Castellone', 84, 61, 97, 76, 'Il borgo alto, nato contro i Saraceni sull\'acropoli romana: la torre ottagonale dei Caetani, Sant\'Erasmo, il teatro romano con le case dentro.'),
-  clip('Mola', 126, 44, 152, 70, 'Il borgo marinaro: la torre del castello angioino, la chiesa di San Giovanni Battista, le barche dei pescatori.'),
-  clip('Centro', 84, 61, 131, 92, 'Via Vitruvio, i negozi, il Comune con il Museo archeologico nazionale.'),
-  clip('Caposele', 62, 90, 92, 104, 'Il porticciolo di Caposele, dove comincia la spiaggia di Vindicio.'),
+  clip('Porto', 142, 70, 170, 96, 'Il porto di Formia: traghetti e aliscafi per Ponza e Ventotene, le barche dei pescatori, il faro sul molo.'),
+  clip('Castellone', 76, 65, 113, 85, 'Il borgo alto, nato contro i Saraceni sull\'acropoli romana: la torre ottagonale dei Caetani, Sant\'Erasmo, il teatro romano con le case dentro.'),
+  clip('Mola', 156, 44, 182, 70, 'Il borgo marinaro: la torre del castello angioino, la chiesa di San Giovanni Battista, le barche dei pescatori.'),
+  clip('Centro', 76, 60, 161, 92, 'Via Vitruvio, i negozi, il Comune con il Museo archeologico nazionale.'),
+  clip('Arcella · Gaeta', 0, 128, 32, 151, 'Il primo tratto di costa gaetana arrivando da Vindicio.'),
+  clip('Caposele', 62, 90, 103, 104, 'Il porticciolo di Caposele, dove comincia la spiaggia di Vindicio.'),
   clip('Vindicio', 20, 84, 68, 127, 'Più di un chilometro di spiaggia, dal porto fino a Gaeta: i lidi, il lungomare, la Bandiera Blu.'),
-  clip('Sopra la stazione', 84, 44, 122, 59, 'Le case sopra la ferrovia, sulla collina di Santa Maria la Noce.'),
-  clip('San Giulio', 153, 30, 169, 45, 'Via Palazzo e via San Giulio: la scuola Mattej, il parchetto con le altalene, le palazzine.'),
-  clip('Via Rotabile', 142, 13, 172, 35, 'La strada dei tornanti: da via Ferrucci sale a Maranola.'),
-  clip('Monti Aurunci', 0, 0, 319, 29, 'Le montagne dietro Formia. Lassù c\'è Maranola, il borgo del presepe vivente.'),
-  clip('Rio Fresco', 120, 30, 176, 46, 'Tra Mola e lo Zauli, sopra l\'Appia: le case lungo via Palazzo.'),
-  clip('Bruno Zauli', 176, 31, 197, 46, 'Il centro di preparazione olimpica, nato nel 1955: la pista dove correva Mennea.'),
-  clip('Via Amendola', 197, 31, 244, 46, 'Le palazzine di via Amendola, il Palamendola, Parco la Fontana.'),
-  clip('Acqualonga', 158, 46, 236, 62, 'Lungo l\'Appia verso Napoli, tra la strada e il mare.'),
-  clip('Scauri', 286, 30, 319, 127, 'Scauri, frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'),
-  clip('Gianola', 244, 62, 286, 127, 'Il parco regionale, dal 1987: la villa di Mamurra, il porticciolo romano, la spiaggia dei Sassolini.'),
-  clip('Santo Janni', 236, 30, 286, 62, 'Le ultime case di Formia, verso Gianola e Scauri.'),
-  clip('Campagna', 0, 30, 84, 96, 'Gli uliveti a ovest della città, verso Itri: qui la ferrovia entra in galleria.')
+  clip('Sopra la stazione', 86, 44, 152, 59, 'Le case sopra la ferrovia, sulla collina di Santa Maria la Noce.'),
+  clip('San Giulio', 183, 30, 199, 45, 'Via Palazzo e via San Giulio: la scuola Mattej, il parchetto con le altalene, le palazzine.'),
+  clip('Via Rotabile', 172, 13, 202, 35, 'La strada dei tornanti: da via Ferrucci sale a Maranola.'),
+  clip('Monti Aurunci', 0, 0, 349, 29, 'Le montagne dietro Formia. Lassù c\'è Maranola, il borgo del presepe vivente.'),
+  clip('Rio Fresco', 150, 30, 206, 46, 'Tra Mola e lo Zauli, sopra l\'Appia: le case lungo via Palazzo.'),
+  clip('Bruno Zauli', 206, 31, 227, 46, 'Il centro di preparazione olimpica, nato nel 1955: la pista dove correva Mennea.'),
+  clip('Via Amendola', 227, 31, 274, 46, 'Le palazzine di via Amendola, il Palamendola, Parco la Fontana.'),
+  clip('Acqualonga', 188, 46, 266, 62, 'Lungo l\'Appia verso Napoli, tra la strada e il mare.'),
+  clip('Scauri', 316, 30, 349, 127, 'Scauri, frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'),
+  clip('Gianola', 274, 62, 316, 127, 'Il parco regionale, dal 1987: la villa di Mamurra, il porticciolo romano, la spiaggia dei Sassolini.'),
+  clip('Santo Janni', 266, 30, 316, 62, 'Le ultime case di Formia, verso Gianola e Scauri.'),
+  clip('Campagna', 0, 30, 87, 96, 'Gli uliveti a ovest della città, verso Itri: qui la ferrovia entra in galleria.')
 ];
 
 /* the gates of Parco la Fontana: locked ('+' on the ground, tools/formia/network.ts) */
@@ -435,9 +489,10 @@ const st = spot('start');
 export const formia: MapDef = {
   name: 'Formia',
   rows: FORMIA_ROWS,
+  roadLines: LITORANEA,
   buildings, objects, groundObjects, signs, npcs, items, areas, warps,
   /* the lights strung across via Abate Tosti, between Telaro and the bar on one side, Morgana and the pescheria on the other */
-  festoons: [{ x0: 134, x1: 139, y: 65 }],
+  festoons: [{ x0: 164, x1: 169, y: 65 }],
   start: [st[0], st[1], 'down'],
   starts: (['valentin', 'costanzo', 'forchetta', 'andrea', 'zendavid', 'claudia'] as const).reduce(function (o, id) { const p = spot('start-' + id); o[id] = [p[0], p[1], 'down']; return o; }, {} as Record<string, [number, number, Dir]>)
 };

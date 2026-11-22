@@ -28,4 +28,4 @@ Apri http://localhost:5173. `npm run build` produce `dist/index.html`; `npm test
 
 Il gioco attivo conserva i personaggi precedenti. Antonio vuole completare la qualità di tutti prima dell'integrazione, che affiderà a Opus. Codex cura idee, specifiche e grafiche.
 
-La mappa è la Formia grande del 12 novembre: 320×128 caselle sulle strade vere, con un Liberty blu che si guida. Due viste satellitari di confronto in [design/mappa](design/mappa/README.md).
+La mappa è la Formia grande: 350×152 caselle sulle strade vere (Castellone e il centro a scala doppia dal 17 novembre), con un Liberty blu che si guida. Due viste satellitari di confronto in [design/mappa](design/mappa/README.md).

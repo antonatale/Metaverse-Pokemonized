@@ -18,7 +18,8 @@ export function startRun(n: Npc) {
   /* free tiles of the pineta, in an order that changes every run; flags at least 4 tiles apart */
   const k = timesDone('corsa'), cand: [number, number, number][] = [];
   for (let y = area.y; y < area.y + area.h; y++) for (let x = area.x; x < area.x + area.w; x++) {
-    if (blocked(M, x, y) || M.at[key(x, y)] || M.cell(x, y).g === 'road') continue;
+    /* among the pines (not on the lungomare or the sand), and near enough to reach them all in a minute */
+    if (blocked(M, x, y) || M.at[key(x, y)] || M.cell(x, y).g !== 'grass' || Math.abs(x - st.x) + Math.abs(y - st.y) > 13) continue;
     cand.push([x, y, hash(x, y, 300 + k)]);
   }
   cand.sort((a, b) => a[2] - b[2]);

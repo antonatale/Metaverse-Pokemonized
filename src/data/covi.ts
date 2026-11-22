@@ -38,7 +38,7 @@ export const COVI: Record<string, Covo> = {
     name: 'Il Palazzo del Popolo', city: 'formia', leader: 'costanzo', level: 6, crew: ['micetto', 'cicalina', 'micetto'], crewTune: [2, 1, 1, 2, -1],
     badge: { id: 'gialosai', name: 'Spilla «Già lo sai»', mark: 'C', color: '#ffe45c' },
     intro: ['GIÀ LO SAI.', 'Questo è il mio palazzo, e questa è la mia repubblica. Se vuoi parlare, prima devi battermi.'],
-    win: ['Daje Roma daje… va bene, hai vinto tu.', '…aspetta. Che ci faccio su un balcone? Da quanto sto parlando? Ah. L\'eco.', 'La spilla è tua: è il mio sigillo. Il comizio però resta mio: GIÀ LO SAI.'],
+    win: ['Daje Roma daje… va bene, hai vinto tu.', 'Apro il portone. Vigile, stacchi il microfono? Da qui sopra non sentivo più chi aveva chiesto la parola.', 'Tieni la spilla. Scendiamo in piazza: stavolta ascolto io.'],
     lose: ['Il popolo ha deciso. Ripassa quando vuoi.'],
     after: ['Il prossimo comizio lo dedico a te. GIÀ LO SAI.'],
     vs: {
@@ -53,14 +53,14 @@ export const COVI: Record<string, Covo> = {
   circolo: {
     name: 'Il Tempio della Terra Rossa', city: 'formia', leader: 'forchetta', level: 6, crew: ['lumacotta', 'ramarrino', 'lumacotta'], crewTune: [0, 1, 0, 1, 0],
     badge: { id: 'peggio', name: 'Spilla «Poteva andare peggio»', mark: 'F', color: '#8fd0f6' },
-    intro: ['Poteva andare peggio.', 'Palleggio da dodici ore e non ho sbagliato una palla. Palleggiamo? Chi perde paga il campo.'],
-    win: ['Poteva andare peggio. Per me.', '…dodici ore? Ho fame. L\'eco mi aveva fatto dimenticare di mangiare.', 'Tieni la spilla. Il campo però lo paghi tu lo stesso.'],
+    intro: ['Poteva andare peggio.', 'Dodici ore: un palleggio, una pennellata, una protesi. Non ho sbagliato niente. Palleggiamo? Chi perde paga il campo.'],
+    win: ['Senti? La palla rimbalza una volta sola. Da stamattina, a ogni rimbalzo ne sentivo un altro da sotto il campo. E mi ripartiva il braccio.', 'Tieni la spilla. Mi fai luce un secondo? Ho visto qualcosa tra la rete e la riga di fondo.'],
     lose: ['Ace. Riprova quando vuoi.'],
     after: ['Dopo la lotta, una partita alla Play?'],
     vs: {
-      antonio: ['Antonio. Hai perso qualcosa anche oggi?', 'Poteva andare peggio: la racchetta te la presto io.'],
+      antonio: ['Antonio. Hai perso qualcosa anche oggi?', 'Poteva andare peggio: la racchetta te la presto io. Ingegnere contro ingegnere.'],
       costanzo: ['Costanzo. Qui non si fanno comizi.', 'Si gioca e basta. Dopo, se vuoi, parli tu.'],
-      andrea: ['Andrea. Tu fai i calcoli, io tiro.', 'A tennis i dati non bastano. Poteva andare peggio.'],
+      andrea: ['Andrea. Tu fai i calcoli, io tiro. E poi dipingo il risultato.', 'A tennis i dati non bastano. Poteva andare peggio.'],
       valentin: ['Valentin. Prima il set, poi la festa.', 'Contro di te sto calmo. È il mio vantaggio.'],
       zendavid: ['Zendavid. Lo so, il tuo Cuore con me va forte.', 'Poteva andare peggio. Giochiamo lo stesso.'],
       claudia: ['Claudia. Il Padre della Trinità sotto i coperti del Zauli.', 'Poteva andare peggio: almeno tu ascolti prima di colpire.']
@@ -70,7 +70,7 @@ export const COVI: Record<string, Covo> = {
     name: 'La Torre Verde', city: 'formia', leader: 'valentin', level: 6, crew: ['granchietto', 'cinghialetto', 'gabbi'], crewTune: [1, 2, -2, 0, 0],
     badge: { id: 'weee', name: 'Spilla «Weee!»', mark: 'W', color: '#ffa04a' },
     intro: ['Weee! Benvenuto nella mia torre. La nebbia? Effetti speciali.', 'Vuoi la spilla? Prima balli con me. Cioè, lotti.'],
-    win: ['Weee… cambio di programma: hai vinto tu.', 'La nebbia se ne va… che sogno strano. Ero nei Carpazi, ballavo con le Iele…', 'La spilla è tua. Stasera festa all\'Eclipse: sei invitato.'],
+    win: ['Weee… la musica si è fermata. Per un momento giuravo di stare nei Carpazi.', 'Prendi la spilla e resta qui. Ho sentito qualcuno battere le mani anche dopo che la musica è finita. Vado a vedere.'],
     lose: ['WEEEEE! Si fa festa nella nebbia. Torna quando vuoi.'],
     after: ['Weee! Stasera all\'Eclipse c\'è posto anche per te.'],
     vs: {
@@ -86,7 +86,7 @@ export const COVI: Record<string, Covo> = {
     name: 'Il Tempio del Basso', city: 'formia', leader: 'zendavid', level: 6, crew: ['olivella', 'ginestrella', 'olivella'], crewTune: [5, 2, 2, 3, 0],
     badge: { id: 'bau', name: 'Spilla «Bau»', mark: 'Z', color: '#ff8fc1' },
     intro: ['Bau.', 'Nel tempio la musica la scelgo io: Ye, a ripetizione. Se vinci, la spilla è tua.'],
-    win: ['Ansia… va bene, hai vinto. Bau.', '…perché ho costruito un tempio di casse in pineta? Ok. Respira. Era l\'eco.', 'Tieni la spilla. Io rimetto le cuffie. A volume normale.'],
+    win: ['Bau. Aspetta che stacco l’ultima cassa.', 'Senti quel suono? L’impianto è spento e qualcuno sta ancora parlando sotto. Lo salvo prima che se ne vada.', 'La spilla è tua. Io le cuffie le tengo, ma abbasso.'],
     lose: ['Bau bau. Questa era bella, ammettilo.'],
     after: ['Ok. Respira. Bella lotta, comunque.'],
     vs: {
@@ -102,7 +102,7 @@ export const COVI: Record<string, Covo> = {
     name: 'La Torre delle Probabilità', city: 'formia', leader: 'andrea', level: 6, crew: ['stellina', 'civettina', 'stellina'], crewTune: [5, 3, -2, 4, 1],
     badge: { id: 'calcolato', name: 'Spilla «Ho calcolato tutto»', mark: 'V', color: '#9be7c4' },
     intro: ['Ho calcolato tutto.', 'Dalla cima di questa torre vedo tutte le probabilità di Formia. Statisticamente vinco io. Vuoi provare lo stesso?'],
-    win: ['Sono cucinato.', 'Aspetta… la torre si abbassa. Ero chiuso dentro la mia distribuzione. Che figura.', 'Non era nei dati. La spilla è tua: complimenti, davvero.'],
+    win: ['Sono cucinato.', 'La torre si abbassa. Gli intervalli li ho segnati anche quando pensavo che fossero i dadi. Aspetta, ti passo la tabella.', 'Questa spilla era l’unica cosa qui che mi tornava sempre in mano. Adesso tienila tu.'],
     lose: ['Come previsto. Al 94%.'],
     after: ['Ho rifatto i calcoli: la prossima volta ti batto. Al 94%.'],
     vs: {
@@ -118,7 +118,7 @@ export const COVI: Record<string, Covo> = {
     name: 'La Cupola', city: 'formia', leader: 'antonio', level: 6, crew: ['civettina', 'polpino', 'stellina'], crewTune: [0, 0, -1, 0, -2],
     badge: { id: 'statoarte', name: 'Spilla «Stato dell\'arte»', mark: 'A', color: '#c3a0ff' },
     intro: ['Ho già letto il paper di questa settimana.', 'Nella cupola gira la simulazione di Formia, e tu sei una variabile che non avevo previsto. Sfida?'],
-    win: ['…mi servono più basi di controlli.', 'Che ore sono? Da quanto gira la simulazione? Crazy shit: era l\'eco.', 'La spilla è tua: stato dell\'arte.'],
+    win: ['…mi servono più basi di controlli.', 'Ho spento il modello. Il Visore però disegna ancora quella linea. È partita da Gianola, guarda l’ora.', 'Tieni la spilla. Adesso posso salvare il tracciato senza che la simulazione riparta.'],
     lose: ['Crazy shit… stato dell\'arte.'],
     after: ['Bella lotta. La metto nel prossimo paper.'],
     vs: {
@@ -136,7 +136,7 @@ export const COVI: Record<string, Covo> = {
     name: 'Il Castello del Padre', city: 'formia', leader: 'claudia', level: 6, crew: ['riccetto', 'lumacotta', 'civettina'], crewTune: [2, 1, 0, 1, 0],
     badge: { id: 'tavoli', name: 'Spilla «Tavoli separati»', mark: 'D', color: '#d6403a' },
     intro: ['Ho capito il tuo punto. Ora senti il mio.', 'Ti sei seduto su tutte e due le sedie, uno alla volta. Bravo. Adesso si lotta.'],
-    win: ['Va bene. Ho ascoltato, e hai ragione tu.', '…un trono? Un castello? Avevo bisogno di spazio, ma così è troppo. Era l\'eco.', 'La spilla è tua. Costanzo direbbe che ti ho portato sulla cattiva strada: tienila lo stesso.'],
+    win: ['Aspetta. Le due sedie sono vuote e finalmente riesco a sentirti da qui.', 'Chi è passato prima aveva una torcia e scarpe tutte bianche di polvere. Ho tenuto accesa la lanterna per vedere dove andava.', 'Tieni la spilla. E lasciamo il portone aperto, almeno per stasera.'],
     lose: ['Puoi sentire anche il mio? Adesso sì. Ripassa quando vuoi.'],
     after: ['Stasera torno da Morgana, al mio tavolo. Siediti, se vuoi.'],
     vs: {

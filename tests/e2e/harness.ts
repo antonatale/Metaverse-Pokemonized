@@ -74,7 +74,9 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
     } };
   });
   await page.clock.install({ time: T0 });
+  await page.clock.pauseAt(T0 + 5000);
   await page.goto(url);
+  await page.locator('#ti-main').waitFor({ state: 'attached' });
   await page.evaluate(async () => {
     await Promise.all([
       document.fonts.load('16px "Lilita One"'), document.fonts.load('16px "Patrick Hand"'),
@@ -82,7 +84,6 @@ async function open(browser: Browser, url: string, o: TwinOpts): Promise<Run> {
     ]);
     await document.fonts.ready;
   });
-  await page.clock.pauseAt(T0 + 5000);
   await page.clock.runFor(1000);
   if (!o.spot) await page.evaluate(() => (window as unknown as { WORLD: { _debug: { spotting(on: boolean): void } } }).WORLD._debug.spotting(false));
   const run: Run = {
@@ -148,7 +149,7 @@ export async function battleOver(page: Page) {
   return page.evaluate(() => { const ov = document.getElementById('overlay')!; return !ov.hidden && ov.classList.contains('result'); });
 }
 /** walk the player along a list of directions, one tile at a time */
-export async function walk(page: Page, dirs: string[]) {
+export async function walk(page: Page, dirs: string[], stepMs = 20) {
   const KEY: Record<string, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   type Pos = { x: number; y: number; dir: string; moving: boolean; busy: boolean; map: string };
   const pos = () => page.evaluate(() => (window as unknown as { WORLD: { _debug: { pos(): Pos } } }).WORLD._debug.pos());
@@ -156,7 +157,7 @@ export async function walk(page: Page, dirs: string[]) {
   for (const d of dirs) {
     if ((await pos()).dir !== d) { await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]); }
     await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]);
-    for (let k = 0; k < 60; k++) { await page.clock.runFor(20); const p = await pos(); if (!p.moving && !p.busy) break; }
+    for (let t = 0; t < 1200; t += stepMs) { await page.clock.runFor(stepMs); const p = await pos(); if (!p.moving && !p.busy) break; }
   }
   await page.clock.runFor(300);
 }

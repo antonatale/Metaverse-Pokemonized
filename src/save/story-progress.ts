@@ -1,5 +1,6 @@
 import { MAPS } from '../data/maps';
 import type { Dir } from '../data/maps/types';
+import { LITORANEA_FLOODED, LITORANEA_REVISION, PINETA_COSTIERA_REVISION, PINETA_REVISION, VINDICIO_REVISION } from '../data/maps/formia-places';
 import { LEGEND } from '../data/maps/legend';
 import { ROSTER, type FriendId } from '../data/characters';
 import type { SpeciesId } from '../data/creatures';
@@ -67,8 +68,8 @@ export interface StoryProgress {
   /** the rival of this story: one of the friends, picked when it begins (story/rival-who.ts); Tullio when missing in a
       story that had met him */
   rivalFriend?: FriendId;
-  /** the chats of «il caminetto» (data/chat.ts): when each came, and what the player answered */
-  chats?: Record<string, { at: number; reply?: string; won?: boolean }>;
+  /** Chats remember the speakers and words as they appeared at the time. */
+  chats?: Record<string, { at: number; reply?: string; won?: boolean; lines?: [FriendId, string][] }>;
   /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
   books?: number;
   /** the gifts of the covi (data/covo-places.ts): Valentin's mărțișor worn, the tune chosen with Zendavid's headphones */
@@ -115,7 +116,17 @@ function backHome(v: StoryProgress) {
   var m0 = MAPS.formia, at = (v.first && m0.starts && m0.starts[v.first]) || m0.start;
   v.x = at[0]; v.y = at[1]; v.dir = at[2];
 }
+/** the map of 17 November gained 30 columns: from Castellone to Via Lavanga (x 83–111) twice as wide, everything east
+    of it 30 columns further right. This one runs first, so the redrawings after it see the save in today's columns */
+export function widened(x: number): number { return x <= 82 ? x : x >= 112 ? x + 30 : 82 + 2 * (x - 82); }
 export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => void }[] = [
+  { id: 'formia18', what: 'Castellone e il centro in grande', run(v) {
+    /* inside the old band everything was drawn again: whoever stood there starts from home; elsewhere, the same place */
+    const band = (x: number) => x > 82 && x < 112;
+    if (v.map === 'formia') { const x = v.x; v.x = widened(x); if (band(x) || walled(v.x, v.y)) { backHome(v); delete v.sella; } }
+    if (v.moto?.map === 'formia') { const x = v.moto.x; v.moto.x = widened(x); if (band(x) || walled(v.moto.x, v.moto.y)) delete v.moto; }
+    if (v.van?.map === 'formia') { const x = v.van.x; v.van.x = widened(x); if (band(x) || walled(v.van.x, v.van.y)) delete v.van; }
+  } },
   { id: 'formia2', what: 'Formia ridisegnata', run: backHome },
   { id: 'formia3', what: 'Formia vera, da OpenStreetMap', run: backHome },
   { id: 'formia4', what: 'le strade unite', run: backHome },
@@ -152,6 +163,60 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
     if (v.map === 'formia' && walled(v.x, v.y, /[-9|+8BiT#KLY]/)) { backHome(v); delete v.sella; }
     if (v.moto && v.moto.map === 'formia' && walled(v.moto.x, v.moto.y, /[-9|+8BiT#KLY]/)) delete v.moto;
     if (v.van && v.van.map === 'formia' && walled(v.van.x, v.van.y, /[-9|+8BiT#KLY]/)) delete v.van;
+  } },
+  /* the big pineta of Vindicio and its lungomare with the Frungillo and the Bandiera, the harbours open on the sea, more
+     tall grass (13 November 2026): whoever stood where a pine, a lido or a lamp is now goes home; a scooter or the van
+     left there goes back to its place */
+  { id: 'formia13', what: 'la pineta grande e il lungomare di Vindicio', run: function (v) {
+    var gone = function (x: number, y: number) { return walled(x, y, /[-9|+8BiTKLY#uhNX]/); };
+    if (v.map === 'formia' && gone(v.x, v.y)) { backHome(v); delete v.sella; }
+    if (v.moto && v.moto.map === 'formia' && gone(v.moto.x, v.moto.y)) delete v.moto;
+    if (v.van && v.van.map === 'formia' && gone(v.van.x, v.van.y)) delete v.van;
+  } },
+  { id: 'formia14', what: 'le case di Vindicio e via Canzatora', run: function (v) {
+    // Roads and building plots also reshape the wooded verges and their street signs.
+    const { x0, y0, x1, y1 } = VINDICIO_REVISION;
+    const occupied = (x: number, y: number) => x >= x0 && x <= x1 && y >= y0 && y <= y1 &&
+      (walled(x, y, /[KLTO]/) || MAPS.formia.signs!.some(s => s.x === x && s.y === y));
+    if (v.map === 'formia' && occupied(v.x, v.y)) { backHome(v); delete v.sella; }
+    if (v.moto?.map === 'formia' && occupied(v.moto.x, v.moto.y)) delete v.moto;
+    if (v.van?.map === 'formia' && occupied(v.van.x, v.van.y)) delete v.van;
+  } },
+  { id: 'formia15', what: 'la litoranea da Vindicio a Gaeta', run(v) {
+    const occupied = (x: number, y: number, vehicle = false) => {
+      if (!LITORANEA_REVISION.some(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1)) return false;
+      const m = MAPS.formia, ch = m.rows[y][x];
+      if (vehicle && /[~:EA]/.test(ch)) return true;
+      return walled(x, y, /[KLTOMQJiPuh]/) || LITORANEA_FLOODED.some(([px, py]) => px === x && py === y) ||
+        m.signs!.some(s => s.x === x && s.y === y);
+    };
+    if (v.map === 'formia' && occupied(v.x, v.y, v.sella)) { backHome(v); delete v.sella; }
+    if (v.moto?.map === 'formia' && occupied(v.moto.x, v.moto.y, true)) delete v.moto;
+    if (v.van?.map === 'formia' && occupied(v.van.x, v.van.y, true)) delete v.van;
+  } },
+  { id: 'formia16', what: 'il Tempio del Basso e il Bodeguita', run(v) {
+    const { x0, y0, x1, y1 } = PINETA_REVISION;
+    const occupied = (x: number, y: number, vehicle = false) => {
+      if (x < x0 || x > x1 || y < y0 || y > y1) return false;
+      const map = MAPS.formia;
+      return walled(x, y, /[BTiKL]/) || map.signs?.some(s => s.x === x && s.y === y) ||
+        (vehicle && /[EA]/.test(map.rows[y][x]));
+    };
+    if (v.map === 'formia' && occupied(v.x, v.y, v.sella)) { backHome(v); delete v.sella; }
+    if (v.moto?.map === 'formia' && occupied(v.moto.x, v.moto.y, true)) delete v.moto;
+    if (v.van?.map === 'formia' && occupied(v.van.x, v.van.y, true)) delete v.van;
+  } },
+  { id: 'formia17', what: 'la pineta sul mare a Caposele', run(v) {
+    const { x0, y0, x1, y1 } = PINETA_COSTIERA_REVISION;
+    const occupied = (x: number, y: number, vehicle = false) => {
+      if (x < x0 || x > x1 || y < y0 || y > y1) return false;
+      const map = MAPS.formia;
+      return walled(x, y, /[^~]/) || map.signs?.some(s => s.x === x && s.y === y) ||
+        (vehicle && /[~:EA]/.test(map.rows[y][x]));
+    };
+    if (v.map === 'formia' && occupied(v.x, v.y, v.sella)) { backHome(v); delete v.sella; }
+    if (v.moto?.map === 'formia' && occupied(v.moto.x, v.moto.y, true)) delete v.moto;
+    if (v.van?.map === 'formia' && occupied(v.van.x, v.van.y, true)) delete v.van;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a

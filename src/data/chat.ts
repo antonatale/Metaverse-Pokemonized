@@ -13,6 +13,7 @@ export const GROUP = 'il caminetto';
     the chat of his own covo); the friend freed last ('last') */
 export type Speaker = FriendId | 'rival' | 'keys' | 'last';
 export interface Chat { id: string; label: string; after?: string; badges?: number; replies?: string[]; lines: [Speaker, string][]; loss?: [Speaker, string][];
+  freeOnly?: true;
   /** a chat of one covo (13 November 2026): it comes when the invitation to that covo is the next stop of the tour, and
       is written by its keeper only, one covo at a time, nothing told before its time */
   covo?: string }
@@ -43,7 +44,7 @@ export const CHATS: Chat[] = [
     ['andrea', 'Ho ricalcolato Formia. Casa mia adesso è una torre.'], ['andrea', 'Probabilità che io esca: zero. Al 94%.'],
     ['keys', 'Le chiavi del Liberty le ho io, {hero}. Probabilità che te le ridia: dipende da te.'] ] },
   { id: 'eco-circolo', covo: 'circolo', label: 'Forchetta palleggia', replies: ['Forchetta??', 'Arrivo al Zauli', '🎾'], lines: [
-    ['forchetta', 'palleggio.'], ['forchetta', 'non riesco a smettere. poteva andare peggio.'],
+    ['forchetta', 'palleggio.'], ['forchetta', 'non riesco a smettere. poteva andare peggio.'], ['forchetta', 'tra un colpo e l\'altro ho finito un quadro e stampato una protesi.'],
     ['keys', 'le chiavi del liberty le ho io. vieni al campo.'] ] },
   { id: 'eco-eclipse', covo: 'eclipse', label: 'Valentin nella nebbia', replies: ['Valentin, esci da lì!', 'Arrivo', '🌫️'], lines: [
     ['valentin', 'Weee… c\'è nebbia verde in salotto. E musica romena.'], ['valentin', 'Sto benissimo. Ballo. Non riesco a smettere. Weee.'],
@@ -65,35 +66,38 @@ export const CHATS: Chat[] = [
     ['rival', 'Ok, ok, al parco hai vinto tu. Ma è solo l\'inizio, {hero}.'],
     ['forchetta', 'Poteva andare peggio, {rv}. Potevi perdere contro di me.'],
     ['valentin', 'Weee, la rivalità! Io faccio il tifo per tutti e due. Più per chi offre.'] ] },
-  { id: 'spilla-1', label: 'La prima spilla', badges: 1, replies: ['Lo scopriremo insieme', 'Una alla volta!', '🏅'], lines: [
-    ['last', 'Ragazzi… sono tornato me stesso. Grazie a {hero}.'],
-    ['last', 'Non ricordo quasi niente. Solo una voce, dalle pietre, che mi chiamava «custode». E una luce, la notte del boato.'],
-    ['last', 'Se è successo a me, può essere successo anche ad altri. Guardate se qualcuno nel gruppo scrive cose strane.'] ] },
-  { id: 'pietra-mura', label: 'Il Cisternone', after: 'pietra-mura', replies: ['Era buio pesto 😱', 'Tutto sotto controllo', '👻'], lines: [
-    ['andrea', 'Siete scesi nel Cisternone? Al buio? Ho calcolato le probabilità di uscirne e non ve le dico.'],
-    ['zendavid', 'Là sotto c\'è un\'eco pazzesca. Ci vorrei registrare un pezzo. Bau.'],
-    ['forchetta', 'ok…'] ] },
-  { id: 'spilla-3', label: 'Tre spille', badges: 3, replies: ['Festa quando siamo tutti liberi', 'Ancora poche 💪', '😎'], lines: [
-    ['last', 'Tre sigilli, {hero}. Ogni volta che uno di noi si sveglia, l\'eco si fa più debole: si sente.'],
-    ['rival', 'Tre? Io ne ho di più. Più o meno. Ci vediamo in giro, {hero}.'] ] },
-  { id: 'pietra-mare', label: 'La pietra del mare', after: 'pietra-mare', replies: ['😂😂😂', 'Claudia ha ragione', '🌊'], lines: [
-    ['zendavid', 'Un sub alle peschiere di Caposele? Pazzesco. Io in acqua ci vado solo con le cuffie impermeabili.'],
-    ['claudia', 'Le pietre sono due. Come i tavoli quando parla Costanzo.'],
-    ['costanzo', 'Non è vero.'],
-    ['claudia', 'Appunto.'] ] },
-  { id: 'pietra-voce', label: 'Le tre pietre', after: 'pietra-voce', replies: ['Che venga pure', 'Occhi aperti 👀', '🔥'], lines: [
-    ['antonio', 'Cicerone in persona vi ha interrogati? Io gli chiederei del suo paper sulle Catilinarie.'],
-    ['andrea', 'Tutte e tre le pietre. Mamurra adesso viene a cercarvi: fate attenzione.'],
-    ['valentin', 'Se viene Mamurra, gli facciamo una festa che non si scorda più. Weee!'] ] },
-  { id: 'mamurra', label: 'Mamurra sconfitto', after: 'tr-mamurra', replies: ['Festa all\'Eclipse! 🎉', 'Formia è salva', 'BAU'], lines: [
-    ['costanzo', 'GIÀ LO SAPEVO. Formia è salva! Discorso stasera in piazza della Vittoria.'],
-    ['forchetta', 'Poteva andare peggio. Tipo, poteva vincere lui.'],
-    ['claudia', 'Il Padre ha ascoltato tutti. Il verdetto è: {hero}.'],
-    ['zendavid', 'BAU! (Questo è un bau di festa.)'],
-    ['valentin', 'Festa all\'Eclipse, subito! Tutti, anche {rv}!'] ] },
-  { id: 'ultima-spilla', label: 'Tutte le spille', badges: 6, replies: ['Mi mancherete 🥲', 'Binario, arrivo!', '🚂'], lines: [
-    ['rival', 'Va bene: sei il più forte di Formia, {hero}. L\'ho detto. Non lo ripeto.'],
-    ['antonio', 'Tutte le spille di Formia. Adesso il treno: Torino, e un giorno Chicago.'],
-    ['andrea', 'Il treno parte in orario. Ho controllato. Due volte.'],
-    ['valentin', 'Weee! Prima di partire, l\'ultima festa.'] ] }
+  { id: 'spilla-1', label: 'Il primo sigillo', badges: 1, replies: ['Proviamo con gli altri', 'Ti porto qualcosa da mangiare', 'Ho segnato l’ora'], lines: [
+    ['last', 'Ragazzi, la spilla se n’è andata e la luce si è spenta. Da dentro sembrava che fossero passati cinque minuti.'],
+    ['last', 'La cosa strana è che l’impulso è tornato anche dopo. Sempre allo stesso intervallo. Viene da più lontano.'] ] },
+  { id: 'pietra-mura', label: 'I segni nel Cisternone', after: 'pietra-mura', freeOnly: true, replies: ['Segno tutto', 'Adesso Caposele', 'Ci vediamo fuori'], lines: [
+    ['claudia', 'I graffi freschi erano solo fuori dalla porta. Dentro, i tre segni sulla pietra erano tutti consumati. Erano lì da molto prima degli scavi.'],
+    ['forchetta', 'tre segni anche sul frammento del campo. ho fatto un disegno.'],
+    ['andrea', 'La Pietra ha pulsato nello stesso istante della torre. Ce l’ho negli appunti.'] ] },
+  { id: 'spilla-3', label: 'Lo stesso impulso', badges: 3, replies: ['Portiamo le prove a Mola', 'Il segno è lo stesso', 'Continuo a seguire l’eco'], lines: [
+    ['last', 'Ho messo vicino gli appunti di noi tre. La luce cambiava colore da un covo all’altro, ma il ritmo era sempre lo stesso.'],
+    ['last', 'Se trovi un posto che pulsa così, fermati ad ascoltare. Potrebbe esserci un’altra Pietra.'] ] },
+  { id: 'pietra-mare', label: 'La registrazione di Caposele', after: 'pietra-mare', freeOnly: true, replies: ['La faccio sentire a Cicerone', 'La riascolto', 'Salvala'], lines: [
+    ['zendavid', 'La registrazione dura undici secondi. Sotto l’acqua, verso la fine, si sentono parole. Alza il volume solo lì.'],
+    ['costanzo', 'Ho richiamato quello che ha visto il sub. L’ultima volta aveva con sé una moneta, la stringeva anche quando è entrato in acqua.'] ] },
+  { id: 'pietra-voce', label: 'Le tre Pietre', after: 'pietra-voce', freeOnly: true, replies: ['Riuniamoci', 'Occhi aperti', 'Le tengo al sicuro'], lines: [
+    ['antonio', 'Mura, Mare e Voce hanno tre suoni diversi. Ma quando le metti vicine rispondono tutte insieme.'],
+    ['andrea', 'Ho spento il Visore e la luce ha continuato. Se lo vediamo noi, può vederlo anche Mamurra.'] ] },
+  { id: 'rapimento', label: 'Dopo Gianola', lines: [
+    ['claudia', 'Ho avvisato chi era a casa. Se torna anche una sola creatura ci scrivono subito.'],
+    ['antonio', 'Ho salvato il tracciato del Visore. L’ultimo punto è sotto le mura di Castellone, alle tre nicchie.'],
+    ['forchetta', 'porto il frammento. se la pietra vibra anche là, almeno sappiamo cosa cercare.'],
+    ['valentin', 'Appello da adesso. Siamo in sette e restiamo in sette.'] ] },
+  { id: 'mamurra', label: 'Le creature a casa', after: 'finale-riunione', lines: [
+    ['claudia', 'Ho fatto il giro. Sono tornate anche quelle che aspettavano a casa.'],
+    ['valentin', 'La mia ha svuotato la ciotola. Poi si è addormentata con la testa dentro. Weee, piano però.'],
+    ['forchetta', 'stasera tengo il telefono acceso. nel dubbio.'],
+    ['zendavid', 'Bau. Stavolta vi ho sentiti tutti.'] ] },
+  { id: 'ultima-spilla', label: 'Il caminetto si ritrova', badges: 6, replies: ['Ci vediamo alla villa', 'Io porto le Pietre', 'Restiamo in contatto'], lines: [
+    ['rival', 'Mamurra vuole vedere tutte le Pietre insieme. Alla villa possiamo farlo uscire allo scoperto.'],
+    ['claudia', 'Ci andiamo tutti. Se uno si ferma, ci fermiamo tutti.'],
+    ['valentin', 'Weee. Stavolta faccio l’appello io prima di entrare.'] ] },
+  { id: 'saluti', label: 'Dalla stazione', lines: [
+    ['valentin', 'Buon viaggio, {hero}. Foto appena arrivi.'],
+    ['claudia', 'Tu manda un messaggio. Le foto dopo.'],
+    ['forchetta', 'porta qualcosa da mangiare sul treno.'] ] }
 ];

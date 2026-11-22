@@ -1,7 +1,7 @@
 import { st } from '../save/story-progress';
 import { COVI } from '../data/covi';
 import { CHARS as C } from '../data/characters';
-import { myStops, nextStop, npcAt, type Stop } from './goals';
+import { storyStops, nextStop, npcAt, type Stop } from './goals';
 import { MAPS } from '../data/maps';
 import { level, team, teamMons } from './growth';
 import { TRAINERS } from '../data/trainers';
@@ -37,16 +37,13 @@ export const CHAPTERS: Record<string, Chapter> = {
     done: ['Ottima scelta! Una creatura cresce con te: ogni lotta le dà esperienza, a certi livelli impara mosse nuove e poi cambia forma.', 'E hai visto come tremava? Qualunque cosa sia successa stanotte, le creature l\'hanno sentita prima di noi.'] },
   'seconda-creatura': { title: 'La creatura che ha paura',
     intro: ['La guardaparco è preoccupata: dopo il boato le creature dell\'erba alta di Gianola sono scappate dalle tane, e una non trova più le altre. Segue la tua da quando sei arrivato: è sola, e ha paura.', 'Cercala nell\'erba alta o tra gli scogli: indeboliscila, lancia un retino, e portala con te. Con una compagna la tua creatura si calma. E in lotta, con due, puoi cambiare: chi entra prende il colpo, ma è in guardia.'],
-    done: ['Due creature, e nessuna ha più paura. Mandale contro chi ha il tipo che battono: una batte, l\'altra regge.', 'Ora ascolta. La guardaparco ha visto da dove venivano le luci di stanotte: non solo da Gianola. Una si è accesa anche in città, e non si è più spenta. Segui la freccia: là qualcuno sa cosa è successo.'] },
+    done: ['Le tue creature si sono calmate. Ora seguiamo il boato fino alle rovine di Gianola. La guardaparco ha visto qualcuno tornare con una pala.'] },
   'squadra-cisterna': { title: 'Una squadra per il buio',
     intro: ['L\'archivista l\'ha detto: la Pietra delle Mura è sotto Castellone, nel Cisternone. Laggiù, al buio, vivono creature che non hanno mai visto il sole, e gli uomini di Mamurra ci stanno già provando.', 'Non scendere con meno di tre creature: catturane un\'altra, nell\'erba alta o tra gli scogli.'],
     done: ['Tre creature: ora il Cisternone non fa più paura.'] },
-  'squadra-mamurra': { title: 'Una squadra per Mamurra',
-    intro: ['Mamurra ha tre creature evolute e la Ricchezza, che si rompe solo con i colpi superefficaci. Ti servono quattro creature che battano tipi diversi.'],
-    done: ['Quattro creature, e di tipi diversi. Mamurra ha i soldi; tu hai una squadra.'] },
   'trama-scavi': { title: 'Gli scavi di Gianola',
     intro: ['Il boato di stanotte è partito da Gianola, dalle rovine della villa romana. E lì, adesso, qualcuno scava con la pala. Di giorno, in giacca e cravatta. Strano, no?', 'Hai una creatura: andiamo a vedere chi è. Le creature lottano con le creature.'],
-    done: ['Uomini di Mamurra! Cercano le Pietre di Telepilo, e sono stati loro a svegliarle stanotte, scavando: il boato, le luci, le creature, quello che è successo ai tuoi amici. Tutto viene da lì.', 'Questa storia è più grande di un giro per Formia.'] },
+    done: ['Gli scavi di Mamurra hanno fatto partire il boato. Una delle luci è rimasta accesa in città. Il telefono comincia a vibrare.'] },
   'trama-archivio': { title: 'Le Pietre di Telepilo',
     intro: ['Per capire cosa hanno svegliato gli uomini di Mamurra servono le carte giuste. Nella Torre di Mola c\'è l\'Archivio storico: l\'archivista conosce le leggende delle Pietre.'],
     done: ['Tre pietre: delle mura, del mare, della voce. Tengono chiuse le porte di Telepilo, la città dei giganti. E Mamurra le vuole tutte.'] },
@@ -64,23 +61,27 @@ export const CHAPTERS: Record<string, Chapter> = {
     done: ['La Pietra del Mare! Ne manca una, e so bene dov\'è.'] },
   'trama-voce': { title: 'La Pietra della Voce',
     intro: ['La terza pietra la custodisce un oratore. Sono io, {hero}. Vieni alla mia tomba, sull\'Appia: ti farò tre domande su Formia.'],
-    done: ['Hai tutte e tre le pietre. Ora Mamurra verrà a cercarti.'] },
-  'trama-mamurra': { title: 'Il fantasma di Mamurra',
-    intro: ['Alla sua villa di Gianola ti aspetta Mamurra in persona, con tre creature evolute. Allenati, porta le tielle, e scegli bene chi mandare.', 'Non è una lotta come le altre: c\'è in gioco Formia.'],
-    done: ['Mamurra è caduto. Formia ti deve un favore.'] },
+    done: ['Le tre Pietre reagiscono allo stesso impulso che avete trovato nei covi.'] },
+  'trama-mamurra': { title: 'L’incontro a Gianola',
+    intro: ['Il caminetto si ritrova alla villa. Insieme avete trovato tutte e tre le Pietre. Andate alle rovine e seguite la luce dorata.'],
+    done: ['Mamurra ha rapito le vostre creature.'] },
+  'finale-discesa': { title: 'Sotto le mura di Castellone',
+    intro: ['Il Visore ha seguito l’eco fin sotto le mura. Cerca le tre nicchie accese e scendi dalle scale.'], done: [] },
+  'finale-ponte': { title: 'La Porta di Telepilo',
+    intro: ['Attraversa il ponte con gli amici. Mamurra vi aspetta dall’altra parte.'], done: ['Avete riportato a casa le vostre creature.'] },
   /* the seven covi (data/covi.ts): whoever is played meets the other six, in any order; each pin makes the next one harder */
   'covo-palamendola': { title: 'La Cupola di Antonio',
     intro: ['Nel parco, accanto alla fontana, la cupola di Antonio. Ci si arriva da casa sua: dalla porta sul retro, tra le siepi e i suoi robot. Dentro, i laser si spengono dalle pedane dall\'altra parte del nucleo.', 'È di tipo Cervello: il Caos gli manda all\'aria i piani.'],
-    done: ['Stato dell\'arte. Ogni spilla rende più forti i covi che restano: allenati.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Il Visore ha registrato il percorso dell’eco.'] },
   'covo-padel': { title: 'La Torre delle Probabilità',
     intro: ['La torre di dadi di Andrea, a Castellone. Alle due porte fanno domande di probabilità: sbagli, e si lotta.', 'È di tipo Cervello: il Caos lo batte. E i colpi critici gli fanno il doppio.'],
-    done: ['Non era nei dati, dice lui. Lo era nei miei.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Andrea ha misurato il tempo tra gli impulsi.'] },
   'covo-circolo': { title: 'Il Tempio della Terra Rossa',
     intro: ['Nei coperti del Zauli la terra rossa scivola come il ghiaccio: guarda dove è asciutta. In fondo, oltre la rete, Forchetta.', 'È di tipo Calma: la Calma perde contro il Cuore e batte il Caos. Pensa bene a chi mandare in campo.'],
-    done: ['Spilla «Poteva andare peggio». Ogni spilla rende più forti i covi che restano.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Il frammento di Forchetta porta lo stesso segno delle Pietre.'] },
   'covo-morgana': { title: 'Il Castello del Padre',
     intro: ['Il castello nero di Claudia, in via Palazzo. Due sedie, nelle due ali: sedersi su entrambe apre la sala del trono. Uno alla volta.', 'È di tipo Calma: il Cuore la batte. Ma il primo colpo che le dai vale la metà: Il Padre la protegge.'],
-    done: ['Spilla «Tavoli separati». Anche il Padre, alla fine, ha ascoltato.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Con la lanterna di Claudia puoi leggere le tracce al Cisternone.'] },
   quiz: { title: 'Una sera da Morgana',
     intro: ['Stasera da Morgana, a Mola, c\'è il quiz su Formia. Domande sulla mia città: le so tutte, ma non ti suggerisco. Quasi.'],
     done: ['Ora sai qualcosa in più di Formia. Io ci ho passato le estati migliori, nella mia villa.'] },
@@ -89,7 +90,7 @@ export const CHAPTERS: Record<string, Chapter> = {
     done: ['Le pause servono, e servono gli amici. Anche Cesare ne aveva, per quanto ne so. Pochi.'] },
   'covo-piazza': { title: 'Il Palazzo del Popolo',
     intro: ['In piazza della Vittoria Costanzo parla dal balcone del suo palazzo. Di comizi me ne intendo: le Catilinarie le ho scritte io. Alle porte, l\'esame di educazione civica.', 'È di tipo Chiacchiera: il Cervello lo batte.'],
-    done: ['Hai zittito un oratore! Ogni spilla rende più forti i covi che restano.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['In piazza hanno visto dove sono andati gli uomini di Mamurra.'] },
   'item-caricabatterie': { title: 'Il caricabatterie perduto',
     intro: ['{hero}, perdi le cose come io perdevo la pazienza con Catilina.', 'Il caricabatterie del robot è dalle parti della stazione. Ritrovalo e nelle lotte della storia non lo perderai più.'],
     done: ['Uno in meno. Sim-to-Real non resterà più bloccata.'] },
@@ -101,13 +102,13 @@ export const CHAPTERS: Record<string, Chapter> = {
     done: ['Hai planato! Ai miei tempi sul golfo c\'erano solo le triremi.'] },
   'covo-eclipse': { title: 'La Torre Verde',
     intro: ['Nella torre verde di Valentin, in via Ferrucci, ballano le Iele: tre file, ognuna al suo tempo. Guardale, e sali in passo con loro.', 'È di tipo Caos: la Calma lo spegne. E recupera un po\' di PS a ogni turno: non farla durare.'],
-    done: ['Weee! Anche la festa di Valentin ha una fine.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Valentin ha riportato fuori chi si era perso nella nebbia.'] },
   'item-portafoglio': { title: 'Il portafoglio sotto l\'ombrellone',
     intro: ['Il portafoglio è sotto un ombrellone dell\'Eclipse. Senza soldi niente retini e niente tielle.'],
     done: ['Portafoglio al sicuro: i sesterzi ti servono nei negozi.'] },
   'covo-pineta': { title: 'Il Tempio del Basso',
     intro: ['In mezzo alla pineta di Vindicio, il tempio di casse di Zendavid. Il DJ alla porta fa tre domande su Kanye.', 'È di tipo Cuore: la Chiacchiera lo convince di tutto. E ogni colpo che prende gli mette ansia.'],
-    done: ['Bau. Anche Zendavid ha dovuto togliersi le cuffie.', 'Un sigillo è tornato al suo posto: l\'eco si è fatto più debole. Ma in città c\'è ancora una luce accesa.'] },
+    done: ['Zendavid ha isolato una voce in latino.'] },
   'item-passaporto': { title: 'Il passaporto alla mia tomba',
     intro: ['L\'ultima cosa: il passaporto. È ai piedi della mia tomba, sull\'Appia verso Itri.', 'Sì, la mia tomba. Passa a salutarmi: lì mi sento a casa.'],
     done: ['Passaporto ritrovato. Chissà fin dove ti porterà.'] },
@@ -152,8 +153,10 @@ export function chapterOf(id: string): Chapter | undefined {
   /* the invitations to the covi: who sends the player there (data/covo-places.ts) */
   if (id.indexOf('invito-') === 0 && COVO_PLACES[id.slice(7)]) {
     var P = COVO_PLACES[id.slice(7)];
-    return { title: P.hook.text, intro: [P.hook.tip, 'Un\'altra luce che non si spegne, in città. Senti cosa racconta: un amico non si sfida per niente.'],
-      done: ['Hai l\'invito: ' + COVI[P.covo].name + '. Dentro, prima di ' + C[P.leader].name + ', ci sono quelli che l\'eco ha messo a difenderlo: non ti lasceranno passare senza lottare, e non si scappa.'] };
+    const intro = [P.hook.tip];
+    if (!st.badges.length) intro.push('Il tuo amico ripete sempre lo stesso gesto. Credo che l’eco lo costringa a difendere la spilla. Sfida il custode. Se perde, dovrà lasciarla andare.');
+    return { title: P.hook.text, intro,
+      done: ['Ora puoi entrare. L’eco ha messo delle guardie fra te e ' + C[P.leader].name + '.'] };
   }
   var ch = CHAPTERS[id];
   /* the park is east of most homes, but west of Zendavid's, in Scauri */
@@ -176,15 +179,15 @@ export function typeWord(leader: FriendId): string | null {
 }
 function covoOf(s: Stop): number | null { var id = s.id.indexOf('covo-') === 0 ? s.id.slice(5) : null; return id && COVI[id] ? covoLevel(id) : null; }
 /** the battles of the plot: whose creatures, and the strongest of them */
-const PLOT_FOE: Record<string, string> = { 'trama-scavi': 'mamurr-scavi', 'trama-cisterna': 'mamurr-cisterna', 'trama-mare': 'mamurr-peschiere', 'trama-mamurra': 'mamurra' };
+const PLOT_FOE: Record<string, string> = { 'trama-scavi': 'mamurr-scavi', 'trama-cisterna': 'mamurr-cisterna', 'trama-mare': 'mamurr-peschiere' };
 function plotFoe(s: Stop): { who: string; lv: number } | null {
   var tr = PLOT_FOE[s.id] ? TRAINERS[PLOT_FOE[s.id]] : null;
   return tr ? { who: tr.title.replace(/^(L'|Il |La )/, function (m) { return m.toLowerCase(); }), lv: Math.max.apply(null, tr.team.map(function (t) { return t.lv; })) } : null;
 }
 /** what Cicero says when asked: the chapter, the challenge, and whether the team is ready */
 export function advice(): string[] {
-  var all = myStops(), s = nextStop(), ch = chapterOf(s.id), done = all.filter(function (x) { return x.done(); }).length;
-  var out = ['Capitolo ' + (done + 1) + ' di ' + all.length + ': ' + (ch ? ch.title : s.text) + '.'].concat(ch ? ch.intro : [s.tip]);
+  var s = nextStop(), ch = chapterOf(s.id);
+  var out = (ch ? ch.intro : [s.tip]).slice();
   var lv = covoOf(s);
   if (lv) {
     var b = best(), who = C[COVI[s.id.slice(5)].leader].name, tw = typeWord(COVI[s.id.slice(5)].leader);
@@ -204,7 +207,7 @@ export function chapterNow(): { title: string; text: string; done: string | null
   var s = nextStop();
   if (st.seen['cap-' + s.id]) return null;
   st.seen['cap-' + s.id] = true;
-  var fin = myStops().filter(function (x) { return x.done() && !st.seen['fin-' + x.id]; });
+  var fin = storyStops().filter(function (x) { return x.done() && !st.seen['fin-' + x.id]; });
   fin.forEach(function (x) { st.seen['fin-' + x.id] = true; });
   var last = fin.length ? chapterOf(fin[fin.length - 1].id) : null, ch = chapterOf(s.id);
   return ch ? { title: ch.title, text: ch.intro[0], done: last && last.done.length ? last.done[0] : null } : null;

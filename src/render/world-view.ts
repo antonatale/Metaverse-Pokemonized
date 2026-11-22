@@ -1,6 +1,6 @@
 import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
-import { T, hash, palette, paintGround, tallFront, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
+import { T, hash, palette, paintGround, setTallStill, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
 import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, type PreparedMap } from '../story/maps';
 import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
@@ -29,8 +29,11 @@ import { FORMIA_AT, FORMIA_SPOT, FORMIA_HIDING } from '../data/maps/formia-groun
 import { BOTTLES } from '../data/maps/formia';
 import { reduced } from '../ui/dom';
 import { rich } from '../ui/gfx';
+import { tallLayer, tallFront, tallBits, tallStep, stillTuft } from './tall-grass';
 import { shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
 import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS } from '../ui/story-screen';
+import { worldShot } from '../ui/story-cutscene';
+import { creaturesMissing } from '../story/finale';
 
 /* Drawing the story map: camera, cached pictures, everything sorted so people walk behind trees and roofs.
    This is the part a Phaser scene will take over; it only reads the story's state. */
@@ -49,6 +52,8 @@ interface Drawn { yb: number; x: number; y?: number; spr?: Sprite; w?: Walker; d
   /** out at sea: in the water to the waist, standing on a paddle board, sitting in a gozzo (with its colour) */
   float?: 'swim' | 'sup' | 'boat' | 'windsurf' }
 interface SceneItem { x: number; yb: number; spr: Sprite; bob: boolean; glide: number; lit?: boolean; glow?: HTMLCanvasElement | null;
+  /** a building whose roof is not a box: its shadow is its outline (see SHAPED), made once when first needed */
+  shaped?: { k: number; sweep: number; prof?: HTMLCanvasElement | null };
   /** the light and the wind (render/atmosphere.ts): how much it leans in the wind; the block that casts its shadow (a
       building), or none when it floats; the same picture without the light on it, to find its windows at night */
   sway?: number; box?: Caster['box']; afloat?: boolean; flat?: () => Sprite;
@@ -105,11 +110,16 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
     var paint = function () { return paintObject(b.kind, P0, s, { w: b.w, h: b.h, up: up, x: b.x, doorX: b.door[0], label: label, roof: b.roof, awning: b.awning, v: b.v, look: b.look, state: cs, base: cp ? cp.base : undefined }); };
     var it = add(b.x * T, (b.y + b.h) * T, volume(paint(), P0), false, 0, lit);
     it.box = block(b.x, b.y, b.w, b.h, b.kind, b.up != null ? up : undefined); it.flat = paint;
+    var sh0 = SHAPED[b.kind];
+    /* a covo drawn as the home of the one played is a house again, and casts a house's shadow */
+    if (sh0 && !(cs === 'mine' && cp && cp.base && UP[cp.base])) it.shaped = { k: sh0.k === 'box' ? (up + T * 0.45) / (b.h * T + up) : sh0.k, sweep: sh0.sweep * b.h * T };
   });
   (m.objects || []).forEach(function (o) {
     var it = add(o.x * T, (o.y + o.h) * T, volume(paintObject(o.kind, P0, s, { w: o.w, h: o.h, up: UP[o.kind] || T, color: o.color }), P0), o.bob);
     /* wide things are blocks; slender ones (a monument, the lighthouse) are laid down as they are drawn */
     if (o.w * o.h > 2) it.box = block(o.x, o.y, o.w, o.h, o.kind);
+    var sh1 = SHAPED[o.kind];
+    if (sh1 && it.box) it.shaped = { k: sh1.k === 'box' ? ((UP[o.kind] || T) + T * 0.45) / (o.h * T + (UP[o.kind] || T)) : sh1.k, sweep: sh1.sweep * o.h * T };
     it.afloat = !!o.bob || m.cell(o.x, o.y).g === 'sea';
   });
   /* the lights across a lane: their foot just past the lane, so that whoever walks there passes under them */
@@ -131,6 +141,32 @@ function sceneItems(m: PreparedMap, P0: Palette, s: number): SceneItem[] {
   }
   items.sort(function (a, b) { return a.yb - b.yb; });
   return items;
+}
+/** the buildings whose roof is not a box (13 November 2026): domes, towers, gables and spires cast the shadow of their
+    outline, not of their footprint. `k`: how high the outline stands, for the picture of it (1: it is drawn as it
+    stands, a tower or a dome; `box`: as high as a box of the same building would be, for a front with its roof or
+    belfry drawn above it); `sweep`: how far back, in tiles of its depth, the outline stands again */
+const SHAPED: Record<string, { k: number | 'box'; sweep: number }> = {
+  covo: { k: 0.85, sweep: 0.3 }, castello: { k: 0.72, sweep: 0.3 }, tower: { k: 0.8, sweep: 0.3 }, octagon: { k: 0.8, sweep: 0.3 },
+  tomb: { k: 0.8, sweep: 0.35 }, fountain: { k: 1, sweep: 0.35 }, ruins: { k: 1, sweep: 0.3 }, lighthouse: { k: 1, sweep: 0.2 },
+  church: { k: 'box', sweep: 1 }, collegiata: { k: 'box', sweep: 1 }, parish: { k: 'box', sweep: 1 }, hermitage: { k: 'box', sweep: 1 },
+  arena: { k: 'box', sweep: 1 }, station: { k: 'box', sweep: 1 }, lido: { k: 'box', sweep: 0.8 }, teatro: { k: 0.9, sweep: 0.4 }
+};
+/** the outline of a picture, as a solid shape: each column filled from its topmost drawn pixel down (a glass dome casts
+    a whole shadow); the shadow on the ground drawn in the picture itself, a few px high, is left out */
+function outlineOf(cv: HTMLCanvasElement, rs: number): HTMLCanvasElement | null {
+  var w = cv.width, h = cv.height, data: Uint8ClampedArray;
+  try { data = cv.getContext('2d')!.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+  var q = Math.max(1, Math.round(rs)), out = document.createElement('canvas');
+  out.width = Math.ceil(w / q); out.height = Math.ceil(h / q);
+  var o = out.getContext('2d')!; o.fillStyle = '#000';
+  for (var x = 0; x < w; x += q) {
+    var top = -1;
+    for (var y = 0; y < h; y++) if (data[(y * w + x) * 4 + 3] > 70) { top = y; break; }
+    if (top < 0 || h - top < 11 * rs) continue;
+    o.fillRect(x / q, top / q, 1, (h - top) / q);
+  }
+  return out;
 }
 var auras: AuraAt[] = [];
 function ensureCaches(now: number) {
@@ -768,6 +804,10 @@ function casters(items: SceneItem[], people: Drawn[], now: number, rs?: number):
   var out: Caster[] = [], RS = rs || renderScale();
   items.forEach(function (it) {
     if (it.afloat) return;
+    if (it.shaped) {
+      if (it.shaped.prof === undefined) it.shaped.prof = outlineOf(it.spr.cv, RS);
+      if (it.shaped.prof) { out.push({ x: it.x, yb: it.yb - 4, w: it.spr.cv.width / RS, h: it.spr.cv.height / RS, img: it.shaped.prof, foot: 4, k: it.shaped.k, sweep: it.shaped.sweep }); return; }
+    }
     if (it.box) { out.push({ x: it.x, yb: it.yb, w: it.spr.cv.width / RS, h: it.spr.cv.height / RS, box: it.box }); return; }
     out.push({ x: it.x, yb: it.yb - 3, w: it.spr.cv.width / RS, h: it.spr.cv.height / RS, img: it.spr.cv, foot: 3, lean: it.sway && !reduced ? -it.sway * wind(it.x, it.yb, now) : 0 });
   });
@@ -788,6 +828,26 @@ export function drawWorld(now: number) {
   try { drawFrame(now, k); } finally { VS = vs0; CACHE_MAX = 12; }
 }
 var framed: boolean | null = null, landed: { x: number; y: number; at: number } | null = null;
+/* the steps into the tall grass, Antonio's and his creature's: each starts a rustle where it lands */
+var grassStep = -1, grassFol = '';
+function grassSteps(now: number, calm: boolean) {
+  var tall = function (x: number, y: number) { return M.cell(x, y).deco === 'tall'; };
+  if (mover && mover.t0 !== grassStep) {
+    grassStep = mover.t0;
+    var dx = Math.sign(mover.tx - mover.fx);
+    if (!st.sella && !moveMode.swim) {
+      if (tall(mover.tx, mover.ty)) tallStep(mover.tx, mover.ty, dx, mover.t0 + STEP * 0.45, true, calm);
+      if (tall(mover.fx, mover.fy)) tallStep(mover.fx, mover.fy, dx, mover.t0, false, calm);
+    }
+  }
+  if (fol && fol.map === M.id) {
+    var fk = fol.x + ',' + fol.y + ',' + fol.t0;
+    if (fk !== grassFol) {
+      grassFol = fk;
+      if (fol.t0 && tall(fol.x, fol.y) && !st.sella) tallStep(fol.x, fol.y, Math.sign(fol.x - fol.fx), fol.t0 + STEP * 0.55, true, calm);
+    }
+  }
+}
 function drawFrame(now: number, sk: number) {
   ensureCaches(now);
   /* the darker frame around the picture is a sheet of the page over the canvas (.wframe): there with the graphics on Alta */
@@ -795,8 +855,16 @@ function drawFrame(now: number, sk: number) {
   /* everything below is in map units (one tile = T); VS turns them into canvas pixels */
   var W = cv.width, H = cv.height, vw = W / VS, vh = H / VS, mw = M.w * T, mh = M.h * T;
   var pp = playerPx(now), lift = (H / DPR > 600 ? 56 : 28) / Z;   /* the player sits a little above the middle, clear of the pad */
-  var camX = mw <= vw ? (mw - vw) / 2 : Math.max(0, Math.min(mw - vw, pp.x + T / 2 - vw / 2));
-  var camY = mh <= vh ? (mh - vh) / 2 : Math.max(0, Math.min(mh - vh, pp.y + T / 2 - vh / 2 + lift));
+  const shot = worldShot;
+  const part = shot ? Math.max(0, Math.min(1, (now - shot.start) / shot.ms)) : 0;
+  const ease = part * part * (3 - 2 * part);
+  const focus = shot ? { x: (shot.from[0] + (shot.to[0] - shot.from[0]) * ease) * T, y: (shot.from[1] + (shot.to[1] - shot.from[1]) * ease) * T } : pp;
+  const travelX = shot ? shot.to[0] - shot.from[0] : 0, travelY = shot ? shot.to[1] - shot.from[1] : 0;
+  const filmMoving = !!(travelX || travelY) && part < 1;
+  const filmDir: Dir = Math.abs(travelX) > Math.abs(travelY) ? (travelX > 0 ? 'right' : 'left') : travelY > 0 ? 'down' : 'up';
+  const filmStep = filmMoving ? Math.floor(now / 160) % 2 : 0;
+  var camX = mw <= vw ? (mw - vw) / 2 : Math.max(0, Math.min(mw - vw, focus.x + T / 2 - vw / 2));
+  var camY = mh <= vh ? (mh - vh) / 2 : Math.max(0, Math.min(mh - vh, focus.y + T / 2 - vh / 2 + lift));
   camX = Math.round(camX * VS) / VS; camY = Math.round(camY * VS) / VS;
   lastCam = { x: camX, y: camY, vs: VS };
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -820,13 +888,31 @@ function drawFrame(now: number, sk: number) {
   }
   ctx.globalAlpha = 1;
   /* the floor of a place with a puzzle: it changes with the steps, so it is not part of the ground */
-  if (M.place) { var ps = placeNow(M.id); drawThings(ctx, P, M.place, ps.flags, ps.tick, now, reduced, { x0: x0, x1: x1, y0: y0, y1: y1 }); }
+  const rescue = creaturesMissing();
+  if (M.place && !(rescue && M.id === 'telepilo')) { var ps = placeNow(M.id); drawThings(ctx, P, M.place, ps.flags, ps.tick, now, reduced, { x0: x0, x1: x1, y0: y0, y1: y1 }); }
   /* the light and the life of Formia (render/atmosphere.ts): outdoors, with the graphics set to Alta */
   var date = new Date(), dk = M.dark ? 1 : M.inside ? 0 : darkness(date), sn = M.inside ? 0 : sunset(date), lit: SceneItem[] = [];
   var fx = rich() && !M.inside && !M.dark, sun = fx ? sunAt(date) : { x: 0, y: 0, k: 0 }, cam = { x: camX, y: camY, w: vw, h: vh }, tiles = fx ? tilesOf(M) : null;
   if (tiles) seaLife(ctx, tiles, x0, x1, y0, y1, now, reduced, 1 - dk * 0.8, P);
+  /* the tall grass: its long blades lean with the wind and part around Antonio and his creature (render/tall-grass.ts) */
+  var calm = reduced || !rich(), tallAt = function (x: number, y: number) { return M.cell(x, y).deco === 'tall'; };
+  grassSteps(now, calm);
+  var inGrass = [{ x: pp.x + T / 2, y: pp.y + T - 4, dx: mover ? Math.sign(mover.tx - mover.fx) : 0 }];
+  if (fol && fol.map === M.id && !st.sella) { var ft = Math.min(1, (now - fol.t0) / STEP); inGrass.push({ x: (fol.fx + (fol.x - fol.fx) * ft) * T + T / 2, y: (fol.fy + (fol.y - fol.fy) * ft) * T + T - 4, dx: Math.sign(fol.x - fol.fx) }); }
+  tallLayer(ctx, tallAt, x0, x1, y0, y1, now, calm, inGrass, P, RS);
   var people: Drawn[] = [], alerts: [number, number, number][] = [];
   M.people.filter(present).forEach(function (p) {
+    if (rescue && p.n.legend === 'lamo') {
+      ctx.save(); ctx.translate((p.x + 0.5) * T, (p.y + 0.52) * T);
+      const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, T * 1.65);
+      glow.addColorStop(0, '#fbe2a8'); glow.addColorStop(1, '#dcb35600');
+      ctx.fillStyle = glow; ctx.fillRect(-T * 2, -T * 2, T * 4, T * 4);
+      ctx.strokeStyle = '#fff2b7'; ctx.lineWidth = 2;
+      for (let i = -1; i <= 1; i++) ctx.strokeRect(i * 6 - 2, -4, 4, 9);
+      ctx.restore();
+      return;
+    }
+    if (shot && p.n.person && shot.actors.includes(p.n.person)) return;
     if (p.n.ghost) {
       /* a ghost of Formia floats over its spot, see-through */
       var gi = mamurraImage(), fl = reduced ? 0 : Math.sin(now / 800) * 3;
@@ -874,7 +960,7 @@ function drawFrame(now: number, sk: number) {
   if (vd) people.push(vd);
   if (inVan) { /* the player rides in the van */ }
   else if (riding) people.push(Object.assign(rider(now, RS, pp), { me: true }));
-  else people.push({ me: true, yb: pp.y + T + 0.5, x: pp.x, y: pp.y, w: walkerFor(hero(), RS), d: st.dir, f: moveMode.swim ? 0 : step, float: moveMode.swim ? (moveMode.board ? 'windsurf' : 'swim') : undefined,
+  else people.push({ me: true, yb: focus.y + T + 0.5, x: focus.x, y: focus.y, w: walkerFor(hero(), RS), d: filmMoving ? filmDir : st.dir, f: shot ? filmStep : moveMode.swim ? 0 : step, float: moveMode.swim ? (moveMode.board ? 'windsurf' : 'swim') : undefined,
     hop: mover && !reduced && !moveMode.swim ? (mover.jump ? Math.sin(pp.t * Math.PI) * 13 : stepHop(pp.t)) : 0, breath: mover || reduced || !fx ? 1 : 1 + 0.014 * Math.sin(now / 820) });
   var pk = parkedMoto(RS);
   if (pk) people.push(pk);
@@ -891,6 +977,12 @@ function drawFrame(now: number, sk: number) {
     if (st.seen[b.id] || b.x < x0 - 1 || b.x > x1 + 1 || b.y < y0 - 1 || b.y > y1 + 1) return;
     people.push({ yb: (b.y + 1) * T + (reduced ? 0 : Math.sin(now / 420 + b.x) * 2), x: b.x * T, spr: bottleSprite(RS) });
   });
+  if (shot) shot.actors.forEach(function (id, i) {
+    const t = reduced || !shot.entering.includes(id) ? 1 : Math.min(1, Math.max(0, (now - shot.start - i * 140) / 850));
+    if (t === 0) return;
+    const x = focus.x + (i % 3 - 1) * (T * 1.5), y = focus.y + (Math.floor(i / 3) + 0.65 + (1 - t) * 1.5) * T;
+    people.push({ x, y, yb: y + T, w: walkerFor({ person: id }, RS), d: filmMoving ? filmDir : 'up', f: t < 1 ? Math.floor(now / 150) % 2 : filmStep });
+  });
   people.sort(function (a, b) { return a.yb - b.yb; });
   if (tiles) {
     /* on the ground, under everyone: the shadows, turning with the sun, and the clouds'; the pigeons that have not flown off */
@@ -904,10 +996,11 @@ function drawFrame(now: number, sk: number) {
   auras.forEach(function (a) { if (inView(a)) auraBack(ctx, a, now, reduced, !rich()); });
   drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   if (M.id === 'formia') pumpScene(ctx, now);
-  /* in the tall grass the blades hide Antonio's feet, and his creature's */
-  [[pp.x, pp.y]].concat(fw ? [[fw.x, fw.yb - T]] : []).forEach(function (q) {
-    if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P);
+  /* in the tall grass the blades hide Antonio's feet, and his creature's; the bits a step throws up fly over them */
+  [[pp.x, pp.y, mover ? Math.sign(mover.tx - mover.fx) : 0]].concat(fw && fol ? [[fw.x, fw.yb - T, Math.sign(fol.x - fol.fx)]] : []).forEach(function (q) {
+    if (M.cell(Math.round(q[0] / T), Math.round(q[1] / T)).deco === 'tall') tallFront(ctx, q[0], q[1], P, RS, now, calm, q[2]);
   });
+  tallBits(ctx, now, P);
   if (tiles) {
     /* in the air, over everyone: the pigeons flying off, the butterflies */
     pigeons(ctx, tiles, M.id, cam, now, reduced, pp.x, pp.y, 1 - dk, true);
@@ -993,7 +1086,7 @@ export function preview(el: HTMLElement | null, o?: { at?: [number, number]; spa
   var sx = Math.max(0, Math.min(mw - sw, fx - sw / 2)), sy = Math.max(0, Math.min(mh - sh, fy - sh / 2));
   var rx = Math.floor(sx / T), ry = Math.floor(sy / T), rect = { x: rx, y: ry, w: Math.min(m.w, Math.ceil((sx + sw) / T)) - rx, h: Math.min(m.h, Math.ceil((sy + sh) / T)) - ry };
   c.setTransform(s * k, 0, 0, s * k, -sx * s * k, -sy * s * k);
-  c.drawImage(paintGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
+  c.drawImage(stillGround(m, P0, s, rect), rect.x * T, rect.y * T, rect.w * T, rect.h * T);
   var me = st.map === 'formia' ? st : { x: m.start[0], y: m.start[1], dir: m.start[2] };
   var people = m.people.filter(function (p) { return present(p) && !p.n.wild && !p.n.mon && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s), d: p.dir }; });
   people.push({ yb: (me.y + 1) * T + 0.5, x: me.x * T, y: me.y * T, w: walkerFor(hero(), s), d: me.dir });
@@ -1009,12 +1102,18 @@ export function preview(el: HTMLElement | null, o?: { at?: [number, number]; spa
 }
 
 
+/** the ground of a still picture of a map (the title, the overview, the town map): the long blades of the tall grass
+    painted in, as they stand when there is no wind */
+function stillGround(m: PreparedMap, P0: Palette, s: number, rect?: { x: number; y: number; w: number; h: number }): HTMLCanvasElement {
+  setTallStill(stillTuft);
+  try { return paintGround(m, P0, s, rect); } finally { setTallStill(null); }
+}
 /** the whole map as one picture, as a data URL (used by the automated playtest) */
 export function overview(id?: string, s?: number): string {
   var m = prepare(id || 'formia'), P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
   s = s || 1; c0.width = m.w * T * s; c0.height = m.h * T * s;
   c.setTransform(s, 0, 0, s, 0, 0);
-  c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
+  c.drawImage(stillGround(m, P0, s), 0, 0, m.w * T, m.h * T);
   var people: Drawn[] = m.people.filter(function (p) { return present(p) && !p.n.wild && !p.n.mon && p.n.pet == null; }).map(function (p) { return { yb: (p.y + 1) * T, x: p.x * T, y: p.y * T, w: walkerFor(p.n, s!), d: p.dir }; });
   m.items.forEach(function (it) { if (!st.found[it.id]) people.push({ yb: (it.y + 1) * T, x: it.x * T, spr: paintObject('item', P0, s!, { item: ITEMS[it.move].icon, up: UP.item }) }); });
   people.sort(function (a, b) { return a.yb - b.yb; });
@@ -1039,7 +1138,7 @@ export function townMap(el: HTMLElement) {
     var P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
     c0.width = Math.round(m.w * T * s); c0.height = Math.round(m.h * T * s);
     c.setTransform(s, 0, 0, s, 0, 0);
-    c.drawImage(paintGround(m, P0, s), 0, 0, m.w * T, m.h * T);
+    c.drawImage(stillGround(m, P0, s), 0, 0, m.w * T, m.h * T);
     drawSorted(c, sceneItems(m, P0, s), [], s, null, 0);
     town = { key, cv: c0 };
   }

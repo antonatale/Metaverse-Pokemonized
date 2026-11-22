@@ -3,6 +3,7 @@ import { st, save } from '../save/story-progress';
 import { stepTime } from '../data/growth';
 import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall, moto, motoAt, rideable } from './maps';
 import { placeArrived, placeEntered } from './place-run';
+import { creaturesMissing } from './finale';
 import type { Arrival } from './place';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
@@ -125,7 +126,7 @@ function tryStep(d: Dir, now: number): boolean {
     var sailing = now - lastEnd < 90;
     gear = !sailing ? 0 : d === rideDir ? Math.min(WIND.length - 1, gear + 1) : Math.max(0, gear - 2);
     rideDir = d; mover.dur = WIND[gear];
-  } else sfx('step');
+  } else sfx(M.cell(nx, ny).deco === 'tall' ? 'grass' : 'step');
   parity ^= 1;
   return true;
 }
@@ -194,7 +195,7 @@ function arrived(): boolean {
   if (a && a.kind === 'door' && a.b.to) { var dr = doorRoute ? doorRoute(a.b) : null; if (dr) warp(dr.to, dr.x, dr.y, dr.dir); else warp(a.b.to, a.b.tx!, a.b.ty!, a.b.tdir); return true; }
   if (a && a.kind === 'warp') { warp(a.w.to, a.w.tx, a.w.ty, a.w.tdir); return true; }
   /* a place with a puzzle: the tile does what it does; a floor that carries is one more step, with nobody asking */
-  if (M.place) {
+  if (M.place && !(M.id === 'telepilo' && creaturesMissing())) {
     var r = placeArrived(M.place);
     if (placeHook) placeHook(r);
     if (r.hit || r.pad) { warp(M.id, r.w.x, r.w.y, r.pad && r.pad.dir); return true; }

@@ -72,12 +72,12 @@ export const PATHS: Record<FriendId, PersonPath> = {
   forchetta: {
     learn: [[5, 'servizio'], [5, 'pitstop'], [7, 'formia'], [10, 'criptico'], [14, 'volee'], [20, 'play'], [26, 'matchpoint']],
     moves: [
-      atk('volee', 'Volée', 70, 'A rete, prima che tu capisca: colpisce per primo, anche lui.', { priority: 1 }),
+      atk('volee', 'Pennellata', 70, 'Da pittore: una pennellata sola, prima che tu capisca. Colpisce per primo, anche lui.', { priority: 1 }),
       { id: 'play', name: 'Partita alla Play', kind: 'status', text: 'Ti convince a fare una partita: l\'Attacco avversario cala per 5 turni.', fx: { foe: 'atkDown' } },
       atk('matchpoint', 'Match Point', 110, 'Il punto che chiude tutto: danno enorme, va a segno 8 volte su 10, critico più facile (25%).', { acc: 0.8, crit: 0.25, show: { a: 'banner', text: 'MATCH POINT!', style: 'formia' } })
     ],
     forms: [
-      { at: 14, title: 'Forchetta da Torneo', text: 'La polo bianca dei tornei. Poteva andare peggio.' },
+      { at: 14, title: 'Forchetta da Torneo', text: 'La polo bianca dei tornei, e sulla manica una macchia di colore che non va più via. Poteva andare peggio.' },
       { at: 26, title: 'Il Più Formiano', text: 'Bianco e azzurro, come la fascia di Forza Formia. Non poteva andare meglio.' }
     ]
   },

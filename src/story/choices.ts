@@ -2,6 +2,7 @@ import { st } from '../save/story-progress';
 import { CHOICES } from '../data/choices';
 import { LEGENDS, type LegendDef, type LegendStage } from '../data/legends';
 import { flag } from './plot';
+import { REUNION } from './finale';
 
 /* What the player has decided (data/choices.ts), and what follows from it. Only flags of st.seen: nothing here is a new
    field of the save, and an old save has simply decided nothing yet. */
@@ -31,9 +32,12 @@ export function legendOf(sp: string): LegendDef | null {
 export function endFlag(L: LegendDef, end: 'preso' | 'libero' | 'patto' | 'amico'): string { return 'sc-' + L.id + '-' + end; }
 /** a pact waits for what the legend has asked for */
 export function pactOpen(L: LegendDef): boolean { return flag(endFlag(L, 'patto')) && !flag(endFlag(L, 'amico')); }
-/** the fight as it stands now: the same one, but a king robbed of his stones says other things and hits harder */
+/** Lamo speaks differently in a trial he has offered, or while he still wants the stones back. */
 export function stagesNow(L: LegendDef): LegendStage[] {
-  return L.id === 'lamo' && stonesKept() ? L.stages.map(function (s) { return Object.assign({}, s, { line: s.angry || s.line }); }) : L.stages;
+  if (L.id !== 'lamo') return L.stages;
+  const kept = stonesKept();
+  if (!kept && !flag(REUNION)) return L.stages;
+  return L.stages.map(stage => ({ ...stage, line: (kept ? stage.angry : stage.afterRescue) || stage.line }));
 }
 /** how much stronger it is now, in levels */
 export function legendOver(L: LegendDef): number { return L.angry && stonesKept() ? L.angry.more : 0; }

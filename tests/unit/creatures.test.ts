@@ -120,7 +120,8 @@ describe('the trainers of Formia', () => {
       /* the battles of the missions start from who asks for them, not from a trainer on the map */
       /* the adepts of the covi stand inside their covo (data/maps/covi.ts) */
       const n = Object.values(MAPS).flatMap((m) => m.npcs || []).find((q) => q.trainer === tr.id) || MISSIONS.find((m) => m.trainer === tr.id);
-      expect(n, 'nobody is ' + tr.id).toBeDefined();
+      if (tr.id === 'mamurra') expect(MAPS.formia.npcs?.find(q => q.id === tr.id)?.trainer).toBeUndefined();
+      else expect(n, 'nobody is ' + tr.id).toBeDefined();
       const team = teamOf(tr.id);
       expect(team.length).toBeGreaterThan(0);
       for (const t of team) { expect(SPECIES[t.sp]).toBeDefined(); for (const m of t.moves || []) expect(CMOVES[m], m).toBeDefined(); }
@@ -161,7 +162,7 @@ describe('Cicero, the guide', () => {
     for (const s of STOPS) { expect(CHAPTERS[s.id], 'no chapter for ' + s.id).toBeDefined(); expect(CHAPTERS[s.id].intro.length).toBeGreaterThan(0); }
     /* three lines, plus the one about whoever is played: four screens from «chi sei?» to the first step */
     expect(OPENING.length + 1).toBeLessThanOrEqual(4);
-    expect(advice()[0]).toMatch(/^Capitolo 1 di \d+/);
+    expect(advice()[0]).toBe(CHAPTERS.starter.intro[0]);
   });
   it('says the rest when it is needed: types, levels, sesterzi and covi each have their tip', async () => {
     const { TIPS } = await import('../../src/story/mentor');

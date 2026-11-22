@@ -65,13 +65,30 @@ Dalle indicazioni di Antonio, dai dati OSM/Overpass (`/ref/poi` del lavoro: Zanz
 - `story/vehicle-space.ts` condivide fra disegno, percorso e sosta la posizione sulla carreggiata e l’ingombro del furgone. La centratura segue le corsie che continuano oltre gli incroci, senza spostamenti laterali a ogni traversa. Il percorso controlla tutto il mezzo, anche fra due caselle, contro edifici, ostacoli e Liberty; una fermata deve avere un accesso collegato al tragitto.
 - `formia12` mette al sicuro i salvataggi se una casa di riempimento o un arredo spostato occupa la vecchia posizione. Misure: 208 case, 7 schermate vuote su 86, 9% di caselle deserte.
 
+## La pineta grande, il lungomare di Vindicio, i porti aperti, più erba alta (13 novembre 2026, notte)
+
+Richiesta di Antonio: pineta di Vindicio «molto più grande», lungomare più lungo con il Frungillo e il Bandiera, porto e traghetto con sbocco a mare, più erba alta.
+
+- **Pineta:** `PINETA` in `network.ts` è la zona; il generatore (passo 7b di `build.ts`) mette un pino domestico in circa una casella su tre, mai due vicini (resta sempre un passaggio) e mai subito sotto un sentiero o il lungomare, più fiori e i lampioni del lungomare dal lato dei pini. Va dal Viale al lungomare e da Caposele alla fine della spiaggia, tagliata da via Vindicio (che scende dall'Appia fino all'Eclipse) e dai `PATHS` «Sentiero della pineta». Il Tempio del Basso è nel cuore della parte ovest, all'incrocio dei sentieri. Il luogo `pineta` è solo il suo «cuore» (cartello, persone); l'area «Pineta di Vindicio» copre tutta la zona ma non conta su sabbia, mare, pietra e strade (`not` nelle aree, `story/maps.ts`). La corsa con Zendavid sceglie bandierine sull'erba e entro 13 caselle.
+- **Viale Unità d'Italia:** da Gaeta sale dritto lungo il bosco (x 26) e corre in cima alla pineta; il vecchio giro a y 108 è tolto. Le ville di Vindicio restano sopra l'Appia.
+- **Lungomare:** `LUNGOMARE` in `network.ts`, una passeggiata di pietra larga due caselle a gradoni lungo la spiaggia, da Caposele alla Scogliera; sotto, tutto sabbia fino al mare (`WIDEN` di Vindicio ora 6). In fila da est: Lido Frungillo (via Tito Scipione 3), Lido Bandiera (7, con beach volley e pedalò), l'Eclipse (58), la Scogliera. Aree «Lido Frungillo», «Lido Bandiera», «Lungomare di Vindicio»; lo sfondo delle lotte è `vindicio`.
+- **Porti:** `MOUTHS` in `network.ts`: il bacino del traghetto si apre a est fra i due moli, la darsena di Mola esce in mare sotto il ponte del lungomare.
+- **Erba alta:** sette macchie nuove (`selv-erba-*` e `selv-pineta-3/4` in `formia-places.ts`, tavole già esistenti), Parco Gramsci più ampio: 538 caselle di erba alta invece di 366.
+- **L'arrivo con Nicola** (14 novembre): la riva dell'Eclipse (`riva-eclipse`) è sull'ultima fila di sabbia davanti al lido, con Faro, la tavola vecchia e i windsurf in acqua subito sotto; il primo punto del giro in windsurf è in mare. `build.ts` segnala un problema se la riva non ha il mare subito sotto o se un punto di `WS_ROUTE` (`data/nicola.ts`) finisce sulla terra.
+- **Salvataggi:** `formia13` riporta a casa chi era dove ora c'è un pino, un lido, un lampione; il motorino o il furgone lasciati lì tornano al loro posto.
+- **Misure:** 192 case (prima 208: le ville tra il Viale e la spiaggia sono diventate pineta).
+
 ## Rilievo
 
 La mappa ha gradoni sugli Aurunci, all'Acervara e a Gianola, muraglione dell'Appia, la salita di via Solaro, tre sentieri, cinque salti verso sud e quattro belvedere registrati nel diario. I fianchi sono caselle solide; una quota numerica per casella non è implementata. Castellone richiede ancora un intervento specifico per diventare visibilmente più alto dell'Appia.
 
 Nel generatore `TERRACES` definisce le terrazze, `SCARPS` i fianchi, `TRAILS` i sentieri, `LEDGES` i salti e `WILD` la chiusura della campagna lontana dai passaggi. `route` in `story/maps.ts` usa i salti solo nel verso consentito. `story/movement.ts` gestisce il salto; le scale funzionano nei due versi. I belvedere sono cartelli con `view`.
 
-Il disegno è in `render/canvas/ground.ts` e `objects.ts`: texture continue, contorni arrotondati, facciate determinate da semi, fianchi e ombre al piede. I colori della mappa vengono dai token `--m-*`. Gli omini riconoscibili usano `person` per gli amici e `look` per gli altri aspetti specifici.
+Il disegno è in `render/canvas/ground.ts` e `objects.ts`: texture continue, contorni arrotondati, facciate determinate da semi, fianchi e ombre al piede.
+
+**Erba alta** (13 novembre 2026): il letto della macchia è nel terreno (`DECO.tall`: un tappeto scuro unito alle caselle vicine, la linea a penna solo sul bordo della macchia); i ciuffi lunghi sono in `render/tall-grass.ts`, disegnati a ogni fotogramma da immagini preparate a 13 inclinazioni: si piegano col vento (`wind` di `atmosphere.ts`), si aprono attorno al giocatore e alla sua creatura, dopo il passaggio oscillano e tornano; a ogni passo dentro saltano su pezzetti di foglia e semi e si sente un fruscio (`sfx('grass')`). Con movimento ridotto o Grafica Bassa niente vento né oscillazioni né pezzetti. Nelle immagini ferme (titolo, pianta del menu, overview) i ciuffi sono dipinti nel terreno (`stillGround` in `world-view.ts`).
+
+**Ombre dei tetti non squadrati** (13 novembre 2026): `SHAPED` in `world-view.ts`. Cupole, torri, covi, chiese con campanile, la tomba, la fontana, le rovine, i lidi proiettano il contorno del proprio disegno (colonna per colonna, pieno anche dove il disegno è di vetro) invece del parallelepipedo dell'impronta: `k` dice quanto è alto il contorno (1 per chi è disegnato in alzato come una torre; `box` per una facciata con il tetto sopra, alto quanto lo sarebbe il blocco), `sweep` quanto indietro il contorno si ripete. Gli altri edifici restano blocchi. I colori della mappa vengono dai token `--m-*`. Gli omini riconoscibili usano `person` per gli amici e `look` per gli altri aspetti specifici.
 
 ## Luce e vita
 
@@ -88,3 +105,36 @@ Test pertinenti: `maps.test.ts`, `relief.test.ts`, `density.test.ts`, `place.tes
 ## Riferimenti
 
 `design/mappa/riferimenti/` conserva due viste satellitari (via Amendola e lo Zauli) per il confronto a occhio. La proposta geografica di Codex dell'11 novembre è stata sostituita dalla Formia grande e tolta: ne restano fonti e coordinate in `fonti-formia.md`.
+
+## Vindicio e il confine con Gaeta (17 novembre 2026)
+
+Via Canzatora collega l’Appia alla Flacca sul lato di terra. Le case seguono la strada verso il confine. A Vindicio, via Acervara, via Taliente, via Sem Benelli, via Giuseppe Garibaldi e un tratto di via Remigio Paone articolano gli isolati. Per i tracciati e la distribuzione dei fabbricati sono stati confrontati l’estratto OSM del progetto e le impronte degli edifici. La griglia conserva incroci e orientamento generale, con distanze e ingombri adattati al gioco. [Cartografia di Vindicio e del confine, © OpenStreetMap contributors](https://www.openstreetmap.org/#map=16/41.2490/13.5830) · [Comune di Formia, incrocio fra via Vindicio e la Flacca](https://www.comune.formia.lt.it/notizie/Attivazione-Nuovo-Rilevatore-di-Infrazioni-Semaforiche-a-Vindicio.html)
+
+Sul lato di Gaeta si incontra il Convento di Villa Irlanda. Il disegno riprende il portico a tre arcate, il frontone e le persiane verdi dell’ala lunga dalla fotografia della struttura. Le altre abitazioni alternano case con loggia, ville con terrazza e palazzine con balconi. [Fotografia e storia del Convento](https://www.villairlanda.it/il-convento/)
+
+La mappa passa da 192 a 219 case di riempimento, più il Convento. La migrazione `formia14` controlla la posizione salvata del giocatore, del motorino e del furgone nella zona interessata.
+
+## La litoranea da Vindicio a Gaeta
+
+La mappa misura 320×152 caselle. Le 24 righe aggiunte a sud seguono il lungomare Giovanni Caboto oltre Villa Irlanda, in località Arcella. Da Formia si percorre viale Unità d’Italia passando per l’incrocio semaforizzato con via Vindicio. Al bivio di via Canzatora si può salire verso l’Appia e la Tomba di Cicerone, oppure proseguire lungo la costa fino all’ingresso della Villa. Dal marciapiede si raggiunge il Convento attraverso il vialetto accanto alla piscina. La passeggiata dei lidi corre sul lato della spiaggia.
+
+La carreggiata, la mezzeria e i nomi che compaiono durante la guida seguono i due tracciati di `LITORANEA` in `formia-places.ts`. La migrazione `formia15` gestisce le posizioni salvate interessate dal nuovo tracciato e dalla variazione della riva sul vecchio bordo sud. [Cartografia del confine](https://www.openstreetmap.org/#map=16/41.2448/13.5777)
+
+## La pineta costiera, il Tempio del Basso e il Bodeguita
+
+Da Formia si passa per Caposele e si entra nella Pineta di Vindicio prima di raggiungere via Tito Scipione e i lidi. Nel gioco la passeggiata attraversa il parco tra il viale e la riva. Le fasce di `PINETA_SHORE` danno spazio ai pini domestici e al sottobosco fino all’acqua. Il Tempio del Basso occupa la radura centrale, collegata da sentieri di ghiaia all’ingresso dalla litoranea e alle panchine che guardano il golfo.
+
+Il Bodeguita del Mar è fra i pini sul lato di Caposele, con tre ombrelloni di paglia, quattro tavolini e le sedie. Oltre il margine ovest della pineta comincia la passeggiata dei lidi, dal Frungillo verso il Bandiera e l’Eclipse. La migrazione `formia17` sposta le posizioni salvate occupate dai nuovi arredi e dagli edifici.
+
+## Castellone e il centro in grande (17 novembre 2026)
+
+La mappa misura 350×152 caselle. Da Castellone a via Lavanga (le colonne 83–111 della mappa di prima) la scala è doppia: circa 11 metri per casella invece di 23, così i vicoli, le piazzette e i gradoni del borgo hanno lo spazio che hanno davvero. Tutto quello che sta a est è 30 colonne più a destra. La regola è `widened(x)` in `save/story-progress.ts`: `x` fino a 82, `82 + 2(x − 82)` nella fascia, `x + 30` oltre; `X_ANCHORS` in `formia-projection.ts` la segue. Tracciati, piazze e blocchi vengono dall'estratto OpenStreetMap del centro (strade, scalinate, impronte degli edifici), letto il 17 novembre. [Cartografia di Castellone e del centro, © OpenStreetMap contributors](https://www.openstreetmap.org/#map=18/41.2556/13.6030)
+
+- **Castellone:** via Vitruvio sale fra le mura (`W`) e il borgo; dentro, via Mamurra fa il giro del colle (alta, sopra, sotto Sant'Erasmo, al castello) con via Orticello, via Traiano, via del Castello, via San Giovanni, via delle Mura Ciclopiche, il vicolo di Sant'Anna. Piazza Sant'Erasmo con la chiesa e la Torre di Castellone; Largo Sant'Anna con il Cisternone; la piazzetta del castello; la piazza della Porta. Il teatro romano (`kind: 'teatro'`, la cavea a gradoni con le case sopra gli archi, come in via del Teatro) con la piazzetta Forcina davanti.
+- **Gradoni:** le scalinate vere sono `STAIRS` in `network.ts` (Gradoni del Duomo, Scalinata della Torre, vico del Teatro, via Orticello, via Traiano, via del Castello, via San Giovanni, via delle Mura Ciclopiche, via del Pesce, via Tacito, vico Antonino Pio, via Orazio). Il generatore le lastrica e le segna `>`: si camminano come le strade, `ground.ts` le disegna a quattro alzate di pietra.
+- **Case del borgo:** le file di Castellone hanno `kind: 'casale'` (`render/canvas/cortina.ts`): case di pietra e intonaco a due o tre piani, tetti di coppi a falde che si incastrano sulle impronte profonde, terrazzi, comignoli, finestre piccole con i fiori, panni, l'edicola col santo, porte ad arco e scale esterne, buganvillea. Più in basso, verso il mare, le cortine dei palazzi come a Mola.
+- **Il centro:** via Vitruvio verso Santa Teresa (facciata propria, `look: 'teresa'`), piazza Marconi, piazza Aldo Moro, piazza IV Novembre lungo la ferrovia con il largo della stazione (via dei Carmelitani, larga due caselle: il furgone ci arriva), piazza della Vittoria col giardino dei Caduti formiani, via Divisione Julia, via Costanzo Ciano, via Salvo D'Acquisto, via degli Olivetani, il viale lungo il mare.
+- **Gente:** nove persone nuove (il cameriere, il ragazzo col motorino di via Mamurra, la signora di Castellone, la studentessa, il tassista della stazione, il negoziante di via Vitruvio, il pescatore del Viale, il signore di Santa Maria la Noce, il ciclista di via Sant'Antonio) e i cartelli del teatro e della Noce.
+- **Salvataggi:** `formia18` è la prima della lista: sposta le posizioni salvate (giocatore, motorino, furgone) con `widened`, così le revisioni dopo leggono la mappa di oggi; chi stava dentro la fascia ridisegnata, o dove ora c'è un edificio, torna a casa (il motorino e il furgone tornano al loro posto). Le zone delle revisioni precedenti (`VINDICIO_REVISION`, `LITORANEA_*`, `PINETA_*`) sono già nelle colonne nuove.
+- **Misure dopo:** 294 case, 154 lampioni, nessun vicolo cieco. 16 schermate vuote su 104 (prima 7 su 93): le schermate a est di Castellone sono tagliate di nuovo e i monti e le colline sopra la fascia contano come terreno in più. `density.test.ts` ha il tetto a 16; scenderlo è lavoro aperto (`roadmap.md`). Caselle deserte 10%.
+

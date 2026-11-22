@@ -32,7 +32,12 @@ export function cicero(cls?: string, look?: 'talk' | 'idle'): string {
 /* The ghost of Lucius Mamurra, of Formiae, Caesar's prefect of engineers, the richest man of his town (and the
    villa at Gianola): the antagonist. A ghost like Cicero's, but gold and purple, with a golden wreath, rings and a
    purse of coins, and a smug smile. */
-export function mamurra(cls?: string): string {
+export function mamurra(cls?: string, look?: 'battle'): string {
+  const battle = look === 'battle';
+  const brows = battle ? 'M45 29 L57 34 M63 34 L75 29' : 'M46 29 Q52 25 57 30 M63 30 Q68 25 74 29';
+  const eyes = battle ? '<ellipse cx="52" cy="40" rx="3.1" ry="3.8" fill="' + INK + '"/><ellipse cx="68" cy="40" rx="3.1" ry="3.8" fill="' + INK + '"/>'
+    : '<path d="M47 40 Q52 36 57 40" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/><path d="M63 40 Q68 36 73 40" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>';
+  const mouth = battle ? 'M50 60 Q59 54 70 60' : 'M50 60 Q60 67 71 58';
   return '<svg xmlns="http://www.w3.org/2000/svg" class="ghost ' + (cls || '') + '" viewBox="0 0 120 140" role="img" aria-label="Il fantasma di Mamurra">' +
     '<defs><radialGradient id="mamurra-glow"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".8"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient></defs>' +
     '<ellipse cx="60" cy="68" rx="58" ry="66" fill="url(#mamurra-glow)"/>' +
@@ -47,10 +52,8 @@ export function mamurra(cls?: string): string {
     [[38, 30, -40], [44, 22, -25], [52, 17, -10], [68, 17, 10], [76, 22, 25], [82, 30, 40]].map(function (l) {
       return '<ellipse cx="' + l[0] + '" cy="' + l[1] + '" rx="6.4" ry="3.4" fill="#f2c14e" stroke="' + INK + '" stroke-width="1.6" transform="rotate(' + l[2] + ' ' + l[0] + ' ' + l[1] + ')"/>';
     }).join('') +
-    /* raised brows, half-closed eyes, a smug smile */
-    '<path d="M46 29 Q52 25 57 30 M63 30 Q68 25 74 29" fill="none" stroke="' + INK + '" stroke-width="2.2" stroke-linecap="round"/>' +
-    '<path d="M47 40 Q52 36 57 40" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/><path d="M63 40 Q68 36 73 40" fill="none" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>' +
+    '<path d="' + brows + '" fill="none" stroke="' + INK + '" stroke-width="2.2" stroke-linecap="round"/>' + eyes +
     '<path d="M60 43 Q57 51 61 53" fill="none" stroke="' + INK + '" stroke-width="2" stroke-linecap="round"/>' +
-    '<path d="M50 60 Q60 67 71 58" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/>' +
+    '<path d="' + mouth + '" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/>' +
     '</svg>';
 }

@@ -13,6 +13,7 @@ import { rivalHere } from './rival';
 import { rivalFriend, rivalSpeaker } from './rival-who';
 import { shutAt } from './place';
 import { LEGENDS } from '../data/legends';
+import { creaturesMissing } from './finale';
 import { firstHuman, homeMons } from './growth';
 import { QUIZZES } from '../data/quizzes';
 import { vanBody, tileBox, overlaps } from './vehicle-space';
@@ -125,7 +126,10 @@ const GULF: Area = { name: 'Il golfo di Gaeta', x: 0, y: 0, w: 0, h: 0, note: 'I
 export function currentArea(): Area | null {
   if (M.inside) return null;
   if (M.id === 'formia' && M.cell(st.x, st.y).g === 'sea' && !isShallow(M, st.x, st.y)) return GULF;
-  for (var i = 0; i < M.areas.length; i++) { var a = M.areas[i]; if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h) return a; }
+  for (var i = 0; i < M.areas.length; i++) {
+    var a = M.areas[i];
+    if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h && !(a.not && a.not.indexOf(M.cell(st.x, st.y).g) >= 0)) return a;
+  }
   return null;
 }
 export function areaName(): string {
@@ -139,6 +143,8 @@ export function present(p: Person): boolean {
   var w = p.n.when;
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
+  if (p.n.id === 'mamurra' && creaturesMissing()) return false;
+  if (p.n.legend === 'lamo' && creaturesMissing() && (M.id === 'telepilo' || M.id === 'formia')) return true;
   if (p.n.person && p.n.person === firstHuman()) return false;
   /* Nicola walking with the player is not at the Eclipse */
   if (p.n.id === 'nicola' && st.companion === 'nicola') return false;

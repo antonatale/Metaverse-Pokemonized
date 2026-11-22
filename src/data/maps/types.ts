@@ -144,7 +144,9 @@ export interface LostItem {
   text: string;
 }
 /** a neighbourhood, for the place name in the corner; its note says what it is, the first time Antonio walks in */
-export interface Area { name: string; x: number; y: number; w: number; h: number; note?: string }
+export interface Area { name: string; x: number; y: number; w: number; h: number; note?: string;
+  /** the kinds of ground (legend.ts `g`) where it does not count: the next area takes over there */
+  not?: string[] }
 export interface Warp { x: number; y: number; to: string; tx: number; ty: number; tdir: Dir }
 
 /* ---------- places with a puzzle: gyms, dungeons (story/place.ts does what these say, and proves it can be done) ---------- */
@@ -187,6 +189,8 @@ export interface MapDef {
   buildings?: Building[];
   objects?: MapObject[];
   groundObjects?: GroundObject[];
+  /** Road markings follow the same corners and carriageway width as the drivable tiles. */
+  roadLines?: { w: number; pts: [number, number][] }[];
   signs?: Sign[];
   /** strings of lights hung across a lane, from the palazzi on one side to those on the other (via Abate Tosti):
       over the tiles x0..x1 of row y, drawn over whoever walks under them */

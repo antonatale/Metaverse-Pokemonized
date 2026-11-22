@@ -81,6 +81,19 @@ describe('Tullio is what the player makes of him', () => {
     expect(teamOf('rivale-3').some((t) => t.resonate)).toBe(false);
   });
   it('nobody else changes with him', () => { decide('tullio1', 'amico'); decide('tullio2', 'amico'); expect(trainerNow('guida')).toBe(TRAINERS.guida); });
+  it('a late rematch remembers what the rival did on the bridge', () => {
+    const rival = st.rivalFriend;
+    st.rivalFriend = 'claudia';
+    try {
+      decide('tullio1', 'sfotto'); decide('tullio2', 'sfotto');
+      expect(trainerNow('rivale-3').intro.join(' ')).toContain('ha detto a Mamurra');
+      st.seen['finale-riunione'] = true;
+      expect(trainerNow('rivale-3').intro.join(' ')).toContain('Sul ponte ti ho dato la mano');
+      expect(trainerNow('rivale-3').prize).toBe(500);
+      st.beaten['tr-rivale-3'] = true;
+      expect(epilogue().join(' ')).toContain('vi siete sfidati di nuovo a Gianola');
+    } finally { st.rivalFriend = rival; }
+  });
 });
 
 describe('the stones', () => {
@@ -107,6 +120,14 @@ describe('the stones', () => {
     expect(sideOf('c1').resonate, 'given back, the power goes with them').toBeUndefined();
   });
   it('sealed, everything stays as it was', () => { decide('pietre', 'sigillo'); expect(stonesKept()).toBe(false); expect(legendOver(Lamo)).toBe(0); });
+  it('after the rescue Lamo offers a trial, or asks for the stones if they are kept', () => {
+    st.seen['finale-riunione'] = true;
+    expect(stagesNow(Lamo)[0].line).toContain('AVETE TENUTO INSIEME IL PONTE');
+    expect(stagesNow(Lamo).map(stage => stage.moves)).toEqual(Lamo.stages.map(stage => stage.moves));
+    decide('pietre', 'tenute');
+    expect(stagesNow(Lamo)[0].line).toContain('SENTIVO LE PIETRE');
+    expect(stagesNow(Lamo)[1].line).toContain('LADRO');
+  });
   it('given back to Lamo, they are gone', () => { decide('pietre', 'tenute'); st.seen[endFlag(Lamo, 'libero')] = true; expect(stonesKept()).toBe(false); });
 });
 

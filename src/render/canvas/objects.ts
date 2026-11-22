@@ -1,7 +1,7 @@
 import { covo } from './covo';
 import type { Palette } from './palette';
 import { T, STICKER_INK, mk, rr, hash, fillStroke, circle, ell, poly, blobs, plaque, cylinder, type Ctx } from './draw';
-import { cortina, castello, anchor, castlewall, cannelle } from './cortina';
+import { cortina, castello, anchor, castlewall, cannelle, casale, teatro } from './cortina';
 
 /** what a tall object is painted with */
 export interface ObjOpts {
@@ -47,6 +47,11 @@ function shuttered(c: Ctx, P: Palette, x: number, y: number, ww: number, wh: num
   }
   rr(c, x, y, ww, wh, 2); fillStroke(c, '#bfe3ff', P.ink, 1.4);
   c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(x + ww / 2, y); c.lineTo(x + ww / 2, y + wh); c.stroke();
+}
+/* A round-headed opening; the spring line is the height where the curve starts. */
+function arch(c: Ctx, x: number, spring: number, radius: number, bottom: number) {
+  c.beginPath(); c.moveTo(x - radius, bottom); c.arc(x, spring, radius, Math.PI, 0);
+  c.lineTo(x + radius, bottom); c.closePath();
 }
 /* a flower box under a window */
 function flowers(c: Ctx, P: Palette, x: number, y: number, ww: number) {
@@ -109,10 +114,13 @@ export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, h
   church: T * 2.15, octagon: T * 2.1, clocktower: T * 2.05, coni: T * 0.75, lido: T * 0.9, kiosk: T * 0.6, ferry: T * 0.75, cypress: T * 1.6,
   lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.75, pub: T * 0.75,
   arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7, pedalo: T * 0.3,
-  borgo: T * 0.75, villa: T * 0.5, cistern: T * 0.5, collegiata: T * 2.6, school: T * 1.6, parish: T * 2.3, aqueduct: T * 0.6, gelateria: T * 0.8, bakery: T * 0.75, pharmacy: T * 0.75, fishmonger: T * 0.75, bookshop: T * 0.75, newsstand: T * 0.4, market: T * 0.4,
+  borgo: T * 0.75, villa: T * 0.5, loggia: T * 0.65, convento: T * 1.2, piscina: T * 0.08, semaforo: T * 0.9, cistern: T * 0.5, collegiata: T * 2.6, school: T * 1.6, parish: T * 2.3, aqueduct: T * 0.6, gelateria: T * 0.8, bakery: T * 0.75, pharmacy: T * 0.75, fishmonger: T * 0.75, bookshop: T * 0.75, newsstand: T * 0.4, market: T * 0.4,
   tobacconist: T * 0.75, winebar: T * 0.75, barber: T * 0.75, hospital: T * 2.4, hermitage: T * 2.3, grandstand: T * 0.6,
   /* the 12 November revision (cortina.ts): the palazzi have their own height, the Torre di Mola dominates Mola */
-  cortina: T, castello: T * 5.2, swings: T * 0.7, slide: T * 0.5, streetPlate: T, anchor: T * 0.85, castlewall: T * 0.6, cannelle: T * 0.7, gozzo: T * 0.2, festoon: T * 2.2, buoy: T * 1.1, bottle: T * 0.2 };
+  cortina: T, castello: T * 5.2, swings: T * 0.7, slide: T * 0.5, streetPlate: T, anchor: T * 0.85, castlewall: T * 0.6, cannelle: T * 0.7, gozzo: T * 0.2, festoon: T * 2.2, buoy: T * 1.1, bottle: T * 0.2,
+  chiosco: T * 0.85, tavoloPaglia: T * 0.8, tavoloBar: T * 0.16,
+  /* Castellone, 17 November 2026 (cortina.ts): the houses of the borgo, the Roman theatre with its houses */
+  casale: T * 0.8, teatro: T * 1.6 };
 export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts): Sprite {
   opt = opt || {};
   var w = (opt.w || 1) * T, h = (opt.h || 1) * T, up = opt.up == null ? T : opt.up;
@@ -121,8 +129,98 @@ export function paintObject(kind: string, P: Palette, s: number, opt?: ObjOpts):
   (OBJ[kind] || OBJ.box)(c, w, h, P, opt);
   return { cv: cv, w: w, h: h + up, up: up };
 }
+/** Santa Teresa, the church of the convent of the Carmelitani by the Comune (17 November 2026): a front of two orders
+    in ochre plaster, pilasters, the portal under its pediment, a round window between two volutes, a little bell gable */
+function teresa(c: Ctx, w: number, h: number, P: Palette, o: ObjOpts) {
+  var dx = (o.doorX! - o.x!) * T, cx = dx + T / 2, base = h - 3, l1 = T * 0.45, top2 = -T * 0.55, wall = P['wall-c'] || P.wall;
+  ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
+  /* the nave behind, its roof seen from above */
+  rr(c, 10, -T * 1.1, w - 20, T * 1.1 + l1, 2); fillStroke(c, P['roof-a'], P.ink, 1.5);
+  /* the lower order: the whole width, four pilasters */
+  rr(c, 3, l1, w - 6, base - l1, 1.5); fillStroke(c, wall, P.ink, 1.8);
+  [6, w * 0.3, w * 0.7 - 6, w - 12].forEach(function (px) { rr(c, px, l1 + 4, 6, base - l1 - 6, 1); fillStroke(c, P.wall, P.ink, 0.9); });
+  rr(c, 1, l1 - 2, w - 2, 6, 1); fillStroke(c, P.wall, P.ink, 1.3);
+  /* the upper order, narrower, between two volutes, a round window, the pediment and its cross */
+  var u0 = w * 0.28, u1 = w * 0.72;
+  rr(c, u0, top2 + 8, u1 - u0, l1 - top2 - 8, 1.5); fillStroke(c, wall, P.ink, 1.6);
+  [[u0, -1], [u1, 1]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], l1 - 2); c.quadraticCurveTo(q[0] + q[1] * 16, l1 - 4, q[0] + q[1] * 18, l1 - 2); c.lineTo(q[0], top2 + 20); c.closePath(); fillStroke(c, wall, P.ink, 1.2); circle(c, q[0] + q[1] * 16, l1 - 6, 2.6); fillStroke(c, P.wall, P.ink, 0.9); });
+  poly(c, [[u0 - 4, top2 + 9], [w / 2, top2 - 8], [u1 + 4, top2 + 9]]); fillStroke(c, P.wall, P.ink, 1.4);
+  c.strokeStyle = P.ink; c.lineWidth = 1.6; c.beginPath(); c.moveTo(w / 2, top2 - 8); c.lineTo(w / 2, top2 - 20); c.moveTo(w / 2 - 4, top2 - 15); c.lineTo(w / 2 + 4, top2 - 15); c.stroke();
+  circle(c, w / 2, top2 + 22, 7.5); fillStroke(c, '#bfe3ff', P.ink, 1.3);
+  c.strokeStyle = P.ink; c.lineWidth = 0.8; for (var k = 0; k < 6; k++) { c.beginPath(); c.moveTo(w / 2, top2 + 22); c.lineTo(w / 2 + Math.cos(k * Math.PI / 3) * 7.5, top2 + 22 + Math.sin(k * Math.PI / 3) * 7.5); c.stroke(); }
+  /* the bell gable on the right, with its bell */
+  var bx = w - 34;
+  rr(c, bx, top2 - 4, 22, 24, 2); fillStroke(c, wall, P.ink, 1.3);
+  c.beginPath(); c.moveTo(bx + 5, top2 + 14); c.lineTo(bx + 5, top2 + 4); c.arc(bx + 11, top2 + 4, 6, Math.PI, 0); c.lineTo(bx + 17, top2 + 14); c.closePath(); fillStroke(c, '#20263a', P.ink, 1);
+  circle(c, bx + 11, top2 + 7, 3); c.fillStyle = '#d9a43a'; c.fill();
+  /* the windows of the lower order, the portal with its pediment and steps */
+  [w * 0.17, w * 0.83].forEach(function (wx) { if (Math.abs(wx - cx) > 24) { rr(c, wx - 5, l1 + 14, 10, 20, 5); fillStroke(c, '#bfe3ff', P.ink, 1.1); } });
+  poly(c, [[cx - 16, base - T - 6], [cx, base - T - 16], [cx + 16, base - T - 6]]); fillStroke(c, P.wall, P.ink, 1.2);
+  rr(c, cx - 10, base - T - 4, 20, T + 2, 9); fillStroke(c, P.wood, P.ink, 1.5);
+  c.strokeStyle = P.wood2; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, base - T + 4); c.lineTo(cx, base - 2); c.stroke();
+  rr(c, cx - 18, base - 1, 36, 4, 1); fillStroke(c, P.stone, P.ink, 1);
+}
+/** Folding chairs on either side of a round café table. */
+function cafeTable(c: Ctx, w: number, h: number, P: Palette) {
+  const x = w / 2, y = h - 8;
+  ell(c, x, y + 4, 14, 3.5); c.fillStyle = P.shadow; c.fill();
+  for (const side of [-1, 1]) {
+    const seat = x + side * 10;
+    c.strokeStyle = P.ink; c.lineWidth = 1.15;
+    c.beginPath(); c.moveTo(seat - 2, y + 4); c.lineTo(seat + 2, y - 3);
+    c.moveTo(seat + 2, y + 4); c.lineTo(seat - 2, y - 3); c.stroke();
+    rr(c, seat - 3, y - 5, 6, 3, 1); fillStroke(c, '#d18c52', P.ink, 1);
+    rr(c, seat - 3, y - 10, 6, 3.5, 1); fillStroke(c, '#d18c52', P.ink, 1);
+  }
+  rr(c, x - 1.3, y - 7, 2.6, 11, 1); fillStroke(c, P.wood, P.ink, 0.9);
+  ell(c, x, y - 7, 7.6, 3.6); fillStroke(c, '#f5d9a9', P.ink, 1.2);
+  rr(c, x + 1.6, y - 11, 2.8, 4, 0.6); fillStroke(c, '#ef9b56', P.ink, 0.7);
+}
+
 const OBJ: Record<string, ObjFn> = {
-  cortina: cortina, castello: castello, anchor: anchor, castlewall: castlewall, cannelle: cannelle,
+  cortina: cortina, castello: castello, anchor: anchor, castlewall: castlewall, cannelle: cannelle, casale: casale, teatro: teatro,
+  chiosco(c, w, h, P, o) {
+    const front = h - 2;
+    rr(c, 6, -4, w - 12, front + 4, 3); fillStroke(c, '#90c4b0', P.ink, 1.6);
+    c.strokeStyle = '#498878'; c.lineWidth = 0.8;
+    for (let y = 2; y < front; y += 5) {
+      c.beginPath(); c.moveTo(7, y); c.lineTo(w - 7, y); c.stroke();
+    }
+    rr(c, 15, 1, w - 30, 19, 2); fillStroke(c, '#3d4c49', P.ink, 1.5);
+    rr(c, 12, 18, w - 24, 5, 1.5); fillStroke(c, '#e8bb82', P.ink, 1.25);
+    for (let i = 0; i < 7; i++) {
+      const x = 20 + 8 * i, height = 6 + i % 3 * 2;
+      rr(c, x, 17 - height, 4, height, 1); fillStroke(c, ['#9cd2b4', '#f6c871', '#e68a71'][i % 3], P.ink, 0.8);
+    }
+    poly(c, [[3, 2], [13, -20], [w - 13, -20], [w - 3, 2]]);
+    fillStroke(c, '#ca7d64', P.ink, 1.6);
+    c.strokeStyle = '#a75648'; c.lineWidth = 0.85;
+    for (let i = 1; i < 9; i++) {
+      c.beginPath(); c.moveTo(13 + (w - 26) * i / 9, -19); c.lineTo(4 + (w - 8) * i / 9, 1); c.stroke();
+    }
+    rr(c, 2, 1, w - 4, 4, 1.5); fillStroke(c, '#edb789', P.ink, 1.15);
+    if (o.label) plaque(c, P, o.label, w / 2, -8, w - 14, 11);
+    flowers(c, P, 8, front - 4, 6); flowers(c, P, w - 14, front - 4, 6);
+  },
+  tavoloBar: cafeTable,
+  tavoloPaglia(c, w, h, P) {
+    const x = w / 2, rim = h - 25;
+    ell(c, x, h - 6, 15, 5); c.fillStyle = P.shadow; c.fill();
+    cafeTable(c, w, h, P);
+    rr(c, x - 1, rim, 2, 14, 1); fillStroke(c, '#92613f', P.ink, 0.8);
+    c.beginPath();
+    c.moveTo(1, rim);
+    c.quadraticCurveTo(5, rim - 9, x, rim - 16);
+    c.quadraticCurveTo(w - 5, rim - 9, w - 1, rim);
+    for (let i = w - 3; i >= 1; i -= 2) c.lineTo(i, rim + 2 + i % 3);
+    c.closePath();
+    fillStroke(c, '#e0b866', P.ink, 1.1);
+    for (let i = 3; i < w - 1; i += 2) {
+      c.strokeStyle = i % 3 === 0 ? '#9e713e' : '#fff0b3'; c.lineWidth = 0.75;
+      c.beginPath(); c.moveTo(x + (i - x) * 0.35, rim - 10);
+      c.quadraticCurveTo(x + (i - x) * 0.76, rim - 6, i, rim + 1); c.stroke();
+    }
+  },
   /* the covi of the friends: the home of the one played is still a home */
   covo: function (c, w, h, P, o) { if (o.state === 'mine' && o.base && OBJ[o.base]) OBJ[o.base](c, w, h, P, o); else covo(c, w, h, P, o); },
   tree: function (c, w, h, P) {
@@ -176,6 +274,33 @@ const OBJ: Record<string, ObjFn> = {
       fillStroke(c, P.leaf, P.ink, 1.4);
     });
     c.fillStyle = P.trunk; circle(c, 17, -7, 2.4); c.fill();
+  },
+  // The lights at the Flacca / Via Vindicio junction face the coast road.
+  semaforo(c, w, h, P) {
+    const x = w / 2;
+    ell(c, x, h - 4, 7, 2.5); fillStroke(c, P.stone2, P.ink, 1);
+    rr(c, x - 2, -7, 4, h + 2, 1); fillStroke(c, P.stone, P.ink, 1);
+    rr(c, x - 6.5, -26, 13, 31, 3); fillStroke(c, P.ink, P.ink, 1);
+    for (const [i, color] of [P['tent-a'], P.lamp, P.leaf2].entries()) {
+      circle(c, x, -20 + i * 9, 3.5); c.fillStyle = color; c.globalAlpha = i === 2 ? 1 : 0.45; c.fill();
+    }
+    c.globalAlpha = 1;
+  },
+  piscina(c, w, h, P) {
+    rr(c, 1, 1, w - 2, h - 2, 9); fillStroke(c, P.stone, P.ink, 1.5);
+    rr(c, 6, 6, w - 12, h - 12, 7); fillStroke(c, P.sea2, P.line, 2);
+    c.save(); c.clip();
+    for (let y = 10; y < h - 7; y += 9) {
+      c.strokeStyle = P.foam; c.lineWidth = 1; c.globalAlpha = 0.55;
+      for (let x = 8 + (y % 3) * 6; x < w - 8; x += 23) {
+        c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 5, y - 3, x + 10, y); c.stroke();
+      }
+    }
+    c.restore();
+    for (const x of [w - 22, w - 15]) {
+      c.beginPath(); c.moveTo(x, h - 8); c.lineTo(x, h - 15); c.strokeStyle = P.ink; c.lineWidth = 2; c.stroke();
+    }
+    c.beginPath(); c.moveTo(w - 22, h - 12); c.lineTo(w - 15, h - 12); c.stroke();
   },
   lamp: function (c, w, h, P) {
     ell(c, 16, 28, 6, 2); c.fillStyle = P.shadow; c.fill();
@@ -341,6 +466,7 @@ const OBJ: Record<string, ObjFn> = {
     rr(c, cx - 4, ttop + 38, 8, 11, 4); c.fillStyle = '#20263a'; c.fill();
   },
   church: function (c, w, h, P, o) {
+    if (o.look === 'teresa') { teresa(c, w, h, P, o); return; }
     var wallTop = T * 0.55, dx = (o.doorX! - o.x!) * T, bx = w - 30, btop = -T * 1.5, nw = bx + 2;
     ell(c, w / 2, h - 1, w / 2, 5); c.fillStyle = P.shadow; c.fill();
     rr(c, bx, btop + 10, 24, h - btop - 12, 2); fillStroke(c, P.wall, P.ink, 1.7);
@@ -822,6 +948,58 @@ const OBJ: Record<string, ObjFn> = {
     circle(c, dx + T - 12, h - T / 2 + 3, 1.3); c.fillStyle = P.ink; c.fill();
     /* now and then an outside stair up to the first floor */
     if (v % 4 === 1 && w >= T * 3) { c.fillStyle = P.stone2; for (var st = 0; st < 3; st++) c.fillRect(w - 18 + st * 4, h - 8 - st * 6, 14 - st * 4, 4); c.strokeStyle = P.ink; c.lineWidth = 1; c.strokeRect(w - 18, h - 20, 14, 18); }
+  },
+  /* Narrow coastal homes with a recessed upper loggia, a tiled canopy and a planted sill. */
+  loggia(c, w, h, P, o) {
+    const f = facade(P, o.v || 0), door = (o.doorX! - o.x!) * T + T / 2;
+    rr(c, 3, -5, w - 6, h + 2, 2); fillStroke(c, f.wall, P.ink);
+    if (f.roof === 1) {
+      // Set the stair head back from the edge of the planted roof terrace.
+      rr(c, 6, -17, w * 0.4, 15, 2); fillStroke(c, f.wall, P.ink);
+      rr(c, 4, -19, w * 0.4 + 4, 4, 1); fillStroke(c, P.stone2, P.ink, 1);
+      flowers(c, P, w - 21, -6, 12);
+      rr(c, 1, -5, w - 2, 6, 1); fillStroke(c, P.wall, P.ink);
+    } else {
+      poly(c, [[1, -4], [9, -18], [w - 8, -18], [w - 1, -4]]); fillStroke(c, P.clay, P.ink);
+      for (let x = 12; x < w - 7; x += 7) {
+        c.beginPath(); c.moveTo(x, -16); c.lineTo(x - 3, -6); c.strokeStyle = P['roof-a']; c.lineWidth = 1; c.stroke();
+      }
+    }
+    for (const x of [w * 0.28, w * 0.72]) {
+      arch(c, x, 12, w * 0.16, 26);
+      fillStroke(c, P.wood2, P.ink);
+      rr(c, x - 4, 11, 8, 14, 1); fillStroke(c, P['shutter-a'], P.ink, 1);
+    }
+    rr(c, 2, 24, w - 4, 5, 1); fillStroke(c, P.wall, P.ink);
+    shuttered(c, P, 11, h - 25, 12, 13, f.shutter);
+    if (f.plants) flowers(c, P, 11, h - 11, 12);
+    rr(c, door - 8, h - 27, 16, 24, 2); fillStroke(c, f.door, P.ink);
+    circle(c, door + 4, h - 13, 1.3); c.fillStyle = P.stone; c.fill();
+  },
+  /* Villa Irlanda's former convent: pediment and three-bay portico on the left,
+     a longer pink wing with tall blind arches and green shutters (hotel exterior photograph). */
+  convento(c, w, h, P, o) {
+    const portico = w * 0.38, cornice = -12, base = h - 5;
+    rr(c, 3, cornice, w - 6, base - cornice, 2); fillStroke(c, P['wall-c'], P.ink);
+    rr(c, 2, cornice - 7, w - 4, 9, 1); fillStroke(c, P.wall, P.ink);
+    poly(c, [[3, cornice - 7], [portico * 0.52, -35], [portico, cornice - 7]]); fillStroke(c, P.wall, P.ink);
+    for (let bay = 0; bay < 3; bay++) {
+      const x = 6 + (bay + 0.5) * (portico - 6) / 3;
+      shuttered(c, P, x - 5, 3, 10, 21, P['shutter-a']);
+      arch(c, x, 54, 8.5, base);
+      fillStroke(c, bay === 2 ? P.wood2 : P.wood, P.ink);
+    }
+    rr(c, 2, 30, portico, 5, 1); fillStroke(c, P.wall, P.ink);
+    const bayWidth = (w - portico - 6) / 5;
+    for (let bay = 0; bay < 5; bay++) {
+      const x = portico + (bay + 0.5) * bayWidth;
+      arch(c, x, 12, bayWidth * 0.45, base - 2); fillStroke(c, P['wall-b'], P.wall, 2);
+      arch(c, x, 12, 7, 21); fillStroke(c, P['shutter-a'], P.ink, 1);
+      c.beginPath(); c.moveTo(x, 6); c.lineTo(x, 21); c.stroke();
+      shuttered(c, P, x - 5, base - 22, 10, 18);
+    }
+    rr(c, 2, base, w - 4, 4, 1); fillStroke(c, P.stone2, P.ink);
+    if (o.label) plaque(c, P, o.label, w * 0.67, 38, w * 0.56, 12);
   },
   /* a villa of Vindicio: low and white, a flat roof terrace, bougainvillea over the door, a palm in the garden */
   villa: function (c, w, h, P, o) {
