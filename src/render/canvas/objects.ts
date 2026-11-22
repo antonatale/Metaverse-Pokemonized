@@ -115,7 +115,7 @@ export const HEIGHT: Record<string, number> = { tower: T * 2.4, tomb: T * 1.9, h
   lifeguard: T * 1.4, ruins: T * 0.9, tunnel: T * 0.5, fountain: T * 0.5, car: T * 0.2, item: T * 0.4, pine: T * 1.4, condo: T * 1.75, pub: T * 0.75,
   arena: T * 0.9, train: T * 0.6, monument: T * 1.5, lighthouse: T * 1.6, gazebo: T * 0.6, board: T * 1.1, windsurf: T * 0.7, pedalo: T * 0.3,
   borgo: T * 0.75, villa: T * 0.5, loggia: T * 0.65, convento: T * 1.2, piscina: T * 0.08, semaforo: T * 0.9, cistern: T * 0.5, collegiata: T * 2.6, school: T * 1.6, parish: T * 2.3, aqueduct: T * 0.6, gelateria: T * 0.8, bakery: T * 0.75, pharmacy: T * 0.75, fishmonger: T * 0.75, bookshop: T * 0.75, newsstand: T * 0.4, market: T * 0.4,
-  tobacconist: T * 0.75, winebar: T * 0.75, barber: T * 0.75, hospital: T * 2.4, hermitage: T * 2.3, grandstand: T * 0.6,
+  tobacconist: T * 0.75, winebar: T * 0.75, barber: T * 0.75, hospital: T * 2.4, caserma: T * 1.6, hermitage: T * 2.3, grandstand: T * 0.6,
   /* the 12 November revision (cortina.ts): the palazzi have their own height, the Torre di Mola dominates Mola */
   cortina: T, castello: T * 5.2, swings: T * 0.7, slide: T * 0.5, streetPlate: T, anchor: T * 0.85, castlewall: T * 0.6, cannelle: T * 0.7, gozzo: T * 0.2, festoon: T * 2.2, buoy: T * 1.1, bottle: T * 0.2,
   chiosco: T * 0.85, tavoloPaglia: T * 0.8, tavoloBar: T * 0.16,
@@ -1140,6 +1140,61 @@ const OBJ: Record<string, ObjFn> = {
   /* the Dono Svizzero, the hospital of via Appia: a long block of the seventies, its ground floor in brick, four
      white floors banded by ribbon windows and grey spandrels, the plant room and the red cross on the flat roof, the
      glass doors of the emergency room under a deep canopy, an ambulance waiting, the blue railing along the street */
+  /* the Comando Compagnia Carabinieri of Formia at the rotonda (via Appia Lato Napoli 1; Street View and the
+     satellite view): a white block of four floors with a red tiled roof and a base clad in stone, the sign over the
+     door, the flag on its pole, the gate of the car park and a car of the Arma waiting in front */
+  caserma: function (c, w, h, P, o) {
+    var top = -T * 0.9, dx = (o.doorX! - o.x!) * T, cx = dx + T / 2, gt = h - T + 2, k, f;
+    var NAVY = '#1f2a4d', RED = '#c8102e';
+    ell(c, w / 2, h - 1, w / 2, 6); c.fillStyle = P.shadow; c.fill();
+    /* the roof of red tiles, hipped, seen from above */
+    poly(c, [[2, top + 4], [10, top - 16], [w - 10, top - 16], [w - 2, top + 4]]); fillStroke(c, P['roof-a'], P.ink, 1.6);
+    c.strokeStyle = P.ink; c.globalAlpha = 0.28; c.lineWidth = 1;
+    for (k = 1; k < 4; k++) { var ry0 = top - 16 + k * 5; c.beginPath(); c.moveTo(10 - k * 2, ry0); c.lineTo(w - 10 + k * 2, ry0); c.stroke(); }
+    for (k = 16; k < w - 12; k += 6) { c.beginPath(); c.moveTo(k, top - 15); c.lineTo(k - 2 + (k / w) * 4, top + 3); c.stroke(); }
+    c.globalAlpha = 1;
+    /* the white block and its floors */
+    rr(c, 3, top + 3, w - 6, h - top - 5, 2); fillStroke(c, '#fbfbf6', P.ink, 1.9);
+    var floors = Math.max(3, Math.floor((gt - top - 10) / 22));
+    for (f = 0; f < floors; f++) {
+      var wy = top + 10 + f * 22;
+      for (var x = 9; x + 13 <= w - 8; x += 18) {
+        if (f === floors - 1 && Math.abs(x + 6 - cx) < 16) continue;
+        rr(c, x, wy, 13, 13, 1.5); fillStroke(c, hash(x, f, 700) < 0.7 ? '#bfe3ff' : '#a8c4dc', P.ink, 1.1);
+        /* white blinds, a strip of grey sill */
+        c.fillStyle = '#eef0f2'; c.fillRect(x + 1, wy + 1, 11, 3 + hash(x, f, 701) * 5);
+        c.fillStyle = P.stone2; c.fillRect(x - 1, wy + 13, 15, 2.5);
+      }
+    }
+    /* the ground floor clad in stone, its blocks */
+    rr(c, 3, gt, w - 6, h - gt - 2, 1.5); fillStroke(c, P.rock, P.ink, 1.5);
+    c.save(); c.beginPath(); c.rect(4, gt + 1, w - 8, h - gt - 4); c.clip();
+    c.strokeStyle = P.rock3; c.globalAlpha = 0.45; c.lineWidth = 0.9;
+    for (var yy = gt + 7, rw = 0; yy < h; yy += 7, rw++) { c.beginPath(); c.moveTo(4, yy); c.lineTo(w - 4, yy); c.stroke(); for (var xx = 4 + (rw % 2) * 7; xx < w; xx += 14) { c.beginPath(); c.moveTo(xx, yy - 7); c.lineTo(xx, yy); c.stroke(); } }
+    c.restore(); c.globalAlpha = 1;
+    /* the door: glass behind a grille, the steps */
+    rr(c, dx + 6, gt + 5, T - 12, h - gt - 7, 2); fillStroke(c, '#c9dcea', P.ink, 1.4);
+    c.strokeStyle = P.ink; c.lineWidth = 0.8; for (k = 1; k < 4; k++) { c.beginPath(); c.moveTo(dx + 6 + k * (T - 12) / 4, gt + 5); c.lineTo(dx + 6 + k * (T - 12) / 4, h - 2); c.stroke(); }
+    rr(c, dx + 2, h - 5, T - 4, 4, 1); fillStroke(c, P.stone, P.ink, 1);
+    /* the sign over the door: navy, white letters, the red stripe of the Arma */
+    var sw = Math.min(w - 16, 96), sx = Math.max(6, Math.min(w - 6 - sw, cx - sw / 2)), sy = gt - 14;
+    rr(c, sx, sy, sw, 12, 1.5); fillStroke(c, NAVY, P.ink, 1.2);
+    c.fillStyle = RED; c.fillRect(sx + 1, sy + 9.5, sw - 2, 1.6);
+    c.fillStyle = '#ffffff'; c.font = '700 7.5px ui-sans-serif, Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('CARABINIERI', sx + sw / 2, sy + 5.2);
+    /* the flag on its pole out of the first floor */
+    var fx = w - 14, fy = gt - 34;
+    c.strokeStyle = P.ink; c.lineWidth = 1.4; c.beginPath(); c.moveTo(fx - 8, fy + 14); c.lineTo(fx + 6, fy - 2); c.stroke();
+    [['#2e8b57', 0], ['#ffffff', 1], [RED, 2]].forEach(function (b) { c.fillStyle = b[0] as string; c.fillRect(fx + 6 + (b[1] as number) * 4, fy - 2, 4, 9); });
+    c.strokeStyle = P.ink; c.lineWidth = 1; c.strokeRect(fx + 6, fy - 2, 12, 9);
+    /* the gate of the car park, its red and white bar */
+    var gx = dx > w / 2 ? 6 : w - 30;
+    rr(c, gx, h - 14, 4, 12, 1); fillStroke(c, P.stone2, P.ink, 1);
+    c.save(); c.beginPath(); c.rect(gx + 4, h - 13, 22, 3.5); c.clip();
+    for (k = 0; k < 6; k++) { c.fillStyle = k % 2 ? '#ffffff' : RED; c.fillRect(gx + 4 + k * 4, h - 13, 4, 3.5); }
+    c.restore(); c.strokeStyle = P.ink; c.lineWidth = 0.9; c.strokeRect(gx + 4, h - 13, 22, 3.5);
+    if (o.label) plaque(c, P, o.label, w / 2, top - 8, Math.min(w - 10, 120), 11);
+  },
   hospital: function (c, w, h, P, o) {
     var top = -T * 1.3, dx = (o.doorX! - o.x!) * T, cx = dx + T / 2, k, r, gt = h - T - 4, brick = P['roof-a'], n = Math.floor((gt - top - 4) / 24);
     ell(c, w / 2, h - 1, w / 2, 6); c.fillStyle = P.shadow; c.fill();

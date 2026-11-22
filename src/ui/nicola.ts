@@ -1,5 +1,6 @@
 import { st, save } from '../save/story-progress';
 import { M, moveMode } from '../story/maps';
+import { offerCourse } from './sea';
 import { vanGo, vanStop, vanSkip, van, walkAlong, walkingAlong, lock } from '../story/movement';
 import { lead, startLead, stopLead, stepLead, sailBack, passed, pump, PUMP } from '../story/lead';
 import { roadPath, nearRoad, backAlong, outOf, dirOf, type Tile } from '../story/van';
@@ -276,12 +277,13 @@ export function companionTalk() {
 /** talking to him at the Eclipse, when he is not walking with the player */
 export function nicolaTalk(n: Npc) {
   var a = activity(n.activity || 'windsurf');
-  say(n.lines || ['…'], NICOLA, [
-    { label: a.verb, fn: function () { startActivity(a.id, n); } },
+  say(n.lines || ['…'], NICOLA, ([
+    { label: a.verb, fn: function () { startActivity(a.id, n); } }
+  ] as DialogOpt[]).concat(st.seen['ws-landed'] && !lead.now ? [{ label: 'Regata!', fn: function () { offerCourse('regata', n); } }] : []).concat([
     { label: WALK.come, fn: function () { st.companion = 'nicola'; save(); say(WALK.join, NICOLA); } },
     { label: WALK.ride, fn: function () { st.companion = 'nicola'; save(); rideMenu(); } },
     { label: 'Più tardi', fn: null }
-  ]);
+  ]));
 }
 /** walking into a part of Formia with him: what he knows of it, now and then */
 var told: Record<string, number> = {};

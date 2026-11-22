@@ -1,12 +1,14 @@
 import type { Building, Dir } from '../data/maps/types';
 import { st, save } from '../save/story-progress';
+import { sea } from './sea';
 import { stepTime } from '../data/growth';
-import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall, moto, motoAt, rideable } from './maps';
+import { DV, M, key, blocked, setMap, moveMode, isShallow, isWall, isSea, moto, motoAt, rideable } from './maps';
 import { placeArrived, placeEntered } from './place-run';
 import { creaturesMissing } from './finale';
 import type { Arrival } from './place';
 import { reduced } from '../ui/dom';
 import { sfx } from '../audio';
+import { windAt, headingSail, SAIL, BOARD, boardTop, steadyHeading, type PointOfSail } from './wind';
 import { root, dialog, running, useDoor, renderPlace, renderHud, stepped, skyFrom } from '../ui/story-screen';
 
 /* Walking on the map, one tile at a time: a tap turns, holding walks; doors and warps take you elsewhere. */
@@ -25,8 +27,15 @@ export function ledgeAt(x: number, y: number): boolean { return M.cell(x, y).dec
    It picks up speed along a straight: each step in the same direction is a gear up, a bend takes two off, a stop
    starts again from the first. The top gear is about two and a half times a walk. */
 export const GEARS = [150, 120, 98, 82, 68];
-/** how long a tile takes on the windsurf, picking up the wind */
-export const WIND = [150, 118, 94, 76, 62, 54];
+/** how long a tile takes on the windsurf, picking up the wind (story/wind.ts) */
+const WIND = BOARD;
+/** what the board is doing, for the screen: the point of sail, a gust taken, a fall in the water (until when) */
+export const sailing: { pos: PointOfSail | null; gust: boolean; fallUntil: number; said: number } = { pos: null, gust: false, fallUntil: 0, said: 0 };
+/** a glide: on the board at speed, letting go of the keys, it runs on a tile or two */
+let glide = 0;
+/** the last moves on the board, for its heading */
+const wake: [number, number][] = [];
+function headingOf(): [number, number] { var x = 0, y = 0; for (var i = 0; i < wake.length; i++) { x += wake[i][0]; y += wake[i][1]; } return [x, y]; }
 /** the gear he is riding in (0 on foot, and when the scooter has just set off) */
 export let gear = 0;
 let rideDir: Dir | null = null, lastEnd = 0;
@@ -83,8 +92,8 @@ export function release(d: Dir) { if (held === d) held = null; walking = false; 
 let placeHook: ((a: Arrival) => void) | null = null;
 export function onPlace(f: (a: Arrival) => void) { placeHook = f; }
 /** the story screen asks, when Antonio walks into the water or against the walls with a creature that can help */
-let edgeHook: ((kind: 'swim' | 'climb', d: Dir) => boolean) | null = null;
-export function onEdge(f: (kind: 'swim' | 'climb', d: Dir) => boolean) { edgeHook = f; }
+let edgeHook: ((kind: 'swim' | 'climb' | 'shore', d: Dir) => boolean) | null = null;
+export function onEdge(f: (kind: 'swim' | 'climb' | 'shore', d: Dir) => boolean) { edgeHook = f; }
 /** one step now, in that direction (after the creature has said yes) */
 export function stepNow(d: Dir) { held = null; walking = false; st.dir = d; tryStep(d, performance.now()); }
 function tryStep(d: Dir, now: number): boolean {
@@ -106,6 +115,11 @@ function tryStep(d: Dir, now: number): boolean {
     if (lastBump !== k) { lastBump = k; if (rideHook && !personAtBump(nx, ny)) { held = null; walking = false; rideHook(nx, ny); } }
     return false;
   }
+  /* in a race at sea the shore stops the board: going ashore is asked first, since it ends the race */
+  if (moveMode.swim && (sea.race || sea.kid) && !blocked(M, nx, ny) && !isSea(M, nx, ny)) {
+    if (edgeHook && lastBump !== k && edgeHook('shore', d)) { lastBump = k; held = null; walking = false; }
+    return false;
+  }
   if (blocked(M, nx, ny)) {
     var a = M.at[k];
     if (a && a.kind === 'door' && !a.b.to && lastBump !== k) { lastBump = k; held = null; useDoor(a.b); }
@@ -122,10 +136,32 @@ function tryStep(d: Dir, now: number): boolean {
     rideDir = d; mover.dur = GEARS[gear];
     sfx('moto' + gear);
   } else if (moveMode.board) {
-    /* on the windsurf the wind does it: faster and faster going straight, a tack slows it down */
-    var sailing = now - lastEnd < 90;
-    gear = !sailing ? 0 : d === rideDir ? Math.min(WIND.length - 1, gear + 1) : Math.max(0, gear - 2);
-    rideDir = d; mover.dur = WIND[gear];
+    /* on the windsurf the wind does it (story/wind.ts): faster and faster going straight, up to what the point of sail
+       allows; a tack slows it down; turning right round at full speed throws one in the water; a gust is a gear more */
+    /* on a grid of four ways the board's heading is the sum of its last moves: a zig-zag up and left is a course to
+       the north-west, a tack, and it keeps its speed as long as the heading does not swing much */
+    var going = now - lastEnd < 90, w = windAt(Date.now()), race = st.seen['vela-regata'] ? 1 : 0;
+    if (!going) wake.length = 0;
+    var before = headingOf(), dv = DV[d];
+    wake.push([dv[0], dv[1]]); if (wake.length > 4) wake.shift();
+    var hv = headingOf(), pos = headingSail(hv, w), P = SAIL[pos];
+    var steady = steadyHeading(before, hv), top = boardTop(P.gears, w.strength, race);
+    if (going && rideDir && d !== rideDir && dv[0] === -DV[rideDir][0] && dv[1] === -DV[rideDir][1] && gear >= 4) {
+      /* a gybe at full speed: in the water, and up on the board again */
+      gear = 0; sailing.fallUntil = now + 1400; sailing.pos = pos;
+      mover = { fx: st.x, fy: st.y, tx: st.x, ty: st.y, t0: now, dur: 1400 };
+      sfx('splash');
+      rideDir = d; glide = 0; wake.length = 0;
+      return true;
+    }
+    var was = gear;
+    gear = !going ? 0 : d === rideDir || steady ? Math.min(top, gear + 1) : Math.max(0, Math.min(top, gear - 2));
+    sailing.gust = w.gust > 0.55;
+    if (sailing.gust && going) gear = Math.min(top + 1, WIND.length - 1, gear + 1);
+    rideDir = d; sailing.pos = pos; glide = 0;
+    mover.dur = Math.round(WIND[gear] / (P.speed * (0.8 + 0.3 * w.strength) * (sailing.gust ? 1.2 : 1) * (race ? 1.08 : 1)));
+    /* the board starts to plane: the spray hisses */
+    if (gear >= 4 && was < 4) sfx('splash');
   } else sfx(M.cell(nx, ny).deco === 'tall' ? 'grass' : 'step');
   parity ^= 1;
   return true;
@@ -181,6 +217,15 @@ export function update(now: number) {
     st.dir = d;
     if (!tryStep(d, now)) auto = [];
     return;
+  }
+  /* on the board at speed, with the keys let go: it runs on a tile or two, slowing down */
+  if (!held && moveMode.board && rideDir && gear >= 3 && glide < 2 && !dialog && !busy && !skyFrom && now - lastEnd < 60) {
+    var gv = DV[rideDir];
+    if (!blocked(M, st.x + gv[0], st.y + gv[1])) {
+      glide++; gear = Math.max(0, gear - 2);
+      mover = { fx: st.x, fy: st.y, tx: st.x + gv[0], ty: st.y + gv[1], t0: now, dur: Math.round(WIND[gear] * 1.25) };
+      return;
+    }
   }
   if (dialog || busy || skyFrom || !held) return;
   if (st.dir !== held) { st.dir = held; pressedAt = now; if (!walking) return; }

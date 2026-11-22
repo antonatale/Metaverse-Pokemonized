@@ -163,6 +163,97 @@ export function seaLife(ctx: CanvasRenderingContext2D, m: Tiles, x0: number, x1:
   ctx.restore();
 }
 
+/* ---------- the ferry ---------- */
+/** The ferry for Ponza, out of the port of Formia and back, every five minutes: alongside at the mouth of the port,
+    out along `way` (tiles: the port, a bend, off the map), away a while, and back the same way. Still (reduced motion):
+    alongside. Only the picture: nothing stops at it. `ctx` in map units; `cam` the view. */
+const FERRY = { cycle: 300, dock: 40, out: 120, away: 30 };
+export function ferry(ctx: CanvasRenderingContext2D, way: [number, number][], cam: View, now: number, still: boolean, day: number) {
+  if (way.length < 2) return;
+  var s = still ? 0 : (now / 1000) % FERRY.cycle, u: number, back = false;
+  if (s < FERRY.dock) u = 0;
+  else if (s < FERRY.dock + FERRY.out) u = (s - FERRY.dock) / FERRY.out;
+  else if (s < FERRY.dock + FERRY.out + FERRY.away) return;
+  else { u = 1 - (s - FERRY.dock - FERRY.out - FERRY.away) / (FERRY.cycle - FERRY.dock - FERRY.out - FERRY.away); back = true; }
+  /* slow out of the port, then at speed: eased along the way */
+  var e = u * u * (3 - 2 * u), L: number[] = [0];
+  for (var i = 1; i < way.length; i++) L.push(L[i - 1] + Math.hypot(way[i][0] - way[i - 1][0], way[i][1] - way[i - 1][1]));
+  var d = e * L[L.length - 1], k = 1;
+  while (k < way.length - 1 && L[k] < d) k++;
+  var a = way[k - 1], b = way[k], f = (d - L[k - 1]) / ((L[k] - L[k - 1]) || 1);
+  var x = (a[0] + (b[0] - a[0]) * f) * T + T / 2, y = (a[1] + (b[1] - a[1]) * f) * T + T / 2;
+  if (x < cam.x - 140 || x > cam.x + cam.w + 140 || y < cam.y - 80 || y > cam.y + cam.h + 80) return;
+  var left = back ? b[0] > a[0] : b[0] < a[0], moving = u > 0 && u < 1 && !still;
+  ctx.save(); ctx.translate(x, y); if (left) ctx.scale(-1, 1);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  /* the wake: two white lines spreading behind */
+  if (moving) {
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+    for (var w = -1; w <= 1; w += 2) { ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.moveTo(-44, 6 + w * 3); ctx.quadraticCurveTo(-80, 8 + w * 10, -120, 10 + w * 22); ctx.stroke(); }
+    ctx.globalAlpha = 0.35; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-44, 7); ctx.lineTo(-96, 9); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  /* the hull, white with a blue band; two decks of windows; the funnel; at night the windows are lit */
+  ctx.strokeStyle = INK; ctx.lineWidth = 2;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(-46, -2); ctx.lineTo(48, -2); ctx.lineTo(40, 12); ctx.lineTo(-42, 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#2f5fa8'; ctx.fillRect(-43, 5, 86, 4);
+  ctx.fillStyle = '#f4f2ea';
+  ctx.beginPath(); ctx.moveTo(-34, -2); ctx.lineTo(-34, -13); ctx.lineTo(26, -13); ctx.lineTo(34, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-26, -13); ctx.lineTo(-26, -21); ctx.lineTo(12, -21); ctx.lineTo(18, -13); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#c8372d'; ctx.beginPath(); ctx.moveTo(-18, -21); ctx.lineTo(-17, -30); ctx.lineTo(-8, -30); ctx.lineTo(-8, -21); ctx.closePath(); ctx.fill(); ctx.stroke();
+  var lit = day < 0.5;
+  ctx.fillStyle = lit ? '#ffd98a' : '#3b4a6b';
+  for (var j = 0; j < 9; j++) ctx.fillRect(-30 + j * 6.4, -9, 3.6, 3);
+  for (var q = 0; q < 5; q++) ctx.fillRect(-21 + q * 6.4, -18, 3.6, 2.6);
+  if (moving && !lit) { ctx.globalAlpha = 0.5; ctx.fillStyle = '#9aa3b8'; for (var p = 0; p < 3; p++) { var pf = ((now / 900) + p / 3) % 1; ctx.beginPath(); ctx.arc(-13 - pf * 22, -33 - pf * 10, 2.5 + pf * 4, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
+  ctx.restore();
+}
+
+/* ---------- the trains ---------- */
+/** A regional train on the railway, one way and then the other, every three and a half minutes: out of the west edge,
+    into the hill, out of it by the station and on to Scauri. `rails`: the pieces of the line (corners, in tiles); the
+    gap between two pieces is a tunnel, where it is not seen. Not drawn with reduced motion. */
+const TRAIN = { cycle: 210, speed: 11, cars: 3, car: 2.4, gapTiles: 22 };
+export function trains(ctx: CanvasRenderingContext2D, rails: [number, number][][], cam: View, now: number, still: boolean, day: number) {
+  if (still || !rails.length) return;
+  /* the line as one length: the pieces one after the other, a tunnel of gapTiles between them */
+  var segs: { a: [number, number]; b: [number, number]; s0: number; len: number; hidden: boolean }[] = [], at = 0;
+  rails.forEach(function (pts, pi) {
+    if (pi > 0) { var pa = rails[pi - 1][rails[pi - 1].length - 1]; segs.push({ a: pa, b: pts[0], s0: at, len: TRAIN.gapTiles, hidden: true }); at += TRAIN.gapTiles; }
+    for (var i = 1; i < pts.length; i++) { var l = Math.abs(pts[i][0] - pts[i - 1][0]) + Math.abs(pts[i][1] - pts[i - 1][1]); segs.push({ a: pts[i - 1], b: pts[i], s0: at, len: l, hidden: false }); at += l; }
+  });
+  var total = at, t = (now / 1000) % TRAIN.cycle, run = (total + TRAIN.cars * TRAIN.car) / TRAIN.speed;
+  var east = t < TRAIN.cycle / 2, u = (east ? t : t - TRAIN.cycle / 2);
+  if (u > run) return;
+  var head = u * TRAIN.speed;
+  for (var c = 0; c < TRAIN.cars; c++) {
+    var s = head - c * TRAIN.car - TRAIN.car / 2;
+    if (s < 0 || s > total) continue;
+    var d = east ? s : total - s, sg = segs[0];
+    for (var k = 0; k < segs.length; k++) if (d >= segs[k].s0 && d <= segs[k].s0 + segs[k].len) { sg = segs[k]; break; }
+    if (sg.hidden) continue;
+    var f = sg.len ? (d - sg.s0) / sg.len : 0, x = (sg.a[0] + (sg.b[0] - sg.a[0]) * f + 0.5) * T, y = (sg.a[1] + (sg.b[1] - sg.a[1]) * f + 0.5) * T;
+    if (x < cam.x - 120 || x > cam.x + cam.w + 120 || y < cam.y - 120 || y > cam.y + cam.h + 120) continue;
+    var horiz = sg.a[1] === sg.b[1], L = TRAIN.car * T - 4, Wd = T * 0.82;
+    ctx.save(); ctx.translate(x, y); if (!horiz) ctx.rotate(Math.PI / 2);
+    ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.lineWidth = 2;
+    /* seen from above: the long roof, a band, the windows along the sides; the front of the first car rounded */
+    var front = c === 0, dirx = (east ? 1 : -1) * (horiz ? Math.sign(sg.b[0] - sg.a[0]) || 1 : Math.sign(sg.b[1] - sg.a[1]) || 1);
+    ctx.fillStyle = '#eef0f2';
+    ctx.beginPath();
+    var r0 = front && dirx < 0 ? Wd / 2 : 4, r1 = front && dirx > 0 ? Wd / 2 : 4;
+    ctx.moveTo(-L / 2 + r0, -Wd / 2); ctx.lineTo(L / 2 - r1, -Wd / 2); ctx.quadraticCurveTo(L / 2, -Wd / 2, L / 2, -Wd / 2 + r1);
+    ctx.lineTo(L / 2, Wd / 2 - r1); ctx.quadraticCurveTo(L / 2, Wd / 2, L / 2 - r1, Wd / 2); ctx.lineTo(-L / 2 + r0, Wd / 2);
+    ctx.quadraticCurveTo(-L / 2, Wd / 2, -L / 2, Wd / 2 - r0); ctx.lineTo(-L / 2, -Wd / 2 + r0); ctx.quadraticCurveTo(-L / 2, -Wd / 2, -L / 2 + r0, -Wd / 2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c8372d'; ctx.fillRect(-L / 2 + 3, -Wd / 2 + 3, L - 6, 3); ctx.fillRect(-L / 2 + 3, Wd / 2 - 6, L - 6, 3);
+    ctx.fillStyle = '#b9c2cf'; ctx.fillRect(-L / 2 + 8, -4, L - 16, 8);
+    ctx.fillStyle = day < 0.5 ? '#ffd98a' : '#3b4a6b';
+    for (var w = -L / 2 + 9; w < L / 2 - 9; w += 9) { ctx.fillRect(w, -Wd / 2 + 7, 5, 2.5); ctx.fillRect(w, Wd / 2 - 9.5, 5, 2.5); }
+    ctx.restore();
+  }
+}
+
 /* ---------- life ---------- */
 const INK = '#1c2340', PIGEON = ['#9aa3b8', '#b9bfd0', '#7f8aa3'];
 /** a few pigeons on a tile of a square: `up` is when they flew off (0: they are down), `down` when they came back */

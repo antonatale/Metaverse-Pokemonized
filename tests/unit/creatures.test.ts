@@ -230,7 +230,7 @@ describe('the hiding places of the wild creatures', () => {
       expect(t, h.id).toBeDefined();
       for (const m of t.day.concat(t.night || [])) { expect(SPECIES[m.sp], h.id).toBeDefined(); expect(m.lv[0]).toBeLessThanOrEqual(m.lv[1]); }
       let n = 0;
-      for (let y = h.y - h.r; y <= h.y + h.r; y++) for (let x = h.x - h.r; x <= h.x + h.r; x++) if ((FORMIA_ROWS[y] || '')[x] === (t.on === 'erba' ? 'E' : 'A')) n++;
+      for (let y = h.y - h.r; y <= h.y + h.r; y++) for (let x = h.x - h.r; x <= h.x + h.r; x++) if ((t.on === 'erba' ? 'E' : 'A*').indexOf((FORMIA_ROWS[y] || '')[x] || '-') >= 0) n++;
       expect(n, h.id + ' at ' + h.x + ',' + h.y).toBeGreaterThan(8);
     }
     const two = [{ sp: 'cicalina' as const, lv: [1, 1] as [number, number], w: 1 }, { sp: 'olivella' as const, lv: [1, 1] as [number, number], w: 3 }];

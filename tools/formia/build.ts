@@ -14,9 +14,9 @@ import { fileURLToPath } from 'node:url';
 import { W, H, col, row } from '../../src/data/maps/formia-projection';
 import { PLACES, SPOTS, HIDING, LITORANEA } from '../../src/data/maps/formia-places';
 import { WS_ROUTE } from '../../src/data/nicola';
-import { RAILS, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, WIDEN, SHORE, QUAYS, BEACHFRONT, POND, SEAS, BUOYS, HARBOUR, NETS,
+import { RAILS, TUNNEL_ENDS, HILLS, STREETS, PATHS, TRAILS, TERRACES, SCARPS, MACERE, LEDGES, WILD, WIDEN, SHORE, QUAYS, BEACHFRONT, SEAS, BUOYS, HARBOUR, NETS,
   TOWN, HIGH_STREET, AVENUES, ZEBRAS, URBAN, BORGO, WALLS, LAMPLIT, MARANOLA, ROWS, PINES, BEDS, ANCHOR, BENCHES, SCOOTERS, FENCES, GATES, CLOSED, KEEP_OPEN, HEDGES,
-  LAND, DARSENA, VAN_ROADS, LUNGOMARE, PINETA, PINETA_SHORE, VINDICIO_PROMENADE, MOUTHS, STAIRS,
+  LAND, DARSENA, VAN_ROADS, LUNGOMARE, PINETA, PINETA_SHORE, VINDICIO_PROMENADE, MOUTHS, STAIRS, CLIFFS, COVES, GROYNES, PORTICCIOLO, OPEN_SEA, ROTONDA_LAND, BREAKWATERS,
   type Line, type Rect } from './network';
 
 type LL = [number, number];   /* lat, lon */
@@ -174,7 +174,7 @@ for (let pass = 0; pass < 3; pass++) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) sea[y][x] = !dry[y][x];
 }
 /* the port and Mola, where the smoothing took the land away (network.ts, LAND) */
-for (const r of LAND) each(r, (x, y) => { sea[y][x] = false; });
+for (const r of LAND.concat([ROTONDA_LAND])) each(r, (x, y) => { sea[y][x] = false; });
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (sea[y][x]) G[y][x] = '~';
 const isLand = (x: number, y: number) => inside(x, y) && !sea[y][x];
 
@@ -217,10 +217,22 @@ for (const strip of PINETA_SHORE) each(strip, (x, y) => { sea[y][x] = false; set
 /** how many tiles from the sea, up to 7 */
 const shore = (x: number, y: number) => { for (let d = 1; d <= 7; d++) for (let k = -d; k <= d; k++) if (sea[y + d]?.[x + k] || sea[y + k]?.[x + d] || sea[y + k]?.[x - d] || sea[y - d]?.[x + k]) return d; return 9; };
 /* west to east: Vindicio's long beach, the quays of the town, rocks and coves, beaches again at Gianola */
+const cliff = (x: number, y: number) => CLIFFS.some((r) => within(r, x, y)) && !COVES.some((r) => within(r, x, y));
+const cove = (x: number, y: number) => COVES.some((r) => within(r, x, y));
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   if (!isLand(x, y)) continue;
   const d = shore(x, y), z = SHORE.find((s) => x >= s.x0 && x < s.x1)!;
-  if (z.kind === 'beach' && d <= 3) set(x, y, d === 3 && noise(x, y, 9) < 0.25 ? 'P' : ':');
+  /* the promontory of Gianola: rocks at the water, scogli to walk on, then the macchia (network.ts, CLIFFS) */
+  if (cliff(x, y)) {
+    if (d === 1) set(x, y, noise(x, y, 70) < 0.3 ? 'R' : '&');
+    else if (d === 2) set(x, y, noise(x, y, 71) < 0.6 ? '&' : noise(x, y, 72) < 0.6 ? 'T' : '.');
+    else if (d === 3) set(x, y, noise(x, y, 73) < 0.3 ? 'T' : noise(x, y, 74) < 0.12 ? 'i' : '.');
+    continue;
+  }
+  /* a cove of pebbles: sand down to the water, no promenade behind it */
+  if (cove(x, y)) { if (d <= 3) set(x, y, ':'); continue; }
+  /* the palms are Vindicio's: Gianola has its lidi and its groynes instead */
+  if (z.kind === 'beach' && d <= 3) set(x, y, d === 3 && x < 266 && noise(x, y, 9) < 0.25 ? 'P' : ':');
   /* behind the beach, the lungomare: a paved walk along the sand (Vindicio's is drawn by hand, see below) */
   if (z.kind === 'beach' && d === 4 && !within(VINDICIO_PROMENADE, x, y) && !within(PINETA, x, y) && /[.f]/.test(get(x, y))) set(x, y, '_');
   /* in town the sea is walled by a stone quay */
@@ -229,6 +241,26 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 }
 /* the quays the smoothing took away */
 for (const q of QUAYS) each(q, (x, y) => { if (sea[y][x]) { sea[y][x] = false; set(x, y, '_'); } });
+/* the groynes of the lungomare Città di Ferrara: a line of rocks straight out to sea from the waterline, and between
+   two of them the sea bites a crescent into the beach (network.ts, GROYNES) */
+for (let g = 0; g < GROYNES.length; g++) {
+  const [gx, gy] = GROYNES[g].at;
+  for (let x = gx; x > gx - GROYNES[g].len; x--) if (inside(x, gy) && (sea[gy][x] || get(x, gy) === ':')) { set(x, gy, 'R'); sea[gy][x] = true; }
+  const n = GROYNES[g + 1];
+  if (!n || Math.hypot(n.at[0] - gx, n.at[1] - gy) > 9) continue;
+  /* the middle of the crescent, a step inland from the waterline */
+  const mx = (gx + n.at[0]) / 2 + 0.2, my = (gy + n.at[1]) / 2 - 0.4, r = Math.hypot(n.at[0] - gx, n.at[1] - gy) * 0.36;
+  /* only sand the sea already touches, picked before any is taken: the crescent is a bite of one or two tiles */
+  const bite: XY[] = [];
+  for (let y = Math.floor(my - r - 1); y <= my + r + 1; y++) for (let x = Math.floor(mx - r - 1); x <= mx + r + 1; x++) {
+    if (!inside(x, y) || get(x, y) !== ':' || Math.hypot(x + 0.5 - mx, y + 0.5 - my) > r) continue;
+    if (N4.some(([a, b]) => inside(x + a, y + b) && sea[y + b][x + a])) bite.push([x, y]);
+  }
+  for (const [x, y] of bite) { set(x, y, '~'); sea[y][x] = true; }
+}
+/* the breakwaters off the Rotonda dei Carabinieri; under the ring, a walk on the rocks above the sea */
+for (const b of BREAKWATERS) walkLine({ name: 'frangiflutti', w: 1, pts: b }, (x, y) => { if (inside(x, y) && sea[y][x]) set(x, y, 'R'); });
+each(ROTONDA_LAND, (x, y) => { if (y >= ROTONDA_LAND.y1 - 1) set(x, y, '_'); else if (get(x, y) === ':' || get(x, y) === 'R') set(x, y, '.'); });
 /* rocks in the water are drawn as sea */
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (get(x, y) === 'R') { sea[y][x] = true; }
 if (process.argv.includes('--base')) {
@@ -341,7 +373,7 @@ const free = (x: number, y: number) => inside(x, y) && !reserved[y][x] && !terra
 /* buildings and gardens stand on open ground, never on a street, a quay or the railway */
 const OPEN = /[.fTiOQ]/;
 const GROUND: Record<string, RegExp> = { land: OPEN, sand: /[:PI]/, sea: /~/, area: OPEN, beach: /[:PI~]/ };
-const STEP_ON = /[.f:_v,=zH7c!$]/;
+const STEP_ON = /[.f:_v,=zH7c!$&]/;
 /** a street, a square, a quay or a promenade: where a door may open */
 const WAY = /[=vz_!]/;
 interface At { x: number; y: number; w: number; h: number; door?: [number, number] }
@@ -442,6 +474,13 @@ for (const p of PLACES) {
       const d = Math.hypot(x + 0.5 - (at.x + at.w / 2), (y + 0.5 - (at.y + at.h / 2)) * at.w / at.h), r = at.w / 2;
       green[y][x] = true;
       set(x, y, d > r ? (noise(x, y, 41) < 0.6 ? 'T' : '.') : d > r - 1.2 ? '_' : noise(x, y, 42) < 0.5 ? 'f' : '.');
+    }
+    else if (p.fill === 'rotonda') {
+      /* the lawn of the Rotonda dei Carabinieri: grass, and in it the round beds of shrubs of the satellite view (drawn
+         by the ground object 'rotonda'; the tiles under them are solid) */
+      green[y][x] = true; squared[y][x] = true;
+      const u = x - at.x, v = y - at.y;
+      set(x, y, (u === 1 && v === 1) || (u === 4 && v === 2) || (u === 2 && v === 4) || (u === 4 && v === 5) ? '#' : noise(x, y, 45) < 0.2 ? 'f' : '.');
     }
     else if (p.fill === 'yard') {
       /* a lawn closed by a hedge on the south and east, and on the west but for the gate in its top corner */
@@ -581,11 +620,16 @@ if (placed.gelati) {
   }
 }
 
-/* the Porticciolo romano of Gianola: the stone tanks of Mamurra's fishpond in the sea, joined to the beach */
+/* the Porticciolo romano of Gianola: its stone quays and tanks in a cove cut into the east side of the promontory
+   (network.ts, PORTICCIOLO), and the mouth of the cove kept open to the sea */
 {
-  const TANKS = ['_______', '_~~_~~_', '_~~_~~_', '___~___'], [px, py] = POND;
-  TANKS.forEach((line, dy) => [...line].forEach((ch, dx) => { const x = px + dx, y = py + dy; if (!inside(x, y) || !sea[y][x]) return; set(x, y, ch); sea[y][x] = ch === '~'; }));
-  for (let x = px + 7; x < W && sea[py + 1][x]; x++) { set(x, py + 1, '_'); sea[py + 1][x] = false; }
+  const { x: px, y: py, rows: pr } = PORTICCIOLO;
+  pr.forEach((line, dy) => [...line].forEach((ch, dx) => {
+    const x = px + dx, y = py + dy;
+    if (!inside(x, y) || ch === ' ') return;
+    set(x, y, ch); sea[y][x] = ch === '~'; reserved[y][x] = true;
+  }));
+  for (const r of OPEN_SEA) each(r, (x, y) => { if (get(x, y) === 'R') set(x, y, '~'); });
 }
 /* Maranola, up in the Aurunci: no trees where its houses are drawn */
 each(MARANOLA, (x, y) => { if (isLand(x, y) && !isStreet(x, y)) set(x, y, 'v'); });
@@ -600,7 +644,7 @@ const spots: Record<string, [number, number]> = {};
 /* nobody stands right in front of a door */
 const front = grid(false);
 for (const p of Object.values(placed)) if (p.door && inside(p.door[0], p.door[1] + 1)) front[p.door[1] + 1][p.door[0]] = true;
-const STAND: Record<string, RegExp> = { land: /[.f_v,!$]/, sand: /[:]/, any: /[.f_v,:!$]/, sea: /~/ };
+const STAND: Record<string, RegExp> = { land: /[.f_v,!$]/, sand: /[:]/, rock: /[&]/, any: /[.f_v,:!$&]/, sea: /~/ };
 for (const s of SPOTS) {
   let tx: number, ty: number;
   if (s.near) {
@@ -733,7 +777,7 @@ for (const h of HIDING) {
   const c = spots[h.spot];
   if (!c) { misses.push(h.spot + ' (no hiding place)'); continue; }
   hidden.push({ id: h.id, x: c[0], y: c[1], r: h.r });
-  const from = h.on === 'grass' ? /[.f]/ : /:/, to = h.on === 'grass' ? 'E' : 'A';
+  const from = h.on === 'grass' ? /[.f]/ : h.on === 'rock' ? /&/ : /:/, to = h.on === 'grass' ? 'E' : h.on === 'rock' ? '*' : 'A';
   for (let y = c[1] - h.r - 1; y <= c[1] + h.r + 1; y++) for (let x = c[0] - h.r - 1; x <= c[0] + h.r + 1; x++) {
     if (!inside(x, y) || !from.test(get(x, y))) continue;
     if (!(x === c[0] && y === c[1]) && (foot[y][x] || pathed[y][x] || roofed[y][x] || front[y][x])) continue;
@@ -753,7 +797,7 @@ for (const h of HIDING) {
   /* what anchors the open ground around it: everything one walks on purpose (streets, paths, stone, sand, tall
      grass), every building with the room around it, every spot. The terraces are left as they are */
   const anchor = grid(false);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) anchor[y][x] = foot[y][x] || reserved[y][x] || /[=vz,_:HEAWuhgSNUdePILYK#7cn!$\-]/.test(get(x, y));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) anchor[y][x] = foot[y][x] || reserved[y][x] || /[=vz,_:HEAWuhgSNUdePILYK#7cn!$\-&*]/.test(get(x, y));
   const far = (x: number, y: number, keep: number) => {
     for (let a = -keep; a <= keep; a++) for (let b = -keep; b <= keep; b++) if (inside(x + b, y + a) && anchor[y + a][x + b]) return false;
     return true;
@@ -766,7 +810,7 @@ for (const h of HIDING) {
   }
   /* a grove is closed by its walls: no gap in it opens on the ground outside */
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (grove[y][x] && get(x, y) === '.' && N4.some(([a, b]) => inside(x + a, y + b) && !grove[y + b][x + a] && /[.f:_v,=zHEAe]/.test(get(x + a, y + b)))) set(x, y, 'a');
+    if (grove[y][x] && get(x, y) === '.' && N4.some(([a, b]) => inside(x + a, y + b) && !grove[y + b][x + a] && /[.f:_v,=zHEAe&*]/.test(get(x + a, y + b)))) set(x, y, 'a');
   }
   for (const m of MACERE) walkLine({ name: 'macera', w: 1, pts: m }, (x, y) => { if (/[.fTO]/.test(get(x, y)) && !foot[y][x] && !pathed[y][x]) set(x, y, 'a'); });
   /* the faces of the terraces: a street climbs them, a path takes the steps */
@@ -776,7 +820,7 @@ for (const h of HIDING) {
     if (foot[y][x]) { if (spotted[y][x]) problems.push(s.name + ': someone stands on the scarp at ' + x + ',' + y); return; }
     set(x, y, s.ch);
   });
-  const stand = (x: number, y: number) => inside(x, y) && !foot[y][x] && /[.f:_v,=zHeEA7c!$0]/.test(get(x, y));
+  const stand = (x: number, y: number) => inside(x, y) && !foot[y][x] && /[.f:_v,=zHeEA7c!$0&*]/.test(get(x, y));
   for (const [x, y] of LEDGES) {
     if (!/[\^\[]/.test(get(x, y)) || !stand(x, y - 1) || !stand(x, y + 1)) { problems.push('ledge at ' + x + ',' + y + ': no scarp there, or no ground above or below it (' + get(x, y - 1) + get(x, y) + get(x, y + 1) + ')'); continue; }
     set(x, y, 'j');
@@ -802,7 +846,7 @@ for (const h of HIDING) {
 /* ---------- 13. street lamps: along the streets of the town, on the pavement or the verge, the two sides taking turns ---------- */
 let lamps = 0;
 {
-  const WALK = /[.f:_v,=zHeEA7c!$0]/;
+  const WALK = /[.f:_v,=zHeEA7c!$0&*]/;
   const walkable = (x: number, y: number) => inside(x, y) && !foot[y][x] && WALK.test(get(x, y));
   /* how many tiles one can walk to from the start: a lamp may never cut anything off */
   const reach = () => {
@@ -870,5 +914,9 @@ fs.writeFileSync(file, '/* Generated by tools/formia/build.ts from OpenStreetMap
   '/** the houses of the town around (the palazzi of the cortine rise `up` tiles over their footprint, a shop below when `look` says so) */\n' +
   'export const FORMIA_HOUSES: { kind: string; x: number; y: number; w: number; h: number; door: [number, number]; v: number; up?: number; look?: string }[] = ' + JSON.stringify(houses) + ';\n' +
   '/** where the wild creatures hide: the middle of each patch of tall grass or rock pools, and how far it goes */\n' +
-  'export const FORMIA_HIDING: { id: string; x: number; y: number; r: number }[] = ' + JSON.stringify(hidden) + ';\n');
+  'export const FORMIA_HIDING: { id: string; x: number; y: number; r: number }[] = ' + JSON.stringify(hidden) + ';\n' +
+  '/** the Porticciolo romano of Gianola: the rectangle its ground object is drawn over */\n' +
+  'export const FORMIA_PORTICCIOLO = ' + JSON.stringify({ x: PORTICCIOLO.x, y: PORTICCIOLO.y, w: Math.max(...PORTICCIOLO.rows.map((r) => r.length)), h: PORTICCIOLO.rows.length }) + ';\n' +
+  '/** the railway, piece by piece (corners), for the trains that run on it (render/atmosphere.ts) */\n' +
+  'export const FORMIA_RAILS: [number, number][][] = ' + JSON.stringify(RAILS) + ';\n');
 console.log('wrote', W + '×' + H, 'tiles to', path.relative(process.cwd(), file), '·', houses.length, 'houses ·', lamps, 'street lamps');

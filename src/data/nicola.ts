@@ -36,10 +36,10 @@ export const WS_ROUTE: { at: [number, number]; say?: string }[] = [
   { at: [90, 107], say: 'Qua sotto ci sono le peschiere romane di Caposele: le vasche dove i Romani tenevano i pesci.' },
   { at: [118, 104] }, { at: [158, 101], say: 'Il porto! Traghetti e aliscafi per Ponza e Ventotene. Occhio alle barche!' },
   { at: [178, 93] }, { at: [188, 86], say: 'Mola, il borgo dei pescatori. La vedi la torre? Era il castello. La sera, sulla banchina, odore di polpo. Ahahah!' },
-  { at: [190, 74] }, { at: [200, 60], say: 'Adesso giù il boma e dritti verso est: qua il vento entra pulito!' },
+  { at: [190, 74] }, { at: [200, 62], say: 'Adesso giù il boma e dritti verso est: qua il vento entra pulito!' },
   { at: [230, 58], say: 'Acqualonga: tra l\'Appia e il mare ci stanno calette che conoscono in pochi. Io sì. Ahahah.' },
   { at: [258, 72] }, { at: [268, 92], say: 'Lo vedi il promontorio? È Gianola: lassù ci stanno le rovine della villa di Mamurra.' },
-  { at: [272, 106] }, { at: [284, 109], say: 'La spiaggia dei Sassolini! Vai a riva, uagliò: io ti guardo da qua.' }
+  { at: [272, 106] }, { at: [284, 109], say: 'La caletta sotto la villa! Vai a riva, uagliò: io ti guardo da qua.' }
 ];
 /** the way back, alone, once the player has landed */
 export const WS_BACK: [number, number][] = [[274, 112], [256, 114]];
@@ -72,7 +72,9 @@ export const ON_THE_WAY: Record<string, string> = {
 export const SEA_TIPS: { say: string[]; after?: string }[] = [
   { say: ['Il mare di Formia ha tre facce, uagliò: la sabbia di Vindicio, gli scogli di Gianola, e il largo.', 'Tra gli scogli, nelle pozze, si nascondono le creature. Passaci in mezzo e vedi. Ahahah.'] },
   { say: ['Una creatura che nuota ti porta in acqua: vicino a riva ci stanno le creature del bagnasciuga, al largo quelle grosse.', 'Al largo, quelle grosse escono quando hai già visto un po\' di mare.'] },
-  { say: ['Col windsurf giri tutto il golfo: in rettilineo prendi velocità, se cambi direzione la perdi. All\'Eclipse ti faccio pure la lezione vera. Ahahah!'] },
+  { say: ['Col windsurf giri tutto il golfo: in rettilineo prendi velocità, se giri di colpo la perdi. All\'Eclipse ti faccio pure la lezione vera. Ahahah!'] },
+  { after: 'tavola', say: ['Il vento, uagliò: guardalo, in mare, nel riquadro in alto. Al lasco si vola, in poppa si va comodi, controvento non si va.', 'Se il vento ti sta in faccia, bordeggia: un colpo su, uno a sinistra, su, sinistra… a zig-zag la tavola risale il vento. E non girarti di colpo a tutta velocità, che fai il bagno. Ahahah!'] },
+  { after: 'ws-landed', say: ['Al largo c\'è da fare: l\'istruttrice a Vindicio ha messo le boe dello slalom, al Lido Oriente parte la traversata del golfo.', 'E il pescatore di Mola, i bagnini… chiedi in giro: c\'è sempre qualcuno che ha perso qualcosa in mare.'] },
   { after: 'tavola', say: ['Col windsurf vai dove vuoi: le boe rosse segnano le secche, e da quella in mezzo al golfo si vede Formia intera.', 'E guarda bene l\'acqua: le correnti portano bottiglie con dei messaggi dentro. Qualcuno ci mette pure qualcosa di buono.'] },
   { say: ['Al largo trovi pure gente: chi fa SUP, un sub che cerca tesori, un pescatore sul gozzo. Ognuno vuole la sua sfida. Ahahah!'] },
   { say: ['Faro, il mio Delfaro, sta sempre davanti all\'Eclipse. Se lo saluti, ti schizza. E hai visto la sua idropompa… Ahahah!'] },

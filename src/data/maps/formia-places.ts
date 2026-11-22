@@ -16,7 +16,7 @@ export interface PlaceSpec {
   doorAt?: number;
   /** for 'area': the ground it is paved or planted with (a field is plain grass, for a track drawn on it; a yard is a
       lawn closed by a hedge, with a gate on its west side) */
-  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'track' | 'court' | 'round' | 'parking' | 'pinetina';
+  fill?: 'piazza' | 'garden' | 'beach' | 'pines' | 'field' | 'yard' | 'track' | 'court' | 'round' | 'parking' | 'pinetina' | 'rotonda';
   /* kind 'covo': the lair of a friend (data/covi.ts), drawn as `look` (the leader) in render/canvas/covo.ts */
   /** tiles kept free of houses and trees around it */
   room?: number;
@@ -34,7 +34,7 @@ export interface PlaceSpec {
 }
 /** something on one tile: a sign, a person, a lost thing, a scooter; at a real place or next to one */
 export interface SpotSpec {
-  id: string; at?: LatLon; near?: { place: string; dx: number; dy: number }; on?: 'sand' | 'sea' | 'any';
+  id: string; at?: LatLon; near?: { place: string; dx: number; dy: number }; on?: 'sand' | 'sea' | 'rock' | 'any';
   /** a tile picked by hand (the countryside and the mountains have no place to be near) */
   tile?: [number, number];
   /** nobody stands here, Antonio just starts here: it may be on a footpath */
@@ -176,9 +176,11 @@ export const PLACES: PlaceSpec[] = [
   { id: 'casa-valentin', kind: 'covo', look: 'valentin', up: 4.2, w: 4, h: 3, at: [41.2613, 13.6172], door: true, doorAt: 2, tile: [175, 41] },
   { id: 'casa-costanzo', kind: 'condo', w: 4, h: 3, at: [41.2600, 13.6121], door: true, tile: [162, 43] },
   { id: 'casa-forchetta', kind: 'cortina', up: 0.55, w: 2, h: 5, at: [41.2592, 13.6146], door: true, tile: [169, 60] },
-  /* Claudia: San Giulio, in via Palazzo, across from the Mattej school and the little park with the swings in front of
-     it; between the Zauli and piazza Risorgimento, on the street inside, not on the Appia (Antonio, 13 November) */
-  { id: 'casa-claudia', kind: 'covo', look: 'claudia', up: 5.2, w: 5, h: 4, at: [41.2641, 13.6213], door: true, doorAt: 2, tile: [188, 37] },
+  /* Claudia: on via Palazzo, between the Zauli and piazza Risorgimento, on the street inside, not on the Appia
+     (Antonio, 13 November); further east than first drawn, toward Scauri, by the Gianni Rodari primary school
+     (Antonio, 21 November: the school is at via Palazzo 68, 41.26367, 13.62472 on Google Maps) */
+  { id: 'casa-claudia', kind: 'covo', look: 'claudia', up: 5.2, w: 5, h: 4, at: [41.2641, 13.6240], door: true, doorAt: 2, tile: [201, 37] },
+  { id: 'scuola-rodari', kind: 'school', w: 5, h: 3, at: [41.26367, 13.62472], door: true, tile: [201, 42] },
   { id: 'scuola-mattej', kind: 'school', w: 6, h: 3, at: [41.2652, 13.6191], door: true, tile: [185, 32] },
   { id: 'parchetto-mattej', kind: 'area', fill: 'garden', w: 5, h: 4, at: [41.2641, 13.6198], tile: [183, 37] },
   { id: 'casa-andrea', kind: 'covo', look: 'andrea', up: 4.4, w: 4, h: 3, at: [41.2541, 13.6016], door: true, doorAt: 1, tile: [89, 88] },
@@ -212,6 +214,12 @@ export const PLACES: PlaceSpec[] = [
   { id: 'risorgimento', kind: 'area', fill: 'piazza', w: 7, h: 3, at: [41.26052, 13.61599], tile: [174, 56] },
   /* the Dono Svizzero: via Ferrucci climbs along its left side */
   { id: 'ospedale', kind: 'hospital', w: 6, h: 4, at: [41.26181, 13.61810], door: true, tile: [183, 47] },
+  /* the Rotonda dei Carabinieri (21 November 2026; OpenStreetMap, the satellite view, Street View): the lawn in the
+     middle of the ring (tools/formia/network.ts, ROTONDA), the Comando Compagnia Carabinieri across the Appia (via Appia
+     Lato Napoli 1) and, next to it, the palazzo with the Bar Elsa on the ground floor (via Appia Lato Napoli 3) */
+  { id: 'rotonda-carabinieri', kind: 'area', fill: 'rotonda', w: 6, h: 7, at: [41.2606, 13.6197], tile: [192, 48], room: 0 },
+  { id: 'caserma', kind: 'caserma', w: 5, h: 3, at: [41.2612, 13.6198], door: true, tile: [183, 41] },
+  { id: 'bar-elsa', kind: 'cortina', look: 'bar', up: 1.2, w: 5, h: 3, at: [41.26101, 13.62030], door: true, doorAt: 1, tile: [189, 42] },
   /* Piazza Mattej, at the foot of Castellone */
   { id: 'mattej', kind: 'area', fill: 'piazza', w: 6, h: 4, at: [41.25348, 13.60090], tile: [96, 86] },
   /* the gate of the park of Gianola, where the road ends */
@@ -240,13 +248,13 @@ export const SPOTS: SpotSpec[] = [
   { id: 'vista-rotabile', tile: [200, 18] }, { id: 'selv-monti-3', tile: [190, 19] }, { id: 'selv-ulivi-3', tile: [161, 33] },
   { id: 'mamma-rodari', near: { place: 'parco-rodari', dx: 2, dy: 3 } },
   { id: 'postino', tile: [102, 55] }, { id: 'selv-ulivi-4', tile: [106, 51] },
-  { id: 'pescatore-canna', tile: [198, 51] }, { id: 'ragazza-scogli', tile: [218, 50] },
+  { id: 'pescatore-canna', tile: [200, 58] }, { id: 'ragazza-scogli', tile: [218, 50] },
   { id: 'selv-macchia-2', tile: [254, 55] }, { id: 'bagnante-santojanni', tile: [264, 62] },
   { id: 'selv-ulivi-5', tile: [306, 54] }, { id: 'contadina', tile: [314, 53] },
   { id: 'selv-ulivi-6', tile: [56, 82] }, { id: 'pensionato', tile: [68, 83] }, { id: 'pittore', tile: [54, 91] },
   { id: 'pescatore-molo', tile: [144, 88] }, { id: 'sign-molo', tile: [146, 82] },
   { id: 'sign-ingresso-gianola', tile: [294, 94] }, { id: 'selv-macchia-3', tile: [294, 80] },
-  { id: 'sign-sassolini', tile: [318, 94] }, { id: 'sign-scauri-nome', tile: [336, 74] }, { id: 'bagnina-scauri', tile: [339, 90] },
+  { id: 'sign-sassolini', tile: [323, 92], on: 'sand' }, { id: 'sign-scauri-nome', tile: [336, 74] }, { id: 'bagnina-scauri', tile: [339, 90] },
   { id: 'selv-scogli-scauri', tile: [336, 100], on: 'sand' }, { id: 'pescatore-scauri', tile: [346, 110], on: 'sand' }, { id: 'selv-macchia-4', tile: [324, 76] },
   { id: 'signora-vindicio', tile: [34, 112] }, { id: 'selv-ulivi-7', tile: [296, 68] },
   { id: 'sign-largo-paone', near: { place: 'largo-paone', dx: -1, dy: 1 } },
@@ -345,7 +353,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'sign-caposele', tile: [84, 96] },
   { id: 'vista-pineta-mare', tile: [72, 102] },
   { id: 'indicazioni-vindicio', tile: [34, 104] },
-  { id: 'sign-porticciolo', tile: [278, 98] },
+  { id: 'sign-porticciolo', tile: [309, 106] },
+  { id: 'sign-rotonda', tile: [188, 45] },
   /* out at sea (reached swimming with a sea creature, or on Nicola's board): buoys to read, bottles adrift with a message,
      people of the sea who challenge Antonio */
   { id: 'boa-300', tile: [90, 104], on: 'sea' },
@@ -360,6 +369,23 @@ export const SPOTS: SpotSpec[] = [
   { id: 'mare-sup', tile: [142, 100], on: 'sea' },
   { id: 'mare-sub', tile: [218, 82], on: 'sea' },
   { id: 'mare-gozzo', tile: [252, 98], on: 'sea' },
+  /* the sea of 21 November 2026 (data/sea.ts): the marks of the races, the things the missions send one to find */
+  { id: 'istruttrice', near: { place: 'eclipse-spiaggia', dx: 11, dy: 3 }, on: 'sand' },
+  { id: 'velista', near: { place: 'oriente', dx: -3, dy: -10 }, on: 'sand' },
+  { id: 'gara-slalom-1', tile: [55, 122], on: 'sea' }, { id: 'gara-slalom-2', tile: [63, 126], on: 'sea' }, { id: 'gara-slalom-3', tile: [71, 122], on: 'sea' },
+  { id: 'gara-slalom-4', tile: [79, 126], on: 'sea' }, { id: 'gara-slalom-5', tile: [87, 122], on: 'sea' }, { id: 'gara-slalom-6', tile: [95, 126], on: 'sea' },
+  { id: 'gara-slalom-7', tile: [101, 120], on: 'sea' },
+  { id: 'via-traversata', tile: [270, 84], on: 'sea' },
+  { id: 'gara-traversata-1', tile: [256, 92], on: 'sea' }, { id: 'gara-traversata-2', tile: [226, 78], on: 'sea' }, { id: 'gara-traversata-3', tile: [190, 96], on: 'sea' },
+  { id: 'gara-traversata-4', tile: [180, 114], on: 'sea' }, { id: 'gara-traversata-5', tile: [139, 104], on: 'sea' }, { id: 'gara-traversata-6', tile: [77, 115], on: 'sea' },
+  { id: 'gara-traversata-7', tile: [59, 120], on: 'sea' },
+  { id: 'gavitello-1', tile: [148, 112], on: 'sea' }, { id: 'gavitello-2', tile: [202, 90], on: 'sea' }, { id: 'gavitello-3', tile: [236, 96], on: 'sea' },
+  { id: 'gavitello-4', tile: [97, 124], on: 'sea' },
+  { id: 'boa-persa-1', tile: [258, 102], on: 'sea' }, { id: 'boa-persa-2', tile: [244, 112], on: 'sea' }, { id: 'boa-persa-3', tile: [272, 120], on: 'sea' },
+  { id: 'tavola-persa', tile: [212, 122], on: 'sea' },
+  { id: 'materassino', tile: [336, 110], on: 'sea' },
+  /* the ferry for Ponza (render/atmosphere.ts): at the mouth of the port, its way out, and off the map to the south-west */
+  { id: 'traghetto-molo', tile: [158, 95], on: 'sea' }, { id: 'traghetto-rotta', tile: [146, 112], on: 'sea' }, { id: 'traghetto-largo', tile: [118, 151], on: 'sea' },
   /* Castellone: who lives inside the Roman theatre, a devotee of Sant'Erasmo; in the centre, the guide of the museum */
   { id: 'teatro', near: { place: 'teatro-romano', dx: 4, dy: 3 } },
   { id: 'devota', near: { place: 'erasmo', dx: 3, dy: 4 } },
@@ -414,8 +440,8 @@ export const SPOTS: SpotSpec[] = [
   /* where the wild creatures of Formia live (the hiding places of HIDING): the easy ones near home, the strong ones
      up in the Aurunci */
   { id: 'selv-gramsci', near: { place: 'parco-gramsci', dx: 2, dy: 1 } },
-  { id: 'selv-gianola-1', tile: [289, 92], on: 'sand' },
-  { id: 'selv-gianola-2', tile: [291, 102], on: 'sand' },
+  { id: 'selv-gianola-1', tile: [294, 117], on: 'rock' },
+  { id: 'selv-gianola-2', tile: [287, 106], on: 'sand' },
   { id: 'selv-pineta-1', tile: [65, 99] },
   { id: 'selv-pineta-3', tile: [71, 102] }, { id: 'selv-pineta-4', tile: [78, 96] },
   /* more tall grass (13 November 2026): in the green between the streets, where the map had none */
@@ -430,8 +456,8 @@ export const SPOTS: SpotSpec[] = [
   { id: 'selv-monti-1', tile: [154, 10] },
   { id: 'selv-monti-2', tile: [118, 10] },
   /* the scrub of the promontory of Gianola, between the terraces of the villa; a third patch of rock pools in the cove */
-  { id: 'selv-macchia', tile: [310, 106] },
-  { id: 'selv-gianola-3', tile: [316, 105], on: 'sand' },
+  { id: 'selv-macchia', tile: [301, 114] },
+  { id: 'selv-gianola-3', tile: [313, 112], on: 'rock' },
   /* the three trails of the relief (VISIONE.md, V3 and V4): their signs, their belvederi, who walks them */
   { id: 'sign-statua', tile: [158, 17] },
   { id: 'tr-pastore', tile: [144, 9] },
@@ -475,9 +501,9 @@ export const SPOTS: SpotSpec[] = [
 ];
 /* where the wild creatures hide, out of sight (data/encounters.ts says which ones, by the id): the generator paints
    tall grass on the grass ('E') and rock pools on the sand ('A') out to about r tiles around each spot */
-export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand' }[] = [
+export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand' | 'rock' }[] = [
   { id: 'gramsci', spot: 'selv-gramsci', r: 4, on: 'grass' },
-  { id: 'gianola', spot: 'selv-gianola-1', r: 3, on: 'sand' },
+  { id: 'gianola', spot: 'selv-gianola-1', r: 3, on: 'rock' },
   { id: 'gianola', spot: 'selv-gianola-2', r: 3, on: 'sand' },
   { id: 'pineta', spot: 'selv-pineta-1', r: 5, on: 'grass' },
   /* Tall grass in the groves around the clearing and the kiosk. */
@@ -493,7 +519,7 @@ export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand'
   { id: 'monti', spot: 'selv-monti-1', r: 4, on: 'grass' },
   { id: 'monti', spot: 'selv-monti-2', r: 4, on: 'grass' },
   { id: 'macchia', spot: 'selv-macchia', r: 3, on: 'grass' },
-  { id: 'gianola', spot: 'selv-gianola-3', r: 3, on: 'sand' },
+  { id: 'gianola', spot: 'selv-gianola-3', r: 3, on: 'rock' },
   /* the big Formia: more of the same kinds of places, where the map has room for them */
   { id: 'monti', spot: 'selv-monti-3', r: 3, on: 'grass' },
   { id: 'ulivi', spot: 'selv-ulivi-3', r: 3, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-4', r: 3, on: 'grass' },

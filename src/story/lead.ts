@@ -16,6 +16,8 @@ export interface Lead {
   wait: boolean; said: number;
   /** sailing back alone, from `t0`: he fades out at the end of the way */
   back: boolean; alpha: number;
+  /** racing (the regatta of data/sea.ts): he does not wait, at this speed in tiles a second */
+  race?: number;
 }
 export const lead: { now: Lead | null } = { now: null };
 
@@ -62,6 +64,12 @@ export function stepLead(dt: number, px: number, py: number): { stopped: boolean
     L.alpha = Math.max(0, Math.min(1, (end - L.s) / 6));
     place(L);
     if (L.s >= end) lead.now = null;
+    return { stopped: false };
+  }
+  if (L.race) {
+    L.wait = false;
+    L.s = Math.min(L.cum[L.cum.length - 1], L.s + L.race * dt);
+    place(L);
     return { stopped: false };
   }
   if (d > FAR) L.wait = true;

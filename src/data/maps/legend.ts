@@ -46,6 +46,8 @@ export const LEGEND: Record<string, Ground> = {
   '7': { g: 'grass', deco: 'tartan' },
   /* where the wild creatures hide (data/encounters.ts): tall grass, and rock pools on the beach */
   'E': { g: 'grass', deco: 'tall' }, 'A': { g: 'sand', deco: 'pools' },
+  /* the promontory of Gianola (21 November 2026): the scogli one walks on at the water, and rock pools among them */
+  '&': { g: 'rock' }, '*': { g: 'rock', deco: 'pools' },
   /* the 12 November 2026 revision: the anchor of Mola on its plinth; the railing of Parco la Fontana and its locked
      gates; the back door of Antonio's flat on the walk of the park (a warp, see formia.ts) */
   '8': { g: 'paving', obj: 'anchor', solid: true },
