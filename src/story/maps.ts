@@ -11,10 +11,12 @@ import { FORMIA_HIDING, FORMIA_SPOT } from '../data/maps/formia-ground';
 import { TRAINERS } from '../data/trainers';
 import { rivalHere } from './rival';
 import { rivalFriend, rivalSpeaker } from './rival-who';
-import { shutAt } from './place';
+import { shutAt, thingsAt } from './place';
 import { LEGENDS } from '../data/legends';
 import { creaturesMissing } from './finale';
-import { firstHuman, homeMons } from './growth';
+import { firstHuman, homeMons, priceFor } from './growth';
+import { NET_IDS } from '../data/nets';
+import { SHOPS } from '../data/growth';
 import { QUIZZES } from '../data/quizzes';
 import { vanBody, tileBox, overlaps } from './vehicle-space';
 
@@ -185,6 +187,32 @@ export function hidingAt(x: number, y: number): Hiding | null {
   });
   return best;
 }
+/** the tiles of Formia where a wild creature can jump out (tall grass, rock pools of a hiding place), found once */
+var grassTiles: [number, number][] | null = null;
+/** the nearest of them to (x, y): where the arrow sends whoever has to catch a creature */
+export function nearestGrass(x: number, y: number): [number, number] | null {
+  if (!grassTiles) {
+    var m = prepare('formia'), seen: Record<string, boolean> = {};
+    grassTiles = [];
+    FORMIA_HIDING.forEach(function (h) {
+      if (!HIDINGS[h.id]) return;
+      for (var dy = -h.r - 2; dy <= h.r + 2; dy++) for (var dx = -h.r - 2; dx <= h.r + 2; dx++) {
+        var tx = h.x + dx, ty = h.y + dy, k = tx + ',' + ty;
+        if (seen[k] || tx < 0 || ty < 0 || tx >= m.w || ty >= m.h || Math.hypot(dx, dy) > h.r + 2) continue;
+        seen[k] = true;
+        var d = m.cell(tx, ty).deco;
+        if ((d === 'tall' || d === 'pools') && !m.solid[ty * m.w + tx]) grassTiles!.push([tx, ty]);
+      }
+    });
+    /* only where one can walk to and fro in it: a tile of grass with another beside it */
+    var isGrass: Record<string, boolean> = {};
+    grassTiles.forEach(function (t) { isGrass[t[0] + ',' + t[1]] = true; });
+    grassTiles = grassTiles.filter(function (t) { return isGrass[(t[0] + 1) + ',' + t[1]] || isGrass[(t[0] - 1) + ',' + t[1]] || isGrass[t[0] + ',' + (t[1] + 1)] || isGrass[t[0] + ',' + (t[1] - 1)]; });
+  }
+  var best: [number, number] | null = null, bd = Infinity;
+  grassTiles.forEach(function (t) { var k = Math.abs(t[0] - x) + Math.abs(t[1] - y); if (k < bd) { bd = k; best = t; } });
+  return best;
+}
 /** wild creatures beaten or caught leave for a while: two minutes, then another one is there */
 export const wildGone: Record<string, number> = {};
 export function wildHere(id: string): boolean { var t = wildGone[id]; return !t || Date.now() - t > 120000; }
@@ -237,13 +265,16 @@ export function blocked(m: PreparedMap, x: number, y: number): boolean {
   if (m.place && shutAt(m.place, (st.places && st.places[m.id] && st.places[m.id].flags) || {}, x, y)) return true;
   return !!personAt(m, x, y) || !!itemAt(m, x, y);
 }
-/** at the bottom of one of the Roman fish tanks of Gianola, an amphora: found swimming there */
+/** at the bottom of one of the Roman fish tanks of Gianola, an amphora: found swimming there. The water of the
+    porticciolo nearest to its sign, ring after ring around it (the porticciolo has its own cove since 21 November 2026,
+    east of the sign: it is no longer the water south-west of it) */
 export function treasureAt(m: PreparedMap): [number, number] | null {
   var s0 = m.id === 'formia' ? FORMIA_SPOT['sign-porticciolo'] : null;
   if (!s0) return null;
-  for (var r = 0; r < 4; r++) for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
-    var x = s0[0] - 2 + dx, y = s0[1] + 1 + dy;
-    if (isShallow(m, x, y)) return [x, y];
+  for (var r = 1; r <= 6; r++) for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    var x = s0[0] + dx, y = s0[1] + dy;
+    if (isShallow(m, x, y) && isSea(m, x, y)) return [x, y];
   }
   return null;
 }
@@ -265,6 +296,65 @@ export function hasBadge(cv0: Covo): boolean { return st.badges.indexOf(cv0.badg
 export function steppedAside(n: Npc): boolean {
   if (!n.aside) return false;
   return !!((n.trainer && st.beaten['tr-' + n.trainer]) || (n.quiz && quizPassed(n.quiz)));
+}
+/** whether (x, y) can be talked to from where the player can get: a free tile next to it (or across a counter, a net) */
+function talkable(x: number, y: number): boolean {
+  return (['up', 'down', 'left', 'right'] as Dir[]).some(function (d) {
+    var nx = x + DV[d][0], ny = y + DV[d][1];
+    if (M.cell(nx, ny).reach) { nx += DV[d][0]; ny += DV[d][1]; }
+    if (nx === st.x && ny === st.y) return true;
+    return !blocked(M, nx, ny) && !personAt(M, nx, ny) && !!route(nx, ny);
+  });
+}
+var inWay: { k: string; p: Person | null } = { k: '', p: null };
+/** someone to get past first, on the way to (x, y): when it cannot be reached, the nearest defender of the door who
+    still stands in it (a quiz to answer, a fight to win), and can be (in a place with a puzzle
+    the way does not count its gates and slides: the puzzle stays the player's). Worked out again only when the player, the target or who stands where changes */
+export function guardInWay(x: number, y: number): Person | null {
+  if (!M || M.id === 'formia' || M.id !== st.map) return null;
+  var guards = M.people.filter(function (p) { return present(p) && !!p.n.aside && !steppedAside(p.n); });
+  /* who stands where counts too: one who has just stepped aside is still walking out of the doorway for a moment */
+  var k = M.id + ':' + st.x + ',' + st.y + '>' + x + ',' + y + ':' + guards.map(function (p) { return p.n.id; }).join(',') + ':' +
+    M.people.filter(present).map(function (p) { return p.x + ',' + p.y; }).join(';');
+  if (inWay.k === k) return inWay.p;
+  var found: Person | null = null;
+  if (guards.length && !talkable(x, y)) {
+    guards.sort(function (a, b) { return Math.abs(a.x - st.x) + Math.abs(a.y - st.y) - (Math.abs(b.x - st.x) + Math.abs(b.y - st.y)); });
+    found = guards.filter(function (p) { return talkable(p.x, p.y); })[0] || null;
+  }
+  inWay = { k: k, p: found };
+  return found;
+}
+/** on the big map, a covo's defenders out in the street (the robots of Parco la Fontana): when the door of the covo
+    cannot be reached from here within the few streets around (people stand in the way), the nearest of them that
+    still keeps its post. A small search, in a box round the player and the door, so that it costs nothing per step */
+export function streetGuard(covo: string, x: number, y: number): Person | null {
+  if (!M || M.id !== 'formia' || st.map !== 'formia') return null;
+  var guards = M.people.filter(function (p) { return p.n.guard === covo && present(p) && !!p.n.aside && !steppedAside(p.n) && Math.abs(p.x - st.x) + Math.abs(p.y - st.y) < 40; });
+  if (!guards.length) return null;
+  var mk = covo + ':' + st.x + ',' + st.y + '>' + x + ',' + y + ':' + M.people.filter(present).map(function (p) { return p.x + ',' + p.y; }).join(';');
+  if (streetMemo.k === mk) return streetMemo.p;
+  streetMemo = { k: mk, p: streetSearch(guards, x, y) };
+  return streetMemo.p;
+}
+var streetMemo: { k: string; p: Person | null } = { k: '', p: null };
+function streetSearch(guards: Person[], x: number, y: number): Person | null {
+  var x0 = Math.min(x, st.x) - 6, x1 = Math.max(x, st.x) + 6, y0 = Math.min(y, st.y) - 6, y1 = Math.max(y, st.y) + 6;
+  if ((x1 - x0) * (y1 - y0) > 4000) return null;
+  var occ: Record<string, boolean> = {}, seen: Record<string, boolean> = {}, q = [[st.x, st.y]];
+  M.people.forEach(function (p) { if (present(p)) occ[key(p.x, p.y)] = true; });
+  seen[key(st.x, st.y)] = true;
+  while (q.length) {
+    var c = q.shift()!;
+    if (Math.abs(c[0] - x) + Math.abs(c[1] - y) <= 1) return null;
+    for (var d in DV) {
+      var nx = c[0] + DV[d as Dir][0], ny = c[1] + DV[d as Dir][1], k = key(nx, ny);
+      if (nx < x0 || nx > x1 || ny < y0 || ny > y1 || seen[k] || occ[k] || blocked(M, nx, ny)) continue;
+      seen[k] = true; q.push([nx, ny]);
+    }
+  }
+  guards.sort(function (a, b) { return Math.abs(a.x - st.x) + Math.abs(a.y - st.y) - (Math.abs(b.x - st.x) + Math.abs(b.y - st.y)); });
+  return guards[0];
 }
 /** where someone stands when nothing is going on: his own tile, or aside */
 export function restOf(n: Npc): [number, number] { return steppedAside(n) ? n.aside! : [n.x, n.y]; }
@@ -315,25 +405,64 @@ export function walkAway(fx: number, fy: number, steps: number): [number, number
   while (prev[k]) { var c = k.split(','); out.unshift([+c[0], +c[1]]); k = prev[k]; }
   return out;
 }
+/** how many nets the player has, of every kind */
+export function netsLeft(): number {
+  var b = st.bag || {};
+  return NET_IDS.reduce(function (n, id) { return n + ((b as Record<string, number>)[id] || 0); }, 0);
+}
+/** with no net left and the sesterzi for the cheapest, the nearest one on this map who sells nets (the net maker of
+    Gianola, the fisherman of Mola); null otherwise */
+export function netSeller(x: number, y: number): Person | null {
+  if (netsLeft() > 0 || (st.money || 0) < priceFor('retino')) return null;
+  var best: Person | null = null, bd = Infinity;
+  M.people.forEach(function (p) {
+    var sh = p.n.shop && SHOPS[p.n.shop];
+    if (!sh || sh.sells.indexOf('retino') < 0 || !present(p)) return;
+    var d = Math.abs(p.x - x) + Math.abs(p.y - y);
+    if (d < bd) { bd = d; best = p; }
+  });
+  return best;
+}
+/** what a step on tall grass or rock pools costs the way finder, in plain steps: the way goes round a patch when going
+    round is less than this many times longer (a walk across town was stopped by a creature at every few steps) */
+export const WILD_STEP = 4;
+/** the way from Antonio to a tile, as the steps to take (the click on the map, the walks of the story, the automatic
+    player): round people, puzzles' slides and, when it costs little, tall grass; null if there is none */
 export function route(tx: number, ty: number): Dir[] | null {
-  var prev: Record<string, { k: string; d: Dir }> = {}, q = [[st.x, st.y]], seen: Record<string, number> = {};
-  seen[key(st.x, st.y)] = 1;
-  while (q.length) {
-    var p = q.shift()!;
-    if (p[0] === tx && p[1] === ty) {
-      var out: Dir[] = [], k = key(tx, ty);
-      while (prev[k]) { out.unshift(prev[k].d); k = prev[k].k; }
-      return out;
+  /* the steps of the way, cheapest first: a tile of tall grass or of rock pools costs WILD_STEP (a bucket for every
+     cost so far: Dial's way, the costs being small whole numbers) */
+  var prev: Record<string, { k: string; d: Dir }> = {}, cost: Record<string, number> = {}, occ: Record<string, boolean> = {};
+  M.people.forEach(function (p) { if (present(p)) occ[key(p.x, p.y)] = true; });
+  var buckets: number[][][] = [[[st.x, st.y]]];
+  cost[key(st.x, st.y)] = 0;
+  for (var c = 0; c < buckets.length; c++) {
+    var b = buckets[c];
+    if (!b) continue;
+    for (var i = 0; i < b.length; i++) {
+      var p = b[i], pk = key(p[0], p[1]);
+      if (cost[pk] !== c) continue;
+      if (p[0] === tx && p[1] === ty) {
+        var out: Dir[] = [], k = pk;
+        while (prev[k]) { out.unshift(prev[k].d); k = prev[k].k; }
+        return out;
+      }
+      (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
+        var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1];
+        /* down a terrace where one can jump: one step, two tiles (story/movement.ts) */
+        if (d === 'down' && M.cell(nx, ny).deco === 'ledge') ny++;
+        var k2 = key(nx, ny), a = M.at[k2];
+        if (blocked(M, nx, ny)) return;
+        if (a && (a.kind === 'warp' || a.kind === 'door') && !(nx === tx && ny === ty)) return;
+        /* around whoever stands in the way (one who keeps a door stays there until passed: see guardInWay) */
+        if (!(nx === tx && ny === ty) && occ[k2]) return;
+        /* in a place with a puzzle, the way does not cross what carries one off (a slide) */
+        if (M.place && thingsAt(M.place, nx, ny).some(function (t) { return t.k === 'slide'; })) return;
+        var dc = M.cell(nx, ny).deco, nc = c + (dc === 'tall' || dc === 'pools' ? WILD_STEP : 1);
+        if (cost[k2] != null && cost[k2] <= nc) return;
+        cost[k2] = nc; prev[k2] = { k: pk, d: d };
+        (buckets[nc] = buckets[nc] || []).push([nx, ny]);
+      });
     }
-    (['up', 'down', 'left', 'right'] as Dir[]).forEach(function (d) {
-      var nx = p[0] + DV[d][0], ny = p[1] + DV[d][1];
-      /* down a terrace where one can jump: one step, two tiles (story/movement.ts) */
-      if (d === 'down' && M.cell(nx, ny).deco === 'ledge') ny++;
-      var k2 = key(nx, ny), a = M.at[k2];
-      if (seen[k2] || blocked(M, nx, ny)) return;
-      if (a && (a.kind === 'warp' || a.kind === 'door') && !(nx === tx && ny === ty)) return;
-      seen[k2] = 1; prev[k2] = { k: key(p[0], p[1]), d: d }; q.push([nx, ny]);
-    });
   }
   return null;
 }

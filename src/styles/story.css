@@ -30,6 +30,15 @@ body.in-world { overflow: hidden; }
 .wplace small { display: block; font: 700 10px/1.25 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .wbadges { margin-left: auto; display: flex; gap: 3px; padding: 3px 6px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); box-shadow: 3px 3px 0 var(--shadow); }
 .wbadges span { display: block; line-height: 0; }
+.wbadges-n { display: none; align-items: center; gap: 4px; font: 15px/1.2 var(--font-display); }
+/* a narrow phone: the count of the pins instead of their row, or the menu is pushed off the screen */
+@media (max-width: 560px) {
+  .whud { gap: 6px; }
+  .wbadges > span { display: none; }
+  .wbadges-n { display: inline-flex; }
+  .wplace { padding: 4px 8px 3px; font-size: 15px; }
+  .wplace small { font-size: 9px; }
+}
 .whud .tb-btn { box-shadow: 3px 3px 0 var(--shadow); }
 .wdialog.dialog { position: absolute; z-index: 4; left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); bottom: calc(var(--padh) + 10px + env(safe-area-inset-bottom, 0px)); max-width: 540px; margin: 0 auto; box-shadow: 4px 4px 0 var(--shadow); }
 .wopts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
@@ -96,7 +105,7 @@ div.pick { cursor: default; }
 .wtoast.out { opacity: 0; }
 
 /* the bars in the corner: the first of the company and the creature at his side, on their way to the next level */
-.wbars { position: absolute; z-index: 2; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.wbars { position: absolute; z-index: 2; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(var(--padh) + 14px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
 .wbars:empty { display: none; }
 .wbar { position: relative; display: grid; grid-template-columns: 42px 176px; align-items: center; gap: 8px; padding: 5px 10px 6px 5px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); }
 .wbar .face { width: 42px; height: 42px; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--tc); }
@@ -110,6 +119,15 @@ div.pick { cursor: default; }
 @keyframes lvup { 0%, 100% { transform: none; } 25% { transform: scale(1.06); box-shadow: 0 0 0 4px var(--tc), 3px 3px 0 var(--shadow); } }
 @keyframes lvtag { 0% { opacity: 0; transform: translateY(8px); } 15%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
 @media (prefers-reduced-motion: reduce) { .wbar .xpbar i { transition: none; } .wbar.lvup, .wbar.lvup::after { animation: none; } }
+/* the cards stand above the cross and the A button of a phone held upright (--padh); on a phone on its side they go
+   under the bar at the top, clear of the A button; with a mouse, down in the corner */
+@media (max-height: 520px) and (orientation: landscape) { .wbars { top: 96px; bottom: auto; } }
+@media (hover: hover) and (pointer: fine) { .wbars { top: auto; bottom: max(12px, env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 560px) {
+  .wbar { grid-template-columns: 34px 118px; gap: 6px; padding: 4px 8px 5px 4px; }
+  .wbar .face { width: 34px; height: 34px; }
+  .wbar-t b { font-size: 14px; }
+}
 
 /* the menu's tabs */
 .tabs { display: flex; gap: 6px; margin: 2px 0 14px; }

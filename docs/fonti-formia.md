@@ -71,7 +71,7 @@ Le fonti e le coordinate verificate qui sotto vengono in buona parte dal lavoro 
 | Scauri, il nome | Da Marco Emilio Scauro, console nel 115 a.C., che la tradizione vuole proprietario di una villa in zona. Fonte: Wikipedia, «Scauri». |
 | Maranola | La torre dei Caetani e il presepe vivente erano già nel gioco (fonti più su). |
 
-**Non verificati, quindi detti senza fatti:** le persone nuove (l'infermiere, il signore di Largo Paone, la signora di Maranola per la parte che non riguarda San Michele, il pellegrino per la sorgente, il postino, i pescatori, la contadina, il pensionato, il pittore, le bagnine) dicono cose loro. I belvedere si chiamano come il posto da cui si guarda.
+**Non verificati, quindi detti senza fatti:** le persone nuove (l'infermiere, il signore di Largo Paone, la signora di Maranola per la parte che non riguarda San Michele, il pellegrino per la sorgente, il postino, i pescatori, la contadina, il pensionato, il pittore, le bagnine; dal 23 novembre la passeggera per Ponza, il pescatore della banchina, la signora a passeggio, la signora alla fermata, il signore che guarda i treni, la signora e il vicino di Scauri, la ragazza con lo skate, il cercatore di funghi, la raccoglitrice di asparagi) dicono cose loro. La passeggera dice solo che il traghetto per Ponza parte tutto l'anno (vedi «Porto», più su). I belvedere si chiamano come il posto da cui si guarda.
 
 **Tolto perché non vero:** via Penitro e via Rubino a nord della ferrovia (nella mappa di prima erano strade di comodo: via Rubino è a Castellone, e ora è lì); il villaggio di Maranola disegnato in lontananza (adesso ci si arriva).
 

@@ -1,5 +1,7 @@
 import { magicBeats } from '../data/types';
 import { crewAt } from '../story/covo-crew';
+import { lossAdvice } from '../story/advice';
+import type { TypeName } from '../data/types';
 import { speedChoice } from './speed';
 import { gfxChoice } from './gfx';
 import { CHARS as C, type CharId, type FriendId } from '../data/characters';
@@ -12,8 +14,9 @@ import { trainTrip } from './train';
 import { SPR } from '../render/svg';
 import { badgeSVG, itemSVG } from '../render/svg/badges';
 import { st, save, resetProgress, onSaveFail } from '../save/story-progress';
-import { M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isSea, isWall, motoAt, moto, type Person } from '../story/maps';
+import { netSeller, M, setMap, DV, OPP, key, itemAt, allItems, foundItems, areaName, currentArea, personAt, blocked, cityCovi, covoLevel, covoPins, hasBadge, route, moveMode, treasureAt, present, walkPath, walkAway, isSea, isWall, motoAt, moto, type Person, nearestGrass } from '../story/maps';
 import { press, release, update, halt, mover, busy, travel, setPace, onEdge, onPlace, stepNow, lock, STEP, walkAlong, walkingAlong, mount, dismount, onRideStop } from '../story/movement';
+import { COVO_PLACES } from '../data/covo-places';
 import { placeProof } from '../story/place-run';
 import { teamOf, trainerLine, trainerNow, shieldNow } from '../story/rival';
 import { rivalFriend } from '../story/rival-who';
@@ -23,7 +26,8 @@ import { groupChat, playChat, openPhone } from './chat';
 import { vanStart, windsurfLanded, leadFrame, companionTalk, nicolaTalk, onTheWay, NICOLA } from './nicola';
 import { reduced, esc, each, $ } from './dom';
 import { setScreen } from './common';
-import { offerActivity, startActivity } from './activities';
+import { offerActivity, startActivity, QUIZ } from './activities';
+import { QUIZZES } from '../data/quizzes';
 import { seaFrame, seaTalk, seaJobsHtml, seaStop } from './sea';
 import { sea } from '../story/sea';
 import { checkRun, cancelRun } from './run';
@@ -48,7 +52,7 @@ import { endFlag, legendOf, legendOver, pactOpen, stagesNow, stonesKept, tullioM
 import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
-import { idOf, sideOf, formNow, gainXp, heroText, foeSide, fightPay, battleBag, keepBag, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
+import { idOf, sideOf, formNow, gainXp, heroText, foeSide, fightPay, battleBag, keepBag, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, homeMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
 import { coin } from './icons';
 import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
 import { onReward } from '../story/activities';
@@ -64,7 +68,7 @@ import { startBattle, goHome } from './battle-screen';
 import { coachKey } from './coaches';
 import { hookTalk, quizTalk, doorShut, doorRoute, keeperGifts, noKeys, giftsPane, wireGifts, onRadio } from './lairs';
 import { setDoorRules } from '../story/movement';
-import { hasGift, charmOn } from '../story/lairs';
+import { hasGift, charmOn, hasKeys } from '../story/lairs';
 import { creaturesMissing, MAMURRA_BEATEN, REUNION } from '../story/finale';
 import { cancelScene, scenePlaying } from './story-cutscene';
 import { cancelFinaleBattle, covoScene, farewellScene, finaleThreshold, mamurraTalk, resumeFinale } from './finale';
@@ -209,7 +213,7 @@ const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="
 function chapterTip() {
   if (!quiet()) return;
   var cn = chapterNow();
-  if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + ' <small>(C per i dettagli)</small>'); }
+  if (cn) { save(); bubble((cn.done ? esc(cn.done) + ' ' : '') + 'Nuovo capitolo: <b>' + esc(cn.title) + '</b>. ' + esc(cn.text) + moreHint()); }
 }
 export function renderGoal() {
   var el = $('wgoal'), h = heading(M.id), rc = sea.race, nx = rc && !M.inside ? rc.marks[rc.got] : null;
@@ -217,12 +221,12 @@ export function renderGoal() {
   if (rc) h = nx ? { x: nx[0], y: nx[1], exact: true, stop: { id: 'boa-' + rc.got, text: 'Boa ' + (rc.got + 1) + ' di ' + rc.marks.length, where: 'in mare', label: 'Gara a vela' } } as unknown as typeof h : null;
   if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
   var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
-  var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = h.stop.id + '|' + turn;
+  var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = h.stop.id + '|' + h.stop.text + '|' + (h.stop.label || '') + '|' + turn;
   if (k === lastGoal) return;
   var fresh = lastGoal !== '' && lastGoal.split('|')[0] !== h.stop.id;
   lastGoal = k; el.hidden = false;
   el.innerHTML = '<span class="wgoal-ic"' + (here ? '' : ' style="transform:rotate(' + turn * 45 + 'deg)"') + '>' + (here ? GOAL_HERE : GOAL_ARROW) + '</span>' +
-    '<span class="wgoal-t"><small>' + ((h.stop as { label?: string }).label || 'Prossima tappa') + '</small>' + esc(h.stop.text) + '</span>';
+    '<span class="wgoal-t"><small>' + (h.stop.label || 'Prossima tappa') + '</small>' + esc(h.stop.text) + '</span>';
   el.setAttribute('aria-label', 'Prossima tappa: ' + h.stop.text + ', ' + h.stop.where + (here ? ': sei arrivato' : '') + '. Apri il menu');
   if (fresh && !reduced) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); clearTimeout(goalFlash); goalFlash = setTimeout(function () { el.classList.remove('new'); }, 1600); }
 }
@@ -260,10 +264,17 @@ export function renderHud() {
   if (hint) hint.textContent = st.sella ? 'In sella: frecce o WASD per guidare · Invio per suonare, da fermo per scendere · M menu'
     : 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · T telefono · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
   $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
-  $('wbadges').innerHTML = cityCovi(M.city).map(function (cv0) {
+  var cv = cityCovi(M.city), won = cv.filter(function (cv0) { return hasBadge(cv0); }).length;
+  /* on a narrow phone the row of pins does not fit beside the menu: a count stands in for it (story.css) */
+  $('wbadges').innerHTML = cv.map(function (cv0) {
     var b = cv0.badge, got = hasBadge(cv0);
     return '<span title="' + esc(b.name + (got ? '' : ' (da conquistare)')) + '">' + badgeSVG({ color: b.color, mark: b.mark, earned: got }, 28) + '</span>';
-  }).join('');
+  }).join('') + '<b class="wbadges-n" aria-label="Spille: ' + won + ' su ' + cv.length + '">' + badgeSVG({ color: '#ffd166', mark: '★', earned: true }, 18) + won + '/' + cv.length + '</b>';
+}
+/** how to ask Cicero for more: the key C at a keyboard, a tap on him on a touch screen */
+function moreHint(): string {
+  var fine = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  return ' <small>(' + (fine ? 'C' : 'tocca Cicerone') + ' per i dettagli)</small>';
 }
 
 
@@ -714,7 +725,12 @@ const CUP = '<svg viewBox="0 0 100 100" width="104" height="104" aria-hidden="tr
   '<path d="M30 24H18c0 12 6 18 14 18M70 24h12c0 12-6 18-14 18" fill="none" stroke="#1c2340" stroke-width="4"/><path d="M44 58h12v12H44Z" fill="#ffd166" stroke="#1c2340" stroke-width="4"/>' +
   '<path d="M32 70h36v10H32Z" fill="#e8916a" stroke="#1c2340" stroke-width="4" stroke-linejoin="round"/><path d="M38 26l4 10" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/></svg>';
 function tourneyTalk(host: string, lines: string[]) {
-  if (!cityCovi('formia').every(hasBadge)) { say(lines.concat(['Il torneo è per chi ha vinto i due covi di Formia: torna con le spille di Forchetta e di Costanzo.']), host); return; }
+  /* every covo of Formia, the player's own aside: the pins still missing, by whose covo they come from */
+  var missing = cityCovi('formia').filter(function (cv0) { return !hasBadge(cv0); }).map(function (cv0) { return C[cv0.leader] ? C[cv0.leader].name : cv0.name; });
+  if (missing.length) {
+    var who = missing.length === 1 ? 'la spilla di ' + missing[0] : 'le spille di ' + missing.slice(0, -1).join(', ') + ' e di ' + missing[missing.length - 1];
+    say(lines.concat(['Il torneo è per chi ha vinto i covi di Formia: torna con ' + who + '.']), host); return;
+  }
   var ed = (st.done && st.done.coppa) || 0;
   say([ed ? 'Il ' + TOURNEY.name + ' ricomincia, edizione numero ' + (ed + 1) + ': stavolta tutti hanno ' + ed * TOURNEY.step + ' livelli in più.'
     : 'Il ' + TOURNEY.name + ': cinque amici, uno dopo l\'altro, sulla pista del Bruno Zauli. Anche Costanzo e Forchetta vogliono la rivincita.',
@@ -860,7 +876,11 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
       fight = null;
       /* it stays where it is, on its knees, until the player has decided */
       if (ending) { rewardsAll(pay, moneyFor(foe.lv, false), function () { legendEnd(ending!, foe.lv); }); return; }
-      wildGone[f.id] = Date.now(); rewardsAll(pay, moneyFor(foe.lv, false)); return;
+      wildGone[f.id] = Date.now();
+      /* a creature the tour asks to catch, beaten instead by a team far above it: how to catch one */
+      var top = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
+      if (nextStop().grass && foe.lv * 2 < top) mentorTip('gentle');
+      rewardsAll(pay, moneyFor(foe.lv, false)); return;
     }
     rewardsAll(pay, 0, function () {
       var first = !st.beaten['tr-' + f.id], now = trainerNow(f.id), gift = first ? now.gift : undefined;
@@ -880,7 +900,10 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
   }
   rewardsAll(pay, 0, function () {
     fight = null;
-    if (tr) say(lines(trainerNow(f.id).lose, f.id), f.who, null, f.id === 'rivale-1' ? firstChallengeChat : undefined); else say([sp.name + ' torna a nascondersi. {hero} e le sue creature vanno a riposare.']);
+    if (tr) {
+      lostTo('tr-' + f.id, f.foes.map(function (q) { return SPECIES[q.sp].type; }).concat(f.foes.map(function (q) { return SPECIES[q.sp].type2; }).filter(Boolean) as TypeName[]), Math.max.apply(null, f.foes.map(function (q) { return q.lv; })));
+      say(lines(trainerNow(f.id).lose, f.id), f.who, null, f.id === 'rivale-1' ? firstChallengeChat : undefined);
+    } else say([sp.name + ' torna a nascondersi. {hero} e le sue creature vanno a riposare.']);
   });
 }
 function firstChallengeChat() { st.seen['sfida-rivale-1'] = true; save(); playChat('rivale-1'); }
@@ -1009,10 +1032,21 @@ function tooStrong(id: string): boolean {
   var mine = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
   return Math.min.apply(null, teamOf(id).map(function (t) { return t.lv; })) - mine > SIGHT_GAP;
 }
+/** a trainer far below the player (his strongest creature this many levels under the player's strongest) does not
+    walk up to challenge on sight: a fight with nothing in it, in the middle of the way. He can still be challenged,
+    talking to him */
+const WEAK_GAP = 15;
+function tooWeak(id: string): boolean {
+  if (TRAINERS[id].rival || TRAINERS[id].covo || !teamMons().length) return false;
+  var mine = Math.max.apply(null, teamMons().map(function (m) { return level(m.uid).lv; }));
+  return mine - Math.max.apply(null, teamOf(id).map(function (t) { return t.lv; })) >= WEAK_GAP;
+}
 function spotted(): boolean {
-  var p = spotting ? M.people.find(seesAntonio) : null;
+  /* nobody comes to challenge in the middle of a race at sea, or of a rescue */
+  var p = spotting && !sea.race && !sea.kid ? M.people.find(seesAntonio) : null;
   if (!p) return false;
   var n = p.n;
+  if (tooWeak(n.trainer!)) { noticed[n.trainer!] = Date.now(); return false; }
   if (tooStrong(n.trainer!)) {
     noticed[n.trainer!] = Date.now();
     bubble(esc(trainerNow(n.trainer!).title + ' ti ha visto, ti ha squadrato… e ha lasciato perdere. Le sue creature sono molto più forti delle tue: se vuoi sfidarlo lo stesso, parlagli.'));
@@ -1082,7 +1116,9 @@ export function stepAside() {
     var rest = restOf(p.n);
     if (p.x === rest[0] && p.y === rest[1]) return;
     var way = walkPath(p.x, p.y, rest[0], rest[1], false);
-    if (way) walk(p, way, function () { home({ p: p }); }); else settlePeople(M);
+    /* a step or two aside, walked; when the only way round is long (the player stands where he would pass), he is
+       simply there, out of the way, and does not wander in front of the player for a while */
+    if (way && way.length <= 4) walk(p, way, function () { home({ p: p }); }); else settlePeople(M);
   });
 }
 /** back on his own tile, facing his own way */
@@ -1175,7 +1211,10 @@ export function closeSheet() { var o = $('overlay'); o.hidden = true; o.innerHTM
 function face(id: string) { return SPR.personIn(id, formNow(id), 'smirk', '', SPR.thumb(id)); }
 /** called by the battle screen when a story battle ends: the covo or the creature reacts, the team grows */
 export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; caught?: boolean; bag?: Record<string, number>; bouts?: Bout[] }) {
+  /* back from the battle: the map comes up out of the paper, not in one cut */
+  build(); root.classList.add('fade');
   open(true);
+  setTimeout(function () { root.classList.remove('fade'); }, 60);
   setTimeout(stepAside, 400);
   var tag = res.tag, key = tag.key || 'antonio';
   keepBag(res.bag); save(); renderHud();
@@ -1196,9 +1235,31 @@ export function afterBattle(res: { tag: StoryTag; won: boolean; quit: boolean; c
     if (!hasBadge(cv0)) st.badges.push(cv0.badge.id);
     save(); renderHud();
     /* the pin, then what the freed keeper gives besides it (story/lairs.ts, ui/lairs.ts) */
-    say(cv0.win, cv0.leader, null, () => award(cv0, () => covoScene(tag.covo!, () => keeperGifts(tag.covo!, () => rewardsAll(pay, cash)))));
+    say(cv0.win, cv0.leader, null, () => award(cv0, () => covoScene(tag.covo!, () => keeperGifts(tag.covo!, () => rewardsAll(pay, cash, () => wayOut(tag.covo!))))));
   } else if (res.won) say(cv0.after, cv0.leader, null, function () { rewardsAll(pay, cash); });
-  else say(cv0.lose, cv0.leader, null, function () { rewardsAll(pay, 0); });
+  else {
+    var crew = crewAt(tag.covo!, lv, covoPins(tag.covo!));
+    lostTo(tag.covo!, crew.map(function (q) { return SPECIES[q.sp].type; }).concat([C[cv0.leader].type as TypeName]), lv);
+    say(cv0.lose, cv0.leader, null, function () { rewardsAll(pay, 0); });
+  }
+}
+/** a second defeat against the same one: Cicero says what to bring (story/advice.ts), once the words are over */
+var losses: Record<string, number> = {};
+function lostTo(id: string, types: TypeName[], lv: number) {
+  losses[id] = (losses[id] || 0) + 1;
+  if (losses[id] !== 2 && losses[id] !== 4) return;
+  var mine = teamMons().concat(homeMons()).map(function (m) { return { name: nameOf(m.uid), sp: m.sp, lv: level(m.uid).lv, home: !!m.home }; });
+  var said = lossAdvice(types, lv, mine);
+  if (said.length) setTimeout(function () { bubble(esc(said.join(' '))); }, 2500);
+}
+/** a covo won: the keeper, free again, offers to walk the player out, so that the way in (its puzzle, its slides,
+    its defenders) is not walked again backwards */
+function wayOut(id: string) {
+  var P = COVO_PLACES[id], w = (M.warps || [])[0];
+  if (!P || M.id !== P.map || !w) return;
+  say(['Usciamo da qui? Conosco la strada più corta.'], COVI[id].leader, [
+    { label: 'Sì, usciamo', fn: function () { travel(w!.to, w!.tx, w!.ty, w!.tdir); } }, { label: 'Resto ancora un po\'', fn: null }
+  ]);
 }
 /** after a pin: how many are left before the train, or that the train is waiting */
 function pinsLeft(city: string, who: string): string {
@@ -1348,7 +1409,8 @@ function frame(now: number) {
   checkRun(now);
   renderGoal();
   if (now - barAt > 300) {
-    barAt = now; standOn(); renderBars(); tellRewards(); chapterTip(); groupChat(quiet() && !M.inside && !mover && !walkingAlong()); tune();
+    barAt = now; standOn(); renderBars(); tellRewards(); chapterTip();
+    if (quiet() && charmOn() && M.id === 'formia' && hidingAt(st.x, st.y) && nextStop().grass) mentorTip('charm'); if (quiet() && M.id === 'formia' && nextStop().grass && netSeller(st.x, st.y)) mentorTip('nonets'); groupChat(quiet() && !M.inside && !mover && !walkingAlong()); tune();
     /* the first time a creature can do something on the map, Cicero says what */
     if (st.seen.intro && !st.seen['cic-power'] && !M.inside && !dialog && !between && !meeting && (powerOf('nuoto') || powerOf('scalata') || powerOf('volo'))) mentorTip('power');
   }
@@ -1427,7 +1489,10 @@ function bubble(html: string) {
   var el = $('wcic-say'), corner = $('wcic');
   if (!el.hidden) { bubbleQ.push(html); return; }
   var long = Math.min(14000, 4500 + html.length * 45);
-  el.innerHTML = '<b>Cicerone</b> ' + heroText(html);
+  /* the way to his details on a line of its own: on an upright phone the words above it may be cut short (team.css) */
+  var more = /\s*<small>([^<]*)<\/small>\s*$/.exec(html), main = more ? html.slice(0, more.index) : html;
+  el.innerHTML = '<span class="wcic-t"><b>Cicerone</b> ' + heroText(main) + '</span>' + (more ? ' <small>' + more[1] + '</small>' : '');
+  el.classList.toggle('more', !!more);
   el.hidden = false; el.classList.remove('out');
   corner.hidden = false; corner.classList.remove('out'); corner.classList.add('talking');
   cicAppear(long);
@@ -1449,9 +1514,12 @@ var helpAt = 0, helpDone = -1;
 function nudge(now: number) {
   var d = stopsDone();
   if (d !== helpDone || !helpAt) { helpDone = d; helpAt = now; return; }
-  if (now - helpAt < 240000 || dialog || overlayOpen() || busy || !st.seen.intro || M.inside || run) return;
+  if (now - helpAt < 240000 || dialog || overlayOpen() || busy || !st.seen.intro || M.inside || run || sea.race || sea.kid) return;
   helpAt = now;
-  bubble('Ti vedo un po\' perso. ' + esc(nextStop().tip) + ' <small>(C per i dettagli)</small>');
+  /* far away, on foot, with the keys of the Liberty: the scooter is quicker */
+  var h = heading(M.id), far = !!h && M.id === 'formia' && Math.abs(h.x - st.x) + Math.abs(h.y - st.y) > 70;
+  var ride = far && !st.sella && hasKeys() ? ' Ed è lontano: col Liberty fai prima, lo trovi dove l\'hai lasciato.' : '';
+  bubble('Ti vedo un po\' perso. ' + esc(nextStop().tip) + esc(ride) + moreHint());
 }
 /** the first time something happens, Cicero explains it from the corner */
 export function mentorTip(id: string) { var t = tipOnce(id); if (t) { save(); bubble(esc(t.join(' '))); } }
@@ -1515,11 +1583,19 @@ export const WORLD = {
     area: function () { return areaName(); },
     screenOf: screenOf,
     /* the automatic player (tools/playtest): the next stop, the tour, what the story has; skip an activity */
-    goal: function () { var h = heading(M.id); return h ? { x: h.x, y: h.y, exact: h.exact, id: h.stop.id, text: h.stop.text } : null; },
+    goal: function () { var h = heading(M.id); return h ? { x: h.x, y: h.y, exact: h.exact, id: h.stop.id, text: h.stop.text, label: h.stop.label || '' } : null; },
     stops: function () { return myStops().map(function (q) { return [q.id, q.done()]; }); },
     lv: function () { return JSON.parse(JSON.stringify({ lv: st.lv, money: st.money, badges: st.badges, mons: (st.mons || []).map(function (m) { return { uid: m.uid, sp: m.sp, home: !!m.home }; }), bag: st.bag })); },
     skipStop: function () { var q = nextStop(); st.done = st.done || {}; st.done[q.id] = (st.done[q.id] || 0) + 1; save(); renderHud(); return q.id; },
     hiding: function () { var h = hidingAt(st.x, st.y); return h ? h.id : null; },
+    grass: function () { return M.id === 'formia' ? nearestGrass(st.x, st.y) : null; },
+    /* who sells nets, the nearest, when none is left and there are the sesterzi for one */
+    seller: function () { var v = M.id === 'formia' ? netSeller(st.x, st.y) : null; return v ? { x: v.x, y: v.y, name: v.n.name || '' } : null; },
+    /* a step from here onto more grass (or rock pools), to walk to and fro in it */
+    grassStep: function () {
+      var t = function (x: number, y: number) { var d = M.cell(x, y).deco; return (d === 'tall' || d === 'pools') && !blocked(M, x, y) && !personAt(M, x, y); };
+      return (['up', 'down', 'left', 'right'] as Dir[]).filter(function (d) { return t(st.x + DV[d][0], st.y + DV[d][1]); })[0] || null;
+    },
     /* a creature for who is played, as the park keeper gives it (playtests that go to a covo) */
     adopt: function (sp: SpeciesId, lv: number) { var uid = addCreature(sp, lv); st.seen.starter = true; save(); renderHud(); return uid; },
     /* trainers who see Antonio and come to challenge him: off in the playtests that walk past them */
@@ -1527,6 +1603,14 @@ export const WORLD = {
     who: function (id: string) { var q = M.people.find(function (o) { return o.n.id === id; }); return q ? { x: q.x, y: q.y, dir: q.dir, present: present(q), moving: !!q.mv } : null; },
     /* the way through a place, from its entry, as the validator found it; and straight to another map (playtests) */
     way: function () { return M.place ? placeProof(M).way : []; },
+    entry: function () { return M.place ? M.place.entry : null; },
+    /* the right answer to a question being asked, at Morgana or at the door of a covo (the playtests answer well) */
+    right: function (q: string) {
+      var a = QUIZ.filter(function (x) { return q.indexOf(x[0]) >= 0; })[0];
+      if (a) return a[1][0];
+      for (var id in QUIZZES) { var b = QUIZZES[id].pool.filter(function (x) { return q.indexOf(x.q) >= 0; })[0]; if (b) return b.a[0]; }
+      return null;
+    },
     travel: travel,
     /* experience for someone, as after a battle: what it learns and the form it takes (playtests) */
     xp: function (key: string, n: number, quiet?: boolean) { var g = gainXp(key, n); save(); renderHud(); if (!quiet) growthSay(g, [nameOf(key) + ' guadagna ' + n + ' punti esperienza.']); },

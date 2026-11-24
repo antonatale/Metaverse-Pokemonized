@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { play, until, toPrompt, battleOver, walk, goStory, fight, type Run } from './harness';
+import { play, until, toPrompt, battleOver, walk, goStory, fight, quietPhone, type Run } from './harness';
 import { FORMIA_SPOT } from '../../src/data/maps/formia-ground';
 import { cisterna } from '../../src/data/maps/cisterna';
 
@@ -36,6 +36,7 @@ async function goTo(p: Page, kind: string, id: string) {
 }
 async function talkThrough(p: Page, max = 12) {
   for (let k = 0; k < max; k++) {
+    await quietPhone(p);
     const d = await p.evaluate(() => window.WORLD._debug.pos());
     if (!d.dialog || d.opts) return;
     await p.keyboard.press('Enter');
@@ -181,15 +182,22 @@ test('the tennis player opens Forchetta’s covo and he finds the fragment', asy
 test('story on a phone with the touch pad', async ({ browser }) => {
   await play(browser, 'touch', { seed: 5, touch: true }, async (r) => {
     const p = r.page;
-    await goStory(p);
+    /* into the story without goStory, which goes past the prologue: here the prologue is what is looked at */
+    const enter = async () => {
+      await p.click('#go-story');
+      const pick = p.locator('[data-hero="antonio"]');
+      if (await pick.count()) await pick.click();
+      await p.clock.runFor(300);
+    };
+    await enter();
     const prologue = p.getByRole('dialog', { name: 'Prologo', exact: true });
     await expect(prologue).toContainText('Alle 3:12 un boato');
     await expect(prologue).toContainText('una mano enorme');
-    await p.reload(); await goStory(p); await p.clock.runFor(900);
+    await p.reload(); await enter(); await p.clock.runFor(900);
     await expect(prologue).toBeVisible();
     await prologue.getByRole('button', { name: 'Il mattino' }).click();
     await until(p, () => window.WORLD._debug.pos().dialog);
-    await p.reload(); await goStory(p); await p.clock.runFor(900);
+    await p.reload(); await enter(); await p.clock.runFor(900);
     await expect(prologue).toHaveCount(0);
     await expect(p.locator('#wtxt')).toContainText('Salve, Antonio');
     await r.shot('pad');
@@ -420,15 +428,22 @@ async function talkTo(p: Page, id: string) {
   await goTo(p, 'npc', id);
   await p.keyboard.press('Enter'); await p.clock.runFor(200);
   await talkThrough(p);
+  /* who has a mission at sea asks it first (ui/sea.ts, 21 November 2026): later, and on to what he always does */
+  const opts = await p.locator('#wopts button').allInnerTexts();
+  if (opts.includes('Ci penso io') && opts.includes('Dopo')) { await choose(p, 'Dopo'); await talkThrough(p); }
+  else if (opts.length === 1 && opts[0] === 'Va bene' && /al largo/.test((await p.evaluate(() => window.WORLD._debug.pos())).text)) { await choose(p, 'Va bene'); await talkThrough(p); }
 }
 test('activities around Formia', async ({ browser }) => {
   /* the longest game: minutes of fake clock (a minute of run in the pineta alone). On Bassa, without a graphics card,
      it still takes about four minutes, most of them Playwright's own: three times the time of the others (C1) */
   test.slow();
-  const r = await play(browser, 'activities', { seed: 9, gfx: 'bassa' }, async (r) => {
+  /* the friends come out of their covi once beaten (13 November 2026): Zendavid of the pineta, Valentin of the Eclipse */
+  const story = inTown({ beaten: { pineta: true, eclipse: true }, badges: ['bau', 'weee'],
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true } });
+  const r = await play(browser, 'activities', { seed: 9, gfx: 'bassa', storage: story }, async (r) => {
     const p = r.page;
     await goStory(p);
-    await until(p, () => window.WORLD._debug.pos().dialog);
+    await p.clock.runFor(1500);
     await talkThrough(p);
     /* the pineta: a run with Zendavid, left to time out */
     await talkTo(p, 'zendavid');
@@ -520,10 +535,14 @@ test('activities around Formia', async ({ browser }) => {
 
 /* Antonio's flat in Parco la Fontana, and the scooter he rides around town */
 test('home and the scooter', async ({ browser }) => {
-  const r = await play(browser, 'home', { seed: 10 }, async (r) => {
+  /* past the opening (a new story is taken to the Eclipse by Nicola's van since 13 November 2026), at home, and with
+     the keys of the Liberty back (a new story has left them at the caminetto: story/lairs.ts) */
+  const home = inTown({ seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true,
+    'chiavi-liberty': true, 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true } });
+  const r = await play(browser, 'home', { seed: 10, storage: home }, async (r) => {
     const p = r.page;
     await goStory(p);
-    await until(p, () => window.WORLD._debug.pos().dialog);
+    await p.clock.runFor(1500);
     await talkThrough(p);
     await goTo(p, 'door', 'casa');
     await walk(p, ['up']);
@@ -631,10 +650,13 @@ test('the tour of Formia', async ({ browser }) => {
 /* the creatures of Formia: the first one from the guardaparco, a wild one out of the rock pools fought, the team in
    the menu; then money spent on nets at Mola and one out of the tall grass caught */
 test('creatures of Formia', async ({ browser }) => {
-  const first = await play(browser, 'creatures', { seed: 5, gfx: 'bassa' }, async (r) => {
+  /* past the opening (Nicola's van to the Eclipse, the windsurf to Gianola: tests/e2e/nicola.spec.ts), at home, with no
+     creature yet */
+  const fresh = inTown({ mons: [], seen: { intro: true, 'cap-starter': true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true } });
+  const first = await play(browser, 'creatures', { seed: 5, gfx: 'bassa', storage: fresh }, async (r) => {
     const p = r.page;
     await goStory(p);
-    await until(p, () => window.WORLD._debug.pos().dialog);
+    await p.clock.runFor(1500);
     await talkThrough(p);
     await talkTo(p, 'guardaparco');
     await choose(p, 'Fammeli vedere');
@@ -853,8 +875,12 @@ test('abilities, states and things to carry', async ({ browser }) => {
 
 /* a trainer not beaten yet sees Antonio step in front of him: a "!", he walks up, challenges him with no saying
    later, and once beaten walks back to his place */
+/* the student of the Vitruvio Pollione stands at 156,56 on today's map, looking down the street; the player starts three
+   tiles below him. Like every save of inTown, the position is written on the map before 17 November 2026 (126,59), and
+   the formia18 migration moves it 30 columns east. Level 20, not more: a trainer whose best creature is 15 or more
+   levels under the player's does not come to challenge on sight (WEAK_GAP, 22 November) */
 test('a trainer who sees Antonio', async ({ browser }) => {
-  const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 30, xp: 0 } },
+  const r = await play(browser, 'spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 126, y: 59, dir: 'up', mons: [{ uid: 'c1', sp: 'polpastro' }], lv: { c1: { lv: 20, xp: 0 } },
     seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-trainer': true, 'cap-trama-scavi': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
@@ -888,7 +914,7 @@ test('a trainer who sees Antonio', async ({ browser }) => {
 /* a trainer far stronger than the player's team only looks at him: no challenge on sight, a word from Cicero instead,
    and the challenge is still there talking to him. In the battle, the sheet lists the moves the creature knows */
 test('a trainer too strong to challenge on sight', async ({ browser }) => {
-  const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
+  const r = await play(browser, 'not-spotted', { seed: 14, reduced: false, spot: true, storage: inTown({ x: 126, y: 59, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 6, xp: 0 } },
     seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-trainer': true, 'cap-trama-scavi': true, 'cap-starter': true, 'cap-seconda-creatura': true, 'cic-power': true } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
@@ -967,7 +993,8 @@ test('walking with a click', async ({ browser }) => {
     type W = { WORLD: { _debug: { route(x: number, y: number): string[] | null; screenOf(x: number, y: number): [number, number]; pos(): { x: number; y: number; dialog: boolean } } } };
     const to = await p.evaluate(() => {
       const d = (window as unknown as W).WORLD._debug;
-      for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, 2]]) { const x = 164 + dx, y = 56 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
+      /* toward the student first (he is at 156,56): from further east he would be off the screen for the next click */
+      for (const [dx, dy] of [[-3, 0], [3, 0], [0, 3], [0, -3], [-2, 2], [2, 2]]) { const x = 164 + dx, y = 56 + dy, rt = d.route(x, y); if (rt && rt.length >= 3 && rt.length <= 6) return { x, y }; }
       return null;
     });
     r.keep('to', to);
@@ -1056,6 +1083,9 @@ test('the stones of Telepilo', async ({ browser }) => {
     r.keep('stone', await p.locator('.award h2').innerText());
     await p.click('#st-ok'); await p.clock.runFor(300);
     await talkThrough(p);
+    /* the stone taken, the way back up is offered (22 November 2026) */
+    await choose(p, 'Sì, torno su'); await p.clock.runFor(500);
+    r.keep('out', await p.evaluate(() => window.WORLD._debug.pos().map));
     /* the tomb is at the far west of the big map: start from the Appia below it, not from home */
     await p.evaluate(() => window.WORLD._debug.travel('formia', 30, 92, 'left')); await p.clock.runFor(500);
     await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
@@ -1077,6 +1107,7 @@ test('the stones of Telepilo', async ({ browser }) => {
   expect(get('way')).toBeGreaterThan(20);
   expect(get('place')).toEqual({ a: true, b: true, c: true });
   expect(String(get('stone'))).toContain('Pietra delle Mura');
+  expect(get('out')).toBe('formia');
   expect(String(get('menu')).toLowerCase()).toContain('3 su 3');
   const st = get('state') as { seen: Record<string, boolean> };
   expect(st.seen['pietra-mura']).toBe(true);
@@ -1154,6 +1185,8 @@ test('the sea stone survives a reload and its voice waits for the walls', async 
     await talkThrough(p, 2);
     await expect(p.locator('#wtxt')).toContainText('Quella voce è la mia');
     await talkThrough(p);
+    /* with the stone, the way out of the Cisternone at once (plot.ts, climbOut) */
+    await choose(p, 'Sì, torno su');
     await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x + 2, y + 1, 'left'), FORMIA_SPOT['sign-tomba']); await p.clock.runFor(300);
     await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
     await p.keyboard.press('Enter'); await p.clock.runFor(300); await talkThrough(p);
@@ -1672,10 +1705,11 @@ test('fishing off the pier', async ({ browser }) => {
 
 /* the friends' tournament at the Bruno Zauli: five friends in a row, then the cup, and the next edition is harder */
 test('the friends\' tournament', async ({ browser }) => {
-  /* five whole battles in a row */
+  /* five whole battles in a row; the tournament wants every pin of Formia but the player's own (Claudia's too, since
+     13 November 2026) */
   test.setTimeout(480_000);
   const strong = { lv: 45, xp: 0 };
-  const r = await play(browser, 'tourney', { seed: 13, storage: inTown({ badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato'], squad: ['antonio', 'forchetta', 'costanzo'], beaten: { circolo: true, piazza: true },
+  const r = await play(browser, 'tourney', { seed: 13, storage: inTown({ badges: ['gialosai', 'peggio', 'weee', 'bau', 'calcolato', 'tavoli'], squad: ['antonio', 'forchetta', 'costanzo'], beaten: { circolo: true, piazza: true },
     lv: { antonio: strong, forchetta: strong, costanzo: strong }, money: 0 }) }, async (r) => {
     const p = r.page;
     await goStory(p);
@@ -1708,14 +1742,15 @@ test('the friends\' tournament', async ({ browser }) => {
 });
 
 /* the creatures' powers: a sea creature swims Antonio to the Roman tanks of Gianola (an amphora at the bottom of one),
-   a lizard takes him up the walls of Castellone, a gull shows Formia from above */
+   a lizard takes him up the walls of Castellone, a gull shows Formia from above. The porticciolo has its own cove since
+   21 November 2026: Antonio starts on its quay (282,106 before the formia18 migration, 312,106 on today's map) */
 test('the creatures\' powers', async ({ browser }) => {
   /* three games in a row */
   test.setTimeout(360_000);
   type P = { x: number; y: number; dialog: boolean; text: string; swim: boolean; climb: boolean; sky: boolean };
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
-  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 246, y: 98, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
+  const swim = await play(browser, 'powers-swim', { seed: 21, storage: inTown({ x: 282, y: 106, dir: 'down', money: 0, seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet } }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     await p.keyboard.press('ArrowDown'); await p.clock.runFor(400);
@@ -1729,7 +1764,7 @@ test('the creatures\' powers', async ({ browser }) => {
   });
   const get = (run: { data: { name: string; value: unknown }[] }, n: string) => run.data.find((x) => x.name === n)!.value;
   expect(String(get(swim, 'ask'))).toContain('a nuoto');
-  expect(get(swim, 'in the water')).toMatchObject({ x: 276, y: 99, swim: true });
+  expect(get(swim, 'in the water')).toMatchObject({ x: 312, y: 107, swim: true });
   expect(String((get(swim, 'in the water') as P).text)).toContain('vasca romana');
   expect((get(swim, 'state') as { money: number; seen: Record<string, boolean> }).money).toBe(60);
 
@@ -1771,17 +1806,17 @@ test('opened again in the sea', async ({ browser }) => {
   const pos = (p: Page) => p.evaluate(() => window.WORLD._debug.pos() as unknown as P);
   const quiet = { 'cic-power': true, 'cic-wild': true, 'cap-trama-scavi': true };
   const seen = { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, ...quiet };
-  const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 246, y: 99, dir: 'down', mons, seen }) }, async (r) => {
+  const open = async (name: string, mons: object[]) => (await play(browser, name, { seed: 24, storage: inTown({ x: 249, y: 99, dir: 'down', mons, seen }) }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
     r.keep('pos', await pos(p));
     await r.shot('opened');
   })).data.find((x) => x.name === 'pos')!.value as P;
   /* a sea creature in the team: it carries him on, where he was */
-  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 276, y: 99, swim: true });
-  /* none: back to the shore, next to where he was */
+  expect(await open('sea-swimmer', [{ uid: 'c1', sp: 'polpino' }])).toMatchObject({ x: 279, y: 99, swim: true });
+  /* none: back to the shore, next to where he was (the rocks of Gianola, four tiles east, since 21 November 2026) */
   const ashore = await open('sea-none', [{ uid: 'c1', sp: 'ramarrino' }]);
   expect(ashore.swim).toBe(false);
-  expect(Math.abs(ashore.x - 276) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
-  expect(Math.abs(ashore.x - 276) + Math.abs(ashore.y - 99)).toBeLessThan(6);
+  expect(Math.abs(ashore.x - 279) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
+  expect(Math.abs(ashore.x - 279) + Math.abs(ashore.y - 99)).toBeLessThan(6);
 });

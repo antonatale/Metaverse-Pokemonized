@@ -389,7 +389,7 @@ function gelato(n: Npc) {
 
 /* ---------- an evening at Morgana: a drink, and a quiz about Formia ---------- */
 /* every answer here is true (sources in docs/fonti-formia.md); the first of each list is the right one */
-const QUIZ: [string, string[]][] = [
+export const QUIZ: [string, string[]][] = [
   ['Secondo la tradizione, chi riposa nella tomba sull\'Appia verso Itri?', ['Marco Tullio Cicerone', 'Giulio Cesare', 'Mamurra']],
   ['Chi fece costruire la torre ottagonale di Castellone, nel 1377?', ['Onorato I Caetani', 'Carlo II d\'Angiò', 'Federico II']],
   ['Che cosa c\'è oggi nella Torre di Mola?', ['L\'Archivio storico di Formia', 'Il Municipio', 'Un faro']],

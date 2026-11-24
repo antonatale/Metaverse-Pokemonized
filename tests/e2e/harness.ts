@@ -149,12 +149,18 @@ export async function battleOver(page: Page) {
   return page.evaluate(() => { const ov = document.getElementById('overlay')!; return !ov.hidden && ov.classList.contains('result'); });
 }
 /** walk the player along a list of directions, one tile at a time */
+/** the phone of the caminetto rings when the player stands still with a chat due (ui/chat.ts): put away, it is not what
+    these games look at. Escape shows the whole chat, a second one closes the phone */
+export async function quietPhone(page: Page) {
+  for (let k = 0; k < 4 && await page.locator('.phone').count(); k++) { await page.keyboard.press('Escape'); await page.clock.runFor(300); }
+}
 export async function walk(page: Page, dirs: string[], stepMs = 20) {
   const KEY: Record<string, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   type Pos = { x: number; y: number; dir: string; moving: boolean; busy: boolean; map: string };
   const pos = () => page.evaluate(() => (window as unknown as { WORLD: { _debug: { pos(): Pos } } }).WORLD._debug.pos());
   /* a quick tap turns the player if he faces elsewhere, a second one takes exactly one step */
   for (const d of dirs) {
+    await quietPhone(page);
     if ((await pos()).dir !== d) { await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]); }
     await page.keyboard.down(KEY[d]); await page.keyboard.up(KEY[d]);
     for (let t = 0; t < 1200; t += stepMs) { await page.clock.runFor(stepMs); const p = await pos(); if (!p.moving && !p.busy) break; }

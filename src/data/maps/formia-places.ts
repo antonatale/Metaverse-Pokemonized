@@ -483,6 +483,17 @@ export const SPOTS: SpotSpec[] = [
   { id: 'tr-bagnante', tile: [278, 57] },
   { id: 'sign-scauri', tile: [304, 37] },
   { id: 'pendolare', tile: [320, 61] },
+  /* the screens one crossed with nothing to do (tools/formia/density.ts, 23 November 2026): who waits for the ferry,
+     who walks or fishes on the lungomare of Mola, who waits for the bus on the Appia, who lives in Scauri and a first
+     challenge there, someone in the woods toward Gaeta; tall grass and rock pools where the ground has room for them,
+     and the belvedere of Maranola */
+  { id: 'passeggera-ponza', tile: [161, 88] }, { id: 'pescatore-banchina', tile: [184, 64] }, { id: 'passeggio-lungomare', tile: [183, 76] },
+  { id: 'fermata-appia', tile: [292, 37] }, { id: 'treni-scauri', tile: [332, 59] }, { id: 'bici-scauri', tile: [345, 68] },
+  { id: 'panchina-scauri', tile: [346, 79] }, { id: 'tr-skate', tile: [347, 86] }, { id: 'funghi-bosco', tile: [8, 108] },
+  { id: 'asparagi-monte', tile: [303, 75] },
+  { id: 'vista-maranola', tile: [163, 8] }, { id: 'selv-erba-maranola', tile: [169, 10] },
+  { id: 'selv-erba-riofresco', tile: [260, 63] }, { id: 'selv-ulivi-8', tile: [307, 95] },
+  { id: 'selv-scogli-scauri-2', tile: [342, 105], on: 'sand' }, { id: 'selv-scogli-scauri-3', tile: [347, 121], on: 'sand' },
   /* Lamo, king of the giants, under the polygonal walls of Castellone */
   { id: 'selv-lamo', tile: [96, 65] },
   /* the other legends: Janus by the ruins of Gianola, the fire of Sant'Elmo on the mole by the lighthouse */
@@ -523,7 +534,14 @@ export const HIDING: { id: string; spot: string; r: number; on: 'grass' | 'sand'
   /* the big Formia: more of the same kinds of places, where the map has room for them */
   { id: 'monti', spot: 'selv-monti-3', r: 3, on: 'grass' },
   { id: 'ulivi', spot: 'selv-ulivi-3', r: 3, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-4', r: 3, on: 'grass' },
-  { id: 'ulivi', spot: 'selv-ulivi-5', r: 3, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-7', r: 3, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-6', r: 3, on: 'grass' },
+  { id: 'ulivi', spot: 'selv-ulivi-5', r: 3, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-7', r: 4, on: 'grass' }, { id: 'ulivi', spot: 'selv-ulivi-6', r: 3, on: 'grass' },
   { id: 'scogliera', spot: 'selv-scogli-scauri', r: 3, on: 'sand' },
-  { id: 'macchia', spot: 'selv-macchia-2', r: 3, on: 'grass' }, { id: 'macchia', spot: 'selv-macchia-3', r: 3, on: 'grass' }, { id: 'macchia', spot: 'selv-macchia-4', r: 3, on: 'grass' }
+  { id: 'macchia', spot: 'selv-macchia-2', r: 3, on: 'grass' }, { id: 'macchia', spot: 'selv-macchia-3', r: 3, on: 'grass' }, { id: 'macchia', spot: 'selv-macchia-4', r: 3, on: 'grass' },
+  /* the screens one crossed with nothing to do (23 November 2026): the meadow over Maranola, the grass by the sea at Rio Fresco,
+     the last olive terrace before the Monte di Scauri, the beach of Scauri toward the Garigliano. The grass of
+     selv-ulivi-7 is a tile wider (r 4) since then: the grove draws back from it, and the meadow at the foot of the
+     Monte di Scauri, shut in by the grove's walls before, can be walked into */
+  { id: 'monti', spot: 'selv-erba-maranola', r: 2, on: 'grass' }, { id: 'gramsci', spot: 'selv-erba-riofresco', r: 3, on: 'grass' },
+  { id: 'ulivi', spot: 'selv-ulivi-8', r: 2, on: 'grass' },
+  { id: 'scogliera', spot: 'selv-scogli-scauri-2', r: 3, on: 'sand' }, { id: 'scogliera', spot: 'selv-scogli-scauri-3', r: 3, on: 'sand' }
 ];

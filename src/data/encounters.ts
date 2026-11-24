@@ -22,7 +22,9 @@ export const HIDINGS: Record<string, Hiding> = {
      tables with a big weight, a rare one in one place, at one hour, with a weight of 1 (and an evolved one only where
      the place is a challenge). Nothing in the game says which is which: the diary only says where it was seen */
   /* the first place inside: the bats of the dark, the snails of the damp walls, and one who is seldom met */
-  cisterna: { id: 'cisterna', name: 'Il Cisternone', on: 'grotta', follow: { off: 0, slack: 4 },
+  /* half as often as in the grass: the Cisternone is a puzzle of some sixty steps, and a fight every dozen of them
+     broke it up (playtests, 22 November 2026) */
+  cisterna: { id: 'cisterna', name: 'Il Cisternone', on: 'grotta', follow: { off: 0, slack: 4 }, rate: 0.5,
     day: [{ sp: 'pipistrillo', lv: [8, 11], w: 5 }, { sp: 'lumacotta', lv: [8, 11], w: 3 }, { sp: 'pipistrega', lv: [20, 22], w: 1, after: 'pietra-mura' }] },
   gramsci: { id: 'gramsci', name: 'Parco Gramsci', on: 'erba',
     day: [{ sp: 'cicalina', lv: [2, 4], w: 4 }, { sp: 'olivella', lv: [3, 4], w: 1 }],

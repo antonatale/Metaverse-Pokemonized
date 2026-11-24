@@ -95,7 +95,7 @@ const buildings: Building[] = [
   building('covo-costanzo', { label: 'PALAZZO DEL POPOLO', to: 'covo-costanzo', tx: 7, ty: 12, tdir: 'up' }),
   building('covo-zendavid', { label: 'TEMPIO DEL BASSO', to: 'covo-zendavid', tx: 7, ty: 12, tdir: 'up' }),
   building('covo-antonio', { label: 'LA CUPOLA', to: 'covo-antonio', tx: 7, ty: 10, tdir: 'up' }),
-  /* across via Palazzo from Claudia's: the Mattej school, and the little park with the swings in front of it */
+  /* on via Palazzo, before Claudia's (which is further east, by the Rodari school): the Mattej school, and the little park with the swings in front of it */
   building('scuola-mattej', { label: 'SCUOLA MATTEJ', msg: ['Scuola Mattej, in via Palazzo: le elementari e le medie dell\'Istituto comprensivo «Pasquale Mattej».', 'Davanti, il parchetto con gli alberi e le altalene.'] }),
   building('scuola-rodari', { label: 'GIANNI RODARI', msg: ['Scuola elementare «Gianni Rodari», in via Palazzo.', 'Il cancello è chiuso. Proprio accanto c\'è il castello di Claudia.'] }),
   building('casa-zendavid', { label: 'CASA DI ZENDAVID', v: 33, to: 'casa-zendavid', tx: 5, ty: 6, tdir: 'up' }),
@@ -237,6 +237,7 @@ const signs: Sign[] = [
   sign('sign-teatro', ['Il teatro romano di Castellone, di età augustea.', 'La cavea si appoggia alla collina e guarda il golfo: sopra ci hanno costruito le case, e nei muri si vedono ancora archi e opus reticulatum.']),
   sign('sign-mattej', ['Piazza Mattej.', 'Qui sotto c\'era il Foro di Formiae: le statue del museo le hanno trovate scavando qui.', '↑ Castellone · → Via Vitruvio, il Comune']),
   sign('sign-rotabile', ['Via Rotabile: sale a Maranola con due tornanti.', 'In motorino è un attimo. A piedi, meno.']),
+  { ...sign('vista-maranola', ['Il belvedere di Maranola.', 'Da quassù Formia si guarda dall\'alto: Mola e il porto, Gianola da una parte, e in fondo al golfo Gaeta.']), view: { id: 'maranola', name: 'Il golfo da Maranola' } },
   { ...sign('vista-rotabile', ['Il tornante della Rotabile.', 'Da quassù si vedono Mola, il porto e, in fondo al golfo, il promontorio di Gaeta.']), view: { id: 'rotabile', name: 'Formia dal tornante della Rotabile' } },
   sign('sign-molo', ['Molo Vespucci.', 'Di qua il capolinea dei pullman, di là la biglietteria dei traghetti. In fondo al molo, il faro.']),
   sign('sign-ingresso-gianola', ['Parco regionale di Gianola e del Monte di Scauri: l\'ingresso.', '↓ La villa di Mamurra, il porticciolo romano · → Il sentiero della punta', 'In motorino si arriva fin qui. Dentro si va a piedi.']),
@@ -262,7 +263,7 @@ const signs: Sign[] = [
     ['targa-appia-napoli', 'Via Appia Lato Napoli', 'L\'Appia verso Napoli, lungo la baia: al 175 il centro Bruno Zauli.'],
     ['targa-gianola', 'Via Gianola', 'Scende verso il parco di Gianola e il lungomare di Formia che porta il nome di Ferrara, con il Lido Oriente.'],
     ['targa-sgb', 'Via San Giovanni Bosco', 'Dall\'Appia scende al Villaggio Don Bosco, quasi di fronte a Parco la Fontana.'],
-    ['targa-palazzo', 'Via Palazzo', 'San Giulio: la scuola Mattej, il parchetto con le altalene e, di fronte, la casa di Claudia.'],
+    ['targa-palazzo', 'Via Palazzo', 'San Giulio: la scuola Mattej, il parchetto con le altalene; più avanti, verso Scauri, la scuola Rodari e la casa di Claudia.'],
     ['targa-ferrucci', 'Via Adalgiso Ferrucci', 'Da piazza Risorgimento sale verso l\'ospedale Dono Svizzero. Qui abita Valentin.'],
     ['targa-solaro', 'Via Solaro', 'Sale a destra di San Giovanni e poi gira a sinistra. Qui abita Costanzo.'],
     ['targa-mattei', 'Piazza Pasquale Mattei', 'A Castellone. Andrea abita a due passi da qui.']
@@ -358,6 +359,18 @@ const npcs: Npc[] = [
   npc('corridore', { name: 'Corridore', seed: 80, dir: 'left', hint: true, lines: ['Faccio il giro sopra la stazione tutte le sere, prima di cena.'] }),
   npc('giardiniere', { name: 'Giardiniere', seed: 81, dir: 'left', lines: ['Tengo in ordine i giardini delle villette, fino al parco.', 'Dopo la casa della guardaparco il sentiero va sulla punta: da lì si vede tutto il golfo.'] }),
   npc('pendolare', { name: 'Pendolare', seed: 82, dir: 'left', lines: ['Scauri è a una fermata di treno da Formia.', 'A piedi, invece, ci vuole pazienza.'] }),
+  /* on the screens that had nothing to do (23 November 2026): they say things of their own, the ferry aside (it does
+     sail for Ponza all year, docs/fonti-formia.md); the ones with `hint` say where the story goes next */
+  npc('passeggera-ponza', { name: 'Passeggera per Ponza', seed: 150, dir: 'down', lines: ['Aspetto il traghetto per Ponza: da qui parte tutto l\'anno, anche d\'inverno.', 'Lo vedi arrivare dal largo e mettersi di fianco al molo. Poi si riparte.'] }),
+  npc('pescatore-banchina', { name: 'Pescatore della banchina', seed: 151, dir: 'right', lines: ['La sera qui abbocca qualcosa. Non sempre un pesce.', 'Le creature grosse stanno al largo, lontano dalla riva. Io resto qui: mi basta la banchina.'] }),
+  npc('passeggio-lungomare', { name: 'Signora a passeggio', seed: 152, dir: 'down', hint: true, lines: ['Su e giù per il lungomare, tutte le sere. Così si sa tutto di tutti.'] }),
+  npc('fermata-appia', { name: 'Signora alla fermata', seed: 153, dir: 'down', hint: true, lines: ['Aspetto l\'autobus. Passa quando vuole lui.'] }),
+  npc('treni-scauri', { name: 'Signore che guarda i treni', seed: 154, dir: 'up', lines: ['Ogni volta che passa il treno conto i vagoni.', 'Non so perché. Ma li conto.'] }),
+  npc('bici-scauri', { name: 'Signora di Scauri', seed: 155, dir: 'left', hint: true, lines: ['Al mare ci vado in bici: dieci minuti e sono in spiaggia.'] }),
+  npc('panchina-scauri', { name: 'Vicino di casa', seed: 156, dir: 'left', lines: ['Da qui passa tutta Scauri: chi va al mare, chi va alla stazione.', 'Io guardo e saluto. È un lavoro anche questo.'] }),
+  npc('tr-skate', { trainer: 'skate', name: 'Ragazza con lo skate', seed: 157, dir: 'left', lines: ['La sera, quando non c\'è nessuno, il lungomare è tutto mio.'] }),
+  npc('funghi-bosco', { name: 'Cercatore di funghi', seed: 158, dir: 'down', hint: true, lines: ['Funghi? Qui? Sì. Ma dove, non lo dico a nessuno.'] }),
+  npc('asparagi-monte', { name: 'Raccoglitrice di asparagi', seed: 159, dir: 'right', hint: true, lines: ['Gli asparagi selvatici crescono in mezzo ai rovi, ai piedi del monte. Ci vuole occhio.'] }),
   npc('tr-archeologa', { trainer: 'archeologa', name: 'Archeologa', seed: 71, dir: 'left', lines: ['La villa di Mamurra scendeva al mare su tre terrazze. Io le misuro una per una.'] }),
   npc('tr-polparo', { trainer: 'polparo', name: 'Pescatore di polpi', seed: 72, dir: 'left', lines: ['Dalla punta si vede il fondo. E chi ci vive.'] }),
   npc('tr-ciclista', { trainer: 'ciclista', name: 'Ciclista', seed: 73, dir: 'down', lines: ['L\'Appia verso Itri è tutta in salita. Per questo mi piace.'] }),

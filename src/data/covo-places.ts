@@ -129,7 +129,7 @@ export const COVO_PLACES: Record<string, CovoPlace> = {
         'Dicono che a San Giulio, in via Palazzo, casa sua sia diventata un castello nero alto fino alle nuvole. E di notte suonano le campane.',
         'Stamattina è arrivato un biglietto, scritto con l\'inchiostro rosso: «L\'invito al tavolo del Padre va a chi vince il quiz di Morgana. Uno alla volta».',
         'Tipico di lei. Allora: giochi al quiz? Se vinci, l\'invito è tuo.'],
-      wait: ['L\'invito è tuo: il castello di Claudia è in via Palazzo, di fronte alla scuola Mattej. Uno alla volta, mi raccomando.'],
+      wait: ['L\'invito è tuo: il castello di Claudia è in via Palazzo, vicino alla scuola Gianni Rodari, verso Scauri. Uno alla volta, mi raccomando.'],
       after: ['Claudia è tornata al suo tavolo! Ha detto che stasera ascolta tutti. Uno alla volta.'] },
     gift: { id: 'lanterna', name: 'La Lanterna del Padre', text: 'Nei posti bui (il Cisternone) la tua luce arriva molto più lontano.',
       say: 'Tieni la lanterna del castello. Dove è buio, ti fa vedere lontano. Il Padre vede tutto, sai. Ma poi ascolta.' }

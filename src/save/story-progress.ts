@@ -225,6 +225,18 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
     if (v.map === 'formia' && stuck(v.x, v.y)) { backHome(v); delete v.sella; }
     if (v.moto && v.moto.map === 'formia' && stuck(v.moto.x, v.moto.y)) delete v.moto;
     if (v.van && v.van.map === 'formia' && stuck(v.van.x, v.van.y)) delete v.van;
+  } },
+  /* 23 November 2026: the screens that had nothing to do (tools/formia/density.ts): new people, a belvedere, tall
+     grass and rock pools; the groves and the hill over Maranola drew back or grew around them, and a lamp, a few
+     olive trees and macere moved. Whoever stood where someone or something stands now goes home */
+  { id: 'formia20', what: 'le persone nuove, l\'erba e il belvedere di Maranola', run: function (v) {
+    var m = MAPS.formia;
+    var taken = function (x: number, y: number) {
+      return walled(x, y, /[MQJaOKT#LY]/) || (m.npcs || []).some(function (n) { return n.x === x && n.y === y; }) || (m.signs || []).some(function (s) { return s.x === x && s.y === y; });
+    };
+    if (v.map === 'formia' && taken(v.x, v.y)) { backHome(v); delete v.sella; }
+    if (v.moto && v.moto.map === 'formia' && taken(v.moto.x, v.moto.y)) delete v.moto;
+    if (v.van && v.van.map === 'formia' && taken(v.van.x, v.van.y)) delete v.van;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a

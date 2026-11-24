@@ -158,3 +158,14 @@ La mappa misura 350×152 caselle. Da Castellone a via Lavanga (le colonne 83–1
 - **Salvataggi:** `formia18` è la prima della lista: sposta le posizioni salvate (giocatore, motorino, furgone) con `widened`, così le revisioni dopo leggono la mappa di oggi; chi stava dentro la fascia ridisegnata, o dove ora c'è un edificio, torna a casa (il motorino e il furgone tornano al loro posto). Le zone delle revisioni precedenti (`VINDICIO_REVISION`, `LITORANEA_*`, `PINETA_*`) sono già nelle colonne nuove.
 - **Misure dopo:** 294 case, 154 lampioni, nessun vicolo cieco. 16 schermate vuote su 104 (prima 7 su 93): le schermate a est di Castellone sono tagliate di nuovo e i monti e le colline sopra la fascia contano come terreno in più. `density.test.ts` ha il tetto a 16; scenderlo è lavoro aperto (`roadmap.md`). Caselle deserte 10%.
 
+
+## Le schermate vuote — 23 novembre 2026
+
+Le quindici schermate che si attraversavano senza niente da fare (`density.ts`) ora hanno tutte qualcosa. I punti sono in `formia-places.ts`, le persone e il cartello in `formia.ts`.
+
+- **Persone:** la passeggera per Ponza sul pontile del porto, il pescatore della banchina e la signora a passeggio sul lungomare di Mola, la signora alla fermata sull'Appia, il signore che guarda i treni dietro casa di Zendavid, la signora e il vicino di Scauri, il cercatore di funghi nel bosco verso Gaeta, la raccoglitrice di asparagi ai piedi del Monte di Scauri. Dicono cose loro; quelle con `hint` dicono anche dove va la storia.
+- **Un'allenatrice:** la ragazza con lo skate a Scauri (`skate` in `data/trainers.ts`, Granchietto al 5 e Cicalina al 6): una prima sfida facile per chi abita lì, come la bagnante sulla strada di Gianola.
+- **Il belvedere di Maranola:** in cima ai vicoli, sopra la torre (`vista-maranola`, veduta `maranola` in `data/panorama.ts`): Gianola a sinistra, Formia sotto, Gaeta e il largo a destra.
+- **Erba e scogli:** erba alta nel prato sopra Maranola (`monti`), sul prato davanti al mare a Rio Fresco (`gramsci`), nell'ultimo uliveto prima del Monte di Scauri (`ulivi`); pozze sulla spiaggia di Scauri verso il Garigliano (`scogliera`, due macchie). La macchia d'erba `selv-ulivi-7` è larga una casella in più: l'uliveto si ritira e il prato ai piedi del Monte di Scauri, che prima era chiuso dalle macere, si può percorrere.
+- **Salvataggi:** `formia20` riporta a casa chi stava dove ora c'è una persona, un cartello, un albero, un lampione o una macera (il motorino e il furgone tornano al loro posto).
+- **Misure dopo:** nessuna schermata vuota su 105 (prima 15 su 104), 6% di caselle deserte (prima 9%). `density.test.ts` ha il tetto a 0 e al 6%.

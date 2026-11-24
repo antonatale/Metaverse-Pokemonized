@@ -11,10 +11,10 @@ import { activity, timesDone } from './activities';
 import { flag } from './plot';
 import { rivalFriend } from './rival-who';
 import { COVO_PLACES } from '../data/covo-places';
-import { invited, keysFrom } from './lairs';
+import { invited, keysFrom, charmOn } from './lairs';
 import { ABDUCTION, MAMURRA_BEATEN, REUNION, creaturesMissing, friendFreed, readyForVilla } from './finale';
 import { chosen } from './choices';
-import { DV, key, prepare } from './maps';
+import { DV, key, prepare, nearestGrass, guardInWay, streetGuard, netSeller } from './maps';
 
 /* The story starts at Gianola, follows the echo through Formia, then takes the player back to the villa.
    Covi follow the protagonist's route. Activities and lost things stay available as detours. */
@@ -34,6 +34,10 @@ export interface Stop {
   /** a stop for one protagonist only: Antonio's lost things are his */
   only?: FriendId;
   optional?: true;
+  /** a stop done by catching: the arrow goes to the nearest tall grass, not to whoever asked */
+  grass?: true;
+  /** what the corner of the screen says over it (Prossima tappa, by default) */
+  label?: string;
 }
 /** where to head on the map Antonio is on: the stop itself, or the door that leads to it */
 export interface Heading { stop: Stop; x: number; y: number; exact: boolean }
@@ -74,7 +78,7 @@ const plot = (id: string, text: string, where: string, tip: string, who: string,
 /** a stop done when the team has that many creatures (caught, or at home): it points to the grass of Gianola */
 const team = (id: string, n: number, text: string, where: string, tip: string): Stop => {
   const [x, y] = npcAt('formia', 'guardaparco');
-  return { id, text, where, tip, map: 'formia', x, y, done: () => (st.mons || []).length >= n };
+  return { id, text, where, tip, map: 'formia', x, y, done: () => (st.mons || []).length >= n, grass: true };
 };
 const [tx, ty] = npcAt('formia', 'capotreno');
 const [tombX, tombY] = FORMIA_SPOT['sign-tomba'];
@@ -183,7 +187,30 @@ export function stopsDone(): number { return storyStops().filter((s) => s.done()
 
 /** where to go from the map Antonio is on: indoors, the way out; outdoors, the door of the place the stop is in */
 export function heading(map: string): Heading | null {
+  const h = headingTo(map);
+  /* inside, whoever keeps the way to it (the door of a covo, the back door of a flat): him first */
+  const g = h && map === st.map ? (map === 'formia' ? (h.stop.id.indexOf('covo-') === 0 ? streetGuard(h.stop.id.slice(5), h.x, h.y) : null) : guardInWay(h.x, h.y)) : null;
+  if (h && g) return { stop: { ...h.stop, text: g.n.name || h.stop.text, label: 'Prima, chi sbarra la strada' }, x: g.x, y: g.y, exact: true };
+  return h;
+}
+function headingTo(map: string): Heading | null {
   const s = nextStop();
+  /* in the closed grounds behind Antonio's flat (Parco la Fontana) the only way out is back through the flat: to its
+     back door, whenever the stop is anywhere else */
+  if (map === 'formia' && st.map === 'formia' && inPark(st.x, st.y) && !(s.map === 'formia' && inPark(s.x, s.y)) && s.map !== 'covo-antonio')
+    return { stop: s, x: parkDoor.x, y: parkDoor.y, exact: false };
+  /* a creature to catch: to the nearest tall grass or rock pools, from where the player is */
+  if (s.grass && map === 'formia' && st.map === 'formia') {
+    const g = nearestGrass(st.x, st.y);
+    /* the mărțișor at the wrist keeps the wild creatures away: no catching with it on */
+    if (g && charmOn()) return { stop: { ...s, label: 'Prima togli il mărțișor (Menu, Mappa)' }, x: g[0], y: g[1], exact: false };
+    /* no net left to throw, and the money for one: first to who sells them, the nearest */
+    const v = g ? netSeller(st.x, st.y) : null;
+    if (v) return { stop: { ...s, text: v.n.name || s.text, label: 'Prima prendi dei retini' }, x: v.x, y: v.y, exact: true };
+    /* already in it: walk around until something jumps out */
+    if (g && g[0] === st.x && g[1] === st.y) return { stop: { ...s, label: 'Cammina qui intorno' }, x: g[0], y: g[1], exact: false };
+    if (g) return { stop: s, x: g[0], y: g[1], exact: false };
+  }
   if (s.map === map) return { stop: s, x: s.x, y: s.y, exact: true };
   const m = MAPS[map];
   /* to Antonio's dome: through his flat, and out of the back door into the park */

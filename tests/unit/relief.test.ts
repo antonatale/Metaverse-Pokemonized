@@ -35,11 +35,12 @@ describe('the relief of Formia', () => {
       expect(back && back.length > 2, 'up from under the ledge at ' + x + ',' + y + ' goes round').toBe(true);
     });
   });
-  it('has four belvederi, each with its own view, each reached on foot from home (and one more out at sea, on a buoy)', () => {
+  it('has five belvederi, each with its own view, each reached on foot from home (and one more out at sea, on a buoy)', () => {
     expect((m.signs || []).filter((s) => !!s.view && s.buoy)).toHaveLength(1);
     const views = (m.signs || []).filter((s) => !!s.view && !s.buoy);
-    expect(views.length).toBe(4);
-    expect(new Set(views.map((s) => s.view!.id)).size).toBe(4);
+    /* the Redentore, the Acervara, the point of Gianola, the Rotabile; Maranola since 23 November 2026 */
+    expect(views.length).toBe(5);
+    expect(new Set(views.map((s) => s.view!.id)).size).toBe(5);
     from(m.start[0], m.start[1]);
     views.forEach((s) => {
       const ways = [[0, 1], [0, -1], [1, 0], [-1, 0]].map(([a, b]) => route(s.x + a, s.y + b)).filter(Boolean);

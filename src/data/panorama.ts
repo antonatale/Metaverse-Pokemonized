@@ -129,6 +129,9 @@ export const VIEWPOINTS: Record<string, Viewpoint> = {
   gianola: { at: [41.2478, 13.6700], eye: 22, heading: 280, fov: 100, near: 'ruins' },
   /* the hairpin of the Rotabile above Mola: the roofs, the tower, the port, Gaeta at the end of the gulf */
   rotabile: { at: [41.2705, 13.6225], eye: 26, heading: 222, fov: 100, near: 'road' },
+  /* the top of the lanes of Maranola, on its spur of the Aurunci: Gianola and Ischia to the left, Formia right below,
+     Gaeta and Ponza to the right (23 November 2026) */
+  maranola: { at: [41.2880, 13.6355], eye: 18, heading: 200, fov: 120, near: 'terrace' },
   /* out in the gulf, by the buoy: Gaeta, Formia and Gianola all round */
   golfo: { at: [41.2440, 13.6180], eye: 1.6, heading: 330, fov: 190, near: 'sea' }
 };

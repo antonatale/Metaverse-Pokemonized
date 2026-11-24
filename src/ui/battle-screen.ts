@@ -720,7 +720,8 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   onField = [S.sides[0].key || S.sides[0].id, S.sides[1].key || S.sides[1].id];
   renderShell();
   quietly(function () { mountCoaches(!restore); });
-  if (!restore && cfg && cfg.story && (cfg.wild || cfg.trainer)) curtain(!!cfg.trainer);
+  /* into any battle of the story the same way: the bars open on it (a covo's, like a trainer's) */
+  if (!restore && cfg && cfg.story) curtain(!!cfg.trainer || !!cfg.story.covo);
   music(S.boss ? 'boss' : 'battle');
   uiHp = [S.sides[0].hp, S.sides[1].hp];
   shown.revealed = [true, S.mode === 'pvp' || S.sides[1].id !== 'esame' || S.sides[1].revealed];

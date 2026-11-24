@@ -113,8 +113,8 @@ export function plotSign(s: Sign): boolean {
     st.seen['pietra-mura'] = true; save();
     sfx('finaleEcho');
     award('pietra-mura', () => {
-      if (flag('pietra-mare')) say(['Accosti le Pietre delle Mura e del Mare. Nel silenzio del Cisternone si sente lo stesso suono registrato a Caposele, e in mezzo c’è una voce.'], null, null, hearStoneVoice);
-      else say(['Ascolta. La Pietra fa lo stesso rumore del boato, però dura meno.', 'Portala alle peschiere di Caposele. Se il sub ha trovato quella del Mare, vediamo come rispondono messe insieme.'], CICERO);
+      if (flag('pietra-mare')) say(['Accosti le Pietre delle Mura e del Mare. Nel silenzio del Cisternone si sente lo stesso suono registrato a Caposele, e in mezzo c’è una voce.'], null, null, () => hearStoneVoice(climbOut));
+      else say(['Ascolta. La Pietra fa lo stesso rumore del boato, però dura meno.', 'Portala alle peschiere di Caposele. Se il sub ha trovato quella del Mare, vediamo come rispondono messe insieme.'], CICERO, null, climbOut);
     });
     return true;
   }
@@ -217,9 +217,17 @@ function collectSeaStone() {
   }));
 }
 
-function hearStoneVoice() {
+function hearStoneVoice(then?: () => void) {
   const voice = recordedVoice();
-  say(voice.line, voice.speaker, null, () => say('Quella voce è la mia. Per la Pietra della Voce, vieni alla mia tomba, sull’Appia verso Itri.', CICERO));
+  say(voice.line, voice.speaker, null, () => say('Quella voce è la mia. Per la Pietra della Voce, vieni alla mia tomba, sull’Appia verso Itri.', CICERO, null, then));
+}
+/** the stone taken, at the bottom of the Cisternone: back up at once, not the whole puzzle again in the dark */
+function climbOut() {
+  const w = (cisterna.warps || [])[0];
+  if (!w || st.map !== 'cisterna') return;
+  say(['La Pietra fa luce: da qui l\'uscita si vede bene. Torni su?'], null, [
+    { label: 'Sì, torno su', fn: () => travel(w.to, w.tx, w.ty, w.tdir) }, { label: 'Resto ancora', fn: null }
+  ]);
 }
 
 /* ---------- the way to a legend (data/legends.ts): a riddle the first time, then down ---------- */

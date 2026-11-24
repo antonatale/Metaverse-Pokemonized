@@ -132,7 +132,7 @@ export const HOME_MAPS: Record<string, MapDef> = {
       ['Libri, tanti. Un segnalibro a metà di ognuno: li legge tutti insieme.'],
       ['Sul tavolo, un foglio con tre nomi: «Padre, Figlio, Spirito».', 'Sotto, a matita: «Il Figlio deve ancora rispondere al vocale dello Spirito».'],
       ['Il letto.', 'Un pisolino prima di Morgana.'],
-      ['Dalla finestra si vede la scuola Mattej, dall\'altra parte di via Palazzo, e il parchetto con gli alberi e le altalene.', 'All\'uscita della scuola, qui sotto, è tutto un vociare.'],
+      ['Dalla finestra si vede la scuola elementare Gianni Rodari, qui accanto in via Palazzo.', 'All\'uscita della scuola, qui sotto, è tutto un vociare.'],
       ['In frigo: una tiella di polpo da dividere. Qui si divide sempre.'],
       ['Il giradischi, con un vinile ancora sul piatto.'],
       ['Il divano, con due cuscini: uno per parte. Tavoli separati anche qui.']

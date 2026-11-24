@@ -114,7 +114,7 @@ export const HOMES: Record<FriendId, string> = {
   costanzo: 'Via Solaro, vicino alla chiesa di San Giovanni',
   andrea: 'Castellone, a due passi da piazza Mattej',
   zendavid: 'Scauri, vicino alla stazione',
-  claudia: 'San Giulio, in via Palazzo, di fronte alla scuola Mattej'
+  claudia: 'San Giulio, in via Palazzo, vicino alla scuola Gianni Rodari'
 };
 /** the same, as Cicero says it to whoever is played: a whole sentence each, so the capitals stay right */
 export const LIVES: Record<FriendId, string> = {
@@ -124,7 +124,7 @@ export const LIVES: Record<FriendId, string> = {
   costanzo: 'Tu abiti in via Solaro, vicino alla chiesa di San Giovanni.',
   andrea: 'Tu abiti a Castellone, a due passi da piazza Mattej.',
   zendavid: 'Tu abiti a Scauri, vicino alla stazione.',
-  claudia: 'Tu abiti a San Giulio, in via Palazzo, di fronte alla scuola Mattej e al parchetto con le altalene.'
+  claudia: 'Tu abiti a San Giulio, in via Palazzo, vicino alla scuola elementare Gianni Rodari, verso Scauri.'
 };
 export function isFriend(id: string): id is FriendId { return Object.prototype.hasOwnProperty.call(PATHS, id); }
 

@@ -80,6 +80,16 @@ export const TRAINERS: Record<string, Trainer> = {
     lose: ['Ha vinto il Riccetto! Non ci credo nemmeno io.'],
     after: ['Il Riccetto vuole la rivincita. Io pure.']
   },
+  /* Scauri (23 November 2026): a first easy challenge for who lives there, on the way down to the sea, like the bather
+     on the road to Gianola */
+  skate: {
+    id: 'skate', title: 'La ragazza con lo skate', prize: 25,
+    team: [{ sp: 'granchietto', lv: 5 }, { sp: 'cicalina', lv: 6 }],
+    intro: ['Ehi! Ho girato mezza Scauri con lo skate, e queste due mi sono venute dietro dalla spiaggia.', 'Una lotta veloce, prima che faccia buio?'],
+    win: ['Va bene, va bene: hai vinto tu. La prossima la vinco io.', 'Tieni, sono i soldi della pizzetta.'],
+    lose: ['Troppo lente, le tue creature! Torna quando sono più sveglie.'],
+    after: ['Un\'altra? Tanto lo skate aspetta.']
+  },
   archeologa: {
     id: 'archeologa', title: 'L\'archeologa di Gianola', prize: 30,
     team: [{ sp: 'lumacotta', lv: 5 }, { sp: 'ginestrella', lv: 6 }],

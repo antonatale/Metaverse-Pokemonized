@@ -34,6 +34,8 @@ GitHub e il Mac usano entrambi `npm run check` (`.github/workflows/ci.yml`). Per
 
 La prima volta: `npx playwright install chromium`. `SHOTS=1 npm run test:e2e` salva le schermate in `test-results/shots/`. Il server riutilizzato sulla 5173 deve appartenere alla copia corretta del progetto; con un'altra copia usare una porta propria e `GAME_URL=http://localhost:5199/ npm run test:e2e`.
 
+Le partite salvate di `inTown` e degli altri test sono scritte sulla mappa di prima del 17 novembre: la migrazione `formia18` le sposta di 30 colonne a est (fra le colonne 83 e 111 raddoppia). Una posizione nuova si scrive allo stesso modo, sottraendo 30, oppure si segnano come già fatte tutte le migrazioni fino a `formia20`. `talkTo` passa oltre la missione in mare che il pescatore, il bagnino dell'Oriente, Nicola e la bagnina di Scauri chiedono per prima («Dopo»). Una partita nuova parte con Cicerone, la chat del caminetto e il furgone di Nicola fino all'Eclipse: chi deve restare in città parte da un salvataggio oltre l'apertura.
+
 Non modificare `src/` durante le prove. Orologio finto e scene con animazioni reali possono interferire con il timeout di `safeShow`; non scambiare automaticamente un salto di scena nel test per un blocco reale. I test lunghi usano Grafica Bassa. Con macchina occupata ridurre i worker prima di modificare i test. Se fallisce solo l'avvio dell'audio, verificare che il contesto audio del browser avanzi: alcuni Chromium headless lo lasciano fermo.
 
 ## File generati
