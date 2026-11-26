@@ -38,8 +38,10 @@ export interface StoryProgress {
   skills?: Record<string, number>;
   /** sesterzi in his pocket */
   money?: number;
-  /** what he carries: nets, tielle, coffees */
+  /** what he carries: nets, tielle, ambrosia… */
   bag?: Record<string, number>;
+  /** a secret a beaten trainer has told (story/trail.ts): followed with its own star until it is found */
+  trail?: { id: string; by?: string };
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them;
       the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character,
       and home: true for one that waits at home instead of travelling with him (a team is six at most) */
@@ -237,6 +239,13 @@ export const MIGRATIONS: { id: string; what: string; run: (v: StoryProgress) => 
     if (v.map === 'formia' && taken(v.x, v.y)) { backHome(v); delete v.sella; }
     if (v.moto && v.moto.map === 'formia' && taken(v.moto.x, v.moto.y)) delete v.moto;
     if (v.van && v.van.map === 'formia' && taken(v.van.x, v.van.y)) delete v.van;
+  } },
+  /* 24 November 2026: the coffee is gone from the game, the ambrosia has taken its place at the bar of Mola. The coffees
+     still in a bag are paid back, at the price they cost */
+  { id: 'ambrosia', what: 'il caffè lascia il posto all\'ambrosia', run: function (v) {
+    var c = v.bag && v.bag.caffe;
+    if (v.bag && 'caffe' in v.bag) delete v.bag.caffe;
+    if (c) v.money = (v.money || 0) + 3 * c;
   } }
 ];
 /** a tile of Formia where nobody can stand since this revision: under a building or an object, or on a railing, a

@@ -78,7 +78,8 @@ export async function runBot({ who = 'antonio', starter = 'polpino', mode = 'fre
            player answers with the command that meets it */
         /* a shop: nets when the arrow asked for them (five, as the money allows), then away */
         if (ov.querySelector('#shop-x')) {
-          if (window.__nets) for (let k = 0; k < 5; k++) { const r = ov.querySelector('[data-it="retino"]:not([disabled])'); if (!r) break; r.click(); }
+          /* the shelf and the counter (ui/bag.ts): the net to the counter, then «Compra» one at a time */
+          if (window.__nets) { const w = ov.querySelector('[data-ware="retino"]'); if (w) w.click(); for (let k = 0; k < 5; k++) { const r = document.querySelector('[data-it="retino"]:not([disabled])'); if (!r) break; r.click(); } }
           const x = document.getElementById('shop-x'); if (x) x.click(); window.__nets = false; return 'shop';
         }
         const ar = ov.querySelector('[data-threat]');
@@ -146,7 +147,6 @@ export async function runBot({ who = 'antonio', starter = 'polpino', mode = 'fre
     }
     if (['quiz', 'gelato', 'windsurf', 'volley', 'corsa', 'padel', 'lettino', 'canoa', 'pesca'].includes(G.id)) { const id = await page.evaluate(() => window.WORLD._debug.skipStop()); stats.skipped = (stats.skipped || []).concat(id); log('SKIP activity ' + id); await page.clock.runFor(300); continue; }
     if (G.id !== lastGoal && G.id.indexOf('·') < 0) { const snap = await page.evaluate(() => window.WORLD._debug.lv()); stats.stops.push({ id: G.id, text: G.text, it, lv: snap.lv, money: snap.money, badges: snap.badges.length, mons: snap.mons }); log('STOP ' + G.id + ' :: ' + G.text + ' :: ' + JSON.stringify(snap)); lastGoal = G.id; if (G.id === 'torino' && stats.stops.length > 3) { /* the last stop: try the gate once */ } }
-    /* optional exploit: spend everything on coffee after each loss */
     // route
     const plan = await page.evaluate((G) => {
       const D = window.WORLD._debug, P = D.pos();

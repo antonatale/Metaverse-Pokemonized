@@ -4,14 +4,13 @@ import { fighter } from '../data/fighters';
 import { ROSTER, type FriendId } from '../data/characters';
 import { PATHS, formAt, isFriend, withForm } from '../data/people';
 import { SPECIES, STARTERS, CMOVES, isSpecies, type SpeciesId } from '../data/creatures';
-import { SKILLS, WARES, SHOPS, MANUALS, marketToday, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type ItemId, type SkillId, type Branch, type Skill } from '../data/growth';
+import { SKILLS, toNext, MAX_LEVEL, xpFor, moneyFor, atLevel, trainerXp, withNature, natureText, statGain, coins, type SkillId, type Branch, type Skill } from '../data/growth';
 import { beaterOf, moveBits, moveIcon } from '../battle';
-import { newsOf } from '../story/newspaper';
 import { cardHtml, cardClass, cardColour, type MoveCard } from './move-card';
 import { TC } from './common';
-import { team, level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, money, earn, has, priceFor, buy, affordable, drinkCoffee, feedAlici, readManual, manualsLeft, USE_ITEMS, COFFEE_XP, coffeeCap, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, BAG_ITEMS, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
-import { coin, ico } from './icons';
-import { bagIcon } from './spells';
+import { level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, earn, has, ambrosiaFor, giveAmbrosia, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
+import { ico } from './icons';
+import { art, giveSheet } from './bag';
 import { M } from '../story/maps';
 import { SPR } from '../render/svg';
 import { creature } from '../render/svg/creatures';
@@ -114,88 +113,17 @@ export function pickFighter(title: string, foeType: TypeName, keys: string[], go
   foes.forEach(function (t) { beatersOf(t).forEach(function (b) { if (good.indexOf(b) < 0 && foes.indexOf(b) < 0) good.push(b); }); });
   pickFrom(title, 'È di tipo ' + foes.join(' e ') + ': ha il vantaggio la magia ' + good.join(', ') + '.', keys, go, good, opts, foes);
 }
-/* ---------- the things used from the bag, outside a battle: the coffee ---------- */
-/** a cup of coffee, for the bag and the shop */
-const CUP = '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round" stroke-linecap="round"><path d="M22 10C18 14 26 16 22 20M32 8C28 12 36 14 32 18" fill="none" stroke="#9aa3b8" stroke-width="3"/>' +
-  '<path d="M44 32H49A7 7 0 0 1 49 46H43" fill="none" stroke="#1c2340" stroke-width="4"/><path d="M12 26H46V40A14 14 0 0 1 32 54H26A14 14 0 0 1 12 40Z" fill="#ffffff" stroke="#1c2340" stroke-width="3.5"/>' +
-  '<path d="M15 29H43" stroke="#7a4a2a" stroke-width="5"/><path d="M8 56H50" stroke="#1c2340" stroke-width="3.5"/></svg>';
-/** the things of the shops of the town, drawn for the bag and the shelves */
-const ICONS: Record<string, string> = {
-  caffe: CUP,
-  /* a jar of balm with a green cross */
-  balsamo: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><rect x="16" y="14" width="32" height="10" rx="3" fill="#57c968" stroke="#1c2340" stroke-width="3.5"/>' +
-    '<rect x="13" y="22" width="38" height="32" rx="8" fill="#ffffff" stroke="#1c2340" stroke-width="3.5"/><path d="M29 30H35V35H40V41H35V46H29V41H24V35H29Z" fill="#2ecc71" stroke="#1c2340" stroke-width="2"/></svg>',
-  /* a paper cone of alici */
-  alici: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><path d="M14 18L50 18L32 58Z" fill="#f3e3c3" stroke="#1c2340" stroke-width="3.5"/>' +
-    '<path d="M20 18C20 8 30 6 30 14M30 18C31 6 42 6 40 16M38 18C42 9 50 12 46 19" fill="#b8c6d6" stroke="#1c2340" stroke-width="3"/><circle cx="26" cy="11" r="1.6" fill="#1c2340"/><circle cx="36" cy="10" r="1.6" fill="#1c2340"/></svg>',
-  /* a manual, with a bookmark */
-  manuale: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round"><rect x="14" y="10" width="36" height="46" rx="3" fill="#3b8fd9" stroke="#1c2340" stroke-width="3.5"/>' +
-    '<path d="M20 10V56" stroke="#1c2340" stroke-width="3"/><rect x="26" y="20" width="18" height="8" rx="1.5" fill="#ffffff" stroke="#1c2340" stroke-width="2"/><path d="M40 52V62L44 58L48 62V52" fill="#d94f4f" stroke="#1c2340" stroke-width="2.5"/></svg>',
-  /* today's paper, folded */
-  giornale: '<svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true" stroke-linejoin="round" stroke-linecap="round"><rect x="10" y="12" width="44" height="40" rx="2" fill="#fdfaf0" stroke="#1c2340" stroke-width="3.5"/>' +
-    '<path d="M16 20H48" stroke="#1c2340" stroke-width="4"/><rect x="16" y="26" width="14" height="12" fill="#9aa3b8"/><path d="M34 27H48M34 32H48M34 37H48M16 43H48M16 47H40" stroke="#1c2340" stroke-width="2"/></svg>'
-};
-/** the picture of a thing in the bag or on a shelf */
-function itemIcon(it: string): string { return ICONS[it] || bagIcon(it); }
-/** a little − n + to choose how many */
-function stepper(id: string, n: number, max: number): string {
-  return '<span class="qty" data-qty="' + id + '"><button class="qty-b" type="button" data-dn aria-label="Uno in meno"' + (n <= 1 ? ' disabled' : '') + '>−</button>' +
-    '<b aria-live="polite">' + n + '</b><button class="qty-b" type="button" data-up aria-label="Uno in più"' + (n >= max ? ' disabled' : '') + '>+</button></span>';
-}
-/** «Usa» on a thing in the bag: a manual is read there and then; a coffee or the alici ask whom, once, and how many in
-    a row */
-export function useItem(it: ItemId, back?: () => void) {
-  if (!has(it)) return;
-  if (it === 'manuale') {
-    if (!readManual()) return;
-    save(); renderHud(); sfx('badge');
-    say(['Antonio legge il manuale da cima a fondo.', 'Un punto abilità in più: si spende nella sua scheda, in «Abilità».'], null, null, back);
-    return;
-  }
-  var coffee = it === 'caffe', icon = ICONS[it], keys = coffee ? team() : team().filter(function (k) { return !!creatureOf(k); });
-  if (!keys.length) { say(['Le alici sono per le creature, e con te non ce n\'è nessuna.'], null, null, back); return; }
-  var give = function (key: string) {
-    var n = 1, draw = function () {
-      var max = has(it), what = coffee ? (n === 1 ? 'un caffè' : n + ' caffè') : (n === 1 ? 'un cartoccio di alici' : n + ' cartocci di alici');
-      var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="us-t"><div class="sheet-h"><h2 id="us-t">' + (coffee ? 'Caffè' : 'Alici') + ' a ' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="us-x">Annulla</button></div>' +
-        '<div class="use-row"><span class="ware-ico">' + icon + '</span><span><b>Quanti?</b><small>Ne hai ' + max + '. ' + (coffee ? 'Ognuno dà ' + COFFEE_XP + ' punti esperienza, fino al livello ' + coffeeCap() + '; oltre, scalda solo il cuore.' : 'Ognuno la avvicina a te: un cuore si riempie prima.') + '</small></span>' + stepper(it, n, max) + '</div>' +
-        '<button class="btn primary" type="button" id="us-go">Dai ' + what + (coffee ? ' · +' + n * COFFEE_XP + ' punti' : '') + '</button></div>');
-      $('us-x').addEventListener('click', function () { closeSheet(); if (back) back(); });
-      var q = o.querySelector('[data-qty]')!;
-      q.querySelector('[data-dn]')!.addEventListener('click', function () { if (n > 1) { n--; draw(); } });
-      q.querySelector('[data-up]')!.addEventListener('click', function () { if (n < max) { n++; draw(); } });
-      $('us-go').addEventListener('click', function () {
-        closeSheet(); sfx('pickup');
-        if (coffee) {
-          var g = drinkCoffee(key, n);
-          save(); renderHud();
-          if (g) growthSay(g, [nameOf(key) + (n === 1 ? ' beve un caffè' : ' beve ' + n + ' caffè, uno dopo l\'altro') + ': +' + g.xp + ' punti esperienza.'], back);
-          return;
-        }
-        feedAlici(key, n); save(); renderHud();
-        say([nameOf(key) + (n === 1 ? ' divora le alici' : ' divora ' + n + ' cartocci di alici') + ' e ti guarda con affetto.', 'Il legame: ' + hearts(key) + '.'], null, null, back);
-      });
-      setTimeout(function () { var b = $('us-go'); if (b) b.focus(); }, 30);
-    };
-    draw();
-  };
-  if (keys.length <= 1) give(keys[0] || 'antonio');
-  else if (coffee) pickFrom('A chi dai il caffè?', 'Ognuno dà ' + COFFEE_XP + ' punti esperienza a chi lo beve, fino al livello ' + coffeeCap() + ' (per crescere oltre si lotta); a una creatura piace, e le si affeziona.', keys, give);
-  else pickFrom('A chi dai le alici?', 'Alle creature il pesce piace tanto: chi le mangia si affeziona a te.', keys, give);
-}
-/** the newspaper of the edicola, read there and then: where something seldom met has been seen today */
-function readNews(back?: () => void) {
-  var nw = newsOf(Math.floor(Date.now() / 86400000)), sp = SPECIES[nw.sp], seen = dexOf(nw.sp) > 0;
-  say(['Avvistamenti. ' + nw.place + ', ' + (nw.night ? 'stanotte' : 'oggi') + ': qualcuno giura di aver visto ' + (seen ? (/^[AEIOU]/.test(sp.name) ? 'un\'' : 'un ') + sp.name : 'una creatura mai vista prima, che si vede di rado') + '.',
-    nw.night ? 'Di notte, dice il giornale: di giorno non si fa vedere.' : 'Di giorno, dice il giornale.'], 'Il giornale di oggi', null, back);
-}
-
 /* ---------- what a battle brings ---------- */
 /** a fighter's numbers at a level (a creature with its character) */
 function statsAt(key: string, id: string, lv: number) {
   var mon = creatureOf(key), base = idOf(key);
   if (mon) return withNature(atLevel(SPECIES[id as SpeciesId].stats, lv), mon.nat);
   return isFriend(base) ? withForm(atLevel(fighter(base).stats, lv), formAt(base, lv)) : atLevel(fighter(base).stats, lv);
+}
+/** a level gone up, in words: "Polpino sale al livello 13! PS +1, Attacco +2, Difesa +1, Velocità +1." */
+export function levelLine(g: Growth): string {
+  var id = g.evolved ? g.evolved.from : idOf(g.key);
+  return g.to > g.from ? nameOf(g.key) + ' sale al livello ' + g.to + '! ' + statGain(statsAt(g.key, id, g.from), statsAt(g.key, id, g.to)) + '.' : '';
 }
 /** says what a fighter got: levels (and what they bring), new moves, ability points; then its new form, if it
     evolves, and the moves it wants to learn in place of one it knows */
@@ -204,7 +132,7 @@ export function growthSay(g: Growth, first: string[], then?: () => void) {
   if (g.to > g.from) lines.push(who + ' sale al livello ' + g.to + '! ' + statGain(statsAt(g.key, id, g.from), statsAt(g.key, id, g.to)) + '.');
   g.learned.forEach(function (m) { lines.push(who + ' impara ' + anyMove(m).name + '!'); });
   if (g.key === firstHuman() && g.to > g.from) lines.push(nameOf(firstHuman()) + ' ha ' + pointsLeft() + (pointsLeft() === 1 ? ' punto abilità' : ' punti abilità') + ' da spendere: apri il menu, Squadra.');
-  if (g.waiting && g.to > g.from) lines.push(who + ' potrebbe diventare ' + SPECIES[g.waiting].name + ', ma deve fidarsi ancora di più di te: lotta insieme a lui, portalo a spasso, offrigli un caffè.');
+  if (g.waiting && g.to > g.from) lines.push(who + ' potrebbe diventare ' + SPECIES[g.waiting].name + ', ma deve fidarsi ancora di più di te: lotta insieme a lui, portalo a spasso, dagli le alici.');
   if (g.to > g.from) sfx('badge');
   say(lines, null, null, function () {
     var learn = function () { askLearn(g.key, g.pending, function () { if (then) then(); }); };
@@ -287,49 +215,6 @@ function grow(id: FriendId, from: number, to: number, then?: () => void) {
   setTimeout(function () { var bt = $('ev-ok'); if (bt) bt.focus(); }, 30);
 }
 
-/* ---------- the shops of Formia ---------- */
-export function openShop(id: string) {
-  var sh = SHOPS[id], want: Record<string, number> = {}, today = new Date().getDay();
-  /* the market has every stall on Saturday, a couple the other days */
-  var sells = id === 'mercato' ? marketToday(today, sh.sells) : sh.sells;
-  var hello = id === 'mercato' ? (today === 6 ? 'Oggi è sabato: ci sono tutte le bancarelle.' : 'Oggi ci sono solo due bancarelle: il mercato vero è il sabato.') : sh.hello;
-  /* how many can be had: the money, the three manuals of the bookshop, one newspaper at a time */
-  var cap = function (it: ItemId) { return it === 'manuale' ? manualsLeft(MANUALS) : it === 'giornale' ? 1 : 99; };
-  var render = function (bought?: string) {
-    var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><div class="sheet-h"><h2 id="sh-t">' + esc(sh.name) + '</h2><button class="tb-btn" type="button" id="shop-x">Chiudi</button></div>' +
-      '<p class="hint">' + esc(bought ? 'Ecco qua: ' + bought + '. Altro?' : hello) + '</p><p class="wallet">In tasca: <b>' + coin() + coins(money()) + '</b></p><ul class="wares">' +
-      sells.map(function (it) {
-        /* how many: at least one, and no more than the money pays for (or the shelf holds) */
-        var w = WARES[it], p = priceFor(it), left = cap(it), max = Math.max(1, Math.min(left, affordable(it))), n = Math.min(want[it] || 1, max), ok = left > 0 && affordable(it) >= n;
-        want[it] = n;
-        return '<li><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(w.name) + '</b><small>' + esc(w.text) + (it === 'giornale' ? '' : ' Ne hai ' + has(it) + '.') + '</small></span>' +
-          (left > 0 ? (left > 1 ? stepper(it, n, max) : '') + '<button class="btn" type="button" data-it="' + it + '"' + (ok ? '' : ' disabled') + ' aria-label="Compra ' + (n === 1 ? '' : n + ' ') + esc(w.name) + ' per ' + coins(p * n) + '">' + coin(16) + p * n + '</button>'
-            : '<span class="sold">Finiti</span>') + '</li>';
-      }).join('') + '</ul>' + (money() < Math.min.apply(null, sells.map(priceFor)) ? '<p class="hint">Non hai abbastanza soldi: si guadagnano lottando e con le attività in giro per Formia.</p>' : '') + '</div>');
-    $('shop-x').addEventListener('click', closeSheet);
-    each(o.querySelectorAll<HTMLElement>('[data-qty]'), function (q) {
-      var it = q.getAttribute('data-qty')!;
-      q.querySelector('[data-dn]')!.addEventListener('click', function () { want[it] = Math.max(1, (want[it] || 1) - 1); render(); focusQty(it, 'dn'); });
-      q.querySelector('[data-up]')!.addEventListener('click', function () { want[it] = (want[it] || 1) + 1; render(); focusQty(it, 'up'); });
-    });
-    each(o.querySelectorAll('[data-it]'), function (b) {
-      b.addEventListener('click', function () {
-        var it = b.getAttribute('data-it') as ItemId, n = want[it] || 1;
-        if (n > cap(it) || !buy(it, n)) return;
-        sfx('pickup'); save(); renderHud();
-        want[it] = 1;
-        /* the newspaper is read at the newsstand */
-        if (it === 'giornale') { st.bag!.giornale = 0; save(); closeSheet(); readNews(function () { openShop(id); }); return; }
-        render((n === 1 ? '' : n + ' × ') + WARES[it].name.toLowerCase() + (it === 'caffe' ? ': sono nella borsa, li dai dal menu' : ''));
-      });
-    });
-    if (!bought) setTimeout(function () { var b = o.querySelector<HTMLElement>('[data-it]:not([disabled])') || $('shop-x'); if (b) b.focus(); }, 30);
-  };
-  /* after a − or a +, the focus stays where it was */
-  var focusQty = function (it: string, which: string) { var b = document.querySelector<HTMLButtonElement>('[data-qty="' + it + '"] [data-' + which + ']'); if (b && !b.disabled) b.focus(); else { var c = document.querySelector<HTMLElement>('[data-it="' + it + '"]'); if (c) c.focus(); } };
-  render();
-}
-
 /* ---------- in the menu: the two teams, the people and the creatures, and the bag ---------- */
 /** one of the team, with what can be done with it */
 function memberRow(key: string): string {
@@ -367,17 +252,11 @@ export function teamHtml(): string {
     (!rescue && (home || M.id.indexOf('casa') === 0) ? '<p class="hint">' + (home ? 'A casa ti aspettano ' + home + (home === 1 ? ' creatura' : ' creature') + '. ' : '') +
       'In viaggio ne porti al massimo ' + TEAM_MAX + ': per cambiarle, parla con loro nel tuo appartamento.</p>' +
       (M.id.indexOf('casa') === 0 ? '<button class="btn small" type="button" data-home-open>Cambia squadra</button>' : '') : '') + '</section></div>' +
-    '<div class="pickrow"><h3>Borsa · ' + coin() + coins(money()) + '</h3><ul class="wbadge-list diary bag">' + bagList().map(function (it) {
-      return '<li class="' + (has(it) ? 'got' : '') + '"><span class="diary-n" aria-hidden="true">' + has(it) + '</span><span class="ware-ico">' + itemIcon(it) + '</span><span><b>' + esc(WARES[it].name) + '</b><small>' + esc(WARES[it].text) + '</small></span>' +
-        (USE_ITEMS.indexOf(it) >= 0 && has(it) ? '<button class="btn small" type="button" data-use="' + it + '">Usa</button>' : '') + '</li>';
-    }).join('') + '</ul><p class="hint">I retini li vende il retaio di Gianola, accanto alla guardaparco; nasse e retini da pesca anche il pescatore di Mola. La tiella la fa il forno di Castellone, il caffè il bar di Mola; il balsamo lo vende la farmacia, le alici la pescheria di Mola, i manuali la libreria, e il sabato a Largo Paone c\'è il mercato. Nei negozi scegli quanti prenderne.</p></div>';
-}
-/** what the bag shows: what goes into a battle, the coffee, and what a creature can carry, when there is some */
-function bagList(): ItemId[] {
-  return (BAG_ITEMS as ItemId[]).concat(USE_ITEMS).concat((heldInBag() as ItemId[]));
+    /* the ambrosia, when there is some: one touch from the team to give it */
+    (has('ambrosia') ? '<button class="amb-strip" type="button" data-amb>' + art('ambrosia', 40) + '<span><b>Ambrosia ×' + has('ambrosia') + '</b><small>Tocca qui e scegli chi la beve: sale subito di un livello.</small></span><span class="amb-go" aria-hidden="true">›</span></button>' : '');
 }
 export function wireTeam(reopen: () => void) {
-  each(document.querySelectorAll('[data-use]'), function (b) { b.addEventListener('click', function () { closeSheet(); useItem(b.getAttribute('data-use') as ItemId, reopen); }); });
+  each(document.querySelectorAll('[data-amb]'), function (b) { b.addEventListener('click', function () { giveSheet('ambrosia', reopen); }); });
   each(document.querySelectorAll('[data-cr]'), function (b) { b.addEventListener('click', function () { openCreature(b.getAttribute('data-cr')!, reopen); }); });
   each(document.querySelectorAll('[data-dex]'), function (b) { b.addEventListener('click', function () { openSpecies(b.getAttribute('data-dex') as SpeciesId, reopen); }); });
   each(document.querySelectorAll('[data-lead]'), function (b) {
@@ -488,9 +367,27 @@ function chainHtml(id: SpeciesId, lit: (sp: SpeciesId) => boolean): string {
 function heldRow(mon: Mon): string {
   var cur = mon.item ? HELD[mon.item as HeldId] : null, bag = heldInBag();
   return '<div class="pickrow"><h3>Oggetto</h3><ul class="wares">' +
-    (cur ? '<li><span><b>' + esc(cur.name) + '</b><small>' + esc(cur.text) + '</small></span><button class="btn" type="button" data-held="">Togli</button></li>' : '') +
-    bag.map(function (it) { return '<li><span><b>' + esc(HELD[it].name) + '</b><small>' + esc(HELD[it].text) + ' Ne hai ' + has(it) + '.</small></span><button class="btn" type="button" data-held="' + it + '">' + (cur ? 'Scambia' : 'Dai') + '</button></li>'; }).join('') +
+    (cur ? '<li><span class="ware-ico">' + art(mon.item!, 36) + '</span><span><b>' + esc(cur.name) + '</b><small>' + esc(cur.text) + '</small></span><button class="btn" type="button" data-held="">Togli</button></li>' : '') +
+    bag.map(function (it) { return '<li><span class="ware-ico">' + art(it, 36) + '</span><span><b>' + esc(HELD[it].name) + '</b><small>' + esc(HELD[it].text) + ' Ne hai ' + has(it) + '.</small></span><button class="btn" type="button" data-held="' + it + '">' + (cur ? 'Scambia' : 'Dai') + '</button></li>'; }).join('') +
     '</ul>' + (cur || bag.length ? '' : '<p class="hint">Non porta niente. Le cose che può portare si comprano al forno di Castellone, al bar e dal pescatore di Mola; a volte le trova per terra la creatura che ti segue.</p>') + '</div>';
+}
+/** on the page of someone who can drink it: the ambrosia in the bag, one touch for a level */
+function ambButton(key: string): string {
+  return has('ambrosia') && ambrosiaFor().indexOf(key) >= 0 ? '<button class="amb-strip small" type="button" data-amb-one="' + key + '">' + art('ambrosia', 28) + '<span><b>Dagli l\'ambrosia</b><small>Ne hai ' + has('ambrosia') + ': +1 livello</small></span></button>' : '';
+}
+/** the ambrosia given from a page: the level goes up there, then the page again */
+function wireAmb(key: string, back: () => void, again: () => void) {
+  var b = document.querySelector('[data-amb-one]');
+  if (b) b.addEventListener('click', function () { giveOne(key, again); });
+  void back;
+}
+/** one ampolla of ambrosia for someone, and what the level brings */
+export function giveOne(key: string, then: () => void) {
+  var g = giveAmbrosia(key, 1);
+  if (!g) return;
+  save(); renderHud(); sfx('magicUp');
+  closeSheet();
+  growthSay(g, [nameOf(key) + ' beve l\'ambrosia.'], then);
 }
 /** a friend, in a word: what it has become, or when it will change */
 function personNote(key: string): string {
@@ -505,12 +402,13 @@ function openPerson(key: string, back: () => void) {
   var next = path.learn.filter(function (x) { return x[0] > l.lv && known.indexOf(x[1]) < 0; })[0], form = path.forms[f];
   sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + c.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(c.name) + (f ? ', ' + esc(path.forms[f - 1].title) : '') + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
     '<div class="cr-top"><span class="cr-art">' + SPR.personIn(key, f, 'grin', '', BUST) + '</span><div class="cr-info">' +
-    '<p><span class="type t-' + c.type.toLowerCase() + '">' + c.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
+    '<p><span class="type t-' + c.type.toLowerCase() + '">' + c.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) + ambButton(key) +
     '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
     '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { var x = anyMove(m); return '<li><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span></li>'; }).join('') + '</ul>' +
     (next ? '<p class="hint">Al livello ' + next[0] + ' vorrà imparare ' + esc(anyMove(next[1]).name) + (known.length >= 4 ? ': sceglierai tu quale mossa dimenticare' : '') + '.</p>' : '') +
     (form ? '<p class="hint">Al livello ' + form.at + ' cambia forma.</p>' : '<p class="hint">È arrivato alla sua forma finale.</p>') + '</div></div>');
   $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
+  wireAmb(key, back, function () { openPerson(key, back); });
   setTimeout(function () { var b = $('cr-x'); if (b) b.focus(); }, 30);
 }
 export function openCreature(key: string, back: () => void) {
@@ -521,7 +419,7 @@ export function openCreature(key: string, back: () => void) {
   var o = sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + sp.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(nameOf(key)) + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
     '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184', undefined, !!mon.gold) + '</span><div class="cr-info">' +
     '<p>' + (mon.nick ? esc(sp.name) + (mon.gold ? ' dorata' : '') + ' · ' : mon.gold ? 'Dorata · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
-    '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' +
+    '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' + ambButton(key) +
     '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
     '<p class="bondline"><span class="hearts" aria-label="Legame: ' + h + ' cuori su 5">' + [0, 1, 2, 3, 4].map(function (k) { return '<i class="' + (k < h ? 'on' : '') + '">♥</i>'; }).join('') + '</span>' +
       '<small>' + esc(['Ancora diffidente', 'Comincia a fidarsi', 'Ti vuole bene', 'Non ti lascia mai', 'Inseparabili', 'Inseparabili'][h]) + (mon.nat ? ' · ' + esc(natureText(mon.nat)) : '') + '</small></p>' +
@@ -534,6 +432,7 @@ export function openCreature(key: string, back: () => void) {
     '<div class="pickrow"><h3>Nome</h3><form class="nick" id="cr-f"><input id="cr-nick" maxlength="12" autocomplete="off" aria-label="Nome di ' + esc(sp.name) + '" placeholder="' + esc(sp.name) + '" value="' + esc(mon.nick || '') + '"><button class="btn" type="submit">Salva</button></form></div>' +
     '<div class="menu-actions">' + (leadCreature() !== key ? '<button class="btn" type="button" id="cr-lead">Dietro di me</button>' : '') + '</div></div>');
   $('cr-x').addEventListener('click', function () { closeSheet(); back(); });
+  wireAmb(key, back, function () { openCreature(key, back); });
   $('cr-f').addEventListener('submit', function (e) { e.preventDefault(); setNick(key, ($('cr-nick') as HTMLInputElement).value); save(); renderHud(); openCreature(key, back); });
   if ($('cr-lead')) $('cr-lead').addEventListener('click', function () { setLead(key); save(); openCreature(key, back); });
   each(o.querySelectorAll('[data-held]'), function (b) { b.addEventListener('click', function () { var it = b.getAttribute('data-held'); giveHeld(key, (it || null) as HeldId | null); save(); sfx('pickup'); openCreature(key, back); }); });

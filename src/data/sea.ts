@@ -56,7 +56,7 @@ export const SEA_JOBS: SeaJob[] = [
     ask: ['La mareggiata di stanotte mi ha strappato le reti: quattro gavitelli sono andati per il golfo.', 'Sono quelli bianchi e rossi, galleggiano. Se vai per mare, me li riporti?'],
     again: ['I gavitelli sono ancora là fuori: uno verso il porto, uno davanti all\'Appia, uno lontano verso Gianola, uno al largo di Vindicio.'],
     done: ['Tutti e quattro! Domani le reti tornano in mare.', 'Tieni, e questa nassa: con le creature del mare fa miracoli.'],
-    things: ['gavitello-1', 'gavitello-2', 'gavitello-3', 'gavitello-4'], thing: 'gavitello', pay: { money: 60, items: { nassa: 1 } } },
+    things: ['gavitello-1', 'gavitello-2', 'gavitello-3', 'gavitello-4'], thing: 'gavitello', pay: { money: 60, items: { nassa: 1, ambrosia: 1 } } },
   { id: 'boe', npc: 'bagnino-oriente', name: 'Le boe del Lido Oriente', where: 'Lido Oriente, Gianola',
     ask: ['Il vento s\'è portato via tre boe gialle del Lido: senza, i pedalò vanno dove vogliono.', 'Sono al largo di Gianola. Le ripeschi tu?'],
     again: ['Mancano ancora delle boe: sono tutte al largo, davanti al promontorio.'],
@@ -71,5 +71,5 @@ export const SEA_JOBS: SeaJob[] = [
     ask: ['Aiuto! Un ragazzino col materassino è finito al largo, il vento lo porta via!', 'Io non posso lasciare la postazione. Vai tu, presto: hai un minuto e mezzo prima che sia troppo lontano.'],
     again: ['Il ragazzino è ancora al largo, nella baia: corri!'],
     done: ['L\'hai raggiunto! Ora torna a riva a nuoto, tranquillo: era solo spaventato.', 'Sei stato bravissimo. Prendi: offre il lido.'],
-    things: ['materassino'], thing: 'ragazzo', adrift: 90, pay: { money: 80, items: { corno: 1 } } }
+    things: ['materassino'], thing: 'ragazzo', adrift: 90, pay: { money: 80, items: { corno: 1, ambrosia: 1 } } }
 ];

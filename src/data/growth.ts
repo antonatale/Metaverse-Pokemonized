@@ -6,7 +6,10 @@ import { HELD, type HeldId } from './passives';
    the experience toward the next one; Antonio also gets a point a level for his abilities. The characters' own
    numbers are their numbers at level 5, the level the story starts at, so a battle between two level-5 fighters
    is the same battle as in the free mode. */
-export const START_LEVEL = 5, MAX_LEVEL = 50;
+export const START_LEVEL = 5;
+/** there is no top level any more (24 November 2026, Antonio: the ambrosia raises a level «senza limiti di livello», and
+    the battles go on giving experience past 50 too) */
+export const MAX_LEVEL = Infinity;
 /** experience to go from a level to the next */
 export function toNext(lv: number): number { return 10 * lv + 20; }
 /** a fighter's numbers at a level: Attack, Defence and Speed +2.5% a level, health +1% */
@@ -81,13 +84,15 @@ export function bond(sk: Grades): number { return 0.15 * (sk.legame || 0); }
 export function friendsPay(n: number, sk: Grades): number { return Math.round(n * (1 + 0.25 * (sk.amici || 0))); }
 
 /* ---------- things to buy around Formia, and what they do ---------- */
-export type ItemId = NetId | 'tiella' | 'caffe' | 'balsamo' | 'alici' | 'manuale' | 'giornale' | HeldId;
+export type ItemId = NetId | 'tiella' | 'ambrosia' | 'balsamo' | 'alici' | 'manuale' | 'giornale' | HeldId;
 export interface Ware { id: ItemId; name: string; price: number; text: string }
 /** the nets, from data/nets.ts, with their prices: the better the net, the dearer */
 const NET_PRICE: Record<NetId, number> = { retino: 8, retino2: 20, argento: 45, oro: 120, nassa: 25, lampara: 25 };
 export const WARES = {
   tiella: { id: 'tiella', name: 'Tiella', price: 6, text: 'In lotta: una fetta di tiella fa recuperare 40 PS (e si usa il turno).' },
-  caffe: { id: 'caffe', name: 'Caffè', price: 3, text: 'Va nella borsa: dal menu, «Usa» lo dà a chi scegli tu, 60 punti esperienza ognuno.' },
+  /* the food of the gods (24 November 2026, in the place of the coffee): a level at once, to a creature or a person, at
+     any level. Dear on purpose: it is a prize more than a thing to buy (trainers, missions, the sea, the diary) */
+  ambrosia: { id: 'ambrosia', name: 'Ambrosia', price: 150, text: 'Il cibo degli dèi, in un\'ampolla: chi la beve sale subito di un livello. Va bene per le creature e per le persone, a qualunque livello.' },
   /* the pharmacy: in a battle it takes away a state, the confusion and what has been lowered */
   balsamo: { id: 'balsamo', name: 'Balsamo', price: 8, text: 'In lotta toglie lo stato (sonno, colpo di sole…), la confusione e i cali di Attacco e Difesa. Si usa il turno.' },
   /* the fishmonger: a creature loves fish, and grows fond of whoever gives it */
@@ -110,7 +115,7 @@ export const SHOPS: Record<string, Shop> = {
   reti: { name: 'La bottega del retaio', hello: 'Reti e retini fatti a mano, uno per ogni creatura: più è buono il retino, meno scappano.', sells: ['retino', 'retino2', 'argento', 'oro', 'nassa', 'lampara'] },
   pesca: { name: 'Reti e retini', hello: 'Reti da pesca, retini, ami: a Mola si pesca da sempre.', sells: ['retino', 'retino2', 'nassa', 'lampara'] },
   forno: { name: 'Il forno di Castellone', hello: 'Tiella di polpo o di scarola: appena sfornata.', sells: ['tiella', 'fetta', 'ciambella'] },
-  bar: { name: 'Il bar di Mola', hello: 'Un caffè? Qui lo facciamo come si deve.', sells: ['caffe', 'oliva'] },
+  bar: { name: 'Il bar di Mola', hello: 'L\'ambrosia la faccio io, con la ricetta di Formiae: miele degli Aurunci, fichi e un segreto. Costa, ma una sorsata e si cresce di un livello.', sells: ['ambrosia', 'oliva'] },
   /* the places of the town (data/maps/formia.ts, SHOP_AT): each one gives the game something of its own */
   pescheria: { name: 'La pescheria di Mola', hello: 'Pesce di stamattina, dalle barche di Mola. Alle creature piace da matti.', sells: ['alici', 'cozza', 'corno'] },
   farmacia: { name: 'La farmacia', hello: 'Un balsamo per le creature? In lotta toglie stati, confusione e cali.', sells: ['balsamo'] },
@@ -128,12 +133,12 @@ export const MANUALS = 3;
 export interface DexPrize { n: number; all?: boolean; give: Partial<Record<ItemId, number>>; coins?: number }
 export const DEX_PRIZES: DexPrize[] = [
   { n: 3, give: { retino2: 3 } },
-  { n: 6, give: { argento: 2 } },
+  { n: 6, give: { argento: 2, ambrosia: 1 } },
   { n: 10, give: { oro: 1 }, coins: 100 },
-  { n: 15, give: { oro: 2 } },
-  { n: 25, give: { oro: 2 }, coins: 150 },
-  { n: 35, give: { oro: 3 }, coins: 200 },
-  { n: 0, all: true, give: { oro: 3 }, coins: 300 }
+  { n: 15, give: { oro: 2, ambrosia: 2 } },
+  { n: 25, give: { oro: 2, ambrosia: 2 }, coins: 150 },
+  { n: 35, give: { oro: 3, ambrosia: 3 }, coins: 200 },
+  { n: 0, all: true, give: { oro: 3, ambrosia: 5 }, coins: 300 }
 ];
 /** the price with Antonio's bargaining */
 export function priceOf(it: ItemId, sk: Grades): number { return Math.max(1, Math.round(WARES[it].price * (1 - 0.1 * (sk.amici || 0)))); }

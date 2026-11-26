@@ -10,7 +10,7 @@ Leggere i file della parte interessata; i numeri e gli elenchi completi restano 
 | Tipi e taratura | `src/data/types.ts`, `tuning.ts` |
 | Stati, abilità, oggetti tenuti | Dati `src/data/passives.ts`; esecuzione `src/battle/passives.ts` |
 | Motore deterministico | `src/battle/index.ts`, `types.ts`, `state.ts`, `rng.ts`, `turn.ts`, `moves.ts`, `damage.ts`, `ai.ts`, `labels.ts`, `stages.ts` |
-| Trama, scelte e missioni | `src/story/plot.ts`, `choices.ts`, `missions.ts`, `mentor.ts`, `rival.ts`, `goals.ts`, `epilogue.ts`; dati omonimi in `src/data/` |
+| Trama, scelte e missioni | `src/story/plot.ts`, `choices.ts`, `missions.ts`, `mentor.ts`, `rival.ts`, `goals.ts`, `epilogue.ts`; dati omonimi in `src/data/`; la strada per la tappa in `guide.ts`, i segreti degli allenatori in `trail.ts` |
 | Covi e squadre dei capi | `src/data/covi.ts`, `src/story/covo-crew.ts`; torneo in `src/data/tourney.ts` |
 | Mappe e movimento | `src/data/maps/`, `src/story/maps.ts`, `movement.ts`; enigmi in `place.ts`, `place-run.ts` |
 | Mappa generata di Formia | `tools/formia/`; risultato `src/data/maps/formia-ground.ts` |
@@ -19,8 +19,8 @@ Leggere i file della parte interessata; i numeri e gli elenchi completi restano 
 | Mappa a schermo | `src/render/world-view.ts`, `atmosphere.ts`, `tall-grass.ts` (erba alta), `src/render/canvas/` |
 | Ritratti e forme | `src/render/svg/looks.ts`, `forms.ts`, `hair.ts`, `outfit.ts`, `face.ts`, `extras.ts`, `index.ts` |
 | Omini sulla mappa | `src/render/canvas/walkers.ts`: `PEOPLE`, `PEOPLE_FORMS`, `LOOKS`, `townsperson` |
-| Creature, rune e sfondi | `src/render/svg/creatures.ts`, `type-shapes.ts`; sfondi in `src/render/scenes.ts` e `src/assets/scenes/` |
-| Titolo e storia a schermo | `src/ui/home.ts`, `story-screen.ts`, `plot.ts`, `team.ts`, `train.ts`, `activities.ts` |
+| Creature, rune e sfondi | `src/render/svg/creatures.ts`, `type-shapes.ts`; sfondi in `src/render/scenes.ts` e `src/assets/scenes/`; i disegni delle cose della borsa in `wares.ts`, i retini in `nets.ts` |
+| Titolo e storia a schermo | `src/ui/home.ts`, `story-screen.ts`, `plot.ts`, `team.ts`, `train.ts`, `activities.ts`; borsa, negozi, dare l'ambrosia e carte dei premi in `bag.ts` (stili `bag.css`) |
 | Lotta a schermo | `src/ui/battle-screen.ts`, `coaches.ts`, `move-card.ts`, `person-scenes.ts`, `move-scenes.ts`, `self-scenes.ts`, `move-props.ts`, `safe-show.ts` |
 | Grafica, velocità, audio UI | `src/ui/gfx.ts`, `speed.ts`, `sound.ts`; stili in `src/styles/`, colori in `tokens.css` |
 | Audio sintetizzato | `src/audio/context.ts`, `synth.ts`, `music.ts`, `tracks.ts`, `zones.ts`, `sfx.ts`, `cues.ts`, `cries.ts` |

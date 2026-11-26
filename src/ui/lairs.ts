@@ -1,4 +1,6 @@
 import type { Building, Dir, Npc } from '../data/maps/types';
+import { loot, type Loot } from './bag';
+import { wareSVG } from '../render/svg/wares';
 import { COVI } from '../data/covi';
 import { CHARS } from '../data/characters';
 import { COVO_PLACES, covoOfBuilding } from '../data/covo-places';
@@ -123,9 +125,9 @@ export function keeperGifts(id: string, then: () => void) {
   lines.push(followUp && flag(followUp.after) ? followUp.say : COVO_CLUES[leader], P.gift.say);
   save();
   say(lines, leader, null, function () {
-    sfx('badge');
-    notify('Hai ricevuto: <b>' + esc(P.gift.name) + '</b>. ' + esc(P.gift.text) + (returnedKeys ? ' E le chiavi del Liberty!' : ''));
-    then();
+    /* the gift on a card, with its picture (ui/bag.ts) */
+    var got: Loot[] = [{ id: P.gift.id, name: P.gift.name }].concat(returnedKeys ? [{ id: 'chiavi', name: 'Le chiavi del Liberty' }] : []);
+    loot('Un dono di ' + CHARS[leader].name + '!', got, P.gift.text, then);
   });
 }
 /** the scooter cannot be ridden without its keys: who has them */
@@ -145,7 +147,7 @@ export function giftsPane(): string {
     if (x.id === 'fischio') act = '<button class="btn" type="button" id="gift-fischio">Fischia</button>';
     if (x.id === 'martisor') act = '<button class="btn" type="button" id="gift-martisor" aria-pressed="' + charmOn() + '">' + (charmOn() ? 'Toglilo' : 'Indossalo') + '</button>';
     if (x.id === 'cuffie') act = '<select id="gift-cuffie" aria-label="Musica">' + RADIO.map(function (r) { return '<option value="' + r[0] + '"' + ((st.radio || '') === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select>';
-    return '<li class="got"><span class="diary-n" aria-hidden="true">✦</span><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span>' + act + '</li>';
+    return '<li class="got"><span class="ware-ico" aria-hidden="true">' + (wareSVG(x.id, 38) || '✦') + '</span><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span>' + act + '</li>';
   });
   var keys = hasKeys() ? '' : '<li><span class="diary-n" aria-hidden="true">·</span><span><b>Le chiavi del Liberty</b><small>' + esc(keysLine()) + '</small></span></li>';
   return '<div class="pickrow"><h3>I doni dei covi</h3><ul class="wbadge-list diary gifts">' + rows.join('') + keys + '</ul></div>';

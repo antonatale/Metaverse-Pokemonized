@@ -2,7 +2,7 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, setTallStill, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, type PreparedMap } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, type PreparedMap, type Person } from '../story/maps';
 import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
 import type { FriendId } from '../data/characters';
 import { mover, parity, STEP, gear, van } from '../story/movement';
@@ -36,7 +36,9 @@ import { reduced } from '../ui/dom';
 import { rich } from '../ui/gfx';
 import { tallLayer, tallFront, tallBits, tallStep, stillTuft } from './tall-grass';
 import { ferry, trains, shade, volume, seaLife, pigeons, butterflies, fireflies, hawks, landing, wind, SWAY, type Caster, type Tiles } from './atmosphere';
-import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS } from '../ui/story-screen';
+import { root, cv, ctx, ciceroShown, skyFrom, skyWho, SKY_MS, challenger, SIGHT } from '../ui/story-screen';
+import { guide } from '../story/guide';
+import { trail as secretTrail } from '../story/trail';
 import { worldShot } from '../ui/story-cutscene';
 import { creaturesMissing } from '../story/finale';
 
@@ -393,6 +395,107 @@ function exclaim(c: CanvasRenderingContext2D, x: number, y: number, t: number) {
   c.fillStyle = '#e63946';
   c.beginPath(); c.moveTo(-1.9, -21); c.lineTo(1.9, -21); c.lineTo(1.1, -11); c.lineTo(-1.1, -11); c.closePath(); c.fill();
   c.beginPath(); c.arc(0, -7.6, 1.7, 0, Math.PI * 2); c.fill();
+  c.restore();
+}
+/* ---------- the guide to the next stop (24 November 2026) ---------- */
+/** the trainers present near the player, looked up a few times a second rather than every frame (a map has hundreds
+    of people) */
+var duels: { at: number; map: string; list: Person[] } = { at: -1e9, map: '', list: [] };
+function duelsNear(now: number): Person[] {
+  if (now - duels.at > 400 || duels.map !== M.id) {
+    duels = { at: now, map: M.id, list: M.people.filter(function (p) { return !!p.n.trainer && Math.abs(p.x - st.x) + Math.abs(p.y - st.y) <= 16 && present(p); }) };
+  }
+  return duels.list;
+}
+/** the angle the way to the next stop leaves the player at, along the streets (story/guide.ts); null when the stop is
+    near and in sight (its own arrow is enough), when Nicola leads the way, in a race or a run */
+function wayToStop(hd: ReturnType<typeof heading>): number | null {
+  if (run || sea.race || (lead.now && !lead.now.back && !lead.now.race && M.id === 'formia')) return null;
+  if (!hd) return null;
+  var far = Math.abs(hd.x - st.x) + Math.abs(hd.y - st.y);
+  if (far <= 6) return null;
+  var gw = guide(st.x, st.y, hd.x, hd.y, 6), toX = gw && gw.left > 1 ? gw.x : hd.x, toY = gw && gw.left > 1 ? gw.y : hd.y;
+  if (toX === st.x && toY === st.y) return null;
+  return Math.atan2(toY - st.y, toX - st.x);
+}
+/** over the stop: a fat arrow that drops and bounces with a squash, its shadow and two rings opening on the ground
+    (`ground`: the y of the ground under it, null when the arrow floats over someone moving, like Nicola's sail) */
+function goalMarker(c: CanvasRenderingContext2D, x: number, tip: number, ground: number | null, now: number, col: string, col2: string) {
+  var ph = reduced ? 0.5 : (now % 900) / 900, bounce = reduced ? 0 : Math.abs(Math.sin(ph * Math.PI)), lift = bounce * 12;
+  var squash = reduced ? 1 : bounce < 0.18 ? 0.82 + bounce : 1;
+  if (ground != null) {
+    /* the rings on the ground, one after the other */
+    for (var r = 0; r < 2; r++) {
+      var t = reduced ? 0.4 : ((now / 1300) + r * 0.5) % 1;
+      c.save(); c.globalAlpha = (1 - t) * 0.85;
+      c.beginPath(); c.ellipse(x, ground, 8 + t * 22, (8 + t * 22) * 0.42, 0, 0, Math.PI * 2);
+      c.lineWidth = 3.5; c.strokeStyle = '#1c2340'; c.stroke(); c.lineWidth = 2; c.strokeStyle = col; c.stroke();
+      c.restore();
+    }
+    /* the shadow of the arrow, smaller as it rises */
+    c.save(); c.globalAlpha = 0.22 - bounce * 0.1; c.fillStyle = '#1c2340';
+    c.beginPath(); c.ellipse(x, ground, 11 - bounce * 4, 4 - bounce * 1.4, 0, 0, Math.PI * 2); c.fill(); c.restore();
+  }
+  c.save(); c.translate(x, tip - lift); c.scale(1 / squash, squash);
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(-16, -15); c.lineTo(-6.5, -15); c.lineTo(-6.5, -32); c.quadraticCurveTo(-6.5, -35, -3.5, -35); c.lineTo(3.5, -35); c.quadraticCurveTo(6.5, -35, 6.5, -32); c.lineTo(6.5, -15); c.lineTo(16, -15); c.closePath();
+  var g = c.createLinearGradient(0, -35, 0, 0); g.addColorStop(0, col); g.addColorStop(1, col2);
+  c.fillStyle = g; c.lineJoin = 'round'; c.lineWidth = 3.4; c.strokeStyle = '#1c2340'; c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(-3.5, -31); c.lineTo(-3.5, -18); c.moveTo(-11, -13.4); c.lineTo(-4, -6.8);
+  c.lineCap = 'round'; c.lineWidth = 2.2; c.strokeStyle = 'rgba(255,255,255,.75)'; c.stroke();
+  c.restore();
+}
+/** at the player's feet: three chevrons pointing the way, a light running along them toward the stop */
+function guideArrow(c: CanvasRenderingContext2D, x: number, y: number, ang: number, now: number) {
+  /* on the ground, seen a little from above: the way is foreshortened up and down, the chevrons stay whole. Going up,
+     they start further out, past the player's body */
+  var dx = Math.cos(ang), dy = Math.sin(ang) * 0.62, n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n, sa = Math.atan2(uy, ux);
+  var d0 = 30 + (uy < 0 ? -uy * 26 : 0);
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  for (var k = 0; k < 3; k++) {
+    /* a light runs along them, from the feet outward, and pushes each one a little as it passes */
+    var t = reduced ? 0 : (((now / 650) - k * 0.2) % 1 + 1) % 1, on = reduced ? 0 : Math.max(0, 1 - Math.abs(t - 0.3) * 3.2);
+    var d = d0 + k * 17 + on * 4, s = 0.86 + k * 0.14;
+    c.save(); c.translate(x + ux * d, y + uy * d); c.rotate(sa);
+    c.beginPath(); c.moveTo(-8 * s, -11 * s); c.lineTo(4 * s, 0); c.lineTo(-8 * s, 11 * s);
+    c.lineWidth = 10; c.strokeStyle = '#1c2340'; c.stroke();
+    c.lineWidth = 5.6; c.strokeStyle = on > 0.35 ? '#fff4b8' : k === 2 ? '#ff9f1c' : '#ffd166'; c.stroke();
+    c.restore();
+  }
+  c.restore();
+}
+/** over a secret told by a trainer: a blue star that turns and bobs, a ring under it */
+function starMarker(c: CanvasRenderingContext2D, x: number, y: number, ground: number, now: number) {
+  var bob = reduced ? 0 : Math.sin(now / 380) * 3, spin = reduced ? 0 : Math.sin(now / 900) * 0.35;
+  var t = reduced ? 0.4 : (now / 1500) % 1;
+  c.save(); c.globalAlpha = (1 - t) * 0.8; c.beginPath(); c.ellipse(x, ground, 7 + t * 18, (7 + t * 18) * 0.42, 0, 0, Math.PI * 2);
+  c.lineWidth = 3; c.strokeStyle = '#1c2340'; c.stroke(); c.lineWidth = 1.8; c.strokeStyle = '#6fd3ff'; c.stroke(); c.restore();
+  c.save(); c.translate(x, y + bob); c.rotate(spin); c.scale(Math.cos(spin * 2), 1);
+  c.beginPath();
+  for (var i = 0; i < 10; i++) { var r = i % 2 ? 5 : 12, a = -Math.PI / 2 + i * Math.PI / 5; if (i) c.lineTo(Math.cos(a) * r, Math.sin(a) * r); else c.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+  c.closePath(); c.fillStyle = '#6fd3ff'; c.lineJoin = 'round'; c.lineWidth = 2.6; c.strokeStyle = '#1c2340'; c.fill(); c.stroke();
+  c.beginPath(); c.arc(-2.5, -3, 1.8, 0, Math.PI * 2); c.fillStyle = '#ffffff'; c.fill();
+  c.restore();
+}
+/** over a trainer who would challenge the player: a small red «VS» */
+function vsMark(c: CanvasRenderingContext2D, x: number, y: number) {
+  c.save(); c.translate(x, y);
+  c.beginPath(); c.moveTo(-10, -9); c.lineTo(10, -9); c.quadraticCurveTo(13, -9, 13, -6); c.lineTo(13, 3); c.quadraticCurveTo(13, 6, 10, 6); c.lineTo(3, 6); c.lineTo(0, 10); c.lineTo(-3, 6); c.lineTo(-10, 6); c.quadraticCurveTo(-13, 6, -13, 3); c.lineTo(-13, -6); c.quadraticCurveTo(-13, -9, -10, -9); c.closePath();
+  c.fillStyle = '#ffffff'; c.strokeStyle = '#1c2340'; c.lineWidth = 1.8; c.lineJoin = 'round'; c.fill(); c.stroke();
+  c.fillStyle = '#e63946'; c.font = '11px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('VS', 0, -1.2);
+  c.restore();
+}
+/** the tiles a trainer watches, the way he faces: faint marks on the ground, up to the first wall */
+function sightTiles(c: CanvasRenderingContext2D, x: number, y: number, dir: Dir, now: number) {
+  var v = DV[dir];
+  c.save();
+  for (var k = 1; k <= SIGHT; k++) {
+    var tx = x + v[0] * k, ty = y + v[1] * k;
+    if (blocked(M, tx, ty) && !(tx === st.x && ty === st.y)) break;
+    var a = reduced ? 0.3 : 0.22 + 0.14 * Math.sin(now / 300 - k * 0.9);
+    c.globalAlpha = a; c.fillStyle = '#e63946';
+    c.beginPath(); c.ellipse(tx * T + T / 2, ty * T + T - 9, 6, 2.6, 0, 0, Math.PI * 2); c.fill();
+  }
   c.restore();
 }
 /* ---------- Faro's hydro pump, in front of the Eclipse (story/lead.ts, ui/nicola.ts) ---------- */
@@ -1005,6 +1108,10 @@ function drawFrame(now: number, sk: number) {
   /* under the covi, the glow of their aura (render/canvas/covo.ts) */
   var inView = function (a: AuraAt) { return a.x + a.w + 120 > camX && a.x - 120 < camX + vw && a.y + a.h + 80 > camY && a.y - a.up - 300 < camY + vh; };
   auras.forEach(function (a) { if (inView(a)) auraBack(ctx, a, now, reduced, !rich()); });
+  /* the chevrons that point the way to the next stop lie on the ground, under the people (see goalMarker, below) */
+  var stopNow = run || sea.race ? null : heading(M.id);
+  var way = shot || skyFrom ? null : wayToStop(stopNow);
+  if (way && !(mover && mover.jump)) guideArrow(ctx, pp.x + T / 2, pp.y + T * 0.72, way, now);
   drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   if (M.id === 'formia') pumpScene(ctx, now);
   /* in the tall grass the blades hide Antonio's feet, and his creature's; the bits a step throws up fly over them */
@@ -1053,17 +1160,36 @@ function drawFrame(now: number, sk: number) {
     ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
   });
   if (M.id === 'formia' && !M.inside && sea.marks.length) seaGlints(ctx, sea.marks, now, reduced, dk);
-  /* the next stop of the tour: a bouncing arrow over the person, the thing or the door */
-  var hd = run || sea.race ? null : heading(M.id), Ld = lead.now && !lead.now.back && !lead.now.race && M.id === 'formia' ? lead.now : null;
+  /* the next stop of the tour (24 November 2026, Antonio: «la freccetta … è brutta, piccola e non mi piace come
+     animazione, falla più figa»): over it a big arrow that drops and bounces, a ring opening on the ground under it; and,
+     while the stop is far or off the screen, chevrons at the player's feet that point the way along the streets */
+  var hd = stopNow, Ld = lead.now && !lead.now.back && !lead.now.race && M.id === 'formia' ? lead.now : null;
   /* in a race at sea, the arrow is over the next mark */
   var nx = sea.race ? sea.race.marks[sea.race.got] : null;
   if (nx && !M.inside) hd = { x: nx[0], y: nx[1] - 1 } as typeof hd;
-  if (hd || Ld) {
+  var busyNow = !!(shot || skyFrom);
+  if ((hd || Ld) && !busyNow) {
     /* while Nicola leads the way to Gianola, the arrow is over him, high over his sail */
-    var ax = Ld ? Ld.x * T + T / 2 : hd!.x * T + T / 2, ay = (Ld ? Ld.y * T - 52 : hd!.y * T - 16) + (reduced ? 0 : Math.sin(now / 220) * 3);
-    ctx.beginPath(); ctx.moveTo(ax - 7, ay - 9); ctx.lineTo(ax + 7, ay - 9); ctx.lineTo(ax, ay); ctx.closePath();
-    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.strokeStyle = '#1c2340'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    var gx = Ld ? Ld.x : hd!.x, gy = Ld ? Ld.y : hd!.y, ax = gx * T + T / 2, tipY = Ld ? Ld.y * T - 52 : gy * T - 16;
+    var onScreen = ax > camX - 30 && ax < camX + vw + 30 && tipY > camY - 60 && tipY < camY + vh + 60;
+    if (onScreen) goalMarker(ctx, ax, tipY, Ld ? null : gy * T + T - 5, now, '#ffd166', '#ff9f1c');
   }
+  /* the secret a trainer has told: a blue star over it (story/trail.ts) */
+  var tr0 = M.id === 'formia' && !run && !busyNow ? secretTrail() : null;
+  if (tr0) {
+    var sx0 = tr0.x * T + T / 2, sy0 = tr0.y * T - 12;
+    if (sx0 > camX - 30 && sx0 < camX + vw + 30 && sy0 > camY - 60 && sy0 < camY + vh + 60) starMarker(ctx, sx0, sy0, tr0.y * T + T - 5, now);
+  }
+  /* the trainers who would walk up to the player: a «VS» over their head and, when he is near, the tiles they watch */
+  if (!M.inside || M.id.indexOf('covo') === 0) duelsNear(now).forEach(function (p) {
+    if (p.alert || p.path || !challenger(p)) return;
+    /* the one the arrow of the next stop is already over needs no other mark */
+    if (hd && hd.x === p.x && hd.y === p.y) return;
+    var d = Math.abs(p.x - st.x) + Math.abs(p.y - st.y);
+    if (d > 14) return;
+    if (d <= 9) sightTiles(ctx, p.x, p.y, p.dir, now);
+    vsMark(ctx, p.x * T + T / 2, p.y * T - 18 + (reduced ? 0 : Math.sin(now / 400 + p.x) * 1.5));
+  });
   /* the flags of a run in the pineta */
   if (run) run.flags.forEach(function (f, k) {
     if (run!.got[k]) return;
@@ -1148,7 +1274,7 @@ function whereOnFormia(): [number, number] {
 }
 export function townMap(el: HTMLElement) {
   /* drawn at the size it is shown, so labels and the marker stay readable on a phone */
-  var m = prepare('formia'), cssW = Math.max(240, el.clientWidth || 340), s = cssW * dpr() / (m.w * T), u = dpr(), key = themeKey() + '|' + lairsKey(nextStop().id) + '|' + s.toFixed(4);
+  var m = prepare('formia'), cssW = Math.max(240, el.clientWidth || 340), s = cssW * dpr() / (m.w * T), u = dpr(), key = themeKey() + '|' + lairsKey(nextStop().id) + '|' + (st.trail ? st.trail.id : '') + '|' + s.toFixed(4);
   if (!town || town.key !== key) {
     var P0 = palette(), c0 = document.createElement('canvas'), c = c0.getContext('2d')!;
     c0.width = Math.round(m.w * T * s); c0.height = Math.round(m.h * T * s);
@@ -1183,6 +1309,14 @@ export function townMap(el: HTMLElement) {
     o.beginPath();
     for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr0 = i % 2 ? R * 0.45 : R; o.lineTo(gx + Math.cos(a) * rr0, gy + Math.sin(a) * rr0); }
     o.closePath(); o.fillStyle = '#ffd166'; o.fill(); o.lineWidth = 1.6 * u; o.strokeStyle = '#1c2340'; o.stroke();
+  }
+  /* the secret a trainer has told, as a blue star (story/trail.ts) */
+  var tr1 = secretTrail();
+  if (tr1) {
+    var tx1 = (tr1.x + 0.5) * k, ty1 = (tr1.y + 0.5) * k, R1 = 6 * u;
+    o.beginPath();
+    for (var i1 = 0; i1 < 10; i1++) { var a1 = -Math.PI / 2 + i1 * Math.PI / 5, rr1 = i1 % 2 ? R1 * 0.45 : R1; o.lineTo(tx1 + Math.cos(a1) * rr1, ty1 + Math.sin(a1) * rr1); }
+    o.closePath(); o.fillStyle = '#6fd3ff'; o.fill(); o.lineWidth = 1.6 * u; o.strokeStyle = '#1c2340'; o.stroke();
   }
   /* with Antonio's visor (story/lairs.ts): the hiding places of the wild creatures, and the lost things not found yet */
   if (hasGift('visore')) {

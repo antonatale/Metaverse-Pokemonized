@@ -1,6 +1,6 @@
 import { CHARS, type Move } from '../data/characters';
 import { SPECIES, isSpecies } from '../data/creatures';
-import { TUNE, K, CRIT, MAGIC_TUNE, SWITCH_TUNE, FIELD_TUNE } from '../data/tuning';
+import { TUNE, K, CRIT, MAGIC_TUNE, SWITCH_TUNE, FIELD_TUNE, levelMult } from '../data/tuning';
 import { magicBeats, type TypeName } from '../data/types';
 import type { BattleEvent, BattleState, Side } from './types';
 import { rand } from './rng';
@@ -78,6 +78,8 @@ function parts(s: BattleState, i: number, id: string): Parts {
   mult *= dealtBy(s, me, foe) * takenBy(s, foe, me, type);
   if (magic) mult *= placeMult(s, type);
   if (shielded(s, i)) mult *= FIELD_TUNE.shield;
+  /* the one above in level hits harder, the one below softer */
+  mult *= levelMult(me.lvl, foe.lvl);
   const base = movePower(me, m) * atk / def * (s.K || K) * e * mult;
   return { base: base, eff: e, type: type, critChance: forceCrit ? 1 : critChance, forceCrit: forceCrit, acc: foe.away ? 0 : (m.acc || 1), notes: notes };
 }
@@ -85,7 +87,7 @@ function parts(s: BattleState, i: number, id: string): Parts {
     computer reads this to weigh a fighter who is not on the field */
 export function plainHit(s: BattleState, a: Side, d: Side, m: Move): number {
   const e = isSpecies(a.id) ? magicEff(moveType(a, m), typesOf(s, d, a)) : eff(sideType(s, a, d), sideType(s, d, a));
-  return movePower(a, m) * (m.acc || 1) * e * statsOf(a).atk / statsOf(d).def * (s.K || K) * (isSpecies(a.id) ? placeMult(s, moveType(a, m)) : 1);
+  return movePower(a, m) * (m.acc || 1) * e * statsOf(a).atk / statsOf(d).def * (s.K || K) * (isSpecies(a.id) ? placeMult(s, moveType(a, m)) : 1) * levelMult(a.lvl, d.lvl);
 }
 /** average damage of a move, for the computer's choice */
 export function expected(s: BattleState, i: number, id: string): number {

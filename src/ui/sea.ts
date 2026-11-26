@@ -1,6 +1,7 @@
 /* The sea (Antonio, 21 November 2026): the races on the windsurf, the missions out on the gulf, the wind on the screen.
    Data in data/sea.ts, state in story/sea.ts, the sailing itself in story/movement.ts and story/wind.ts. */
 import type { Npc } from '../data/maps/types';
+import { loot, type Loot } from './bag';
 import { FORMIA_SPOT } from '../data/maps/formia-ground';
 import { COURSES, SEA_JOBS, type Course, type SeaJob } from '../data/sea';
 import { WS_ROUTE, WS_BACK } from '../data/nicola';
@@ -113,7 +114,10 @@ function finishJob(j: SeaJob, who?: string) {
   if (j.pay.sail) st.seen['vela-regata'] = true;
   save(); renderHud();
   sfx('badge');
-  say(j.done.concat(['Missione compiuta: ' + coins(j.pay.money) + (j.pay.sail ? ' e la vela da regata di Nicola (sul windsurf prendi una marcia in più).' : '.')]), who || null);
+  var got: Loot[] = [{ id: 'sesterzi', n: j.pay.money }].concat(Object.keys(items).map(function (k) { return { id: k, n: (items as Record<string, number>)[k] }; }));
+  say(j.done, who || null, null, function () {
+    loot('Missione in mare compiuta!', got, j.pay.sail ? 'E la vela da regata di Nicola: sul windsurf prendi una marcia in più.' : null);
+  });
 }
 
 /** the missions at sea in the menu: the ones heard of, how far they are, who to ask for the others */

@@ -53,8 +53,12 @@ import { epilogue } from '../story/epilogue';
 import { LEGENDS, type LegendStage } from '../data/legends';
 import { MAMURRA, storyStage, flag, linesNow } from '../story/plot';
 import { idOf, sideOf, formNow, gainXp, heroText, foeSide, fightPay, battleBag, keepBag, addCreature, teamRef, hasStarter, money, leadCreature, creatureOf, nameOf, level, see, earn, hearts, addBond, teamMons, homeMons, firstHuman, progress, powerOf, dexPrizesDue, nextDexPrize, takeDexPrize, prizeText, dexHad } from '../story/growth';
-import { coin } from './icons';
-import { chooseStarter, pickFighter, rewards, rewardsAll, openShop, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
+import { coin, ico } from './icons';
+import { openShop, bagHtml, wireBag, loot, addLoot, lootToast, thingText, type Loot } from './bag';
+import { trail, newTrail } from '../story/trail';
+import { missionOfTrainer } from '../story/missions';
+import { guide } from '../story/guide';
+import { chooseStarter, pickFighter, rewards, rewardsAll, teamHtml, wireTeam, dexHtml, openHome, portrait, tcOf, growthSay } from './team';
 import { onReward } from '../story/activities';
 import type { Growth } from '../story/growth';
 import type { Bout, Member, StoryTag } from '../battle';
@@ -91,7 +95,7 @@ function build() {
   root.innerHTML =
     '<canvas id="wcv" role="img" aria-label="Mappa della città vista dall\'alto"></canvas>' +
     '<div class="wframe" aria-hidden="true"></div>' +
-    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><span class="wwind" id="wwind" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn wphone" type="button" id="wphone" aria-label="Telefono: il caminetto (T)" title="Il caminetto (T)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
+    '<div class="whud"><span class="wplace" id="wplace"></span><span class="wrun" id="wrun" hidden></span><span class="wwind" id="wwind" hidden></span><button class="wgoal" type="button" id="wgoal" hidden></button><button class="wgoal wtrail" type="button" id="wtrail" hidden></button><p class="wtoast" id="wtoast" hidden aria-live="polite"></p><span class="wmoney" id="wmoney" title="I sesterzi di Antonio"></span><span class="wbadges" id="wbadges"></span>' + soundButton() + '<button class="tb-btn wphone" type="button" id="wphone" aria-label="Telefono: il caminetto (T)" title="Il caminetto (T)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10 18.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="tb-btn" type="button" id="wmenu">Menu</button></div>' +
     '<div class="wbars" id="wbars" role="group" aria-label="Livelli"></div>' +
     '<button class="wcic" type="button" id="wcic" hidden aria-label="Chiedi a Cicerone (tasto C)" title="Chiedi a Cicerone (C)">' + cicero() + '</button><p class="wcic-say" id="wcic-say" hidden aria-live="polite"></p>' +
     '<div class="dialog wdialog" id="wdialog" hidden role="status" aria-live="polite"><span class="wghost" id="wghost" hidden>' + cicero('', 'talk') + '</span><span class="who" id="wwho" hidden></span><span class="txt" id="wtxt"></span><div class="wopts" id="wopts" hidden></div><span class="caret" aria-hidden="true"></span></div>' +
@@ -136,6 +140,7 @@ function build() {
   $('wphone').addEventListener('click', function () { if (running && !dialog && !busy) openPhone(); });
   $('wcic').addEventListener('click', function () { mentorTalk(); });
   $('wgoal').addEventListener('click', function () { openMenu('viaggio'); });
+  $('wtrail').addEventListener('click', function () { openMenu('mappa'); });
   window.addEventListener('resize', resize);
   built = true;
 }
@@ -184,7 +189,9 @@ export function notify(html: string) {
     comes along. The activity still has its sheet open, or its own words to say, so it waits and is told from the frame */
 var told: { g: Growth; joined: FriendId | null }[] = [];
 onReward(function (g, cash, joined) {
-  notify('<b>' + esc(nameOf(g.key)) + '</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + coins(cash) : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : ''));
+  var said = '<b>' + esc(nameOf(g.key)) + '</b> +' + g.xp + ' esperienza' + (cash ? ' · +' + coins(cash) : '') + (g.to > g.from ? ' · sale al livello ' + g.to + '!' : '');
+  /* what an activity pays comes with the picture of the sesterzi */
+  if (cash) lootToast('sesterzi', said); else notify(said);
   if (built) renderHud();
   if (g.to > g.from || joined) told.push({ g: g, joined: joined });
 });
@@ -205,7 +212,7 @@ function friendJoins(id: FriendId, lines: string[]) {
 }
 /* the next stop of the tour, with an arrow that points to it (or to the door that leads to it) */
 var lastGoal = '', goalFlash: ReturnType<typeof setTimeout> | undefined;
-const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const GOAL_ARROW = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3.5 12h14M11.5 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const GOAL_HERE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 /** a new chapter of the story: Cicero says so from the corner, once nothing else is going on (no talk, no sheet, no
     trainer coming to challenge Antonio, no fight); from the frame, so that it never slips in between two steps of one
@@ -221,6 +228,9 @@ export function renderGoal() {
   if (rc) h = nx ? { x: nx[0], y: nx[1], exact: true, stop: { id: 'boa-' + rc.got, text: 'Boa ' + (rc.got + 1) + ' di ' + rc.marks.length, where: 'in mare', label: 'Gara a vela' } } as unknown as typeof h : null;
   if (!h || run) { if (!el.hidden) { el.hidden = true; lastGoal = ''; } return; }
   var dx = h.x - st.x, dy = h.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
+  /* the arrow of the corner points the way the streets go, as the chevrons at the feet do (story/guide.ts) */
+  var gw = here || M.inside ? null : guide(st.x, st.y, h.x, h.y, 6);
+  if (gw && gw.left > 1 && (gw.x !== st.x || gw.y !== st.y)) { dx = gw.x - st.x; dy = gw.y - st.y; }
   var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = h.stop.id + '|' + h.stop.text + '|' + (h.stop.label || '') + '|' + turn;
   if (k === lastGoal) return;
   var fresh = lastGoal !== '' && lastGoal.split('|')[0] !== h.stop.id;
@@ -229,6 +239,23 @@ export function renderGoal() {
     '<span class="wgoal-t"><small>' + (h.stop.label || 'Prossima tappa') + '</small>' + esc(h.stop.text) + '</span>';
   el.setAttribute('aria-label', 'Prossima tappa: ' + h.stop.text + ', ' + h.stop.where + (here ? ': sei arrivato' : '') + '. Apri il menu');
   if (fresh && !reduced) { el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); clearTimeout(goalFlash); goalFlash = setTimeout(function () { el.classList.remove('new'); }, 1600); }
+}
+/* the secret a beaten trainer has told: a second line in the corner, blue, with its own arrow (story/trail.ts) */
+var lastTrail = '';
+const TRAIL_STAR = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2l2.6 6.4L21 9.3l-5 4.4 1.6 6.8L12 17l-5.6 3.5L8 13.7 3 9.3l6.4-.9Z" fill="currentColor"/></svg>';
+export function renderTrail() {
+  var el = document.getElementById('wtrail');
+  if (!el) return;
+  var t = M.id === 'formia' && !run && !sea.race ? trail() : null;
+  if (!t) { if (!el.hidden) { el.hidden = true; lastTrail = ''; root.classList.remove('has-trail'); } return; }
+  root.classList.add('has-trail');
+  var dx = t.x - st.x, dy = t.y - st.y, here = Math.abs(dx) + Math.abs(dy) <= 1;
+  var turn = here ? -1 : (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8, k = t.id + '|' + turn;
+  if (k === lastTrail) return;
+  lastTrail = k; el.hidden = false;
+  el.innerHTML = '<span class="wgoal-ic"' + (here ? '' : ' style="transform:rotate(' + turn * 45 + 'deg)"') + '>' + (here ? TRAIL_STAR : GOAL_ARROW) + '</span>' +
+    '<span class="wgoal-t"><small>Segreto' + (st.trail && st.trail.by ? ' · da ' + esc(st.trail.by) : '') + '</small>' + esc(t.name) + '</span>';
+  el.setAttribute('aria-label', 'Segreto: ' + t.name + (here ? ': sei arrivato' : '') + '. Apri la mappa');
 }
 /* ---------- the bars in the corner: the first of the company and the creature at his side, always on the way to the next level ---------- */
 var barKeys = '', barAt = 0, barShown: Record<string, { lv: number; pct: number }> = {};
@@ -258,12 +285,22 @@ function renderBars() {
     barShown[k] = { lv: l.lv, pct: pct };
   });
 }
+var shownMoney: number | null = null;
 export function renderHud() {
-  lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); renderBars();
+  lastPlace = ''; renderPlace(); lastGoal = ''; renderGoal(); lastTrail = ''; renderTrail(); renderBars();
   var hint = root.querySelector('.whint');
   if (hint) hint.textContent = st.sella ? 'In sella: frecce o WASD per guidare · Invio per suonare, da fermo per scendere · M menu'
     : 'Frecce, WASD o un clic per camminare · Invio per parlare · M menu · T telefono · C Cicerone · F schermo intero' + (powerOf('volo') ? ' · V per guardare dall\'alto' : '');
-  $('wmoney').innerHTML = coin() + '<b>' + money() + '</b>';
+  /* the purse in the corner: when the sesterzi change, it jumps and says how many came or went */
+  var mEl = $('wmoney'), was = shownMoney;
+  mEl.innerHTML = coin() + '<b>' + money() + '</b>';
+  if (was != null && money() !== was && !reduced) {
+    var d = money() - was, tag = document.createElement('i');
+    tag.className = 'wmoney-d' + (d < 0 ? ' out' : ''); tag.textContent = (d > 0 ? '+' : '−') + Math.abs(d);
+    mEl.appendChild(tag);
+    mEl.classList.remove('bump'); void mEl.offsetWidth; mEl.classList.add('bump');
+  }
+  shownMoney = money();
   var cv = cityCovi(M.city), won = cv.filter(function (cv0) { return hasBadge(cv0); }).length;
   /* on a narrow phone the row of pins does not fit beside the menu: a count stands in for it (story.css) */
   $('wbadges').innerHTML = cv.map(function (cv0) {
@@ -505,10 +542,12 @@ onRideStop(function (x, y) {
 function pickUp(it: LostItem) {
   sfx('pickup');
   st.found[it.id] = true; save();
-  var left = allItems().length - foundItems().length;
-  say(['Hai ritrovato ' + ITEMS[it.move].name + '!', it.text,
-    left ? 'Nelle lotte della Storia Antonio non ' + it.pron + ' perde più. ' + (left === 1 ? 'Ne manca ancora uno.' : 'Ne mancano ancora ' + left + '.')
+  var left = allItems().length - foundItems().length, nm = ITEMS[it.move].name;
+  /* the card with the thing itself, then what it means */
+  loot('Hai ritrovato ' + nm + '!', [{ id: it.id, art: itemSVG(ITEMS[it.move].icon, true, 112), name: nm.charAt(0).toUpperCase() + nm.slice(1) }], it.text, function () {
+    say([left ? 'Nelle lotte della Storia Antonio non ' + it.pron + ' perde più. ' + (left === 1 ? 'Ne manca ancora uno.' : 'Ne mancano ancora ' + left + '.')
       : 'Hai ritrovato tutto: nelle lotte della Storia Antonio non perde più niente.']);
+  });
 }
 /** talking to someone: the plot first, unless it has just had its say (past), and then what that one always does */
 var seaAside = false;
@@ -676,16 +715,18 @@ function treasure(): boolean {
   var b = moveMode.swim && M.id === 'formia' ? BOTTLES.find(function (q) { return q.x === st.x && q.y === st.y && !st.seen[q.id]; }) : null;
   if (b) {
     st.seen[b.id] = true; earn(b.prize); save(); renderHud();
-    sfx('found'); halt();
+    halt();
     var left = BOTTLES.filter(function (q) { return !st.seen[q.id]; }).length;
-    say(['Una bottiglia che galleggia! La tiri su.'].concat(b.text, ['(+' + b.prize + ' sesterzi' + (left ? ': ne restano ' + left + ' nel golfo' : '') + '.)']));
+    loot('Una bottiglia che galleggia!', [{ id: 'bottiglia', name: 'Un messaggio in bottiglia' }, { id: 'sesterzi', n: b.prize }], left ? 'Ne restano ' + left + ' nel golfo.' : 'Era l\'ultima del golfo.', function () { say(b!.text); });
     return true;
   }
   var t = moveMode.swim ? treasureAt(M) : null;
   if (!t || st.x !== t[0] || st.y !== t[1] || st.seen.anfora) return false;
   st.seen.anfora = true; earn(60); save(); renderHud();
   sfx('found'); halt();
-  say(['Sul fondo della vasca romana c\'è qualcosa che luccica…', 'Un\'anfora! Intera, dopo duemila anni nel porticciolo di Gianola.', 'Il museo archeologico la compra per 60 sesterzi: un pezzo di Formiae torna a casa.']);
+  say(['Sul fondo della vasca romana c\'è qualcosa che luccica…', 'Un\'anfora! Intera, dopo duemila anni nel porticciolo di Gianola.'], null, null, function () {
+    loot('Un\'anfora romana!', [{ id: 'anfora', name: 'L\'anfora del porticciolo' }, { id: 'sesterzi', n: 60 }], 'Il museo archeologico la compra: un pezzo di Formiae torna a casa.');
+  });
   return true;
 }
 /** the view from above: a creature with wings flies up and, for a few seconds, Formia is seen from high up */
@@ -884,16 +925,23 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
     }
     rewardsAll(pay, 0, function () {
       var first = !st.beaten['tr-' + f.id], now = trainerNow(f.id), gift = first ? now.gift : undefined;
-      st.beaten['tr-' + f.id] = true;
-      if (first) earn(now.prize);
-      if (gift) { st.bag = st.bag || {}; for (var g in gift.items) st.bag[g] = (st.bag[g] || 0) + gift.items[g]; }
+      st.beaten['tr-' + f.id] = true; delete waived[f.id];
+      /* the first time: the sesterzi and his gift, in the bag at once (and saved: a reload in the middle of the words
+         loses nothing), then shown on a card with their pictures */
+      var got: Loot[] = first ? [{ id: 'sesterzi', n: now.prize }] : [];
+      if (gift) for (var g in gift.items) got.push({ id: g, n: gift.items[g] });
+      addLoot(got);
       save(); renderHud(); fight = null;
-      sfx('badge');
-      say(lines(now.win, f.id).concat(gift ? [gift.say] : [], first ? ['{hero} vince ' + coins(now.prize) + '.'] : []), f.who, null, function () {
+      var after = function () {
         /* a defender of a covo (one in a doorway, who asked a quiz and lost the fight): beaten, he gets out of the way
            now, not only the next time the covo is entered */
         if (M.people.some(function (p) { return p.n.trainer === f.id && !!p.n.aside; })) { notify('<b>' + esc(f.who) + '</b> si fa da parte.'); stepAside(); }
         plotAfter(f.id, f.who, f.id === 'rivale-1' ? firstChallengeChat : undefined);
+      };
+      sfx('badge');
+      say(lines(now.win, f.id).concat(gift ? [gift.say] : []), f.who, null, function () {
+        if (!got.length) { after(); return; }
+        loot('Hai battuto ' + lowerFirst(now.title) + '!', got, null, function () { if (first) secretOf(f.id, f.who, after); else after(); });
       });
     });
     return;
@@ -907,6 +955,17 @@ function fightAfter(res: { won: boolean; caught?: boolean; bouts?: Bout[] }) {
   });
 }
 function firstChallengeChat() { st.seen['sfida-rivale-1'] = true; save(); playChat('rivale-1'); }
+function lowerFirst(t: string): string { return /^(Il|La|Lo|L'|Gli|Le|I) /.test(t) || /^L'/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
+/** a trainer of the town, beaten the first time, tells a secret of Formia: from now on it has its star (story/trail.ts) */
+function secretOf(id: string, who: string, then: () => void) {
+  var tr = TRAINERS[id], p = M.people.find(function (q) { return q.n.trainer === id; });
+  /* not the rival, the adepts of the covi, Mamurra's men, nor who is a friend's mission (that one has its own card) */
+  if (tr.rival || tr.covo || /^mamurr/.test(id) || missionOfTrainer(id) || M.id !== 'formia') { then(); return; }
+  var sc = newTrail(p ? p.x : st.x, p ? p.y : st.y, who);
+  if (!sc) { then(); return; }
+  save(); renderTrail();
+  say(['Ah, e ti dico una cosa che sanno in pochi.', sc.hint, 'Te la segno io: segui la stella azzurra.'], who, null, then);
+}
 /* ---------- wild creatures: hidden in the tall grass and in the rock pools ---------- */
 var calm = 0;
 /** a step has just ended: in a hiding place a wild creature may jump out (true: the step stops there) */
@@ -934,13 +993,17 @@ export function stepped(): boolean {
 /** what Antonio's creature digs up: a few sesterzi, a slice of tiella, a net someone lost */
 function sniff(key: string) {
   var r = Math.random(), name = nameOf(key), what: string;
+  var id = 'sesterzi';
   if (r < 0.5) { var n = 3 + Math.floor(Math.random() * 10); earn(n); what = coins(n) + ' caduti a qualcuno'; }
-  else if (r < 0.75) { st.bag = st.bag || {}; st.bag.tiella = (st.bag.tiella || 0) + 1; what = 'una fetta di tiella ancora incartata'; }
+  else if (r < 0.75) { id = 'tiella'; what = 'una tiella ancora incartata'; }
   /* now and then something for a creature to carry */
-  else if (r < 0.85) { var it = HELD_IDS[Math.floor(Math.random() * HELD_IDS.length)]; st.bag = st.bag || {}; st.bag[it] = (st.bag[it] || 0) + 1; what = WARES[it].name.toLowerCase(); }
-  else { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + 1; what = 'un retino dimenticato'; }
+  else if (r < 0.84) { id = HELD_IDS[Math.floor(Math.random() * HELD_IDS.length)]; what = WARES[id as keyof typeof WARES].name.toLowerCase(); }
+  /* once in a long while, an ampolla someone has lost: the creature that follows found it */
+  else if (r < 0.86) { id = 'ambrosia'; what = 'un\'ampolla di ambrosia'; }
+  else { id = 'retino'; what = 'un retino dimenticato'; }
+  if (id !== 'sesterzi') { st.bag = st.bag || {}; st.bag[id] = (st.bag[id] || 0) + 1; }
   save(); renderHud(); sfx('pickup');
-  notify('<b>' + esc(name) + '</b> annusa per terra e trova ' + esc(what) + '!');
+  lootToast(id, '<b>' + esc(name) + '</b> annusa per terra e trova ' + esc(what) + '!');
 }
 /** a creature of that hiding place jumps out: by day or by night, now and then a golden one */
 function meet(h: Hiding) {
@@ -998,18 +1061,35 @@ function trainerTalk(id: string, who: string, talk: string[], came?: boolean) {
   mentorTip('trainer');
   var tr = trainerNow(id), beaten = !!st.beaten['tr-' + id];
   if (!teamMons().length) { say(talk.concat(['Le creature si sfidano con le creature: senza una tua non si lotta.', 'Al Parco di Gianola la guardaparco ne affida una a chi se lo merita.']), who); return; }
-  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { trainerFight(id, who); } }];
-  /* the defenders of a covo do not let you by with a «later» (13 November 2026); a rematch is always optional */
-  if (!came && (beaten || !tr.covo)) opts.push({ label: 'Più tardi', fn: null });
-  say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat([foesLine(id)]), who, opts);
+  var opts: DialogOpt[] = [{ label: beaten ? 'Rivincita!' : 'Sfida!', fn: function () { delete waived[id]; trainerFight(id, who); } }];
+  /* a challenge can always be put off (24 November 2026, Antonio: «non deve capitare che per sbaglio incontri qualcuno
+     che non vuoi affrontare e sei costretto a farlo»): who has walked up goes back to his place and does not come again
+     on his own; he waits to be talked to. A defender of a covo stays in the doorway: without beating him, no way in */
+  opts.push({ label: came ? 'Non ora' : 'Più tardi', fn: function () {
+    waived[id] = Date.now();
+    if (came) say([tr.covo ? 'Allora da qui non passi. Quando sei pronto, sono qui.' : TRAINERS[id].rival ? 'Va bene, ti aspetto. Quando vuoi, vieni a cercarmi.' : 'Va bene, un\'altra volta. Se cambi idea, sono qui.'], who);
+  } });
+  say((came ? [] : talk).concat(lines(beaten ? tr.after : tr.intro, id)).concat(plotBefore(id)).concat([foesLine(id)], beaten ? [] : [prizeLine(id)]), who, opts);
 }
+/** what a trainer gives the first time he is beaten, in words, before the challenge */
+function prizeLine(id: string): string {
+  var tr = trainerNow(id), bits = [coins(tr.prize)];
+  if (tr.gift) for (var g in tr.gift.items) bits.push(thingText(g, tr.gift.items[g]));
+  return 'Se vinci: ' + bits.join(' e ') + (TRAINERS[id].rival || TRAINERS[id].covo || /^mamurr/.test(id) || missionOfTrainer(id) ? '.' : ', e un segreto di Formia.');
+}
+/** trainers the player has said «not now» to: they do not walk up again on their own */
+var waived: Record<string, number> = {};
+/** the last time someone walked up to challenge: then a little peace, whoever it is */
+var lastSpot = 0;
+const SPOT_PAUSE = 45000;
 
 /* ---------- trainers who see Antonio: a "!" over their head, and they come to challenge him ---------- */
 /* As in the games: a trainer not beaten yet looks ahead the way he faces, a few tiles; when Antonio steps into his
    sight a "!" pops up over his head, he walks up to Antonio and challenges him, with no saying later. Tullio, the
    rival, calls him from anywhere near. Once the talk or the fight is over the trainer walks back to his place (a
    beaten rival walks away, and is gone), and leaves Antonio alone for a while. */
-const SIGHT = 4, RIVAL_NEAR = 5, ALERT_MS = 750, LEAVE_ALONE = 180000;
+export const SIGHT = 4;
+const RIVAL_NEAR = 5, ALERT_MS = 750, LEAVE_ALONE = 180000;
 var noticed: Record<string, number> = {}, meeting: Person | null = null, away: { p: Person; map: string; done?: () => void }[] = [];
 function seesAntonio(p: Person): boolean {
   var id = p.n.trainer;
@@ -1042,8 +1122,9 @@ function tooWeak(id: string): boolean {
   return mine - Math.max.apply(null, teamOf(id).map(function (t) { return t.lv; })) >= WEAK_GAP;
 }
 function spotted(): boolean {
-  /* nobody comes to challenge in the middle of a race at sea, or of a rescue */
-  var p = spotting && !sea.race && !sea.kid ? M.people.find(seesAntonio) : null;
+  /* nobody comes to challenge in the middle of a race at sea, or of a rescue; nor right after someone else did */
+  if (Date.now() - lastSpot < SPOT_PAUSE) return false;
+  var p = spotting && !sea.race && !sea.kid ? M.people.find(function (q) { return !waived[q.n.trainer || ''] && seesAntonio(q); }) : null;
   if (!p) return false;
   var n = p.n;
   if (tooWeak(n.trainer!)) { noticed[n.trainer!] = Date.now(); return false; }
@@ -1052,8 +1133,14 @@ function spotted(): boolean {
     bubble(esc(trainerNow(n.trainer!).title + ' ti ha visto, ti ha squadrato… e ha lasciato perdere. Le sue creature sono molto più forti delle tue: se vuoi sfidarlo lo stesso, parlagli.'));
     return false;
   }
+  lastSpot = Date.now();
   approach(p, function () { trainerTalk(n.trainer!, n.name || '', [], true); });
   return true;
+}
+/** whether a trainer on the map would walk up to the player (for the mark over his head): not beaten, not put off */
+export function challenger(p: Person): boolean {
+  var id = p.n.trainer;
+  return !!id && !p.n.ghost && !p.n.quiz && !st.beaten['tr-' + id] && !waived[id] && !TRAINERS[id].rival;
 }
 function faceTo(x: number, y: number, tx: number, ty: number): Dir { return Math.abs(tx - x) > Math.abs(ty - y) ? (tx > x ? 'right' : 'left') : (ty > y ? 'down' : 'up'); }
 /** the "!", the walk up to Antonio (who stands still meanwhile), and the two face each other: then `then` */
@@ -1139,15 +1226,22 @@ const NETS_TALK = ['Senti, una cosa. Dopo il boato di stanotte le creature dell\
   'Altri retini, anche più buoni, li vende il retaio qui accanto.'];
 function giveNets() { st.bag = st.bag || {}; st.bag.retino = (st.bag.retino || 0) + GIFT_NETS; st.seen['dono-retini'] = true; save(); renderHud(); }
 /** a save from before the gift: the guardaparco gives the nets the next time */
-function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, {hero}! Come sta la tua creatura?'].concat(NETS_TALK), who); }
+function netsGift(who: string) { giveNets(); sfx('pickup'); say(['Ah, {hero}! Come sta la tua creatura?'].concat(NETS_TALK), who, null, function () { netsCard(); }); }
+/** the nets of the guardaparco, shown */
+function netsCard(then?: () => void) { loot('Dalla guardaparco', [{ id: 'retino', n: GIFT_NETS }], 'Sono nella borsa: in lotta, tocca «Borsa» e lancia il retino.', then); }
 /** the guardaparco's prizes for the creature diary: all the ones reached, at once, and the next one */
 function dexPrizeTalk(who: string) {
   var due = dexPrizesDue(), lines = ['Fammi vedere il tuo diario delle creature… ' + dexHad() + ' creature! Bravo, {hero}.'];
-  due.forEach(function (p) { takeDexPrize(p); lines.push('Questo è per te: ' + prizeText(p) + '.'); });
-  var nx = nextDexPrize();
-  lines.push(nx ? (nx.p.all ? 'Se le prendi tutte, ti do il premio più grande: ' : 'Quando ne avrai ' + nx.at + ', ti do ' ) + prizeText(nx.p) + '.' : 'Le hai prese tutte. A Formia non l\'aveva mai fatto nessuno.');
+  var got: Loot[] = [];
+  due.forEach(function (p) {
+    takeDexPrize(p); lines.push('Questo è per te: ' + prizeText(p) + '.');
+    (Object.keys(p.give) as string[]).forEach(function (it) { got.push({ id: it, n: (p.give as Record<string, number>)[it] }); });
+    if (p.coins) got.push({ id: 'sesterzi', n: p.coins });
+  });
+  var nx = nextDexPrize(), next = nx ? (nx.p.all ? 'Se le prendi tutte, ti do il premio più grande: ' : 'Quando ne avrai ' + nx.at + ', ti do ') + prizeText(nx.p) + '.' : 'Le hai prese tutte. A Formia non l\'aveva mai fatto nessuno.';
   save(); renderHud(); sfx('badge');
-  say(lines, who);
+  /* what she gives, as a card with the pictures; then what comes next */
+  say(lines, who, null, function () { loot('Il premio del diario', got, null, function () { say([next], who); }); });
 }
 /** the guardaparco has seen the player land at Gianola behind Nicola: she comes down to the beach, and has a creature
     for them */
@@ -1191,9 +1285,11 @@ function starterTalk(who: string, first?: string[]) {
         giveNets();
         playChat('starter', function () {
           say(['Ottima scelta: ' + sp.name + ' è tuo!', 'Le creature selvatiche si nascondono nell\'erba alta e nelle pozze tra gli scogli: passaci in mezzo e salteranno fuori.'].concat(NETS_TALK), who, null, function () {
-            /* The group has already celebrated the creature before the rival comes to challenge. */
-            var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
-            if (r) { var n = r.n; bringNear(r); approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+            netsCard(function () {
+              /* The group has already celebrated the creature before the rival comes to challenge. */
+              var r = M.people.find(function (q) { return q.n.trainer === 'rivale-1' && present(q); });
+              if (r) { var n = r.n; bringNear(r); approach(r, function () { trainerTalk('rivale-1', n.name || '', [], true); }); }
+            });
           });
         });
       });
@@ -1291,7 +1387,8 @@ function hourHint() {
 }
 /* the menu in four tabs: the team (and who leads it), the journey (the tour, the stones, the badges), the diary
    (things done, things found, the creatures met), the map (and the hour); it opens on the last one used */
-const TABS: { id: string; label: string }[] = [{ id: 'squadra', label: 'Squadra' }, { id: 'viaggio', label: 'Viaggio' }, { id: 'diario', label: 'Diario' }, { id: 'mappa', label: 'Mappa' }];
+/* the bag has a tab of its own (24 November 2026): before it was a long list under the team */
+const TABS: { id: string; label: string; ico: string }[] = [{ id: 'squadra', label: 'Squadra', ico: 'users' }, { id: 'borsa', label: 'Borsa', ico: 'wallet' }, { id: 'viaggio', label: 'Viaggio', ico: 'flag' }, { id: 'diario', label: 'Diario', ico: 'notes' }, { id: 'mappa', label: 'Mappa', ico: 'eye' }];
 var menuTab = 'squadra';
 function openMenu(tab?: string) {
   if (!running || dialog || busy) return;
@@ -1306,12 +1403,17 @@ function openMenu(tab?: string) {
   }).join('');
   var panes: Record<string, string> = {
     squadra: teamHtml(),
-    viaggio: '<div class="pickrow"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (journey.length - 1) + '</h3><ul class="wbadge-list diary tour">' + journey.map(function (s0) {
-      /* the stops still ahead stay a mystery: only the ones done and the next one are told */
-      var done = s0.done(), next = s0.id === goal;
-      return '<li class="' + (done ? 'got' : next ? 'next' : 'secret') + '"><span class="diary-n" aria-hidden="true">' + (done ? '✓' : next ? '➜' : '?') + '</span><span><b>' + esc(done || next ? s0.text : '???') + '</b><small>' +
-        esc(done ? s0.where + ' · fatto' : next ? s0.where + ' · prossima tappa' : 'da scoprire') + '</small></span></li>';
-    }).join('') + '</ul></div>' + cluesHtml() + stonesHtml() + missionsHtml() + seaJobsHtml() +
+    borsa: bagHtml(),
+    /* the tour (24 November 2026): a track of all its stops, the ones ahead still a mystery, and the next one big under it;
+       the ones done, small, in a row */
+    viaggio: '<div class="pickrow tourbox"><h3>Giro di Formia · ' + stopsDone() + ' su ' + (journey.length - 1) + '</h3>' +
+      '<ol class="track" aria-hidden="true">' + journey.map(function (s0) { return '<li class="' + (s0.done() ? 'got' : s0.id === goal ? 'next' : '') + '"></li>'; }).join('') + '</ol>' +
+      journey.filter(function (s0) { return s0.id === goal; }).map(function (s0) {
+        return '<button class="nextcard" type="button" id="wm-next"><span class="nextcard-ic" aria-hidden="true">➜</span><span><small>Prossima tappa</small><b>' + esc(s0.text) + '</b><i>' + esc(s0.where) + '</i></span><span class="nextcard-go">Mostra sulla mappa</span></button>';
+      }).join('') +
+      '<ul class="wbadge-list diary tour done-list">' + journey.filter(function (s0) { return s0.done(); }).map(function (s0) {
+        return '<li class="got"><span class="diary-n" aria-hidden="true">✓</span><span><b>' + esc(s0.text) + '</b><small>' + esc(s0.where) + '</small></span></li>';
+}).join('') + '</ul></div>' + cluesHtml() + stonesHtml() + missionsHtml() + seaJobsHtml() +
       '<div class="pickrow"><h3>Spille</h3><ul class="wbadge-list">' + badges + '</ul></div>' +
       (detours.length ? '<div class="pickrow"><h3>Deviazioni</h3><ul class="wbadge-list diary">' + detours.map(s => '<li class="' + (s.done() ? 'got' : '') + '"><span><b>' + esc(s.text) + '</b><small>' + esc(s.where + (s.done() ? ' · fatto' : '')) + '</small></span></li>').join('') + '</ul></div>' : ''),
     diario: '<div class="pickrow"><h3>Diario di Formia</h3><ul class="wbadge-list diary">' + ACTIVITIES.map(function (a) {
@@ -1341,7 +1443,7 @@ function openMenu(tab?: string) {
   };
   sheet('<div class="sheet menu" role="dialog" aria-modal="true" aria-labelledby="wm-t"><div class="sheet-h"><h2 id="wm-t">Storia · ' + esc(MAPS[city].name) + '</h2><button class="tb-btn" type="button" id="wm-x">Chiudi</button></div>' +
     '<div class="tabs" role="tablist">' + TABS.map(function (t) {
-      return '<button type="button" role="tab" id="tab-' + t.id + '" data-tab="' + t.id + '" aria-controls="pane-' + t.id + '" aria-selected="' + (t.id === menuTab) + '">' + esc(t.label) + '</button>';
+      return '<button type="button" role="tab" id="tab-' + t.id + '" data-tab="' + t.id + '" aria-controls="pane-' + t.id + '" aria-selected="' + (t.id === menuTab) + '">' + ico(t.ico) + '<span>' + esc(t.label) + '</span></button>';
     }).join('') + '</div>' +
     TABS.map(function (t) { return '<div class="tabpane" role="tabpanel" id="pane-' + t.id + '" aria-labelledby="tab-' + t.id + '"' + (t.id === menuTab ? '' : ' hidden') + '>' + panes[t.id] + '</div>'; }).join('') + '</div>');
   var drawn = false;
@@ -1355,6 +1457,9 @@ function openMenu(tab?: string) {
   each(document.querySelectorAll('[data-tab]'), function (b) { b.addEventListener('click', function () { sfx('click'); show(b.getAttribute('data-tab')!); }); });
   show(menuTab);
   wireTeam(openMenu);
+  wireBag(openMenu);
+  var nextB = document.getElementById('wm-next');
+  if (nextB) nextB.addEventListener('click', function () { sfx('click'); show('mappa'); });
   wireGifts(openMenu);
   each(document.querySelectorAll('[data-ora]'), function (b) {
     b.addEventListener('click', function () {
@@ -1407,7 +1512,7 @@ function frame(now: number) {
   leadFrame(now);
   seaFrame(now);
   checkRun(now);
-  renderGoal();
+  renderGoal(); renderTrail();
   if (now - barAt > 300) {
     barAt = now; standOn(); renderBars(); tellRewards(); chapterTip();
     if (quiet() && charmOn() && M.id === 'formia' && hidingAt(st.x, st.y) && nextStop().grass) mentorTip('charm'); if (quiet() && M.id === 'formia' && nextStop().grass && netSeller(st.x, st.y)) mentorTip('nonets'); groupChat(quiet() && !M.inside && !mover && !walkingAlong()); tune();
@@ -1618,6 +1723,8 @@ export const WORLD = {
     meet: function (id: string) { if (HIDINGS[id]) meet(HIDINGS[id]); },
     /* a shop, as from its counter */
     shop: function (id: string) { if (SHOPS[id]) openShop(id); },
+    /* the card of something won (ui/bag.ts), as the game shows it: for a look at it */
+    loot: function (title: string, list: Loot[]) { loot(title, list); },
     /* one creature of a kind, at a level, jumps out of the rocks of Gianola (to look at the shows of any of them) */
     /* a covo's challenge, from wherever Antonio is (playtests, and a look at who stands behind the crew) */
     covo: function (id: string) { if (COVI[id]) challenge(id); },

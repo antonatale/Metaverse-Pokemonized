@@ -37,6 +37,8 @@ async function goTo(p: Page, kind: string, id: string) {
 async function talkThrough(p: Page, max = 12) {
   for (let k = 0; k < max; k++) {
     await quietPhone(p);
+    /* the card of something found or won (ui/bag.ts): «Continua», and the story goes on */
+    if (await p.locator('#lt-ok').count()) { await p.click('#lt-ok'); await p.clock.runFor(200); continue; }
     const d = await p.evaluate(() => window.WORLD._debug.pos());
     if (!d.dialog || d.opts) return;
     await p.keyboard.press('Enter');
@@ -136,7 +138,8 @@ test('the passport detour leaves the investigation at Gianola active', async ({ 
     await p.evaluate(([x, y]) => window.WORLD._debug.travel('formia', x + 2, y + 1, 'left'), FORMIA_SPOT.passaporto); await p.clock.runFor(300);
     await goTo(p, 'item', 'passaporto');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
-    await expect(p.locator('#wtxt')).toContainText('Hai ritrovato');
+    /* the card of what is found, with its picture (ui/bag.ts), then the words */
+    await expect(p.locator('#lt-t')).toContainText('Hai ritrovato');
     await talkThrough(p);
     await goTo(p, 'sign', 'Tomba di Cicerone, sull\'Appia');
     await p.keyboard.press('Enter'); await p.clock.runFor(200);
@@ -220,11 +223,8 @@ test('hot reload keeps an open battle', async ({ browser }) => {
     await p.evaluate(() => window.WORLD._debug.meet('gianola')); await p.clock.runFor(300);
     await talkThrough(p);
     await choose(p, 'Lotta!'); await p.clock.runFor(800);
-    for (let k = 0; k < 1; k++) {
-      await toPrompt(p);
-      const id = await p.evaluate(() => window.UI._debug.suggest());
-      await p.click('#pad .mv[data-id="' + id + '"]');
-    }
+    /* the reload at the first choice: since the levels count more (24 November 2026) a level-30 creature takes a wild
+       one of level 5 down at the first blow, and a battle already over is not kept */
     await toPrompt(p);
     await r.shot('before');
     await p.evaluate(() => sessionStorage.setItem('__hot', JSON.stringify((window as unknown as { __snap(): unknown }).__snap())));
@@ -299,7 +299,8 @@ test('the shops of the town', async ({ browser }) => {
   const r = await play(browser, 'shops', { seed: 3, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     const shop = async (id: string) => { await p.evaluate((i) => (window.WORLD._debug as unknown as { shop(id: string): void }).shop(i), id); await p.clock.runFor(300); };
-    const buy = async (it: string, n = 1) => { for (let k = 1; k < n; k++) await p.click('[data-qty="' + it + '"] [data-up]'); await p.click('[data-it="' + it + '"]'); await p.clock.runFor(200); };
+    /* a shop is a shelf and a counter (ui/bag.ts): the thing chosen on the shelf comes to the counter, with how many */
+    const buy = async (it: string, n = 1) => { await p.click('[data-ware="' + it + '"]'); for (let k = 1; k < n; k++) await p.click('[data-qty="' + it + '"] [data-up]'); await p.click('[data-it="' + it + '"]'); await p.clock.runFor(200); };
     await goStory(p); await p.clock.runFor(1500);
     /* the shops on the map */
     for (const [name, x, y] of [['pharmacy', 72, 28], ['market', 66, 37], ['fish', 95, 29], ['news', 83, 42], ['bakery', 62, 37]] as [string, number, number][]) {
@@ -309,20 +310,23 @@ test('the shops of the town', async ({ browser }) => {
     await shop('farmacia'); await buy('balsamo'); await r.shot('farmacia'); await p.click('#shop-x');
     await shop('pescheria'); await buy('alici', 2); await r.shot('pescheria'); await p.click('#shop-x');
     await shop('libreria'); await buy('manuale'); await r.shot('libreria'); await p.click('#shop-x');
-    await shop('mercato'); r.keep('market', await p.locator('.wares li').count()); await r.shot('mercato'); await p.click('#shop-x');
+    await shop('mercato'); r.keep('market', await p.locator('.shelf .ware').count()); await r.shot('mercato'); await p.click('#shop-x');
     await shop('edicola'); await buy('giornale'); await p.clock.runFor(1500);
     r.keep('news', await p.evaluate(() => window.WORLD._debug.pos().text));
     await r.shot('giornale');
     await talkThrough(p); await p.clock.runFor(300);
     if (await p.locator('#shop-x').count()) await p.click('#shop-x');
     r.keep('bought', await p.evaluate(() => window.WORLD.state()));
-    /* from the menu: the alici to the Cicalina, then the manual */
+    /* from the menu, the bag: the alici to the Cicalina, touched twice, then the manual */
     await p.keyboard.press('m'); await p.clock.runFor(300);
-    await p.click('[data-use="alici"]'); await p.clock.runFor(300);
-    await p.click('[data-qty="alici"] [data-up]'); await p.click('#us-go'); await p.clock.runFor(300);
-    await talkThrough(p);
-    await p.keyboard.press('m'); await p.clock.runFor(300);
-    await p.click('[data-use="manuale"]'); await p.clock.runFor(300);
+    await p.click('#tab-borsa'); await p.click('[data-item="alici"]'); await p.clock.runFor(200);
+    await p.click('#it-go'); await p.clock.runFor(300);
+    for (let k = 0; k < 2; k++) { await p.click('[data-give="c1"]'); await p.clock.runFor(300); }
+    await r.shot('alici');
+    await p.click('#gv-x'); await p.clock.runFor(200);
+    await p.click('#it-x'); await p.clock.runFor(200);
+    await p.click('#tab-borsa'); await p.click('[data-item="manuale"]'); await p.clock.runFor(200);
+    await p.click('#it-go'); await p.clock.runFor(300);
     await talkThrough(p);
     r.keep('after', await p.evaluate(() => window.WORLD.state()));
   });
@@ -369,36 +373,35 @@ for (const reunion of [false, true]) test('Andrea takes the train to Milano' + (
   expect(get('back')).toBe('formia');
 });
 
-/* the bar of Mola: three coffees in one go, into the bag; from the menu, «Usa» asks whom once, and how many */
-test('three coffees, given from the bag', async ({ browser }) => {
+/* the bar of Mola: an ampolla of ambrosia, dear, into the bag; from the team in the menu, a touch on who drinks it: a level */
+test('the ambrosia, bought and given from the team', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 215, y: 42, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {}, seen: { intro: true, starter: true },
-    mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 20, bag: {} };
-  const r = await play(browser, 'coffee', { seed: 4, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
+    mons: [{ uid: 'c1', sp: 'cicalina' }], lv: { c1: { lv: 5, xp: 0 } }, money: 160, bag: { caffe: 2 } };
+  const r = await play(browser, 'ambrosia', { seed: 4, viewport: { width: 1280, height: 800 }, storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(1500);
+    /* an old save's coffees are paid back: 2 × 3 sesterzi */
+    r.keep('migrated', await p.evaluate(() => (window.WORLD.state() as { bag: Record<string, number>; money: number })));
     await p.evaluate(() => (window.WORLD._debug as unknown as { shop(id: string): void }).shop('bar')); await p.clock.runFor(300);
-    for (let k = 0; k < 2; k++) await p.click('[data-qty="caffe"] [data-up]');
     await r.shot('shop');
-    r.keep('price', await p.locator('[data-it="caffe"]').innerText());
-    await p.click('[data-it="caffe"]'); await p.clock.runFor(200);
+    r.keep('price', await p.locator('[data-it="ambrosia"]').innerText());
+    await p.click('[data-it="ambrosia"]'); await p.clock.runFor(200);
     r.keep('bought', await p.evaluate(() => (window.WORLD.state() as { bag: Record<string, number>; money: number })));
     await p.click('#shop-x'); await p.clock.runFor(200);
     await p.keyboard.press('m'); await p.clock.runFor(300);
-    await p.locator('[data-use="caffe"]').scrollIntoViewIfNeeded();
-    await r.shot('bag');
-    await p.click('[data-use="caffe"]'); await p.clock.runFor(300);
-    await p.click('.pick[data-key="c1"]'); await p.clock.runFor(300);
-    for (let k = 0; k < 2; k++) await p.click('[data-qty="caffe"] [data-up]');
+    await p.click('#tab-squadra'); await p.click('[data-amb]'); await p.clock.runFor(300);
     await r.shot('give');
-    await p.click('#us-go'); await p.clock.runFor(300);
+    await p.click('[data-give="c1"]'); await p.clock.runFor(1500);
     await talkThrough(p, 20);
     r.keep('after', await p.evaluate(() => (window.WORLD.state() as { bag: Record<string, number>; lv: Record<string, { lv: number }> })));
   });
   const get = (n: string) => r.data.find((x) => x.name === n)!.value as { bag: Record<string, number>; money: number; lv: Record<string, { lv: number }> };
-  expect(String(get('price'))).toContain('9');
-  expect(get('bought')).toMatchObject({ bag: { caffe: 3 }, money: 11 });
-  expect(get('after').bag.caffe).toBe(0);
-  expect(get('after').lv.c1.lv).toBeGreaterThan(5);
+  expect(get('migrated').money).toBe(166);
+  expect(get('migrated').bag.caffe).toBeUndefined();
+  expect(String(get('price'))).toContain('150');
+  expect(get('bought')).toMatchObject({ bag: { ambrosia: 1 }, money: 16 });
+  expect(get('after').bag.ambrosia).toBe(0);
+  expect(get('after').lv.c1.lv).toBe(6);
 });
 
 /* the things to do around Formia, each in its real place */
@@ -627,14 +630,16 @@ test('the tour of Formia', async ({ browser }) => {
     }
     r.keep('tip', said.join(' | '));
     await r.page.click('#wgoal'); await r.page.clock.runFor(300);
-    r.keep('menu', await r.page.locator('.tour').innerText());
+    /* the tour: a track of every stop, the next one big, the ones ahead never named (24 November 2026) */
+    r.keep('menu', await r.page.locator('.tourbox').innerText());
+    r.keep('track', await r.page.locator('.track li').count());
     await r.shot('menu', { fullPage: true });
   });
   const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'riccetto' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
     await r.page.click('#wgoal'); await r.page.clock.runFor(300);
-    await expect(r.page.locator('.tour .next')).toContainText('Chi scava tra le rovine di Gianola?');
-    await expect(r.page.locator('.tour')).not.toContainText('Gelato');
+    await expect(r.page.locator('.nextcard')).toContainText('Chi scava tra le rovine di Gianola?');
+    await expect(r.page.locator('.tourbox')).not.toContainText('Gelato');
     await expect(r.page.locator('.pickrow', { hasText: 'Deviazioni' })).toContainText('Gelato');
     await expect(r.page.locator('.pickrow', { hasText: 'Indizi sull’eco' })).toContainText('Le tre tacche');
   });
@@ -642,7 +647,7 @@ test('the tour of Formia', async ({ browser }) => {
   expect(get(first, 'goal')).toContain('La tua prima creatura');
   expect(get(first, 'tip')).toContain('guardaparco di Gianola');
   expect(get(first, 'menu')).toContain('La tua prima creatura');
-  expect(get(first, 'menu')).toContain('???');
+  expect(Number(get(first, 'track'))).toBeGreaterThan(10);
   expect(get(first, 'menu')).not.toContain('Sfida Forchetta');
   expect(get(later, 'goal')).toContain('Chi scava tra le rovine di Gianola?');
 });
@@ -667,8 +672,10 @@ test('creatures of Formia', async ({ browser }) => {
     await p.clock.runFor(300);
     await r.shot('rival-spotted');
     await until(p, () => !!window.WORLD._debug.pos().dialog);
-    await talkThrough(p);
-    r.keep('rival', await p.locator('#wtxt').innerText());
+    /* his words, up to the challenge (the last line says what a win brings): what he said of his creature */
+    const said: string[] = [];
+    for (let k = 0; k < 12; k++) { const d = await p.evaluate(() => window.WORLD._debug.pos()); said.push(await p.locator('#wtxt').innerText()); if (!d.dialog || d.opts) break; await p.keyboard.press('Enter'); await p.clock.runFor(200); }
+    r.keep('rival', said.join(' | '));
     await r.shot('rival-talk');
     await choose(p, 'Sfida!');
     await p.clock.runFor(800);
@@ -716,6 +723,7 @@ test('creatures of Formia', async ({ browser }) => {
     await p.clock.runFor(1500);
     await talkTo(p, 'pescatore');
     await choose(p, 'Compra');
+    await p.click('[data-ware="retino2"]');
     for (let k = 0; k < 3; k++) { await p.click('[data-it="retino2"]'); await p.clock.runFor(200); }
     await r.shot('shop');
     await p.click('#shop-x'); await p.clock.runFor(200);
@@ -907,7 +915,8 @@ test('a trainer who sees Antonio', async ({ browser }) => {
   /* he came down the street to the tile in front of Antonio, and went back */
   expect(at('came')).toMatchObject({ x: at('before').x, y: st.y - 1, dir: 'down' });
   expect(at('after')).toEqual(at('before'));
-  expect(r.data.find((x) => x.name === 'opts')!.value).toEqual(['Sfida!']);
+  /* a challenge on sight can be put off (24 November 2026) */
+  expect(r.data.find((x) => x.name === 'opts')!.value).toEqual(['Sfida!', 'Non ora']);
   expect(st.beaten['tr-studente']).toBe(true);
 });
 

@@ -93,6 +93,8 @@ async function closeChat(p: Page) {
 async function dialogueUntil(p: Page, button: string) {
   for (let i = 0; i < 60; i++) {
     if (await p.getByRole('button', { name: button, exact: true }).isVisible()) return;
+    /* the card of something given (the guardaparco's nets): «Continua» */
+    if (await p.locator('#lt-ok').isVisible()) { await p.locator('#lt-ok').click(); await p.clock.runFor(200); continue; }
     if (await p.locator('#wdialog').isVisible()) await p.keyboard.press('Enter');
     await p.clock.runFor(200);
   }
@@ -145,7 +147,8 @@ for (const outcome of ['win', 'loss'] as const) test('creature chat before the r
     for (let i = 0; i < 60 && !await p.locator('#ph-x').isVisible(); i++) {
       const here = await rival();
       expect([here.x, here.y, here.present, here.moving]).toEqual([waiting.x, waiting.y, true, false]);
-      if (await p.locator('#wopts button').first().isVisible()) await p.locator('#wopts button').first().click();
+      if (await p.locator('#lt-ok').isVisible()) await p.locator('#lt-ok').click();
+      else if (await p.locator('#wopts button').first().isVisible()) await p.locator('#wopts button').first().click();
       else if (await p.locator('#wdialog').isVisible()) await p.keyboard.press('Enter');
       await p.clock.runFor(300);
     }

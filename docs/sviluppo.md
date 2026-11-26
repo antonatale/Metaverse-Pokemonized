@@ -17,6 +17,7 @@
 | `npm run sim`, `npm run sim:fun` | Duelli fra amici e decisioni fra creature |
 | `npx tsx tools/sim-story.ts trainers` | Allenatori contro squadre di riferimento |
 | `npx tsx tools/sim-covi.ts` | Covi, protagonisti e iniziali; `--tune` cerca una taratura |
+| `npx tsx tools/sim-levels.ts [n] [0,0.05]` | Quanto conta un livello: covi e selvatiche con la squadra sopra o sotto, per valori di `LEVEL_TUNE.per` |
 | `npx tsx tools/sim-legend.ts giano:36 <squadra>` | Una leggenda contro una squadra |
 | `npm run playtest` | partite automatiche: ogni protagonista per tre iniziali |
 | `npm run perf` | Misura il fotogramma con `dist/perf.html` |

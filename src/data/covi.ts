@@ -35,7 +35,7 @@ export const COVO_STEP = 3;
 
 export const COVI: Record<string, Covo> = {
   piazza: {
-    name: 'Il Palazzo del Popolo', city: 'formia', leader: 'costanzo', level: 6, crew: ['micetto', 'cicalina', 'micetto'], crewTune: [2, 1, 1, 2, -1],
+    name: 'Il Palazzo del Popolo', city: 'formia', leader: 'costanzo', level: 6, crew: ['micetto', 'cicalina', 'micetto'], crewTune: [2, 0, 0, 2, -1],
     badge: { id: 'gialosai', name: 'Spilla «Già lo sai»', mark: 'C', color: '#ffe45c' },
     intro: ['GIÀ LO SAI.', 'Questo è il mio palazzo, e questa è la mia repubblica. Se vuoi parlare, prima devi battermi.'],
     win: ['Daje Roma daje… va bene, hai vinto tu.', 'Apro il portone. Vigile, stacchi il microfono? Da qui sopra non sentivo più chi aveva chiesto la parola.', 'Tieni la spilla. Scendiamo in piazza: stavolta ascolto io.'],
@@ -51,7 +51,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   circolo: {
-    name: 'Il Tempio della Terra Rossa', city: 'formia', leader: 'forchetta', level: 6, crew: ['lumacotta', 'ramarrino', 'lumacotta'], crewTune: [0, 1, 0, 1, 0],
+    name: 'Il Tempio della Terra Rossa', city: 'formia', leader: 'forchetta', level: 6, crew: ['lumacotta', 'ramarrino', 'lumacotta'], crewTune: [0, 0, 1, 1, 0],
     badge: { id: 'peggio', name: 'Spilla «Poteva andare peggio»', mark: 'F', color: '#8fd0f6' },
     intro: ['Poteva andare peggio.', 'Dodici ore: un palleggio, una pennellata, una protesi. Non ho sbagliato niente. Palleggiamo? Chi perde paga il campo.'],
     win: ['Senti? La palla rimbalza una volta sola. Da stamattina, a ogni rimbalzo ne sentivo un altro da sotto il campo. E mi ripartiva il braccio.', 'Tieni la spilla. Mi fai luce un secondo? Ho visto qualcosa tra la rete e la riga di fondo.'],
@@ -67,7 +67,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   eclipse: {
-    name: 'La Torre Verde', city: 'formia', leader: 'valentin', level: 6, crew: ['granchietto', 'cinghialetto', 'gabbi'], crewTune: [1, 2, -2, 0, 0],
+    name: 'La Torre Verde', city: 'formia', leader: 'valentin', level: 6, crew: ['granchietto', 'cinghialetto', 'gabbi'], crewTune: [0, 1, -1, -1, 0],
     badge: { id: 'weee', name: 'Spilla «Weee!»', mark: 'W', color: '#ffa04a' },
     intro: ['Weee! Benvenuto nella mia torre. La nebbia? Effetti speciali.', 'Vuoi la spilla? Prima balli con me. Cioè, lotti.'],
     win: ['Weee… la musica si è fermata. Per un momento giuravo di stare nei Carpazi.', 'Prendi la spilla e resta qui. Ho sentito qualcuno battere le mani anche dopo che la musica è finita. Vado a vedere.'],
@@ -83,7 +83,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   pineta: {
-    name: 'Il Tempio del Basso', city: 'formia', leader: 'zendavid', level: 6, crew: ['olivella', 'ginestrella', 'olivella'], crewTune: [5, 2, 2, 3, 0],
+    name: 'Il Tempio del Basso', city: 'formia', leader: 'zendavid', level: 6, crew: ['olivella', 'ginestrella', 'olivella'], crewTune: [2, 0, 1, 0, 0],
     badge: { id: 'bau', name: 'Spilla «Bau»', mark: 'Z', color: '#ff8fc1' },
     intro: ['Bau.', 'Nel tempio la musica la scelgo io: Ye, a ripetizione. Se vinci, la spilla è tua.'],
     win: ['Bau. Aspetta che stacco l’ultima cassa.', 'Senti quel suono? L’impianto è spento e qualcuno sta ancora parlando sotto. Lo salvo prima che se ne vada.', 'La spilla è tua. Io le cuffie le tengo, ma abbasso.'],
@@ -99,7 +99,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   padel: {
-    name: 'La Torre delle Probabilità', city: 'formia', leader: 'andrea', level: 6, crew: ['stellina', 'civettina', 'stellina'], crewTune: [5, 3, -2, 4, 1],
+    name: 'La Torre delle Probabilità', city: 'formia', leader: 'andrea', level: 6, crew: ['stellina', 'civettina', 'stellina'], crewTune: [2, 1, 0, 3, 1],
     badge: { id: 'calcolato', name: 'Spilla «Ho calcolato tutto»', mark: 'V', color: '#9be7c4' },
     intro: ['Ho calcolato tutto.', 'Dalla cima di questa torre vedo tutte le probabilità di Formia. Statisticamente vinco io. Vuoi provare lo stesso?'],
     win: ['Sono cucinato.', 'La torre si abbassa. Gli intervalli li ho segnati anche quando pensavo che fossero i dadi. Aspetta, ti passo la tabella.', 'Questa spilla era l’unica cosa qui che mi tornava sempre in mano. Adesso tienila tu.'],
@@ -115,7 +115,7 @@ export const COVI: Record<string, Covo> = {
     }
   },
   palamendola: {
-    name: 'La Cupola', city: 'formia', leader: 'antonio', level: 6, crew: ['civettina', 'polpino', 'stellina'], crewTune: [0, 0, -1, 0, -2],
+    name: 'La Cupola', city: 'formia', leader: 'antonio', level: 6, crew: ['civettina', 'polpino', 'stellina'], crewTune: [0, 0, -1, 0, -1],
     badge: { id: 'statoarte', name: 'Spilla «Stato dell\'arte»', mark: 'A', color: '#c3a0ff' },
     intro: ['Ho già letto il paper di questa settimana.', 'Nella cupola gira la simulazione di Formia, e tu sei una variabile che non avevo previsto. Sfida?'],
     win: ['…mi servono più basi di controlli.', 'Ho spento il modello. Il Visore però disegna ancora quella linea. È partita da Gianola, guarda l’ora.', 'Tieni la spilla. Adesso posso salvare il tracciato senza che la simulazione riparta.'],
@@ -133,7 +133,7 @@ export const COVI: Record<string, Covo> = {
   /* Claudia's covo: her home in via Palazzo turned black castle (the invitation is won at Morgana). Her crew is the night of Mola: an urchin of the rocks under
      the tower, a snail of the old walls, an owl of the lane; they grow into creatures of the Calma, as she is */
   morgana: {
-    name: 'Il Castello del Padre', city: 'formia', leader: 'claudia', level: 6, crew: ['riccetto', 'lumacotta', 'civettina'], crewTune: [2, 1, 0, 1, 0],
+    name: 'Il Castello del Padre', city: 'formia', leader: 'claudia', level: 6, crew: ['riccetto', 'lumacotta', 'civettina'], crewTune: [2, 2, 1, 2, 1],
     badge: { id: 'tavoli', name: 'Spilla «Tavoli separati»', mark: 'D', color: '#d6403a' },
     intro: ['Ho capito il tuo punto. Ora senti il mio.', 'Ti sei seduto su tutte e due le sedie, uno alla volta. Bravo. Adesso si lotta.'],
     win: ['Aspetta. Le due sedie sono vuote e finalmente riesco a sentirti da qui.', 'Chi è passato prima aveva una torcia e scarpe tutte bianche di polvere. Ho tenuto accesa la lanterna per vedere dove andava.', 'Tieni la spilla. E lasciamo il portone aperto, almeno per stasera.'],

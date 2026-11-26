@@ -40,6 +40,7 @@ export interface Trainer {
 export const TRAINERS: Record<string, Trainer> = {
   animatore: {
     id: 'animatore', title: 'L\'animatore dell\'oratorio', prize: 25,
+    gift: { items: { tiella: 2 }, say: 'E prendi la merenda dell\'oratorio: due tielle, appena sfornate.' },
     team: [{ sp: 'olivella', lv: 6 }, { sp: 'cicalina', lv: 7 }],
     intro: ['All\'oratorio alleniamo anche le creature: questa Olivella è nata nell\'uliveto dietro il campo.', 'Facciamo una lotta? Due contro i tuoi.'],
     win: ['Bella lotta! Don Bosco diceva che si impara giocando.', 'Tieni, per la tua squadra.'],
@@ -48,6 +49,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   bambino: {
     id: 'bambino', title: 'Il bambino dell\'Eclipse', prize: 15,
+    gift: { items: { retino: 2 }, say: 'E questi due retini: tanto il secchiello l\'ho perso.' },
     team: [{ sp: 'granchietto', lv: 7 }],
     intro: ['Ho perso il secchiello, però sugli scogli ho trovato un Granchietto!', 'Facciamo una lotta? Se vinco io, mi aiuti a cercare il secchiello.'],
     win: ['Uffa! Il mio Granchietto è stanco.', 'Tieni, sono i soldi del gelato.'],
@@ -56,6 +58,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   studente: {
     id: 'studente', title: 'Lo studente della Vitruvio Pollione', prize: 40, smart: 1,
+    gift: { items: { retino2: 2 }, say: 'E due retini da pesca: me li ha dati la prof per la ricerca, ma io ormai ho finito.' },
     team: [{ sp: 'cicalina', lv: 10 }, { sp: 'civettina', lv: 11 }],
     intro: ['Per la tesina ho studiato le creature di Formia: le leggende, i tipi, le mosse.', 'Adesso faccio la prova pratica. Con te.'],
     win: ['Bocciato in pratica… ma la teoria era giusta.', 'Tieni, te li sei meritati.'],
@@ -64,6 +67,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   guida: {
     id: 'guida', title: 'La guida del museo', prize: 90, smart: 1,
+    gift: { items: { ambrosia: 1 }, say: 'E questa: un\'ampolla di ambrosia. Sui papiri del museo c\'è la ricetta, l\'ho rifatta io: chi la beve sale di un livello.' },
     team: [{ sp: 'riccione', lv: 17 }, { sp: 'granchione', lv: 18 }, { sp: 'civettona', lv: 19 }],
     intro: ['Al museo custodiamo le statue di Formiae; io custodisco anche le creature delle sue leggende.', 'Tre, come le età della storia di Formia: vediamo se le conosci.'],
     win: ['Notevole. Saresti un buon custode anche tu.', 'Prendi: è la ricompensa del museo.'],
@@ -74,6 +78,7 @@ export const TRAINERS: Record<string, Trainer> = {
      begins, to the Appia of the Acervara and up the Aurunci, at the levels of the creatures that live there */
   bagnante: {
     id: 'bagnante', title: 'La bagnante di Gianola', prize: 15,
+    gift: { items: { tiella: 1 }, say: 'E prendi questa tiella: l\'avevo portata per il pranzo in spiaggia.' },
     team: [{ sp: 'riccetto', lv: 4 }],
     intro: ['Torno adesso dagli scogli: guarda che cosa mi è venuto dietro!', 'Tu ce l\'hai una creatura? Facciamo una lotta, una sola.'],
     win: ['Brava la tua! Il mio Riccetto ci è rimasto male.', 'Tieni: sono i soldi del ghiacciolo.'],
@@ -84,6 +89,7 @@ export const TRAINERS: Record<string, Trainer> = {
      on the road to Gianola */
   skate: {
     id: 'skate', title: 'La ragazza con lo skate', prize: 25,
+    gift: { items: { ciambella: 1 }, say: 'E una ciambella all\'anice: falla portare alla tua creatura, correrà come me in discesa.' },
     team: [{ sp: 'granchietto', lv: 5 }, { sp: 'cicalina', lv: 6 }],
     intro: ['Ehi! Ho girato mezza Scauri con lo skate, e queste due mi sono venute dietro dalla spiaggia.', 'Una lotta veloce, prima che faccia buio?'],
     win: ['Va bene, va bene: hai vinto tu. La prossima la vinco io.', 'Tieni, sono i soldi della pizzetta.'],
@@ -92,6 +98,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   archeologa: {
     id: 'archeologa', title: 'L\'archeologa di Gianola', prize: 30,
+    gift: { items: { argento: 1 }, say: 'Negli scavi ho trovato un retino d\'argento, chissà di chi era. Tienilo tu.' },
     team: [{ sp: 'lumacotta', lv: 5 }, { sp: 'ginestrella', lv: 6 }],
     intro: ['Sto rilevando le terrazze della villa: erano tre, una sotto l\'altra, fino al mare.', 'Le creature della macchia mi fanno compagnia mentre misuro. Le vuoi conoscere?'],
     win: ['Brave, le tue. Lo segno sul taccuino, accanto alle misure.', 'Tieni: è il rimborso della trasferta.'],
@@ -100,6 +107,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   polparo: {
     id: 'polparo', title: 'Il pescatore di polpi', prize: 35,
+    gift: { items: { nassa: 2 }, say: 'E due nasse: per le creature di mare valgono tre retini.' },
     team: [{ sp: 'riccetto', lv: 7 }, { sp: 'stellina', lv: 7 }],
     intro: ['Sotto la punta, tra gli scogli, ci sono le tane dei polpi. E non solo quelle.', 'Queste due le ho trovate stamattina. Vediamo se le tue sanno nuotare.'],
     win: ['Va bene, hai vinto: oggi il polpo lo offro io.', 'Tieni, sono i soldi del pescato.'],
@@ -108,6 +116,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   ciclista: {
     id: 'ciclista', title: 'La ciclista dell\'Appia', prize: 45,
+    gift: { items: { balsamo: 2 }, say: 'E due balsami: in salita mi servono, ma tu ne avrai più bisogno.' },
     team: [{ sp: 'cicalina', lv: 9 }, { sp: 'olivella', lv: 10 }],
     intro: ['Da Formia a Itri l\'Appia sale, e io la faccio tutte le mattine.', 'Le mie creature mi vengono dietro in salita. Le tue ce la fanno?'],
     win: ['Mi hai staccata. Succede di rado.', 'Tieni: ci pago il caffè in cima.'],
@@ -116,6 +125,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   contadino: {
     id: 'contadino', title: 'Il contadino dell\'Acervara', prize: 50, smart: 1,
+    gift: { items: { oliva: 1 }, say: 'E un\'oliva di Gaeta del mio uliveto: falla portare a una creatura.' },
     team: [{ sp: 'olivella', lv: 10 }, { sp: 'ginestrella', lv: 11 }],
     intro: ['Queste terrazze le tengono su le macere, i muretti a secco: pietra su pietra, senza calce.', 'E tra gli ulivi ci vivono loro due. Vuoi vedere come lavorano?'],
     win: ['Hai le mani buone, ragazzo. Con le creature come con la terra.', 'Tieni, per il disturbo.'],
@@ -124,6 +134,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   pastore: {
     id: 'pastore', title: 'Il pastore degli Aurunci', prize: 70, smart: 1,
+    gift: { items: { ambrosia: 1 }, say: 'E un\'ampolla di ambrosia: miele e fichi degli Aurunci, come la facevano i pastori. Chi la beve sale di un livello.' },
     team: [{ sp: 'cinghialetto', lv: 13 }, { sp: 'ginestrella', lv: 13 }, { sp: 'falchetto', lv: 14 }],
     intro: ['Quassù si sale da sempre con le bestie. E da sempre ci sono anche le altre, quelle dei giganti.', 'Le mie tengono lontani i cinghiali dal gregge. Vediamo se tengono lontano anche te.'],
     win: ['Piano, piano. Hai vinto.', 'Prendi: è il prezzo di una forma di cacio.'],
@@ -132,6 +143,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   escursionista: {
     id: 'escursionista', title: 'L\'escursionista del Redentore', prize: 80, smart: 1,
+    gift: { items: { ambrosia: 1 }, say: 'E questa ampolla di ambrosia: in vetta al Redentore la portano tutti, per la discesa.' },
     team: [{ sp: 'civettina', lv: 14 }, { sp: 'falchetto', lv: 15 }, { sp: 'cinghialetto', lv: 15 }],
     intro: ['Vengo dalla cima: lassù il vento porta via il cappello.', 'Mi hanno seguito in tre per tutto il sentiero. Li alleniamo un po\'?'],
     win: ['Che gambe! E che squadra.', 'Tieni: con questi ti compri l\'acqua per la salita.'],
@@ -177,6 +189,7 @@ export const TRAINERS: Record<string, Trainer> = {
      meets him three times: at the park, on the Appia, and after Mamurra, for the title of the strongest in Formia */
   'rivale-1': {
     id: 'rivale-1', title: 'Tullio, il nipote della guardaparco', prize: 30, rival: 1, team: [],
+    gift: { items: { retino: 3 }, say: 'Tieni, tre retini della nonna. Ne ha tanti.' },
     intro: ['Ehi, aspetta! Sono Tullio, il nipote della guardaparco. La nonna mi ha fatto scegliere dopo di te.', 'Ho preso {rival}. {why}', 'Le nostre creature sono appena nate: vediamo subito chi è più forte!'],
     win: ['Cosa?! Avevo scelto quella giusta, eppure…', 'Va bene, stavolta hai vinto tu. Ma mi alleno, e la prossima volta ti batto!'],
     lose: ['Visto? La nonna aveva ragione. Allena il tuo {mine} e riprova quando vuoi: io sto qui.'],
@@ -184,6 +197,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   'rivale-2': {
     id: 'rivale-2', title: 'Tullio, il nipote della guardaparco', prize: 80, smart: 1, rival: 2, team: [],
+    gift: { items: { ambrosia: 1 }, say: 'E questa: un\'ampolla di ambrosia. Me l\'aveva data la nonna per allenarmi, ma… prendila tu.' },
     intro: ['{hero}! Ti ho visto passare: ho girato tutta Formia per allenarmi, dalla pineta al porto.', 'Guarda il mio {rival}: è cambiato! E ho preso anche un\'altra creatura. Rivincita?'],
     win: ['Di nuovo! Ma come fai?', 'La nonna dice che le creature crescono con chi gli vuole bene. Forse ha ragione lei.', 'Va\' pure da Cicerone. Ma non è finita, eh!'],
     lose: ['Stavolta tocca a me! Le tue creature sono stanche: falle riposare e torna.'],
@@ -191,6 +205,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   'rivale-3': {
     id: 'rivale-3', title: 'Tullio, il nipote della guardaparco', prize: 250, smart: 2, rival: 3, team: [],
+    gift: { items: { ambrosia: 2 }, say: 'Tieni anche queste: due ampolle di ambrosia. Io con le mie creature ho finito di correre.' },
     intro: ['{hero}. Hai battuto il fantasma di Mamurra: la nonna non parla d\'altro.', 'Però adesso il più forte di Formia chi è? Tu o io?', 'Il mio {rival} ha preso la sua forma più grande. Con tutto quello che abbiamo: niente scuse!'],
     win: ['…Sei tu il più forte di Formia.', 'La nonna aveva visto giusto, il giorno che ti ha dato {mine}. Grazie per le lotte, {hero}.', 'Quando vuoi la rivincita, sono qui al parco.'],
     lose: ['Il più forte di Formia sono io! Per adesso. Torna quando vuoi.'],
@@ -215,6 +230,7 @@ export const TRAINERS: Record<string, Trainer> = {
   /* out at sea, for whoever gets that far (swimming with a sea creature, or on Nicola's board) */
   sup: {
     id: 'sup', title: 'La ragazza col SUP', prize: 70, smart: 1,
+    gift: { items: { ambrosia: 1 }, say: 'E un\'ampolla di ambrosia: me l\'ha data il bagnino, ma a me in acqua non serve.' },
     team: [{ sp: 'cefalino', lv: 14 }, { sp: 'medusella', lv: 15 }, { sp: 'delfi', lv: 16 }],
     intro: ['Ehi! Fin qui a nuoto? Rispetto.', 'Io vengo al largo col SUP ogni mattina, prima che si alzi il vento. I miei amici del mare vengono con me.', 'Lotta sull\'acqua: chi cade, paga il cornetto.'],
     win: ['In acqua sei più forte che a terra, eh.', 'Il cornetto te lo offro al bar dell\'Eclipse.'],
@@ -223,6 +239,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   sub: {
     id: 'sub', title: 'Il sub delle secche', prize: 90, smart: 1,
+    gift: { items: { ambrosia: 1 }, say: 'Questa ampolla l\'ho trovata sul fondo, chiusa con la cera: è ambrosia. Prendila tu.' },
     team: [{ sp: 'murenaccia', lv: 17 }, { sp: 'riccione', lv: 18 }, { sp: 'astromarina', lv: 19 }],
     intro: ['Shhh. Sotto di noi ci sono le secche: venti metri d\'acqua, posidonia e anfore rotte.', 'Ci vengo a vedere le murene. Ma una mi ha seguito su, e adesso lotta con me.', 'Pronto? Trattieni il fiato.'],
     win: ['Bolle… Hai il fiato lungo, tu.', 'La boa gialla segna le secche: lì sotto vive il più grosso dei Delfaro, dicono.'],
@@ -231,6 +248,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   pescatoreLargo: {
     id: 'pescatoreLargo', title: 'Il pescatore del gozzo', prize: 120, smart: 2,
+    gift: { items: { ambrosia: 2 }, say: 'E due ampolle di ambrosia: in sessant\'anni di mare ne ho tirate su poche, ma te le sei meritate.' },
     team: [{ sp: 'granchione', lv: 20 }, { sp: 'cefaldrago', lv: 22 }, { sp: 'delfaro', lv: 23 }],
     intro: ['Uè, guagliò! Tu nuoti fin quaggiù e io col gozzo ci metto mezz\'ora.', 'Sessant\'anni che pesco nel golfo, da Mola a Gianola. Le creature del mare mi conoscono tutte.', 'Facciamo così: se vinci tu, ti do il pesce di oggi. Se vinco io, mi tiri su le reti.'],
     win: ['Mannaggia! Sessant\'anni di mare e un ragazzino mi batte.', 'Tieni, il pesce di oggi lo vendi al porto. E salutami il golfo.'],
@@ -250,6 +268,7 @@ export const TRAINERS: Record<string, Trainer> = {
   },
   anziano: {
     id: 'anziano', title: 'Il signore di Castellone', prize: 150, smart: 2,
+    gift: { items: { ambrosia: 2 }, say: 'E due ampolle di ambrosia, di quella antica: a Castellone si fa così da quando c\'erano le mura.' },
     team: [{ sp: 'ramarrone', lv: 22 }, { sp: 'granchione', lv: 24 }, { sp: 'muraglione', lv: 28 }],
     intro: ['Lo sai chi ha messo le pietre delle mura di Castellone? I giganti, dicono. E io custodisco la loro creatura.', 'Se vuoi vedere il Dracastello, prima devi battere gli altri due.'],
     win: ['Duemila anni di mura… e tu le hai scavalcate.', 'Tieni. E rispetta le pietre di Castellone.'],

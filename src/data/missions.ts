@@ -35,7 +35,7 @@ export const MISSIONS: Mission[] = [
       { q: 'Una lucina resta rossa. Dietro la scatola un cavo penzola nel vuoto.', a: ['Lo rimetti dov\'era', 'Chiedi all\'IA', 'Dichiari il cavo fuori standard'], ok: 0, yes: 'Tutte verdi. La vicina si fa il segno della croce.', no: 'Il cavo continua a penzolare, indifferente.' }
     ],
     done: ['Sei un genio! Tieni, ho fatto la tiella. Ah, e questa creatura dorme sul mio balcone da mesi: portatela via, ti prego.'],
-    pay: { money: 60, items: { tiella: 3 }, mon: 'lumacotta' } },
+    pay: { money: 60, items: { tiella: 3, ambrosia: 1 }, mon: 'lumacotta' } },
   { id: 'comizio', who: 'costanzo', npc: 'tifoso', name: 'Il comizio del bar', where: 'Il bar di Mola',
     wait: ['Qui al bar non si ascolta più nessuno: chi vuole la tiella di polpo contro chi la vuole di scarola. Ci vorrebbe uno che sa parlare alla gente. Uno che non si ferma mai.', 'Ma sì: portami Costanzo.'],
     ask: ['Costanzo! Il bar è spaccato in due. Sali sulla sedia e fai qualcosa.'],
@@ -45,13 +45,13 @@ export const MISSIONS: Mission[] = [
       { q: 'L\'ultimo, il più cattivo: «E il bidet?»', a: ['Aboliamolo', 'Il bidet non si tocca', 'Quale bidet?'], ok: 1, yes: 'Applausi. Qualcuno piange.', no: 'Fischi. Da quella parte non si passa.' }
     ],
     done: ['Tiella di polpo E di scarola: ha vinto la democrazia. Offre il bar.', 'Questa gatta dorme sul bancone e non ascolta nessuno. A te però ti guarda.'],
-    pay: { money: 80, mon: 'micetto' } },
+    pay: { money: 80, items: { ambrosia: 1 }, mon: 'micetto' } },
   { id: 'finale', who: 'forchetta', npc: 'tennista', name: 'La finale del circolo', where: 'Il Bruno Zauli',
     wait: ['Sto cercando Forchetta. Gli devo una rivincita da due anni, e non mi risponde ai messaggi. O mi risponde cose che non capisco.'],
     ask: ['Forchetta! Finalmente. Niente racchette, oggi: lottiamo con le creature. Chi perde paga il campo.'],
     trainer: 'tennista',
     done: ['Poteva andare peggio, eh? Per me no.', 'Tieni, questo falco viene sempre a guardare le partite. Tifa per chi vince.'],
-    pay: { money: 90, items: { corno: 1 }, mon: 'falchetto' } },
+    pay: { money: 90, items: { corno: 1, ambrosia: 1 }, mon: 'falchetto' } },
   { id: 'conti', who: 'andrea', npc: 'gelataio', name: 'I conti del gelataio', where: 'Piazza Marconi',
     wait: ['Con questi conti impazzisco. Mi servirebbe uno bravo con i numeri. Andrea, quello del padel, dicono che calcoli tutto.'],
     ask: ['Andrea! Tre righe di conti e ti faccio un cono doppio.'],
@@ -61,13 +61,13 @@ export const MISSIONS: Mission[] = [
       { q: 'Se regalo un cono ogni dieci, su 40 coni quanti ne regalo?', a: ['2', '10', '4'], ok: 2, yes: 'Quattro. E consigli di smettere.', no: 'Non è il tuo giorno. Riprova.' }
     ],
     done: ['Avevi ragione: smetto di regalarli. Tieni, questa stella marina è caduta nella vaschetta del pistacchio. Non chiedermi come.'],
-    pay: { money: 70, items: { ciambella: 1 }, mon: 'stellina' } },
+    pay: { money: 70, items: { ciambella: 1, ambrosia: 1 }, mon: 'stellina' } },
   { id: 'festa', who: 'valentin', npc: 'barista', name: 'La festa all\'Eclipse', where: 'Eclipse beach, Vindicio',
     wait: ['Stasera qui non si muove nessuno. Ci vorrebbe l\'anima della festa. Valentin, dove sei quando servi?'],
     ask: ['Valentin! Il dj si è fermato, e c\'è uno che dice che bisogna andare a dormire alle dieci. Pensaci tu.'],
     trainer: 'guastafeste',
     done: ['Weee! Sono rimasti tutti fino all\'alba. Anche quello delle dieci.', 'Questa lucciola non se ne vuole andare. Viene con te?'],
-    pay: { money: 90, items: { oliva: 1 }, mon: 'lucciolina' } },
+    pay: { money: 90, items: { oliva: 1, ambrosia: 1 }, mon: 'lucciolina' } },
   { id: 'serata', who: 'zendavid', npc: 'oste', name: 'La serata a Morgana', where: 'Birreria Morgana',
     wait: ['Stasera il palco è vuoto, e la sala si annoia. Mi serve uno che faccia ridere. Più o meno. Zendavid, per esempio.'],
     ask: ['Zendavid! Sali sul palco. Il pubblico è difficile: finisci le battute, e guarda di farle ridere.'],
@@ -77,7 +77,7 @@ export const MISSIONS: Mission[] = [
       { q: 'Qual è il colmo per un elettricista?', a: ['Prendere la scossa', 'Avere le bollette', 'Restare folgorato da una ragazza'], ok: 2, yes: 'Stavolta ridono tutti!', no: '…nessuno ride. Però un cane abbaia.' }
     ],
     done: ['Non ci credo: hanno riso. Tieni, questa ginestra è cresciuta nel vaso del palco. È tua.'],
-    pay: { money: 80, items: { fetta: 1 }, mon: 'ginestrella' } },
+    pay: { money: 80, items: { fetta: 1, ambrosia: 1 }, mon: 'ginestrella' } },
   /* Claudia: two at a table of Morgana fighting over nothing, as Costanzo and she do over everything; she knows how it
      ends well: one at a time, or two tables for one evening */
   { id: 'tavolo', who: 'claudia', npc: 'avventore', name: 'Il tavolo che litiga', where: 'Birreria Morgana',
@@ -89,5 +89,5 @@ export const MISSIONS: Mission[] = [
       { q: 'Non sono d\'accordo neanche adesso. Come chiudi la serata?', a: ['Chi perde paga il giro', 'Tavoli separati, per stasera: domani se ne riparla', 'Chiami Costanzo a decidere'], ok: 1, yes: 'Ognuno al suo tavolo, e ognuno con la sua idea. Ma a fine serata brindano insieme.', no: 'Ci vorrebbe un\'altra ora. E Costanzo ne vorrebbe tre.' }
     ],
     done: ['Grazie, Claudia. Mamurra o Cicerone, ne riparliamo domani. Uno alla volta.', 'Tieni: questo Micetto dorme sotto il nostro tavolo da settimane. Con te sta meglio.'],
-    pay: { money: 70, items: { tiella: 2 }, mon: 'micetto' } }
+    pay: { money: 70, items: { tiella: 2, ambrosia: 1 }, mon: 'micetto' } }
 ];

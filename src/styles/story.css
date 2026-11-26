@@ -92,7 +92,11 @@ div.pick { cursor: default; }
 /* the next stop of the tour, under the place name: an arrow that points to it */
 .wgoal { position: absolute; top: 52px; left: 0; max-width: min(78vw, 340px); display: flex; align-items: center; gap: 7px; padding: 4px 11px 4px 7px; border: 2px solid var(--line); border-radius: 8px;
   background: var(--card); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-align: left; cursor: pointer; font: 15px/1.15 var(--font-display); }
-.wgoal-ic { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--warn); color: var(--on-hl); transition: transform .25s ease; }
+.wgoal-ic { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid var(--line); border-radius: 50%; background: var(--warn); color: var(--on-hl); transition: transform .35s cubic-bezier(.3,1.5,.5,1); box-sizing: border-box; }
+/* the arrow in the corner nudges toward where it points (it turns with its circle) */
+.wgoal-ic svg { animation: goal-nudge 1.1s ease-in-out infinite; }
+@keyframes goal-nudge { 50% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .wgoal-ic svg { animation: none; } }
 .wgoal-t { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wgoal-t small { display: block; font: 700 10px/1.25 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .wgoal.new { animation: wgoal-new 1.5s ease; }

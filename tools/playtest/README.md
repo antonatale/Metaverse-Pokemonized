@@ -27,4 +27,4 @@ node tools/playtest/report.mjs antonio,zendavid gabbi prudente   # una scelta
 - I ganci che usa: `WORLD._debug.goal`, `stops`, `lv`, `skipStop`, `hiding`, `grass`, `way`, `entry`, `right`, `route`, `pos` e `UI._debug.pick`,
   `info`, `suggest`.
 
-Dal 23 novembre, quando la freccia dice «Prima prendi dei retini», il giocatore va dal venditore, sceglie «Compra» e prende cinque retini; in lotta lancia solo retini (non cibo o caffè).
+Dal 23 novembre, quando la freccia dice «Prima prendi dei retini», il giocatore va dal venditore, sceglie «Compra» e prende cinque retini; in lotta lancia solo retini (non cibo o ambrosia). Dal 24 novembre nei negozi tocca prima il retino sullo scaffale e poi «Compra»; le carte dei premi si chiudono con il loro unico pulsante, come le altre.

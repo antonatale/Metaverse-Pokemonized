@@ -295,12 +295,25 @@ export function buy(it: ItemId, n?: number): boolean {
 }
 /** how many of a thing the money in his pocket pays for */
 export function affordable(it: ItemId): number { return Math.floor(money() / priceFor(it)); }
-/** the things in the bag that are used outside a battle, from the menu: the coffee */
-export const USE_ITEMS: ItemId[] = ['caffe', 'alici', 'manuale'];
-/** what a coffee gives whoever drinks it; it does not buy levels: no experience past COFFEE_CAP (R8) */
-export const COFFEE_XP = 30;
-/** the level past which a coffee only warms the heart: the level of the next covo (6, then 3 more for each pin) */
-export function coffeeCap(): number { return 6 + 3 * st.badges.length; }
+/** the things in the bag that are used outside a battle, from the menu: the ambrosia, the alici, the manuals */
+export const USE_ITEMS: ItemId[] = ['ambrosia', 'alici', 'manuale'];
+/** who can be given the ambrosia: everyone who fights for the one being played, and the creatures waiting at home */
+export function ambrosiaFor(): string[] { return team().concat(homeMons().map(function (m) { return m.uid; })); }
+/** the experience that takes a fighter up n levels from where it is, keeping how far it was toward the next one */
+export function levelsXp(key: string, n: number): number {
+  var lv = level(key).lv, x = 0;
+  for (var k = 0; k < n; k++) x += toNext(lv + k);
+  return x;
+}
+/** n ampolle of ambrosia (all those in the bag at most) for someone: n levels up, whatever its level, and a creature is
+    fond of whoever gives it */
+export function giveAmbrosia(key: string, n?: number): Growth | null {
+  var k = Math.min(Math.max(1, Math.floor(n || 1)), has('ambrosia'));
+  if (k < 1) return null;
+  st.bag!.ambrosia = has('ambrosia') - k;
+  addBond(key, 4 * k);
+  return gainXp(key, levelsXp(key, k));
+}
 /** a cartoccio of alici for a creature: its bond with Antonio grows (a heart is 20) */
 export const ALICI_BOND = 8;
 export function feedAlici(key: string, n?: number): number {
@@ -319,14 +332,6 @@ export function readManual(): boolean {
 }
 /** how many manuals are still on the shelf of the bookshop */
 export function manualsLeft(total: number): number { return Math.max(0, total - (st.books || 0) - has('manuale')); }
-/** n coffees (all those in the bag at most) for one of the team: experience, and a creature likes it */
-export function drinkCoffee(key: string, n?: number): Growth | null {
-  var k = Math.min(Math.max(1, Math.floor(n || 1)), has('caffe'));
-  if (k < 1) return null;
-  st.bag!.caffe = has('caffe') - k;
-  addBond(key, 3 * k);
-  return gainXp(key, level(key).lv < coffeeCap() ? COFFEE_XP * k : 0);
-}
 /** what goes into a battle, and what is left of it after */
 /** what can go into a battle: the nets (data/nets.ts) and the tiella */
 export const BAG_ITEMS: ItemId[] = (NET_IDS as ItemId[]).concat(['tiella', 'balsamo']);
@@ -362,7 +367,7 @@ export function prizeText(p: DexPrize): string {
   if (p.coins) bits.push(coins(p.coins));
   return bits.join(' e ');
 }
-const PLURAL: Partial<Record<ItemId, string>> = { retino: 'retini', retino2: 'retini da pesca', argento: 'retini d\'argento', oro: 'retini d\'oro', nassa: 'nasse', lampara: 'reti della lampara', tiella: 'fette di tiella' };
+const PLURAL: Partial<Record<ItemId, string>> = { ambrosia: 'ampolle di ambrosia', retino: 'retini', retino2: 'retini da pesca', argento: 'retini d\'argento', oro: 'retini d\'oro', nassa: 'nasse', lampara: 'reti della lampara', tiella: 'fette di tiella' };
 /** the nets Antonio has, all kinds together */
 export function netsLeft(): number { return NET_IDS.reduce(function (n, k) { return n + has(k); }, 0); }
 

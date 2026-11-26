@@ -11,11 +11,12 @@ import { SPECIES } from '../data/creatures';
 import { NET_IDS } from '../data/nets';
 import { chosen, decide, endFlag, stonesKept, tullioMood } from '../story/choices';
 import { rivalSpeaker } from '../story/rival-who';
-import { addCreature, creatureOf, firstHuman, has, monsOf, nameOf, own, prizeText, heroText } from '../story/growth';
+import { addCreature, creatureOf, firstHuman, has, monsOf, nameOf, own, heroText } from '../story/growth';
 import type { Mission } from '../data/missions';
 import { CHARS } from '../data/characters';
 import { COVI } from '../data/covi';
 import { COVO_NOTES } from '../data/finale';
+import { loot, type Loot } from './bag';
 import { canDo, missionDone, missionOf, missionOfTrainer, missionPay, tooEarly, myMissions } from '../story/missions';
 import { esc, $ } from './dom';
 import { say, sheet, closeSheet, renderHud, dexNotice, trainerFight, foesLine, type DialogOpt } from './story-screen';
@@ -84,9 +85,13 @@ function quiz(m: Mission, who: string) {
 }
 function missionDoneNow(m: Mission, who: string) {
   say(m.done, who, null, function () {
-    var c = creatureOf(missionPay(m)), name = nameOf(c!.uid);
+    var c = creatureOf(missionPay(m)), name = nameOf(c!.uid), items = m.pay.items || {};
     save(); renderHud(); sfx('badge'); dexNotice();
-    say(['Per la missione «' + m.name + '»: ' + prizeText({ n: 0, give: m.pay.items || {}, coins: m.pay.money }) + '.', name + (c && c.home ? ' ti aspetta a casa: la squadra è al completo.' : ' entra nella squadra!')]);
+    /* what it brings, on a card with the pictures (ui/bag.ts); then the creature that comes along */
+    var got: Loot[] = [{ id: 'sesterzi', n: m.pay.money }].concat(Object.keys(items).map(function (k) { return { id: k, n: (items as Record<string, number>)[k] }; }));
+    loot('Missione compiuta!', got, '«' + m.name + '»', function () {
+      say([name + (c && c.home ? ' ti aspetta a casa: la squadra è al completo.' : ' entra nella squadra!')]);
+    });
   });
 }
 /** the missions in the menu: who can do each one, and where */

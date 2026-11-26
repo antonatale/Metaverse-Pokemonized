@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { STOPS, storyStops } from '../../src/story/goals';
 import { HIDINGS } from '../../src/data/encounters';
 import { st } from '../../src/save/story-progress';
-import { addCreature, drinkCoffee, level, coffeeCap, COFFEE_XP } from '../../src/story/growth';
+import { addCreature, giveAmbrosia, level, has } from '../../src/story/growth';
+import { levelMult } from '../../src/data/tuning';
 
-/* R8 and R10 of REVISIONE.md: the coffee does not buy levels; the tour makes the player catch and build a team. */
+/* R10 of REVISIONE.md: the tour makes the player catch and build a team. The ambrosia (24 November 2026, in the place of
+   the coffee) buys a level at any level, on purpose: Antonio asked for it, and it is dear. */
 describe('the tour teaches the game', () => {
   it('asks for a second creature right after the first and three before the Cisternone, before the group finale', () => {
     const ids = STOPS.map((s) => s.id);
@@ -26,14 +28,28 @@ describe('the tour teaches the game', () => {
     strong.forEach((m) => expect(m.after).toBe('pietra-mura'));
   });
 });
-describe('the coffee', () => {
-  it('gives experience only below the cap, and the bond always', () => {
-    st.badges = []; st.bag = { caffe: 20 }; st.lv = {}; st.mons = [];
+describe('the ambrosia', () => {
+  it('takes whoever drinks it up exactly one level each, keeping the way to the next, at any level', () => {
+    st.badges = []; st.bag = { ambrosia: 5 }; st.lv = {}; st.mons = [];
     const uid = addCreature('polpino', 5);
-    const g = drinkCoffee(uid, 10)!;
-    expect(g.xp).toBe(10 * COFFEE_XP);
-    st.lv![uid] = { lv: coffeeCap(), xp: 0 };
-    expect(drinkCoffee(uid, 5)!.xp).toBe(0);
-    expect(level(uid).lv).toBe(coffeeCap());
+    st.lv![uid] = { lv: 12, xp: 40 };
+    const g = giveAmbrosia(uid, 2)!;
+    expect([g.from, g.to]).toEqual([12, 14]);
+    expect(level(uid)).toEqual({ lv: 14, xp: 40 });
+    st.lv![uid] = { lv: 60, xp: 0 };
+    expect(giveAmbrosia(uid, 1)!.to).toBe(61);
+    expect(has('ambrosia')).toBe(2);
+    expect(giveAmbrosia(uid, 9)!.to).toBe(63);
+    expect(giveAmbrosia(uid, 1)).toBeNull();
+  });
+});
+describe('the levels in battle', () => {
+  it('make a blow stronger for each level above, weaker below, within bounds, and nothing in the free mode', () => {
+    expect(levelMult(10, 10)).toBe(1);
+    expect(levelMult(14, 10)).toBeCloseTo(1.2);
+    expect(levelMult(10, 14)).toBeCloseTo(0.8);
+    expect(levelMult(60, 10)).toBe(1.8);
+    expect(levelMult(10, 60)).toBe(0.6);
+    expect(levelMult(undefined, 10)).toBe(1);
   });
 });

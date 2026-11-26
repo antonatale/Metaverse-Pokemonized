@@ -45,3 +45,13 @@ export const MAGIC_TUNE = { se: 1.12, nve: 0.9 };
     off a blow until it is broken, and how much more it takes for `open` turns once it is */
 export const FIELD_TUNE = { boost: 1.1, max: 3, heal: 0.15, shield: 0.8, broken: 1.3, open: 2 };
 export const SWITCH_TUNE = { guard: 0.5, rest: 0.05, margin: 0.15, chance: 0.75 };
+/** the levels (story battles only: the free mode has none). The numbers of a fighter grow little with a level
+    (data/growth.ts, atLevel), so on top of them a blow does `per` more for each level the one who strikes is above the
+    one it hits, and `per` less for each level below, between `min` and `max` (24 November 2026, Antonio: «voglio che ci
+    sia più differenza tra i livelli»). Measured with tools/sim-levels.ts */
+export const LEVEL_TUNE = { per: 0.05, min: 0.6, max: 1.8 };
+/** what the levels do to a blow of a fighter at level `a` on one at level `d` (1 when either has none) */
+export function levelMult(a?: number, d?: number): number {
+  if (!a || !d) return 1;
+  return Math.max(LEVEL_TUNE.min, Math.min(LEVEL_TUNE.max, 1 + LEVEL_TUNE.per * (a - d)));
+}
