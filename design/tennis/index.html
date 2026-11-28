@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0d1423">
+    <title>Tennis sulla terra · Telepilo</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <div class="brand">
+          <span class="brand-ball" aria-hidden="true"></span>
+          <div>
+            <p class="wordmark">Telepilo</p>
+            <h1>Tennis sulla terra</h1>
+          </div>
+        </div>
+        <div class="play-bar">
+          <div class="play-modes" role="group" aria-label="Modalità di gioco">
+            <button id="practice-mode" type="button" aria-pressed="true">Allenamento</button>
+            <button id="match-mode" type="button" aria-pressed="false">Tie-break</button>
+          </div>
+          <div class="lineup" id="lineup" hidden>
+            <label><span>Tu</span><select id="character" aria-label="Il tuo personaggio">
+              <option value="claudia">Claudia</option><option value="andrea">Andrea</option><option value="forchetta">Forchetta</option>
+            </select></label>
+            <label><span>Contro</span><select id="rival" aria-label="Avversario">
+              <option value="forchetta">Forchetta</option><option value="andrea">Andrea</option><option value="claudia">Claudia</option>
+            </select></label>
+          </div>
+        </div>
+        <div class="utilities">
+          <button id="audio" type="button" aria-pressed="true" aria-label="Audio"><span aria-hidden="true">♪</span> <span class="utility-text">Audio</span></button>
+          <button id="pause" type="button" aria-label="Pausa" aria-keyshortcuts="Escape"><span class="pause-icon" aria-hidden="true"></span> <span class="utility-text">Pausa</span></button>
+        </div>
+      </header>
+
+      <div class="arena">
+        <div class="toolbar">
+          <div class="feed-choices" id="feed-choices" role="group" aria-label="Tipo di lancio">
+            <button id="center" type="button" aria-pressed="true" data-feed="center">Centrale</button>
+            <button id="backhand" type="button" aria-pressed="false" data-feed="backhand">Rovescio</button>
+            <button id="wide" type="button" aria-pressed="false" data-feed="wide">Larga</button>
+            <button id="short" type="button" aria-pressed="false" data-feed="short">Corta</button>
+            <button id="volley" type="button" aria-pressed="false" data-feed="volley">Volée</button>
+            <button id="service-drill" type="button" aria-pressed="false">Servizio</button>
+          </div>
+          <label class="difficulty" id="drill-options" hidden><span>Battuta</span>
+            <select id="drill-turn" aria-label="Battuta da provare">
+              <option value="1d">Prima da destra</option><option value="2d">Seconda da destra</option>
+              <option value="1s">Prima da sinistra</option><option value="2s">Seconda da sinistra</option>
+            </select>
+          </label>
+          <div class="serve-strip" id="serve-strip" hidden>
+            <strong id="serve-title">Prima di servizio</strong><span id="serve-detail">Tu al servizio</span>
+          </div>
+          <label class="difficulty"><span>Difficoltà</span>
+            <select id="difficulty" aria-label="Difficoltà">
+              <option value="easy">Facile</option>
+              <option value="normal">Normale</option>
+              <option value="hard">Difficile</option>
+            </select>
+          </label>
+          <div class="score" id="score" aria-label="Punti della sessione">
+            <span><img id="character-icon" alt="" width="29" height="29" hidden><span id="player-name">Tu</span><strong id="player-score">0</strong></span>
+            <span><img id="rival-icon" alt="" width="29" height="29" hidden><span id="opponent-name">CPU</span><strong id="cpu-score">0</strong></span>
+          </div>
+        </div>
+
+        <div class="court-shell" id="court" tabindex="0" role="region" aria-label="Campo da tennis" aria-describedby="instructions">
+          <canvas id="scene" aria-hidden="true"></canvas>
+          <div class="matchup" id="matchup" hidden aria-hidden="true">
+            <figure class="matchup-card" id="near-showcase">
+              <canvas id="near-portrait"></canvas><figcaption id="near-showcase-name">Claudia</figcaption>
+            </figure>
+            <span class="versus">VS</span>
+            <figure class="matchup-card" id="far-showcase">
+              <canvas id="far-portrait"></canvas><figcaption id="far-showcase-name">Forchetta</figcaption>
+            </figure>
+          </div>
+          <span class="court-caption" aria-hidden="true"><i></i><span id="court-mode">Allenamento</span><b>·</b> Terra rossa</span>
+          <div class="out-call" id="out-call" hidden><small>Occhio di falco</small><strong>OUT</strong><canvas id="review-canvas" width="440" height="170" aria-hidden="true"></canvas><span id="out-detail"></span></div>
+          <span class="replay-label" id="replay-label" hidden>Replay <b>½×</b></span>
+        </div>
+
+        <aside class="match-hud" aria-label="Indicatori di gioco">
+          <div class="charge" id="charge" data-zone="ready" aria-hidden="true">
+            <div class="charge-label"><span>Carica</span><strong id="power-label">0%</strong></div>
+            <span class="charge-track"><span id="power"></span><span class="charge-limit"></span><span class="charge-cursor"></span></span>
+            <div class="charge-caption"><span id="charge-state">Pronta</span><span class="charge-warning" id="charge-warning"></span></div>
+          </div>
+          <div class="contact" id="contact" data-state="idle">
+            <div class="contact-heading"><span>Impatto</span><strong id="contact-label">—</strong></div>
+            <span class="contact-track" aria-hidden="true"></span>
+            <p id="contact-hint">Finestra di tiro</p>
+          </div>
+          <div class="gesture-card" id="gesture-card" data-mode="move">
+            <div class="gesture-heading"><span>Trackpad</span><strong id="gesture-mode">Corsa</strong></div>
+            <div class="aim-map" aria-hidden="true"><span class="aim-dot"></span></div>
+            <div class="gesture-caption"><p id="gesture-readout">Muovi il puntatore per correre</p><strong id="shot-speed" hidden></strong></div>
+          </div>
+          <div class="rally-stats">
+            <div><span>Colpi</span><strong id="rally-count">0</strong></div>
+            <div><span>Scambio migliore</span><strong id="rally-best">0</strong></div>
+          </div>
+        </aside>
+
+        <section class="feedback" id="feedback" data-tone="neutral" aria-label="Stato dello scambio">
+          <div class="feedback-text">
+            <p id="status">Palla centrale</p>
+            <p id="detail">Clicca sul campo per lanciare.</p>
+          </div>
+          <span id="announcement" class="sr-only" role="status" aria-atomic="true"></span>
+          <div class="feedback-actions">
+            <select id="replay-camera" aria-label="Inquadratura del replay" hidden><option value="ball">Segui palla</option><option value="wide">Campo intero</option><option value="landing">Primo piano rimbalzo</option></select>
+              <button class="replay-button" id="replay" type="button" hidden>Rivedi il punto</button>
+            <button class="primary launch" id="launch" type="button" aria-keyshortcuts="R"><span>Lancia la palla</span><kbd>R</kbd></button>
+          </div>
+        </section>
+
+        <section class="controls" id="instructions" aria-label="Comandi">
+          <div class="desktop-controls">
+            <div class="trackpad-guide">
+              <span><b>Muovi</b> per correre</span><i aria-hidden="true"></i>
+              <span><b>Tieni il clic e striscia</b> per mirare</span><i aria-hidden="true"></i>
+              <span><b>Rilascia su ORA</b> per colpire</span><i aria-hidden="true"></i>
+              <span><b>2 dita</b> slice · verso di te, smorzata</span><i aria-hidden="true"></i>
+              <span><b>A rete</b> clic al volo</span>
+            </div>
+          </div>
+          <div class="touch">
+            <div class="touch-control">
+              <div class="stick" id="stick" role="group" aria-label="Leva per muoversi">
+                <span class="stick-direction stick-up" aria-hidden="true">▴</span>
+                <span class="stick-direction stick-right" aria-hidden="true">▸</span>
+                <span class="stick-direction stick-down" aria-hidden="true">▾</span>
+                <span class="stick-direction stick-left" aria-hidden="true">◂</span>
+                <span class="stick-thumb" id="thumb" aria-hidden="true"></span>
+              </div>
+            </div>
+            <button id="touch-launch" class="primary" type="button" aria-label="Lancia la palla">Lancia</button>
+            <div class="touch-control">
+              <button class="strike" id="strike" type="button" tabindex="-1" aria-label="Colpisci. Tieni per caricare e rilascia al momento giusto"><span aria-hidden="true" class="racket-icon"></span>Colpisci</button>
+            </div>
+          </div>
+        </section>
+
+        <details class="aim-settings" id="aim-settings" open>
+          <summary><span>Tastiera e mira alternativa</span><strong id="aim-readout">Tempismo</strong></summary>
+          <section class="aim-panel" aria-label="Mira">
+            <button class="timing-mode" id="aim-timing" type="button" aria-pressed="true" aria-keyshortcuts="T"><span>Tempismo</span><kbd>T</kbd></button>
+            <div class="aim-lanes">
+              <input id="aim-slider" type="range" min="-100" max="100" step="1" value="0" aria-label="Direzione del colpo" aria-valuetext="Centro">
+              <div class="aim-names">
+                <button id="aim-cross" type="button" data-aim="-1" aria-pressed="false" aria-keyshortcuts="Q">Incrociato <kbd>Q</kbd></button>
+                <button id="aim-center" type="button" data-aim="0" aria-pressed="false" aria-keyshortcuts="X">Centro <kbd>X</kbd></button>
+                <button id="aim-line" type="button" data-aim="1" aria-pressed="false" aria-keyshortcuts="E">Lungolinea <kbd>E</kbd></button>
+              </div>
+            </div>
+          </section>
+          <div class="keys">
+            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>o frecce per muoverti</span></span>
+            <span><kbd>L</kbd> <span>Pallonetto</span></span>
+            <span><kbd>Spazio</kbd> <span>Tieni per caricare · rilascia per colpire</span></span>
+          </div>
+        </details>
+      </div>
+    </main>
+
+    <dialog id="menu" aria-labelledby="menu-title">
+      <h2 id="menu-title">Pausa</h2>
+      <p id="menu-detail">Lo scambio riprende da qui.</p>
+      <p id="special-shots" hidden>Striscia sul campo a due dita per il taglio, verso di te per accorciare. A rete colpisci prima del rimbalzo per la volée. Il tasto L alza un pallonetto.</p>
+      <button id="slow" type="button" aria-pressed="false">Rallentatore al 65%</button>
+      <label class="wheel-option"><input type="checkbox" id="reverse-scroll"> Inverti la direzione dello scorrimento a due dita</label>
+      <label class="swipe-setting">Sensibilità della strusciata
+        <select id="swipe-sensitivity">
+          <option value="0.74">Alta</option>
+          <option value="1" selected>Media</option>
+          <option value="1.27">Bassa</option>
+        </select>
+      </label>
+      <button class="primary" id="return" type="button" autofocus>Riprendi</button>
+      <button id="exit" type="button">Esci dall’allenamento</button>
+    </dialog>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
