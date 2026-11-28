@@ -27,11 +27,12 @@ export const PLACE_MAGIC: Record<string, { type: TypeName; name: string }> = {
 };
 /** the scene behind a battle on that map, in that part of town */
 export function sceneFor(map: string, area: string | null, boss = false): string {
-  const covo = COVO_SCENES[map];
+  /* the floors above a covo (data/maps/covi-floors.ts, «covo-claudia-2»): the covo's own scene */
+  const covo = COVO_SCENES[map] || COVO_SCENES[map.replace(/-[23]$/, '')];
   if (covo) return covo + (boss ? '-boss' : '');
   return BY_MAP[map] || (area && BY_AREA[area]) || 'porto';
 }
 /** Changing the illustration must not change the existing location bonus. */
 export function magicFor(map: string, area: string | null) {
-  return PLACE_MAGIC[BY_MAP[map] || (area && BY_AREA[area]) || 'porto'];
+  return PLACE_MAGIC[BY_MAP[map] || BY_MAP[map.replace(/-[23]$/, '')] || (area && BY_AREA[area]) || 'porto'];
 }

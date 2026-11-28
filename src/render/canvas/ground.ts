@@ -836,6 +836,29 @@ const GROUND_OBJ: Record<string, GroundObjFn> = {
   },
   /* the things in the covi of the friends (data/maps/covi.ts): render/canvas/covo.ts */
   'covo-prop': function (c, o, P) { covoProp(c, o, P); },
+  /* the dark under a covo's floor (data/maps/covi-floors.ts): the crypt's abyss, the pit under the stage */
+  void: function (c, o, P) {
+    var X = o.x * T, Y = o.y * T;
+    c.fillStyle = '#120e1a'; c.fillRect(X, Y, T, T);
+    c.fillStyle = '#231c30'; c.globalAlpha = 0.9; c.fillRect(X + 4, Y + 4, T - 8, T - 8); c.globalAlpha = 1;
+    c.fillStyle = '#3a3346'; c.fillRect(X, Y, T, 3);
+  },
+  /* the stairs between the floors of a covo (data/maps/covi-floors.ts): o.text 'up' rises, 'down' goes into the dark */
+  stairs: function (c, o, P) {
+    var X = o.x * T, Y = o.y * T, W = (o.w || 1) * T, up = o.text !== 'down', n = 5, k;
+    for (k = 0; k < n; k++) {
+      var t = k / n, y = Y + t * T, h = T / n + 0.5, inset = up ? (1 - t) * 4 : t * 4;
+      c.fillStyle = up ? (k % 2 ? '#d9cdb8' : '#e8ddc8') : (k % 2 ? '#4a4256' : '#3a3346');
+      c.fillRect(X + inset, y, W - inset * 2, h);
+      c.strokeStyle = P.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(X + inset, y); c.lineTo(X + W - inset, y); c.stroke();
+    }
+    c.strokeStyle = P.ink; c.lineWidth = 1.8; c.strokeRect(X + 0.5, Y + 0.5, W - 1, T - 1);
+    /* an arrow: which way it goes */
+    c.fillStyle = up ? '#ffd166' : '#c9a6ff'; c.beginPath();
+    var cx = X + W / 2, cy = Y + T / 2;
+    if (up) { c.moveTo(cx, cy - 8); c.lineTo(cx + 7, cy + 1); c.lineTo(cx - 7, cy + 1); } else { c.moveTo(cx, cy + 8); c.lineTo(cx + 7, cy - 1); c.lineTo(cx - 7, cy - 1); }
+    c.closePath(); c.fill(); c.strokeStyle = P.ink; c.lineWidth = 1.4; c.stroke();
+  },
   /* the things that say whose home it is (data/maps/homes.ts): o.text is which */
   'home-prop': function (c, o, P) {
     var w = o.w * T, h = o.h * T, k;

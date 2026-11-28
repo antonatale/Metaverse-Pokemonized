@@ -12,7 +12,9 @@ export type Stage =
   /* scenes of their own */
   | 'tide' | 'jaws' | 'clamp' | 'grasp' | 'pod' | 'volley' | 'sting' | 'jet' | 'ram' | 'dive' | 'fall'
   | 'bolt' | 'shade' | 'omen' | 'cone' | 'haze' | 'swarm' | 'rise' | 'twister' | 'snatch' | 'quake' | 'sign' | 'song' | 'speech'
-  | 'scratch' | 'curtain' | 'topple' | 'ambush' | 'memory' | 'peck' | 'sparkle' | 'hop';
+  | 'scratch' | 'curtain' | 'topple' | 'ambush' | 'memory' | 'peck' | 'sparkle' | 'hop'
+  /* the creatures of the seven (ui/companion-scenes.ts) */
+  | 'roar' | 'ace' | 'blade' | 'meteor' | 'triad' | 'triumph' | 'freestyle' | 'enso' | 'proof';
 /** what a scene throws about, if not the type's own shapes: runes, thorns, moons, fish, feathers, rocks… (ui/move-props.ts) */
 export type Prop = 'rune' | 'thorn' | 'moon' | 'slab' | 'rock' | 'fish' | 'feather' | 'star' | 'eye' | 'pit' | 'flower' | 'firefly' | 'flame'
   | 'note' | 'wish' | 'pollen' | 'sun' | 'panino' | 'stoneheart' | 'mast' | 'foot' | 'spark' | 'heart';
@@ -65,12 +67,29 @@ export const MOVE_FX: Record<string, Scene> = {
   scia: s('jet', { prop: 'wish', col: '#dfe8f5' }), arsura: s('song', { prop: 'sun' }), scintille: s('orbit', { prop: 'flame', col: '#6fc8ff' }),
   strillo: s('song', { prop: 'feather' }), grufolata: s('rain', { prop: 'rock', col: '#c9a074' }), occhiata: s('orbit', { prop: 'eye' }), ninna: s('song', { prop: 'note' }),
   frinire: s('orbit', { prop: 'note' }), miagolio: s('omen', { prop: 'heart', n: 5, col: '#ff8fc1' }), ruggito: s('song'), ultrasuoni: s('song', { prop: 'wish' }),
-  passato: s('memory'), eco: s('song', { prop: 'note' }), saltello: s('hop')
+  passato: s('memory'), eco: s('song', { prop: 'note' }), saltello: s('hop'),
+  /* the creatures of the seven (data/companions.ts): each line its own, the last form a scene of its own */
+  /* Costanzo's caracal (Chiacchiera): the hiss, the pounce, the edict written in gold, the harangue, Caesar's triumph */
+  soffio: s('roar', { n: 2, col: '#f3cfae' }), balzo: s('hop'), editto: s('sign', { n: 5, col: '#e8c547' }), arringa: s('cone', { col: '#ffd84d' }),
+  urlocesare: s('triumph', { words: ['VENI', 'VIDI', 'VICI'] }),
+  /* Claudia's black cat: the golden eyes in the dark (Crepuscolo), the three moons of the Trinità (Calma) */
+  gattonero: s('omen', { prop: 'eye', n: 3, col: '#ffd34d' }), trinitaria: s('triad'),
+  /* Valentin's dog (Caos): the bark, the ankles, the mane of wires is Antonio's; the party (Cuore); the freestyle (Chiacchiera) */
+  abbaio: s('roar', { n: 4, col: '#ff8a65' }), caviglie: s('jaws', { n: 3 }), weeefesta: s('swarm', { prop: 'heart', n: 9, col: '#ff5fd2' }),
+  inguaia: s('freestyle', { words: ['STAI', 'IN', 'GUA', 'IA', 'TOOOO'] }),
+  /* Forchetta's swordfish (Calma, Corrente): the thrust, the paint, the serve, the blade of sea light */
+  stoccata: s('sting', { col: '#e6edf5' }), acquerello: s('curtain', { col: '#4fa3d8' }), servizioace: s('ace'), fendente: s('blade'),
+  /* Zendavid's owl (Cuore, Chiacchiera): the hoot, the bass drop, the ensō */
+  baugufo: s('song', { prop: 'note' }), dropbasso: s('quake', { prop: 'note' }), enso: s('enso'),
+  /* Antonio's lion (Cervello, Caos, Cielo): the first roar, the mane of wires, the re-entry from orbit */
+  ruggitino: s('roar', { n: 3, col: '#f0b54a' }), criniera: s('beam', { prop: 'spark', col: '#ffe45c' }), rientro: s('meteor'),
+  /* Andrea's fox (Cervello, Cielo): the sum, the ninety per cent, the padel smash off the glass, the theorem */
+  calcolo: s('volley', { prop: 'star', n: 5 }), novanta: s('lob', { prop: 'star', col: '#ffd34d' }), smashpadel: s('ace', { prop: 'feather' }), teorema: s('proof')
 };
 
 /* The moves a creature casts on itself (it raises a number, it heals): each has a scene of its own (ui/self-scenes.ts)
    instead of the pillar of light they all shared. A move not listed here keeps the pillar. */
-export type SelfStage = 'shell' | 'walls' | 'scales' | 'sunbath' | 'bloom' | 'calm' | 'veil' | 'idea' | 'tome' | 'regrow' | 'burrow' | 'hourglass' | 'door' | 'gates' | 'roots' | 'oil';
+export type SelfStage = 'shell' | 'walls' | 'scales' | 'sunbath' | 'bloom' | 'calm' | 'veil' | 'idea' | 'tome' | 'regrow' | 'burrow' | 'hourglass' | 'door' | 'gates' | 'roots' | 'oil' | 'purr' | 'fluff' | 'phones';
 export const SELF_FX: Record<string, SelfStage> = {
   /* Calma */ scaglie: 'scales', sole: 'sunbath', muraglia: 'walls',
   /* Calore */ profumo: 'bloom', bonaccia: 'calm',
@@ -78,5 +97,6 @@ export const SELF_FX: Record<string, SelfStage> = {
   /* Corrente */ guscio: 'shell', tana: 'burrow',
   /* Crepuscolo */ futuro: 'hourglass', soglia: 'door',
   /* Corazza */ telepilo: 'gates',
-  /* Cuore */ radici: 'roots', olio: 'oil'
+  /* Cuore */ radici: 'roots', olio: 'oil',
+  /* the seven's creatures */ fusa: 'purr', pelonero: 'fluff', cuffione: 'phones'
 };

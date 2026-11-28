@@ -1,6 +1,8 @@
 import type { Character, Move, Stats } from './characters';
 import type { TypeName } from './types';
 import { ABILITIES } from './passives';
+import { COMPANIONS, COMPANION_MOVES, type CompanionId } from './companions';
+import type { FriendId } from './characters';
 
 /* The creatures of Formia: animals and plants of the town with a magic of their own, this game's own. The legend they
    come from is the town's: Formia was said to be the city of the giant Laestrygonians of the Odyssey and of their
@@ -22,11 +24,15 @@ export type SpeciesId =
   | 'medusella' | 'medusaurora' | 'stellina' | 'astromarina' | 'murenaccia' | 'delfi' | 'delfaro' | 'cefalino' | 'cefaldrago'
   | 'lucciolina' | 'lanternella' | 'pipistrillo' | 'pipistrega' | 'cinghialetto' | 'zannaferro' | 'falchetto' | 'pellegrino'
   | 'ginestrella' | 'ginestrona' | 'lumacotta' | 'torrelumaca' | 'micetto' | 'gattomola'
-  | 'lamo' | 'giano' | 'fuocelmo';
+  | 'lamo' | 'giano' | 'fuocelmo'
+  /* the creatures of the seven (data/companions.ts) */
+  | CompanionId;
 
 /** how a creature is drawn (render/svg/creatures.ts): its body, its colours, and what grows on it with each form */
 export type Body = 'octo' | 'lizard' | 'bird' | 'cicada' | 'olive' | 'urchin' | 'crab' | 'owl' | 'giant'
-  | 'jelly' | 'star' | 'eel' | 'dolphin' | 'fish' | 'firefly' | 'bat' | 'boar' | 'falcon' | 'flower' | 'snail' | 'cat' | 'janus' | 'flame';
+  | 'jelly' | 'star' | 'eel' | 'dolphin' | 'fish' | 'firefly' | 'bat' | 'boar' | 'falcon' | 'flower' | 'snail' | 'cat' | 'janus' | 'flame'
+  /* the creatures of the seven (render/svg/companions.ts) */
+  | 'caracal' | 'blackcat' | 'xolo' | 'swordfish' | 'eagleowl' | 'lion' | 'wingfox';
 export interface CreatureArt { body: Body; main: string; dark: string; belly: string; accent: string; size: number }
 
 export interface Species {
@@ -59,6 +65,8 @@ export interface Species {
   catchRate?: number;
   /** what it is good at without doing anything (data/passives.ts): one, two for a last form */
   abil?: string[];
+  /** one of the creatures of the seven (data/companions.ts): it belongs to that friend, and is never met in the wild */
+  owner?: FriendId;
 }
 
 /* ---------- the moves of the creatures: plain numbers, done by battle/moves.ts (genericMove) ---------- */
@@ -166,7 +174,9 @@ export const CMOVES: Record<string, Move> = {
   primaluce: atk('primaluce', 'Prima luce', 85, 'Il volto che guarda a oriente vede l\'alba prima di tutti: danno alto, critico più facile (20%).', { crit: 0.2, mtype: 'Calore' }),
   tempestelmo: atk('tempestelmo', 'Tempesta di Sant\'Elmo', 120, 'Il cielo si rompe in fulmini e ogni onda prende fuoco d\'azzurro: danno enorme, va a segno 85 volte su 100, e una volta su cinque confonde.', { acc: 0.85, mtype: 'Calore', fx: { conf: 0.2 } }),
   vele: atk('vele', 'Vele di fuoco', 85, 'Spiega le ali come le vele di una nave e ci passa il vento della tempesta: danno alto.', { mtype: 'Cielo' }),
-  passogigante: atk('passogigante', 'Passo del gigante', 90, 'Un passo, e trema tutta Formia, dalle mura al mare: danno alto, e la Difesa sale per 5 turni.', { mtype: 'Corazza', fx: { self: 'defUp' } })
+  passogigante: atk('passogigante', 'Passo del gigante', 90, 'Un passo, e trema tutta Formia, dalle mura al mare: danno alto, e la Difesa sale per 5 turni.', { mtype: 'Corazza', fx: { self: 'defUp' } }),
+  /* the moves of the creatures of the seven (data/companions.ts) */
+  ...COMPANION_MOVES
 };
 
 /* ---------- the species ---------- */
@@ -567,7 +577,9 @@ export const SPECIES: Record<SpeciesId, Species> = {
     cry: { entry: 'FSSSHHH… KRRRAAAK! IL MARE BRUCIA!', win: 'La tempesta passa. Io resto.', ko: 'Torno sulle onde…' },
     text: 'La fiamma azzurra che i marinai vedono sugli alberi delle navi nei temporali, il fuoco di Sant\'Elmo. Si racconta che sia un drago di fuoco e di fulmini, con le ali come vele, che dorme nelle nuvole sopra il golfo: porta fortuna a chi lo vede e lo lascia andare, e una tempesta a chi lo vuole tenere.',
     where: 'Il molo del faro, di notte', art: { body: 'flame', main: '#5fb6ff', dark: '#2a4fb8', belly: '#e8f6ff', accent: '#ffe45c', size: 1 }
-  })
+  }),
+  /* the creatures of the seven, one line each (data/companions.ts) */
+  ...COMPANIONS
 };
 /** the three to start with, in the order they are offered */
 export const STARTERS: SpeciesId[] = ['polpino', 'ramarrino', 'gabbi'];

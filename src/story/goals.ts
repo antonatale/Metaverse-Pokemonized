@@ -1,6 +1,7 @@
 import { CHARS as C, type FriendId } from '../data/characters';
 import { GATES, SECOND_CITY } from '../data/gates';
 import { firstHuman } from './growth';
+import { hasMine } from './mine';
 import { COVI } from '../data/covi';
 import { ITEMS } from '../data/items';
 import { MAPS } from '../data/maps';
@@ -14,7 +15,7 @@ import { COVO_PLACES } from '../data/covo-places';
 import { invited, keysFrom, charmOn } from './lairs';
 import { ABDUCTION, MAMURRA_BEATEN, REUNION, creaturesMissing, friendFreed, readyForVilla } from './finale';
 import { chosen } from './choices';
-import { DV, key, prepare, nearestGrass, guardInWay, streetGuard, netSeller } from './maps';
+import { DV, key, prepare, nearestGrass, guardInWay, streetGuard, netSeller, groundOf } from './maps';
 
 /* The story starts at Gianola, follows the echo through Formia, then takes the player back to the villa.
    Covi follow the protagonist's route. Activities and lost things stay available as detours. */
@@ -91,16 +92,21 @@ export const STOPS: Stop[] = [
     return { id: 'starter', text: 'La tua prima creatura', where: 'Parco di Gianola', tip: 'La guardaparco di Gianola cerca qualcuno a cui affidare un cucciolo. Perché non tu?',
       map: 'formia', x, y, done: () => !!st.seen.starter };
   })(),
-  /* A second creature helps at the ruins, then the player builds a team for the Cisternone. */
-  team('seconda-creatura', 2, 'La tua seconda creatura', 'L\'erba alta del Parco di Gianola', 'La guardaparco dice: con i retini che ti ho dato, cammina nell\'erba alta o tra gli scogli di Gianola. Indebolisci una creatura e lancia il retino.'),
+  /* The second creature is the player's own (27 November 2026): the one born beside him at 3:12, frightened, behind the
+     guardaparco's house (story/mine.ts). A save already past the ruins does not go back for it: it waits there. */
+  (function (): Stop {
+    const [x, y] = npcAt('formia', 'mia-creatura');
+    return { id: 'seconda-creatura', text: 'La tua creatura', where: 'Dietro la casa della guardaparco, a Gianola', tip: 'Stanotte alle 3:12, accanto a te, è nata una creatura. Ti ha seguito fino a Gianola e ha paura: calmala.',
+      map: 'formia', x, y, done: () => hasMine() || flag('tr-mamurr-scavi') };
+  })(),
   plot('trama-scavi', 'Chi scava tra le rovine di Gianola?', 'Parco di Gianola', 'A Gianola, tra le rovine della villa romana, c\'è un tipo in giacca e cravatta che scava con la pala.', 'mamurr-scavi', 'tr-mamurr-scavi'),
-  covo('palamendola', 'covo-antonio', 'Antonio è chiuso nella cupola accanto alla fontana di Parco la Fontana. Nel parco si entra solo da casa sua, dalla porta sul retro.'),
-  covo('padel', 'covo-andrea', 'Andrea è in cima alla Torre delle Probabilità, a Castellone, dietro piazza Mattei. Alla porta fanno domande di probabilità.'),
-  covo('circolo', 'circolo', 'Forchetta palleggia da dodici ore nel Tempio della Terra Rossa, i tennis coperti del Zauli.'),
+  covo('palamendola', 'covo-antonio-3', 'Antonio è chiuso nella cupola accanto alla fontana di Parco la Fontana. Nel parco si entra solo da casa sua, dalla porta sul retro.'),
+  covo('padel', 'covo-andrea-3', 'Andrea è in cima alla Torre delle Probabilità, a Castellone, dietro piazza Mattei. Alla porta fanno domande di probabilità.'),
+  covo('circolo', 'circolo-3', 'Forchetta palleggia da dodici ore nel Tempio della Terra Rossa, i tennis coperti del Zauli.'),
   plot('trama-archivio', 'L\'Archivio della Torre di Mola', 'Torre di Mola', 'Le leggende di Formia le conosce l\'archivista della Torre di Mola: chiedi a lei delle Pietre di Telepilo.', 'archivista', 'trama-archivio'),
-  covo('morgana', 'covo-claudia', 'Claudia è nel suo castello nero, in via Palazzo, a San Giulio. Il Padre ti aspetta sul trono. Uno alla volta.'),
+  covo('morgana', 'covo-claudia-3', 'Claudia è nel suo castello nero, in via Palazzo, a San Giulio. Il Padre ti aspetta sul trono. Uno alla volta.'),
   doing('gelato', 'gelataio', 'Passa da Lavezzi, in piazza Marconi accanto al Comune: fanno il gelato dal 1870.'),
-  covo('piazza', 'covo-costanzo', 'Costanzo parla dal balcone del Palazzo del Popolo, in piazza della Vittoria. Per salire, l\'esame di educazione civica.'),
+  covo('piazza', 'covo-costanzo-3', 'Costanzo parla dal balcone del Palazzo del Popolo, in piazza della Vittoria. Per salire, l\'esame di educazione civica.'),
   team('squadra-cisterna', 3, 'Tre creature per il buio', 'L\'erba alta e gli scogli', 'Nel Cisternone si lotta al buio: Cicerone dice di non scendere con meno di tre creature. Cattura nell\'erba alta o tra gli scogli.'),
   plot('trama-cisterna', 'L\'uomo del Cisternone', 'Castellone', 'A Castellone, davanti al Cisternone, c\'è uno con la torcia che cerca di forzare la porta.', 'mamurr-cisterna', 'tr-mamurr-cisterna'),
   { ...plot('trama-mura', 'La parola del Cisternone', 'Castellone, dalla signora del teatro', 'La signora che abita dentro il teatro romano sa la parola che apre il Cisternone.', 'teatro', 'porta-cisterna'),
@@ -111,9 +117,9 @@ export const STOPS: Stop[] = [
   lost('appunti'),
   plot('trama-mare', 'La Pietra del Mare', 'Le peschiere di Caposele', 'Un sub si immerge tra le peschiere romane di Caposele: dicono che abbia tirato su una pietra che brilla.', 'mamurr-peschiere', 'pietra-mare'),
   doing('windsurf', 'nicola', 'All\'Eclipse c\'è Nicola Spadea, il campione di windsurf: oggi c\'è la termica giusta per una lezione.'),
-  covo('eclipse', 'covo-valentin', 'Valentin è in cima alla torre verde di via Ferrucci, di fronte all\'ospedale. Nella nebbia ballano le Iele.'),
+  covo('eclipse', 'covo-valentin-3', 'Valentin è in cima alla torre verde di via Ferrucci, di fronte all\'ospedale. Nella nebbia ballano le Iele.'),
   lost('portafoglio'),
-  covo('pineta', 'covo-zendavid', 'Zendavid è alla consolle del Tempio del Basso, in mezzo alla pineta di Vindicio. Alla porta, domande su Kanye.'),
+  covo('pineta', 'covo-zendavid-3', 'Zendavid è alla consolle del Tempio del Basso, in mezzo alla pineta di Vindicio. Alla porta, domande su Kanye.'),
   lost('passaporto'),
   { id: 'trama-voce', text: 'La Pietra della Voce', where: 'Tomba di Cicerone', tip: 'Alla Tomba di Cicerone, sull\'Appia, di sera si sente una voce che parla latino.',
     map: 'formia', x: tombX, y: tombY, done: () => flag('pietra-voce') },
@@ -135,7 +141,7 @@ export function myStops(): Stop[] {
   /* the covi come in order of distance from home (the plot keeps its place): whoever lives in Scauri starts from the
      east, whoever lives in Castellone from the centre; the rival's comes last */
   const home = (MAPS.formia.starts && MAPS.formia.starts[me]) || MAPS.formia.start;
-  const at = (s: Stop): number[] => { if (s.map === 'formia') return [s.x, s.y]; const b = (MAPS.formia.buildings || []).find((q) => q.to === s.map); return b ? b.door : [s.x, s.y]; };
+  const at = (s: Stop): number[] => { if (s.map === 'formia') return [s.x, s.y]; const b = (MAPS.formia.buildings || []).find((q) => q.to === groundOf(s.map)); return b ? b.door : [s.x, s.y]; };
   const far = (s: Stop) => { const p = at(s); return Math.hypot(p[0] - home[0], p[1] - home[1]); };
   const slots = list.map((s, k) => (s.id.indexOf('covo-') === 0 ? k : -1)).filter((k) => k >= 0);
   const covi = slots.map((k) => list[k]).sort((a, b) => far(a) - far(b));
@@ -193,11 +199,24 @@ export function heading(map: string): Heading | null {
   if (h && g) return { stop: { ...h.stop, text: g.n.name || h.stop.text, label: 'Prima, chi sbarra la strada' }, x: g.x, y: g.y, exact: true };
   return h;
 }
+/** the warp of an indoor map that leads toward another indoor map, through the warps of the maps in between (the stairs of
+    a covo, floor after floor); none if the way goes out into the town */
+function warpToward(from: string, to: string): { x: number; y: number } | null {
+  if (from === to || !MAPS[from] || !MAPS[from].inside) return null;
+  const firstOf: Record<string, { x: number; y: number }> = {}, q: string[] = [];
+  (MAPS[from].warps || []).forEach(function (w) { if (MAPS[w.to] && MAPS[w.to].inside && !firstOf[w.to]) { firstOf[w.to] = w; q.push(w.to); } });
+  for (let i = 0; i < q.length; i++) {
+    const at = q[i];
+    if (at === to) return firstOf[at];
+    (MAPS[at].warps || []).forEach(function (w) { if (w.to !== from && MAPS[w.to] && MAPS[w.to].inside && !firstOf[w.to]) { firstOf[w.to] = firstOf[at]; q.push(w.to); } });
+  }
+  return null;
+}
 function headingTo(map: string): Heading | null {
   const s = nextStop();
   /* in the closed grounds behind Antonio's flat (Parco la Fontana) the only way out is back through the flat: to its
      back door, whenever the stop is anywhere else */
-  if (map === 'formia' && st.map === 'formia' && inPark(st.x, st.y) && !(s.map === 'formia' && inPark(s.x, s.y)) && s.map !== 'covo-antonio')
+  if (map === 'formia' && st.map === 'formia' && inPark(st.x, st.y) && !(s.map === 'formia' && inPark(s.x, s.y)) && s.map.indexOf('covo-antonio') !== 0)
     return { stop: s, x: parkDoor.x, y: parkDoor.y, exact: false };
   /* a creature to catch: to the nearest tall grass or rock pools, from where the player is */
   if (s.grass && map === 'formia' && st.map === 'formia') {
@@ -214,12 +233,13 @@ function headingTo(map: string): Heading | null {
   if (s.map === map) return { stop: s, x: s.x, y: s.y, exact: true };
   const m = MAPS[map];
   /* to Antonio's dome: through his flat, and out of the back door into the park */
-  if (s.map === 'covo-antonio') {
+  if (s.map.indexOf('covo-antonio') === 0 && map.indexOf('covo-antonio') !== 0) {
     if (map === 'casa') return { stop: s, x: parkExit.x, y: parkExit.y, exact: false };
     if (map === 'formia' && (st.map !== 'formia' || !inPark(st.x, st.y))) { const c = (m.buildings || []).find((q) => q.id === 'casa'); if (c) return { stop: s, x: c.door[0], y: c.door[1], exact: false }; }
   }
-  if (m.inside) { const w = (m.warps || [])[0]; return w ? { stop: s, x: w.x, y: w.y, exact: false } : null; }
-  const b = (m.buildings || []).find((q) => q.to === s.map);
+  /* inside, the stairs that lead toward it (a covo has floors, data/maps/covi-floors.ts), or else the way out */
+  if (m.inside) { const w = warpToward(map, s.map) || (m.warps || [])[0]; return w ? { stop: s, x: w.x, y: w.y, exact: false } : null; }
+  const b = (m.buildings || []).find((q) => !!q.to && (q.to === s.map || q.to === groundOf(s.map)));
   if (b) return { stop: s, x: b.door[0], y: b.door[1], exact: false };
   const g = (m.signs || []).find((q) => q.enter && q.enter.to === s.map);
   return g ? { stop: s, x: g.x, y: g.y, exact: false } : null;

@@ -47,6 +47,9 @@ function reachable() {
     const cp = door && covoOfBuilding(door.id);
     if (cp && cp.home) visit(cp.home, MAPS[cp.home].start[0], MAPS[cp.home].start[1]);
     if (jump) { visit(jump[0], jump[1], jump[2]); continue; }   /* stepping on a door or warp takes you through */
+    /* a portal of a place (the floors of a covo, data/maps/covi-floors.ts) throws you to its target */
+    const pad = m.place && m.place.things.find((t) => t.k === 'pad' && t.x === x && t.y === y);
+    if (pad && pad.k === 'pad') { visit(map, pad.tx, pad.ty); continue; }
     for (const d of DIRS) {
       const nx = x + DV[d][0], ny = y + DV[d][1], way = (m.signs || []).find((g) => g.enter && g.x === nx && g.y === ny);
       if (way) visit(way.enter!.to, way.enter!.tx, way.enter!.ty);              /* a sign that opens with the story */

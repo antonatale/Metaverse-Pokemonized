@@ -1,3 +1,6 @@
+import { gapCls, gapMark } from './level-gap';
+import { shout } from './shout';
+import { INGUAIATO } from '../data/mazzarri';
 import { CHARS as C, type Character, type FighterId, type Move } from '../data/characters';
 import { fighter } from '../data/fighters';
 import { SPECIES, isSpecies } from '../data/creatures';
@@ -41,9 +44,18 @@ let dialog: HTMLElement, whoEl: HTMLElement, txtEl: HTMLElement, pad: HTMLElemen
 /** a side's name: the one Antonio gave his creature, or the character's */
 function sideName(i: number): string { return S.sides[i].nick || fighter(S.sides[i].id).name; }
 function sideLabel(i: number): string { return S.mode === 'pvp' ? 'G' + (i + 1) : (i === 0 ? 'Tu' : 'CPU'); }
+/** the level in a box: green with ▲ when two or more above the one in front, red with ▼ when below (the levels count:
+    5% of every blow for each one, data/tuning.ts) */
+function lvTag(i: number): string {
+  var lv = S.sides[i].lvl, o = S.sides[1 - i].lvl;
+  if (!lv) return '';
+  var d = o ? lv - o : 0, cls = gapCls(lv, o);
+  var title = d >= 2 ? d + ' livelli sopra: colpisce più forte e incassa meglio' : d <= -2 ? -d + ' livelli sotto: colpisce più piano e incassa peggio' : 'livello simile';
+  return ' <small class="lv' + cls + '" title="' + title + '">Lv ' + lv + gapMark(lv, o) + '</small>';
+}
 function boxHtml(i: number): string {
-  var c = fighter(S.sides[i].id), lv = S.sides[i].lvl;
-  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + (lv ? ' <small class="lv">Lv ' + lv + '</small>' : '') + '</b><span class="surge" id="sg-' + i + '"></span><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
+  var c = fighter(S.sides[i].id);
+  return '<div class="box ' + (i === 0 ? 'me' : 'opp') + '" id="box-' + i + '"><div class="box-h"><b>' + esc(S.sides[i].nick || c.name) + lvTag(i) + '</b><span class="surge" id="sg-' + i + '"></span><span class="team-dots" id="dots-' + i + '" aria-hidden="true"></span><span class="chip tag">' + sideLabel(i) + '</span></div>' +
     '<div class="hp"><em>PS</em><div class="hpbar" id="hp-' + i + '"><i class="lag"></i><span></span>' + marksHtml(i) + '</div></div>' +
     '<div class="box-f"><span class="types" id="ty-' + i + '">' + typesHtml(i) + '</span><div class="chips" id="chips-' + i + '"></div><span class="hpnum" id="hpn-' + i + '"></span></div></div>';
 }
@@ -131,6 +143,8 @@ function countHp(i: number, from: number, to: number) {
 }
 /** who the box of each side shows right now: during the playback of a turn the state may already be ahead of the screen */
 let onField: string[] = ['', ''];
+/** who is in front on each side, by fighter id, as the events are played (Valentin shouts when he knocks someone out) */
+let fieldId: string[] = ['', ''];
 function renderSync(sn: Snap) {
   for (var i = 0; i < 2; i++) {
     if (sn.who && sn.who[i] !== onField[i]) continue;
@@ -172,9 +186,10 @@ function moveButton(b: HTMLButtonElement, i: number, m: Move) {
   b.setAttribute('aria-label', m.name + (L.locked ? ', non disponibile' : '') + '. ' + (lvl ? EFF_WORD[lvl] + '. ' : '') + L.sub);
   if (bag) {
     /* a thing in the bag: its picture, how many are left, how likely a net is to hold now */
-    b.className = 'mv bag cr' + (L.locked ? ' locked' : '') + (L.chance != null && L.chance >= 0.5 ? ' ready' : '');
+    /* the same picture and colours as in the bag of the menu (ui/bag.ts): blue for nets, red for the battle's things */
+    b.className = 'mv bag cr ' + (m.id === 'tiella' || m.id === 'balsamo' ? 'k-fight' : 'k-catch') + (L.locked ? ' locked' : '') + (L.chance != null && L.chance >= 0.5 ? ' ready' : '');
     b.style.setProperty('--tc', TC[E.sideType(S, i)]);
-    b.innerHTML = '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">' + L.count + '</i>' : '') + '</span><b>' + esc(m.name) + '</b><small>' + esc(L.sub) + '</small>';
+    b.innerHTML = '<span class="mv-rune">' + bagIcon(m.id) + (L.count != null ? '<i class="cnt">×' + L.count + '</i>' : '') + '</span><b>' + esc(m.name) + '</b><small>' + esc(L.sub) + '</small>';
     return;
   }
   /* a move: a card in the colour of its magic (ui/move-card.ts, the same as on the sheet for learning a move) */
@@ -436,7 +451,11 @@ function swapEvent(ev: Extract<BattleEvent, { k: 'swap' }>) {
   m.innerHTML = '<div class="bob">' + bust(ev.id, 'smirk', '', undefined, ev.gold, ev.form) + '</div>';
   if (counting[i]) { clearTimeout(counting[i]!); counting[i] = null; }
   $('box-' + i).outerHTML = boxHtml(i);
+  /* the one in front has changed: the other box's level mark is measured against the newcomer */
+  var other = document.querySelector('#box-' + (1 - i) + ' .lv');
+  if (other) other.outerHTML = lvTag(1 - i).trim();
   onField[i] = ev.key || ev.id;
+  fieldId[i] = ev.id;
   uiHp[i] = ev.hp;
   setHp(i, ev.hp);
 }
@@ -453,12 +472,38 @@ function stepEvent(ev: BattleEvent, evs: BattleEvent[], next: number): Promise<u
     case 'hp':
       quietly(function () { coachHit(ev); });
       /* a blow of a friend's scene that hits more than once: each one is drawn as it lands */
-      if (acting && acting.beforeHit && ev.who !== acting.who && ev.dmg) { var bh = acting.beforeHit; return bh(acting.hits++).then(function () { return hpEvent(ev); }); }
-      return hpEvent(ev);
+      if (acting && acting.beforeHit && ev.who !== acting.who && ev.dmg) { var bh = acting.beforeHit; return bh(acting.hits++).then(function () { return hpEvent(ev); }).then(function () { return koShout(ev); }); }
+      return hpEvent(ev).then(function () { return koShout(ev); });
     case 'sync': renderSync(ev); return Promise.resolve();
     case 'swap': swapEvent(ev); quietly(function () { coachSwap(ev); }); return Promise.resolve();
     default: return Promise.resolve();
   }
+}
+/* «Stai inguaiatoooo!» (data/mazzarri.ts, ui/shout.ts): Valentin, in front, has just knocked someone out. In the middle
+   of a battle he says it; the blow that ends it gets the whole shout, before the result */
+function koShout(ev: Extract<BattleEvent, { k: 'hp' }>): Promise<unknown> {
+  var by = 1 - ev.who;
+  if (!ev.dmg || ev.hp > 0 || fieldId[by] !== 'valentin') return Promise.resolve();
+  if (S.phase === 'over' && S.winner === by) return Promise.resolve();
+  return say(INGUAIATO, by);
+}
+/** whether the battle just won is Valentin's: he is in front at the end, or it is his story (not a wild one), or he
+    fought on the player's side, or it was his covo */
+function valentinWon(): boolean {
+  if (S.result !== 'win' || S.winner == null) return false;
+  var w = S.winner, story = S.story;
+  if (S.sides[w].id === 'valentin') return true;
+  if (!story) return false;
+  if (w === 0) return story.ally === 'valentin' || (S.hero === C.valentin.name && !S.wild);
+  return story.covo === 'eclipse';
+}
+function endShout(my: number): Promise<void> {
+  if (!valentinWon()) return Promise.resolve();
+  var w = S.winner!, side = S.sides[w], form = side.id === 'valentin' ? side.form : undefined;
+  return new Promise(function (res) {
+    if (my !== flow) { res(); return; }
+    shout(bust('valentin', 'grin', '', undefined, false, form), function () { res(); }, { right: w === 1 });
+  });
 }
 /** the trainers' part never stops the battle: if it fails, the battle goes on without it */
 function quietly(run: () => void) { try { run(); } catch (e) { console.error('coach failed:', e); } }
@@ -484,7 +529,7 @@ function runFlow() {
   var my = ++flow;
   function loop(): Promise<unknown> {
     if (my !== flow) return Promise.resolve();
-    if (S.phase === 'over') { showResult(); return Promise.resolve(); }
+    if (S.phase === 'over') { return endShout(my).then(function () { if (my === flow) showResult(); }); }
     if (S.phase === 'intro') { setPad(false, 0); return play(E.intro(S), my).then(loop); }
     if (S.phase === 'send') { setPad(false); return askSend({}, my); }
     if (S.phase === 'begin') { setPad(false); turnbar.hidden = true; return play(E.beginTurn(S), my).then(loop); }
@@ -603,7 +648,7 @@ function showResult() {
     stamp = 'Vince ' + sideName(S.winner!);
     if (S.mode === 'pvp') sub = 'Giocatore ' + (S.winner! + 1);
     else sub = S.winner === 0 ? 'Hai vinto' : 'Ha vinto il computer';
-    first = [S.winner!, fighter(w.id).lines.win]; second = [1 - S.winner!, fighter(l.id).lines.ko];
+    first = [S.winner!, w.id === 'valentin' ? INGUAIATO : fighter(w.id).lines.win]; second = [1 - S.winner!, fighter(l.id).lines.ko];
   } else { star = A.id; stamp = 'Pareggio'; first = null; second = null; }
   var story = S.story, storyWon = !!story && wonNow();
   if (story && story.covo && COVI[story.covo]) sub = COVI[story.covo].name;
@@ -718,6 +763,7 @@ export function startBattle(cfg: BattleConfig | null, restore?: boolean) {
   document.body.classList.add('in-battle');
   window.scrollTo(0, 0);
   onField = [S.sides[0].key || S.sides[0].id, S.sides[1].key || S.sides[1].id];
+  fieldId = [S.sides[0].id, S.sides[1].id];
   renderShell();
   quietly(function () { mountCoaches(!restore); });
   /* into any battle of the story the same way: the bars open on it (a covo's, like a trainer's) */
@@ -746,6 +792,8 @@ export function goHome() {
 /* a story battle is over (or abandoned): back to the map, where the covo or the creature reacts and Antonio's team grows */
 function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
   var caught = !!S && S.result === 'catch', bag = S ? S.bag : undefined, bouts: Bout[] = (S && S.bouts) || [];
+  /* how it went, for the excuse of whoever lost (ui/scala.ts): how long, and how much the winner had left */
+  var turns = S ? S.turn : 0, left = S && S.winner != null && S.sides[S.winner].max ? S.sides[S.winner].hp / S.sides[S.winner].max : undefined;
   flow++;
   if (stopSay) stopSay();
   tapHandler = null;
@@ -753,7 +801,7 @@ function backToWorld(story: StoryTag, won: boolean, quit: boolean) {
   document.body.classList.remove('in-battle');
   closeOverlay();
   S = null as unknown as BattleState;
-  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts });
+  if (WORLD) WORLD.afterBattle({ tag: story, won: won, quit: !!quit, caught: caught, bag: bag, bouts: bouts, turns: turns, left: left });
   else goHome();
 }
 /** the battle screen as one object, with the same names the old window.UI had */

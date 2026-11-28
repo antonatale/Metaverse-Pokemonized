@@ -1,0 +1,174 @@
+/* ---------- the Scala Mazzarri (ui/scala.ts): the excuse on one side, the ladder leaning on the mirror on the other ---------- */
+.overlay.scala-ov { align-items: center; padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px)); background: rgba(10, 14, 30, .55); }
+.scala { --rh: 34px; position: relative; width: min(100%, 740px); max-height: 100%; overflow: auto; box-sizing: border-box; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
+  border: 2px solid var(--line); border-radius: 14px; box-shadow: 6px 6px 0 var(--line); color: var(--text);
+  background: repeating-linear-gradient(transparent 0 27px, var(--grid) 27px 28px), var(--paper); animation: sm-in .42s cubic-bezier(.2,1.3,.4,1); }
+@keyframes sm-in { from { opacity: 0; transform: translateY(14px) scale(.94); } }
+@keyframes sm-pop { from { opacity: 0; transform: scale(.6); } }
+.sm-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sm-plaque { padding: 5px 14px 3px; font: 26px/1 var(--font-display); letter-spacing: .02em; text-transform: uppercase; color: var(--on-hl); background: var(--t-chiacchiera);
+  border: 2px solid var(--line); border-radius: 8px; box-shadow: 3px 3px 0 var(--line); transform: rotate(-2deg); }
+.sm-head small { font: 700 11px/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.sm-body { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 16px; align-items: start; }
+.sm-said { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.sm-who { display: flex; align-items: center; gap: 10px; }
+.sm-who b { font: 22px/1 var(--font-display); font-weight: normal; color: var(--ink); }
+.sm-face { flex: none; width: 78px; height: 78px; box-sizing: border-box; overflow: hidden; border: 3px solid var(--line); border-radius: 50%; background: var(--tc); animation: sm-pop .5s cubic-bezier(.2,1.6,.4,1); }
+.sm-face svg, .sm-jface svg, .sm-holder span svg, .sm-cost svg { display: block; width: 100%; height: 100%; }
+/* the excuse: a speech bubble, written by hand */
+.sm-bubble { position: relative; margin: 0; min-height: 92px; padding: 12px 16px; border: 2px solid var(--line); border-radius: 16px; background: var(--card); box-shadow: 3px 3px 0 var(--shadow); }
+.sm-bubble::before { content: ""; position: absolute; left: 26px; top: -13px; width: 20px; height: 20px; background: var(--card); border-left: 2px solid var(--line); border-top: 2px solid var(--line); transform: rotate(45deg); }
+.sm-bubble p { margin: 0; font: 22px/1.28 var(--font-hand); color: var(--text); cursor: default; }
+.sm-ask { margin: 0; font: 700 13.5px/1.35 var(--font-body); color: var(--muted); }
+.scala.done .sm-ask { font: 22px/1.1 var(--font-display); color: var(--ink); }
+.scala.tier-exact .sm-ask { color: var(--good); }
+/* the result: the two rungs, and what the cassa pays */
+.sm-out { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; animation: sm-pop .45s cubic-bezier(.2,1.5,.4,1); }
+.sm-out[hidden] { display: none; }
+.sm-pair { display: flex; flex-direction: column; align-items: center; min-width: 52px; padding: 4px 10px 5px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); }
+.sm-pair i { font: 700 10px/1.3 var(--font-body); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sm-pair b { font: 28px/1 var(--font-display); font-weight: normal; color: var(--ink); }
+.sm-pj { background: var(--jc); }
+.sm-pj i, .sm-pj b { color: var(--on-hl); }
+.sm-pay { display: flex; flex-direction: column; font: 26px/1 var(--font-display); color: var(--good); }
+.sm-pay.none { font-size: 19px; color: var(--muted); }
+.sm-pay small { margin-top: 3px; font: 700 11px/1.2 var(--font-body); color: var(--muted); }
+.scala.tier-exact .sm-pay { animation: sm-glow 1.2s ease-in-out 2; }
+@keyframes sm-glow { 50% { transform: scale(1.12); text-shadow: 0 0 10px var(--t-chiacchiera); } }
+/* the one who holds the ladder, and what he says */
+.sm-judge { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 2px dashed var(--line); border-radius: 12px; background: var(--card); animation: sm-pop .4s ease-out; }
+.sm-judge[hidden] { display: none; }
+.sm-jface { flex: none; width: 50px; height: 50px; box-sizing: border-box; overflow: hidden; border: 2px solid var(--line); border-radius: 50%; background: var(--jc); }
+.sm-judge p { margin: 0; font: 15px/1.38 var(--font-body); color: var(--text); }
+/* the ladder: two wooden rails, ten rungs, the mirror it leans on */
+.sm-ladder { position: relative; display: flex; flex-direction: column; align-items: center; }
+.sm-mirror { position: relative; z-index: 0; width: 148px; height: 86px; margin-bottom: -22px; transform: rotate(5deg); }
+.sm-rails { position: relative; z-index: 1; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0 30px; transform: rotate(2deg); }
+.sm-rails::before, .sm-rails::after { content: ""; position: absolute; top: -10px; bottom: -8px; width: 11px; background: var(--t-corazza); border: 2px solid var(--line); border-radius: 5px; }
+.sm-rails::before { left: 22px; }
+.sm-rails::after { right: 22px; }
+.sm-rung { position: relative; z-index: 1; height: var(--rh); display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 0; background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.sm-rung::before { content: ""; position: absolute; z-index: -1; left: -6px; right: -6px; top: 50%; height: 8px; margin-top: -5px; background: var(--t-corazza); border: 2px solid var(--line); border-radius: 4px; }
+.sm-rung b { flex: none; display: grid; place-items: center; width: 27px; height: 27px; box-sizing: border-box; border: 2px solid var(--line); border-radius: 50%; background: var(--rc); color: var(--on-hl); font: 15px/1 var(--font-display); font-weight: normal; transition: transform .15s; }
+.sm-rung span { min-width: 0; padding: 1px 6px; border-radius: 6px; background: var(--card); border: 1.5px solid var(--line); font: 15px/1.15 var(--font-hand); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s; }
+.sm-rung:hover:not(:disabled) b, .sm-rung:focus-visible b { transform: scale(1.18); }
+.sm-rung:hover:not(:disabled) span, .sm-rung:focus-visible span { background: var(--rc); }
+.sm-rung:focus-visible { outline: none; }
+.sm-rung:focus-visible b { box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--ink); }
+.sm-rung:disabled { cursor: default; }
+.sm-rung.mine b { box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--ink); }
+.sm-rung.official b { transform: scale(1.22); box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--jc), 0 0 0 8px var(--line); animation: sm-beat .9s ease-in-out 2; }
+.sm-rung.official span { background: var(--rc); }
+.scala.done .sm-rung:not(.official):not(.mine) { opacity: .5; }
+@keyframes sm-beat { 50% { transform: scale(1.38); } }
+/* who has climbed: «Tu» on the left, the judge's face on the right */
+.sm-mark { position: absolute; z-index: 2; bottom: calc((var(--at, 1) - .5) * var(--rh)); transform: translateY(50%); opacity: 0; transition: bottom .13s ease-out, opacity .2s; pointer-events: none; }
+.sm-mark.on { opacity: 1; }
+.sm-you { left: -6px; padding: 3px 7px 2px; border-radius: 6px; background: var(--ink); color: var(--on-btn); font: 13px/1 var(--font-display); font-style: normal; }
+.sm-you::after { content: ""; position: absolute; right: -6px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left-color: var(--ink); border-right: 0; }
+.sm-cost { right: -10px; width: 34px; height: 34px; box-sizing: border-box; overflow: hidden; border: 2px solid var(--line); border-radius: 50%; background: var(--jc); }
+.sm-holder { display: flex; align-items: center; gap: 7px; margin-top: 12px; }
+.sm-holder span { width: 32px; height: 32px; box-sizing: border-box; overflow: hidden; border: 2px solid var(--line); border-radius: 50%; background: var(--jc); }
+.sm-holder small { font: 15px/1.1 var(--font-hand); color: var(--muted); }
+.sm-foot { position: sticky; bottom: -14px; z-index: 3; display: flex; justify-content: flex-end; gap: 8px; margin: 0 -16px -14px; padding: 8px 16px 14px; background: linear-gradient(transparent, var(--paper) 35%); }
+.sm-foot [hidden] { display: none; }
+/* a 10 voted 10: the plaque goes red and shakes */
+.scala.puro .sm-plaque { background: var(--red); color: var(--on-btn); animation: sm-shake .5s ease-in-out 3; }
+@keyframes sm-shake { 25% { transform: rotate(-6deg) scale(1.08); } 75% { transform: rotate(3deg) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .scala, .sm-face, .sm-out, .sm-judge, .scala.tier-exact .sm-pay, .sm-rung.official b, .scala.puro .sm-plaque { animation: none; }
+  .sm-mark { transition: none; }
+}
+@media (max-width: 560px) {
+  .scala { --rh: 31px; padding: 12px; gap: 10px; }
+  .sm-plaque { font-size: 20px; }
+  /* the excuse beside the ladder, and what the judge says under both, the whole width */
+  .sm-body { grid-template-columns: minmax(0, 1fr) 118px; grid-template-areas: "who ladder" "bubble ladder" "ask ladder" "out ladder" "judge judge"; gap: 8px; align-items: start; }
+  .sm-said { display: contents; }
+  .sm-who { grid-area: who; }
+  .sm-bubble { grid-area: bubble; }
+  .sm-ask { grid-area: ask; }
+  .sm-out { grid-area: out; }
+  .sm-judge { grid-area: judge; }
+  .sm-ladder { grid-area: ladder; grid-row: 1 / 5; }
+  .sm-foot { margin: 0 -12px -12px; padding: 8px 12px 12px; bottom: -12px; }
+  .sm-face { width: 56px; height: 56px; }
+  .sm-who b { font-size: 18px; }
+  .sm-bubble { min-height: 0; padding: 10px 12px; }
+  .sm-bubble p { font-size: 19px; }
+  .sm-rung span { display: none; }
+  .sm-rails { padding: 0 24px; }
+  .sm-rails::before { left: 18px; }
+  .sm-rails::after { right: 18px; }
+  .sm-mirror { width: 104px; height: 62px; margin-bottom: -16px; }
+  .sm-pair b { font-size: 24px; }
+  .sm-pay { font-size: 21px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .scala { --rh: 22px; gap: 6px; padding: 8px 14px; }
+  .sm-plaque { font-size: 18px; }
+  .sm-head small { font-size: 10px; }
+  .sm-mirror { display: none; }
+  .sm-face { width: 50px; height: 50px; }
+  .sm-bubble { min-height: 0; }
+  .sm-bubble p { font-size: 18px; }
+  .sm-rung b { width: 22px; height: 22px; font-size: 13px; }
+  .sm-holder { display: none; }
+}
+
+/* ---------- «Stai inguaiatoooo!» (ui/shout.ts): Valentin's freestyle over whatever is on the screen ---------- */
+.shout { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; overflow: hidden; cursor: pointer; background: rgba(10, 14, 30, .5); animation: sh-dim .25s ease-out; }
+@keyframes sh-dim { from { background: rgba(10, 14, 30, 0); } }
+.shout.out { opacity: 0; transition: opacity .25s; }
+.sh-rays { position: absolute; left: 50%; top: 50%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; opacity: .55;
+  background: repeating-conic-gradient(from 0deg, var(--t-cielo) 0deg 9deg, transparent 9deg 22deg); animation: sh-spin 6s linear infinite, sh-rays-in .4s ease-out; }
+.shout.plain .sh-rays { display: none; }
+@keyframes sh-spin { to { transform: rotate(360deg); } }
+@keyframes sh-rays-in { from { transform: scale(.2); opacity: 0; } }
+/* Valentin with the microphone, from the side */
+.sh-man { position: absolute; left: 4vw; bottom: 0; width: min(34vw, 280px); aspect-ratio: 1; animation: sh-man-in .45s cubic-bezier(.2,1.4,.4,1); }
+.shout.from-right .sh-man { left: auto; right: 4vw; transform: scaleX(-1); }
+@keyframes sh-man-in { from { transform: translateX(-120%) rotate(-12deg); } }
+.shout.from-right .sh-man { animation-name: sh-man-in-r; }
+@keyframes sh-man-in-r { from { transform: scaleX(-1) translateX(-120%) rotate(-12deg); } }
+.sh-face { position: absolute; inset: 0; overflow: hidden; border: 4px solid var(--line); border-radius: 50%; background: var(--t-caos); box-shadow: 6px 6px 0 var(--line); }
+.sh-face svg { display: block; width: 100%; height: 100%; }
+.sh-mic { position: absolute; right: -6%; bottom: 8%; width: 24%; transform: rotate(28deg); filter: drop-shadow(3px 3px 0 var(--line)); }
+.sh-wave { position: absolute; right: -16%; bottom: 46%; width: 30%; aspect-ratio: 1; border: 4px solid var(--t-chiacchiera); border-left-color: transparent; border-bottom-color: transparent; border-radius: 50%; opacity: 0; transform: rotate(45deg); animation: sh-wave 1s ease-out infinite; }
+.sh-wave:nth-of-type(2) { animation-delay: .33s; }
+.sh-wave:nth-of-type(3) { animation-delay: .66s; }
+@keyframes sh-wave { 0% { opacity: .9; transform: rotate(45deg) scale(.5); } 100% { opacity: 0; transform: rotate(45deg) scale(1.8) translate(14px, -14px); } }
+/* the words: slammed down, the O's growing one after the other */
+.sh-words { position: relative; z-index: 1; margin: 0 4vw; display: flex; flex-direction: column; align-items: center; text-align: center; font-family: var(--font-display); line-height: .92; color: var(--t-chiacchiera);
+  -webkit-text-stroke: 3px var(--line); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--line); transform: rotate(-4deg); }
+.sh-a { font-size: clamp(44px, 11vw, 120px); opacity: 0; transform: scale(2.6) rotate(10deg); }
+.sh-b { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: baseline; max-width: 92vw; font-size: clamp(40px, 9.5vw, 112px); color: var(--card); opacity: 0; transform: scale(2.4) rotate(-8deg); }
+.shout.a-in .sh-a { opacity: 1; transform: none; transition: transform .2s cubic-bezier(.2,1.6,.4,1), opacity .08s; }
+.shout.b-in .sh-b { opacity: 1; transform: none; transition: transform .2s cubic-bezier(.2,1.6,.4,1), opacity .08s; }
+.sh-os span { display: inline-block; color: var(--t-caos); font-size: calc(1em + var(--k) * .07em); animation: sh-o .22s cubic-bezier(.2,1.8,.4,1); }
+@keyframes sh-o { from { transform: scale(0) rotate(-30deg); } }
+.sh-bang { display: inline-block; color: var(--red); opacity: 0; }
+.shout.bang .sh-bang { opacity: 1; animation: sh-o .25s cubic-bezier(.2,1.8,.4,1); }
+.shout.bang { animation: sh-shake .38s ease-in-out; }
+@keyframes sh-shake { 20% { transform: translate(-7px, 4px); } 40% { transform: translate(6px, -5px); } 60% { transform: translate(-4px, 3px); } 80% { transform: translate(3px, -2px); } }
+.shout.still .sh-a, .shout.still .sh-b { opacity: 1; transform: none; }
+.shout.still .sh-man, .shout.still .sh-rays, .shout.still .sh-wave { animation: none; }
+.shout.still .sh-wave { display: none; }
+@media (max-width: 560px) {
+  .sh-man { width: 44vw; left: -4vw; bottom: 4vh; }
+  .shout.from-right .sh-man { right: -4vw; }
+  .sh-words { -webkit-text-stroke-width: 2px; text-shadow: 3px 3px 0 var(--line); }
+}
+
+/* ---------- the Scala Mazzarri in the Viaggio (story-screen.ts scalaHtml) ---------- */
+.scala-card .sc-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.scala-card .sc-stats span { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); text-align: center; }
+.scala-card .sc-stats b { font: 22px/1 var(--font-display); font-weight: normal; color: var(--ink); }
+.scala-card .sc-stats small { font: 700 10px/1.2 var(--font-body); color: var(--muted); }
+.scala-card .sc-title { margin: 8px 0; font: 14px/1.4 var(--font-body); }
+.scala-card .sc-title b { padding: 1px 6px; border-radius: 5px; background: var(--t-chiacchiera); color: var(--on-hl); }
+.scala-card .sc-who { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.scala-card .sc-who li { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 13px; }
+.scala-card .sc-who i { height: 9px; border: 1.5px solid var(--line); border-radius: 5px; background: linear-gradient(90deg, var(--tc) calc(var(--p) * 100%), var(--card) 0); }
+.scala-card .sc-who small { color: var(--muted); }
+@media (max-width: 560px) { .scala-card .sc-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

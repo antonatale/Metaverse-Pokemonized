@@ -1,6 +1,7 @@
 import { SPECIES, type SpeciesId, type Species, type Body } from '../../data/creatures';
 import { isPersonType, type TypeName } from '../../data/types';
 import { fit } from './type-shapes';
+import { COMPANION_BODIES } from './companions';
 
 /* The creatures of Formia, drawn whole in one SVG each: no shared <defs>, so the same picture works in battle
    (expressions switch with data-expr, like the friends') and, as an image, on the map. Sticker style: flat colours
@@ -14,6 +15,10 @@ interface Face {
   eyes: [number, number][]; r: number; mouth: [number, number] | null; w: number; iris?: string; lid: string; rune: [number, number];
   /** a legend's heavy brows, one tilt per eye (1: lower toward +x, −1: toward −x): no blush, a stern look */
   brows?: number[];
+  /** drawn in front of the face in every expression: the glass of a helmet */
+  over?: string;
+  /** the colour of the face's lines on a dark coat (closed eyes, mouth), where the ink would vanish */
+  line?: string;
 }
 
 function ell(cx: number, cy: number, rx: number, ry: number, fill: string, sw = 4, extra = '') {
@@ -92,6 +97,7 @@ function faceGroup(f: Face, x: string): string {
       else s += path('M' + (m[0] - w / 2) + ' ' + m[1] + ' Q' + m[0] + ' ' + (m[1] + w * 0.5) + ' ' + (m[0] + w / 2) + ' ' + m[1], 'none', 3.5);
     }
   }
+  if (f.line) s = s.split('stroke="' + INK + '"').join('stroke="' + f.line + '"');
   return f.brows ? s + blush : blush + s;
 }
 
@@ -817,7 +823,8 @@ function flame(sp: Species): [string, Face] {
   return [s, { eyes: [[86, 60], [114, 60]], r: 6.5, mouth: null, w: 12, iris: a.accent, lid: a.main, rune: [100, 124], brows: [1, -1] }];
 }
 const BODIES: Record<Body, (sp: Species) => [string, Face]> = { octo: octo, lizard: lizard, bird: bird, cicada: cicada, olive: olive, urchin: urchin, crab: crab, owl: owl, giant: giant,
-  jelly: jelly, star: star, eel: eel, dolphin: dolphin, fish: fish, firefly: firefly, bat: bat, boar: boar, falcon: falcon, flower: flower, snail: snail, cat: cat, janus: janus, flame: flame };
+  jelly: jelly, star: star, eel: eel, dolphin: dolphin, fish: fish, firefly: firefly, bat: bat, boar: boar, falcon: falcon, flower: flower, snail: snail, cat: cat, janus: janus, flame: flame,
+  ...COMPANION_BODIES };
 
 /* ---------- magic: each type has its own, the creatures carry it ----------
    An aura behind them, a rune on the forehead or the chest, motes of light in the air; from the second form a magic
@@ -882,7 +889,7 @@ export function creature(id: SpeciesId, expr?: string, cls?: string, vb?: string
   var faces = only ? '<g>' + faceGroup(bf[1], only) + '</g>' : EXPRS.map(function (x) { return '<g class="ex ex-' + x + '">' + faceGroup(bf[1], x) + '</g>'; }).join('');
   return '<svg xmlns="http://www.w3.org/2000/svg" class="spr spr-c spr-' + id + (sp.legend ? ' spr-legend' : '') + ' ' + (cls || '') + '" viewBox="' + (vb || '0 0 200 200') + '" data-expr="' + (expr || 'smirk') + '" role="img" aria-label="' + sp.name + '">' +
     mg.back + '<ellipse cx="100" cy="190" rx="' + (54 * k) + '" ry="7" fill="' + INK + '" opacity=".14"/>' +
-    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + mg.rune + faces + '</g>' + mg.front + (gold ? SPARKS : '') + '</svg>';
+    '<g transform="translate(100 190) scale(' + k + ') translate(-100 -190)">' + bf[0] + mg.rune + faces + (bf[1].over || '') + '</g>' + mg.front + (gold ? SPARKS : '') + '</svg>';
 }
 /** the rules that show one expression at a time (also in styles/sprites.css) */
 export const CREATURE_CSS = '.spr-c .ex{display:none}' + EXPRS.map(function (x) { return '.spr-c[data-expr="' + x + '"] .ex-' + x; }).join(',') + '{display:inline}';

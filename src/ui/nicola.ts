@@ -46,13 +46,14 @@ window.addEventListener('keydown', function (e) {
 
 /** the van comes up the street to the tile `at` (from where it is parked, if it is near, or from further down the
     road), and stops; then `then` */
-function comeTo(at: Tile, then: (dir: Dir) => void) {
-  var v = st.van, from: Tile = v && v.map === M.id && Math.abs(v.x - at[0]) + Math.abs(v.y - at[1]) < 30 ? [v.x, v.y] : backAlong(M, at, 14);
+function comeTo(at: Tile, then: (dir: Dir) => void, slow?: boolean) {
+  var v = st.van, from: Tile = v && v.map === M.id && Math.abs(v.x - at[0]) + Math.abs(v.y - at[1]) < 30 ? [v.x, v.y] : backAlong(M, at, slow ? 24 : 14);
   var path = roadPath(M, from, at);
   if (!path) { say(RIDE.none, NICOLA); return; }
   st.van = undefined;
   if (!path.length) { then(v ? v.dir : 'left'); return; }
-  vanGo(from, path, false, 70, function () { var dir = van!.dir; vanStop(); sfx('horn'); then(dir); });
+  /* the first time he comes up the street slowly, with the radio on, so the music arrives with him */
+  vanGo(from, path, false, slow ? Math.max(110, Math.min(170, 4200 / path.length)) : 70, function () { var dir = van!.dir; vanStop(); sfx('horn'); then(dir); });
 }
 /* ---------- what Nicola says while he drives: a line at a time, under the van, as the way goes by ---------- */
 var talkEl: HTMLElement | null = null, talkT = 0;
@@ -121,6 +122,8 @@ export function vanStart(then?: () => void) {
   if (M.id !== 'formia' || M.inside) { done(); return; }
   var ec = FORMIA_AT.eclipse.door!, end = nearRoad(M, ec[0], ec[1], 16), at = end && nearRoad(M, st.x, st.y, 12, true, end);
   if (!at || !end) { done(); return; }
+  /* his radio, far off, then nearer: the happy tune comes up the street with the van (audio/zones.ts openingMusic) */
+  st.seen['nicola-radio'] = true; save(); refreshMusic();
   say(PICKUP.come, null, null, function () {
     comeTo(at!, function (dir) {
       park(at!, dir);
@@ -150,7 +153,7 @@ export function vanStart(then?: () => void) {
         st.seen['nicola-arrived'] = true; save();
         refreshMusic();
       });
-    });
+    }, true);
   });
 }
 /** the player walks by themselves to a tile (Nicola behind), then `then`; straight on if there is no way */

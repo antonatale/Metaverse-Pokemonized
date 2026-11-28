@@ -2,7 +2,7 @@ import { ITEMS } from '../data/items';
 import type { Npc } from '../data/maps/types';
 import { T, hash, palette, paintGround, setTallStill, paintObject, walker, PEOPLE, PEOPLE_FORMS, LOOKS, townsperson, HEIGHT, type Palette, type Sprite } from './canvas';
 import { st } from '../save/story-progress';
-import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, type PreparedMap, type Person } from '../story/maps';
+import { M, prepare, present, blocked, key, DV, wildNow, petAt, moveMode, moto, isSea, groundOf, type PreparedMap, type Person } from '../story/maps';
 import { leadCreature, idOf, creatureOf, formNow, firstHuman } from '../story/growth';
 import type { FriendId } from '../data/characters';
 import { mover, parity, STEP, gear, van } from '../story/movement';
@@ -400,10 +400,16 @@ function exclaim(c: CanvasRenderingContext2D, x: number, y: number, t: number) {
 /* ---------- the guide to the next stop (24 November 2026) ---------- */
 /** the trainers present near the player, looked up a few times a second rather than every frame (a map has hundreds
     of people) */
-var duels: { at: number; map: string; list: Person[] } = { at: -1e9, map: '', list: [] };
-function duelsNear(now: number): Person[] {
+var duels: { at: number; map: string; list: { p: Person; mode: 'come' | 'wait' }[] } = { at: -1e9, map: '', list: [] };
+function duelsNear(now: number): { p: Person; mode: 'come' | 'wait' }[] {
   if (now - duels.at > 400 || duels.map !== M.id) {
-    duels = { at: now, map: M.id, list: M.people.filter(function (p) { return !!p.n.trainer && Math.abs(p.x - st.x) + Math.abs(p.y - st.y) <= 16 && present(p); }) };
+    var list: { p: Person; mode: 'come' | 'wait' }[] = [];
+    M.people.forEach(function (p) {
+      if (!p.n.trainer || Math.abs(p.x - st.x) + Math.abs(p.y - st.y) > 16 || !present(p)) return;
+      var mode = challenger(p);
+      if (mode) list.push({ p: p, mode: mode });
+    });
+    duels = { at: now, map: M.id, list: list };
   }
   return duels.list;
 }
@@ -427,8 +433,8 @@ function goalMarker(c: CanvasRenderingContext2D, x: number, tip: number, ground:
     /* the rings on the ground, one after the other */
     for (var r = 0; r < 2; r++) {
       var t = reduced ? 0.4 : ((now / 1300) + r * 0.5) % 1;
-      c.save(); c.globalAlpha = (1 - t) * 0.85;
-      c.beginPath(); c.ellipse(x, ground, 8 + t * 22, (8 + t * 22) * 0.42, 0, 0, Math.PI * 2);
+      c.save(); c.globalAlpha = (1 - t) * 0.5;
+      c.beginPath(); c.ellipse(x, ground, 8 + t * 18, (8 + t * 18) * 0.42, 0, 0, Math.PI * 2);
       c.lineWidth = 3.5; c.strokeStyle = '#1c2340'; c.stroke(); c.lineWidth = 2; c.strokeStyle = col; c.stroke();
       c.restore();
     }
@@ -436,7 +442,8 @@ function goalMarker(c: CanvasRenderingContext2D, x: number, tip: number, ground:
     c.save(); c.globalAlpha = 0.22 - bounce * 0.1; c.fillStyle = '#1c2340';
     c.beginPath(); c.ellipse(x, ground, 11 - bounce * 4, 4 - bounce * 1.4, 0, 0, Math.PI * 2); c.fill(); c.restore();
   }
-  c.save(); c.translate(x, tip - lift); c.scale(1 / squash, squash);
+  /* 27 November 2026: a little smaller and lower, so it says where without shouting it */
+  c.save(); c.translate(x, tip - lift * 0.6); c.scale(0.78 / squash, 0.78 * squash);
   c.beginPath(); c.moveTo(0, 0); c.lineTo(-16, -15); c.lineTo(-6.5, -15); c.lineTo(-6.5, -32); c.quadraticCurveTo(-6.5, -35, -3.5, -35); c.lineTo(3.5, -35); c.quadraticCurveTo(6.5, -35, 6.5, -32); c.lineTo(6.5, -15); c.lineTo(16, -15); c.closePath();
   var g = c.createLinearGradient(0, -35, 0, 0); g.addColorStop(0, col); g.addColorStop(1, col2);
   c.fillStyle = g; c.lineJoin = 'round'; c.lineWidth = 3.4; c.strokeStyle = '#1c2340'; c.fill(); c.stroke();
@@ -444,23 +451,24 @@ function goalMarker(c: CanvasRenderingContext2D, x: number, tip: number, ground:
   c.lineCap = 'round'; c.lineWidth = 2.2; c.strokeStyle = 'rgba(255,255,255,.75)'; c.stroke();
   c.restore();
 }
-/** at the player's feet: three chevrons pointing the way, a light running along them toward the stop */
-function guideArrow(c: CanvasRenderingContext2D, x: number, y: number, ang: number, now: number) {
-  /* on the ground, seen a little from above: the way is foreshortened up and down, the chevrons stay whole. Going up,
-     they start further out, past the player's body */
+/** at the player's feet, the way to the next stop. 27 November 2026, Antonio: the arrows were still «così tanto
+    evidenti». Now it is a hint and not a sign: nothing while he walks (the dial in the corner already turns toward the
+    stop), and when he stops for a moment, or a new stop has just been set, a small pale arrowhead comes up on the
+    ground a step past his feet, breathes slowly, and goes again as soon as he moves */
+var wayHint = { a: 0, still: 0, x: -1, y: -1, map: '', goal: '', goalAt: -1e9, at: 0 };
+function guideArrow(c: CanvasRenderingContext2D, x: number, y: number, ang: number, now: number, moving: boolean, goal: string) {
+  var h = wayHint;
+  if (moving || st.x !== h.x || st.y !== h.y || M.id !== h.map) { h.still = now; h.x = st.x; h.y = st.y; h.map = M.id; }
+  if (goal !== h.goal) { h.goal = goal; h.goalAt = now; }
+  var want = !moving && (now - h.still > 1300 || now - h.goalAt < 2600) ? 1 : 0, dt = Math.min(100, Math.max(0, now - h.at));
+  h.at = now; h.a += (want - h.a) * Math.min(1, dt / (want ? 420 : 160));
+  if (h.a < 0.02) return;
   var dx = Math.cos(ang), dy = Math.sin(ang) * 0.62, n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n, sa = Math.atan2(uy, ux);
-  var d0 = 30 + (uy < 0 ? -uy * 26 : 0);
-  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-  for (var k = 0; k < 3; k++) {
-    /* a light runs along them, from the feet outward, and pushes each one a little as it passes */
-    var t = reduced ? 0 : (((now / 650) - k * 0.2) % 1 + 1) % 1, on = reduced ? 0 : Math.max(0, 1 - Math.abs(t - 0.3) * 3.2);
-    var d = d0 + k * 17 + on * 4, s = 0.86 + k * 0.14;
-    c.save(); c.translate(x + ux * d, y + uy * d); c.rotate(sa);
-    c.beginPath(); c.moveTo(-8 * s, -11 * s); c.lineTo(4 * s, 0); c.lineTo(-8 * s, 11 * s);
-    c.lineWidth = 10; c.strokeStyle = '#1c2340'; c.stroke();
-    c.lineWidth = 5.6; c.strokeStyle = on > 0.35 ? '#fff4b8' : k === 2 ? '#ff9f1c' : '#ffd166'; c.stroke();
-    c.restore();
-  }
+  var breathe = reduced ? 0.5 : 0.5 + 0.5 * Math.sin(now / 700), d = 30 + (uy < 0 ? -uy * 20 : 0) + breathe * 2;
+  c.save(); c.globalAlpha = h.a * (0.42 + breathe * 0.16); c.lineJoin = 'round';
+  c.translate(x + ux * d, y + uy * d); c.rotate(sa); c.scale(1, 0.8);
+  c.beginPath(); c.moveTo(5, 0); c.lineTo(-3.5, -5); c.quadraticCurveTo(-1.6, 0, -3.5, 5); c.closePath();
+  c.fillStyle = '#fff3d1'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#1c2340'; c.stroke();
   c.restore();
 }
 /** over a secret told by a trainer: a blue star that turns and bobs, a ring under it */
@@ -477,11 +485,13 @@ function starMarker(c: CanvasRenderingContext2D, x: number, y: number, ground: n
   c.restore();
 }
 /** over a trainer who would challenge the player: a small red «VS» */
-function vsMark(c: CanvasRenderingContext2D, x: number, y: number) {
+function vsMark(c: CanvasRenderingContext2D, x: number, y: number, quiet?: boolean) {
   c.save(); c.translate(x, y);
+  /* grey and smaller when he will not come on his own: the challenge is there, talking to him */
+  if (quiet) { c.globalAlpha = 0.7; c.scale(0.85, 0.85); }
   c.beginPath(); c.moveTo(-10, -9); c.lineTo(10, -9); c.quadraticCurveTo(13, -9, 13, -6); c.lineTo(13, 3); c.quadraticCurveTo(13, 6, 10, 6); c.lineTo(3, 6); c.lineTo(0, 10); c.lineTo(-3, 6); c.lineTo(-10, 6); c.quadraticCurveTo(-13, 6, -13, 3); c.lineTo(-13, -6); c.quadraticCurveTo(-13, -9, -10, -9); c.closePath();
   c.fillStyle = '#ffffff'; c.strokeStyle = '#1c2340'; c.lineWidth = 1.8; c.lineJoin = 'round'; c.fill(); c.stroke();
-  c.fillStyle = '#e63946'; c.font = '11px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = quiet ? '#7a8199' : '#e63946'; c.font = '11px "Lilita One", "Arial Rounded MT Bold", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('VS', 0, -1.2);
   c.restore();
 }
@@ -1108,10 +1118,11 @@ function drawFrame(now: number, sk: number) {
   /* under the covi, the glow of their aura (render/canvas/covo.ts) */
   var inView = function (a: AuraAt) { return a.x + a.w + 120 > camX && a.x - 120 < camX + vw && a.y + a.h + 80 > camY && a.y - a.up - 300 < camY + vh; };
   auras.forEach(function (a) { if (inView(a)) auraBack(ctx, a, now, reduced, !rich()); });
-  /* the chevrons that point the way to the next stop lie on the ground, under the people (see goalMarker, below) */
+  /* the arrowhead that points the way to the next stop lies on the ground, under the people (see goalMarker, below) */
   var stopNow = run || sea.race ? null : heading(M.id);
   var way = shot || skyFrom ? null : wayToStop(stopNow);
-  if (way && !(mover && mover.jump)) guideArrow(ctx, pp.x + T / 2, pp.y + T * 0.72, way, now);
+  if (way != null && !(mover && mover.jump)) guideArrow(ctx, pp.x + T / 2, pp.y + T * 0.72, way, now, !!mover, stopNow ? stopNow.x + ',' + stopNow.y : '');
+  else wayHint.a = 0;
   drawSorted(ctx, cache.items, people, RS, cam, now, lampsOn(dk), lit);
   if (M.id === 'formia') pumpScene(ctx, now);
   /* in the tall grass the blades hide Antonio's feet, and his creature's; the bits a step throws up fly over them */
@@ -1181,14 +1192,15 @@ function drawFrame(now: number, sk: number) {
     if (sx0 > camX - 30 && sx0 < camX + vw + 30 && sy0 > camY - 60 && sy0 < camY + vh + 60) starMarker(ctx, sx0, sy0, tr0.y * T + T - 5, now);
   }
   /* the trainers who would walk up to the player: a «VS» over their head and, when he is near, the tiles they watch */
-  if (!M.inside || M.id.indexOf('covo') === 0) duelsNear(now).forEach(function (p) {
-    if (p.alert || p.path || !challenger(p)) return;
+  if (!M.inside || M.id.indexOf('covo') === 0) duelsNear(now).forEach(function (q) {
+    var p = q.p;
+    if (p.alert || p.path || !present(p)) return;
     /* the one the arrow of the next stop is already over needs no other mark */
     if (hd && hd.x === p.x && hd.y === p.y) return;
     var d = Math.abs(p.x - st.x) + Math.abs(p.y - st.y);
     if (d > 14) return;
-    if (d <= 9) sightTiles(ctx, p.x, p.y, p.dir, now);
-    vsMark(ctx, p.x * T + T / 2, p.y * T - 18 + (reduced ? 0 : Math.sin(now / 400 + p.x) * 1.5));
+    if (d <= 9 && q.mode === 'come') sightTiles(ctx, p.x, p.y, p.dir, now);
+    vsMark(ctx, p.x * T + T / 2, p.y * T - 18 + (reduced || q.mode === 'wait' ? 0 : Math.sin(now / 400 + p.x) * 1.5), q.mode === 'wait');
   });
   /* the flags of a run in the pineta */
   if (run) run.flags.forEach(function (f, k) {
@@ -1269,7 +1281,7 @@ const TOWN_LABELS: [string, string][] = [['Casa', 'casa'], ['Eclipse', 'eclipse'
 /** where Antonio is on the Formia map: indoors, at the door he went in by */
 function whereOnFormia(): [number, number] {
   if (st.map === 'formia') return [st.x, st.y];
-  const b = (prepare('formia').buildings || []).find(function (q) { return q.to === st.map; });
+  const b = (prepare('formia').buildings || []).find(function (q) { return q.to === groundOf(st.map); });
   return b ? [b.door[0], b.door[1] + 1] : [st.x, st.y];
 }
 export function townMap(el: HTMLElement) {

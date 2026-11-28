@@ -224,6 +224,31 @@ export const TRACKS: Record<string, Track> = {
       ], { gain: 0.03, cutoff: 3600, decay: 0.6, sustain: 0.05, release: 0.9 })
     ]
   },
+  /* the dawn after the night of 3:12 (ui/dawn.ts) and the first minutes of the morning, until Nicola's van: the mystery
+     melts. F major, slow, an arpeggio that rises like the light, a melody that this time answers itself */
+  alba: {
+    bpm: 72, loop: true,
+    voices: [
+      lead([
+        'C5 - - - A4 - - - F5 - - - E5 - - -',
+        'D5 - - - C5 - A4 - G4 - - - . . . .',
+        'A4 - - - C5 - - - F5 - - - G5 - - -',
+        'A5 - - - G5 - F5 - E5 - - - F5 - - -'
+      ], { type: 'triangle', gain: 0.13, cutoff: undefined, decay: 0.5, sustain: 0.6, vibrato: 10 }),
+      bass([
+        'F2 - - - - - - - F2 - - - - - - -',
+        'Bb1 - - - - - - - C2 - - - - - - -',
+        'D2 - - - - - - - Bb1 - - - - - - -',
+        'C2 - - - - - - - F2 - - - - - - -'
+      ], { gain: 0.22, sustain: 0.9 }),
+      pluck([
+        'F4 A4 C5 F5 A4 C5 F5 A5 F4 A4 C5 F5 A4 C5 F5 A5',
+        'D4 F4 Bb4 D5 F4 Bb4 C5 E5 C4 E4 G4 C5 E4 G4 C5 E5',
+        'D4 F4 A4 D5 F4 A4 D5 F5 Bb3 D4 F4 Bb4 D4 F4 Bb4 D5',
+        'C4 E4 G4 C5 E4 G4 Bb4 C5 F4 A4 C5 F5 A4 C5 F5 A5'
+      ], { gain: 0.022, cutoff: 3000, decay: 0.3, sustain: 0.05, release: 0.6 })
+    ]
+  },
   /* Nicola's arrival: a bouncy major-key tune, with little answers and a skipping bass, through the first sea trip. */
   nicola: {
     bpm: 104, loop: true,

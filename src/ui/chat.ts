@@ -9,7 +9,9 @@ import { creaturesMissing, friendFreed } from '../story/finale';
 import { CHATS, GROUP, type Chat } from '../data/chat';
 import { CHARS, ROSTER, type FriendId } from '../data/characters';
 import { busy } from '../story/movement';
-import { sheet, closeSheet } from './story-screen';
+import { sheet, closeSheet, notify } from './story-screen';
+import { replyFx, backFrom, applyReply } from '../story/replies';
+import { TONE } from '../data/replies';
 import { SPR } from '../render/svg';
 import { heroText } from '../story/growth';
 import { esc, each, $, reduced } from './dom';
@@ -83,6 +85,8 @@ function bubble(id: FriendId, text: string, at: number, first: boolean): string 
 }
 const mine = (text: string, at: number) => '<div class="ph-msg out"><div class="ph-b"><p>' + esc(text) + '<small>' + hm(at) + ' <i class="ph-tick">✓✓</i></small></p></div></div>';
 const pill = (label: string, at: number) => '<div class="ph-day"><span>' + esc(dayOf(at)) + ' · ' + esc(label) + '</span></div>';
+/** what an answer did in the game (data/replies.ts), under it in the chat */
+const fxNote = (text: string) => '<div class="ph-fx"><span>' + esc(heroText(text)) + '</span></div>';
 /** who is in the group, for the line under its name: everyone but whoever is played */
 function members(): string { var me = firstHuman(); return ROSTER.filter(function (f) { return f !== me; }).map(function (f) { return CHARS[f].name; }).join(', ') + ', tu'; }
 function phone(): HTMLElement {
@@ -97,6 +101,20 @@ function phone(): HTMLElement {
 }
 var playing: { skip: () => void; done: () => void } | null = null;
 function scrollDown(el: HTMLElement) { el.scrollTop = el.scrollHeight; }
+/* the last message is never left under the answers (27 November 2026): when the bottom of the phone grows (the answers
+   come up) or the chat grows, the chat follows its end, unless the player has scrolled up to read */
+var stuck: ResizeObserver | null = null;
+function keepEnd(el: HTMLElement) {
+  if (stuck) stuck.disconnect();
+  var atEnd = true;
+  el.addEventListener('scroll', function () { atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 24; });
+  if (typeof ResizeObserver === 'undefined') return;
+  stuck = new ResizeObserver(function () { if (atEnd) scrollDown(el); });
+  stuck.observe(el);
+  var inner = el.parentElement && el.parentElement.querySelector('.ph-foot');
+  if (inner) stuck.observe(inner);
+  new MutationObserver(function () { if (atEnd) scrollDown(el); }).observe(el, { childList: true });
+}
 
 function rememberChat(c: Chat) {
   const at = Date.now(), lines = linesOf(c);
@@ -114,13 +132,18 @@ export function recordChat(id: string) {
 }
 function closePhone(then?: () => void) {
   playing = null; document.removeEventListener('keydown', keys, true);
+  if (stuck) { stuck.disconnect(); stuck = null; }
   closeSheet(); sfx('click');
   if (then) then();
 }
+/** when the answers came up: an Enter pressed to hurry the messages along does not send the first answer by mistake */
+var chipsAt = 0;
 function keys(e: KeyboardEvent) {
   if (!playing) return;
+  var on = e.target as HTMLElement;
+  if ((e.key === 'Enter' || e.key === ' ') && on.classList && on.classList.contains('ph-chip') && Date.now() - chipsAt < 650) { e.preventDefault(); e.stopImmediatePropagation(); return; }
   /* on a button of the phone, Enter presses it */
-  if ((e.key === 'Enter' || e.key === ' ') && (e.target as HTMLElement).tagName === 'BUTTON') return;
+  if ((e.key === 'Enter' || e.key === ' ') && on.tagName === 'BUTTON') return;
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopImmediatePropagation(); playing.skip(); }
   else if (e.key === 'Escape' || e.key === 't' || e.key === 'T') { e.preventDefault(); e.stopImmediatePropagation(); playing.done(); }
 }
@@ -136,6 +159,10 @@ function history(el: HTMLElement, skip?: string) {
     html += pill(c.label, at);
     lines.forEach(function (l) { html += bubble(l[0], l[1], at, l[0] !== prev); prev = l[0]; });
     if (rec && rec.reply) html += mine(rec.reply, at);
+    /* and what came of it: the answer back, the consequence */
+    var fx = rec && rec.fx != null ? replyFx(c.id, rec.fx) : null, who = fx ? backFrom(c.id, fx, lastFreed(c)) : null;
+    if (fx && who && fx.back) html += bubble(who, heroText(fx.back[1]), at, true);
+    if (fx) html += fxNote(fx.note);
   });
   el.innerHTML = html || (skip ? '' : '<p class="ph-empty">Ancora niente: il gruppo si sveglia quando succede qualcosa.</p>');
   scrollDown(el);
@@ -145,6 +172,7 @@ export function openPhone() {
   if (playing) return;
   var el = phone();
   history(el);
+  keepEnd(el);
   sfx('pop');
   var done = function () { closePhone(); };
   playing = { skip: done, done: done };
@@ -162,27 +190,50 @@ export function playChat(id: string, then?: () => void) {
   var el = phone(), sub = $('ph-sub'), replies = $('ph-replies'), k = 0, timer = 0, tick = 0, typing: HTMLElement | null = null, prev = '';
   history(el, c.id);
   el.insertAdjacentHTML('beforeend', pill(c.label, at));
-  scrollDown(el);
+  scrollDown(el); keepEnd(el);
   var finished = false;
   var end = function () {
     finished = true; clearTimeout(timer); clearInterval(tick);
     sub.textContent = members();
     replies.hidden = false;
-    replies.innerHTML = (c.replies || ['👍', '😂', '🔥']).map(function (r) { return '<button type="button" class="ph-chip">' + esc(r) + '</button>'; }).join('') +
-      '<button type="button" class="ph-chip ph-away" id="ph-away">Metti via il telefono</button>';
-    each(replies.querySelectorAll('.ph-chip:not(.ph-away)'), function (b) {
+    el.parentElement!.classList.add('answering');
+    /* the answers, each with its tone (what it does is seen once it is sent: data/replies.ts) */
+    replies.innerHTML = '<div class="ph-chips">' + (c.replies || ['👍', '😂', '🔥']).map(function (r, i) {
+      var fx = replyFx(c.id, i);
+      return '<button type="button" class="ph-chip" data-k="' + i + '"' + (fx ? ' data-tone="' + fx.tone + '"' : '') + '><span>' + esc(r) + '</span>' + (fx ? '<small>' + TONE[fx.tone] + '</small>' : '') + '</button>';
+    }).join('') + '</div>' +
+      '<button type="button" class="ph-away" id="ph-away">Metti via il telefono</button>';
+    each(replies.querySelectorAll('.ph-chip'), function (b) {
       b.addEventListener('click', function () {
-        var r = b.textContent || '';
-        st.chats![c.id].reply = r; save();
+        var k = +((b as HTMLElement).dataset.k || 0), r = (c.replies || ['👍', '😂', '🔥'])[k] || '';
+        st.chats![c.id].reply = r; applyReply(c.id, k); save();
         el.insertAdjacentHTML('beforeend', mine(r, Date.now())); scrollDown(el); sfx('msgOut');
-        each(replies.querySelectorAll('.ph-chip:not(.ph-away)'), function (o) { (o as HTMLButtonElement).disabled = true; });
-        var away = $('ph-away'); away.classList.add('go'); away.focus();
+        each(replies.querySelectorAll('.ph-chip'), function (o) { (o as HTMLButtonElement).disabled = true; });
+        (b as HTMLElement).classList.add('sent');
+        var fx = replyFx(c.id, k), who = fx ? backFrom(c.id, fx, lastFreed(c)) : null;
+        var away = $('ph-away');
+        var told = function () { if (fx) { el.insertAdjacentHTML('beforeend', fxNote(fx.note)); scrollDown(el); sfx('pickup'); afterNote = fx.note; } away.classList.add('go'); away.focus(); };
+        if (fx && who && fx.back) {
+          /* the friend answers back: «is typing…», then the bubble */
+          var typ = document.createElement('div');
+          typ.className = 'ph-msg in typing first';
+          typ.innerHTML = avatar(who) + '<div class="ph-b"><i></i><i></i><i></i></div>';
+          window.setTimeout(function () { el.appendChild(typ); scrollDown(el); sub.textContent = CHARS[who!].name + ' sta scrivendo…'; }, reduced ? 0 : 500);
+          window.setTimeout(function () {
+            typ.remove(); sub.textContent = members();
+            el.insertAdjacentHTML('beforeend', bubble(who!, heroText(fx!.back![1]), Date.now(), true)); scrollDown(el); sfx('msgIn');
+            told();
+          }, reduced ? 50 : 1500);
+        } else told();
       });
     });
     $('ph-away').addEventListener('click', finish);
     var first = replies.querySelector('button') as HTMLButtonElement | null; if (first) first.focus();
+    chipsAt = Date.now();
   };
-  var finish = function () { if (!finished) { show(true); return; } closePhone(then); };
+  /* what the answer did, said again in the corner when the phone is put away */
+  var afterNote = '';
+  var finish = function () { if (!finished) { show(true); return; } var note = afterNote; closePhone(then); if (note) notify('📱 ' + heroText(note)); };
   /** the next message: "is typing…" for a moment, as long as the message, then the bubble */
   var next = function () {
     if (k >= ls.length) { end(); return; }

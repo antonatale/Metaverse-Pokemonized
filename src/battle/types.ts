@@ -118,7 +118,9 @@ export interface Bout { key: string; foe: FighterId; lv: number; who: string[]; 
 /** what the story knows about a battle: the covo, or the wild creature (its id on the map), who fights for Antonio, the foe's level */
 /** a story battle: where it comes from, and (for the battle screen) its place and who stands behind the foe's creatures
     (`coach`, ui/coaches.ts) */
-export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string; coach?: string }
+export interface StoryTag { covo?: string; wild?: string; trainer?: string; tourney?: number; sp?: string; key?: string; foeLv?: number; gold?: boolean; scene?: string; coach?: string;
+  /** a friend who fights on the player's side for this battle (27 November 2026: Valentin against Mamurra's men) */
+  ally?: string }
 
 export interface Forced { move?: string; skip?: boolean }
 export interface Grade { g: number; lode: boolean }

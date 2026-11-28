@@ -131,12 +131,13 @@ export function isFriend(id: string): id is FriendId { return Object.prototype.h
 /** how a friend comes into the company: beating its covo, or doing its activity together (`activity`). Everyone is a
     protagonist, with a team of its own: it comes with its first creature, of its own type */
 export const JOIN: Record<Exclude<FriendId, 'antonio'>, { sp: SpeciesId; lv: number; activity?: string; say?: string[] }> = {
-  costanzo: { sp: 'cicalina', lv: 6 },
-  forchetta: { sp: 'lumacotta', lv: 9 },
-  andrea: { sp: 'stellina', lv: 8, activity: 'padel', say: ['Ho calcolato che con te perdo meno tempo. Vengo.', 'Questa stella l\'ho trovata sugli scogli: è di tipo Cervello, come me.'] },
-  valentin: { sp: 'cinghialetto', lv: 8, activity: 'volley', say: ['Weee! Da oggi la festa si sposta dove vai tu.', 'Lui è il mio cinghialetto. Non chiedere.'] },
-  zendavid: { sp: 'olivella', lv: 8, activity: 'corsa', say: ['Bau. Se corri così, vengo con te.', 'Questa Olivella ascolta la musica con me. Non si lamenta mai.'] },
-  claudia: { sp: 'lumacotta', lv: 8, activity: 'quiz', say: ['Ho sentito il tuo punto: vengo con te.', 'Lei è la mia Lumacotta. Lenta, calma, e non sbaglia mai strada. Al contrario di quel che dice Costanzo.'] }
+  /* 27 November 2026: each one brings his own, the creature born beside him at 3:12 (data/companions.ts) */
+  costanzo: { sp: 'pumbino', lv: 6 },
+  forchetta: { sp: 'spadino', lv: 9 },
+  andrea: { sp: 'volpalina', lv: 8, activity: 'padel', say: ['Ho calcolato che con te perdo meno tempo. Vengo.', 'Lei è Volpalina: alle 3:12 è nata sul mio davanzale, con due alette. Probabilità che volasse: bassa. Eppure.'] },
+  valentin: { sp: 'aru', lv: 8, activity: 'volley', say: ['Weee! Da oggi la festa si sposta dove vai tu.', 'Lui è Aru. Piccolo, senza peli, morde le caviglie. Alle 3:12 era sotto il mio letto. Non chiedere.'] },
+  zendavid: { sp: 'gufobau', lv: 8, activity: 'corsa', say: ['Bau. Se corri così, vengo con te.', 'Questo è Gufobau. Alle 3:12 è atterrato sulle mie cuffie e non se n\'è più andato. Ascolta la musica con me. Non si lamenta mai.'] },
+  claudia: { sp: 'tedua', lv: 8, activity: 'quiz', say: ['Ho sentito il tuo punto: vengo con te.', 'Lei è Tedua. Nera, pelosa, alle 3:12 è uscita dal buio del castello. Non sbaglia mai strada. Al contrario di quel che dice Costanzo.'] }
 };
 /** how far a form takes the numbers: the people have no second form of a kind to get them from, as the creatures do */
 export const FORM_STATS = [1, 1.08, 1.16];

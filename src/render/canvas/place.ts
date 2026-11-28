@@ -1,5 +1,5 @@
 import type { PlaceDef, Thing } from '../../data/maps/types';
-import { beatOn, gateShut } from '../../story/place';
+import { beatOn, gateShut, fallen } from '../../story/place';
 import { T, circle, fillStroke, type Ctx } from './draw';
 import type { Palette } from './palette';
 
@@ -73,6 +73,51 @@ function iele(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
   c.beginPath(); c.moveTo(X + 16, Y + 6); c.quadraticCurveTo(X + 25, Y + 18, X + 23, Y + 25); c.lineTo(X + 9, Y + 25); c.quadraticCurveTo(X + 7, Y + 18, X + 16, Y + 6); c.closePath(); c.fill(); c.stroke();
   circle(c, X + 16, Y + 6, 3.4); c.fill(); c.stroke();
 }
+/* 27 November 2026, the covi with floors: a laser that sweeps (Antonio's lab), a ball off the ball machine (Forchetta's
+   centre court), a wave of bass (Zendavid's speakers), a flame of the candelabra (Claudia's tower) */
+function laser(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  c.globalAlpha = danger ? 0.9 : 0.25; c.fillStyle = danger ? '#ff3d5a' : '#ff8fa3'; c.fillRect(X + 2, Y + T / 2 - (danger ? 3 : 1), T - 4, danger ? 6 : 2);
+  if (danger) { c.globalAlpha = 0.35; c.fillRect(X, Y + T / 2 - 8, T, 16); }
+  c.globalAlpha = 1;
+  circle(c, X + 4, Y + T / 2, 3); fillStroke(c, '#2b2f3a', P.ink, 1.2); circle(c, X + T - 4, Y + T / 2, 3); fillStroke(c, '#2b2f3a', P.ink, 1.2);
+}
+function ball(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  c.globalAlpha = danger ? 0.45 : 0.14; c.fillStyle = P.ink; c.beginPath(); c.ellipse(X + T / 2, Y + T / 2 + 6, danger ? 10 : 6, danger ? 4 : 2.5, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+  if (!danger) return;
+  circle(c, X + T / 2, Y + T / 2 - 2, 8); fillStroke(c, '#d8f04a', P.ink, 1.8);
+  c.strokeStyle = '#ffffff'; c.lineWidth = 1.6; c.beginPath(); c.arc(X + T / 2 - 9, Y + T / 2 - 2, 7, -0.9, 0.9); c.stroke(); c.beginPath(); c.arc(X + T / 2 + 9, Y + T / 2 - 2, 7, Math.PI - 0.9, Math.PI + 0.9); c.stroke();
+}
+function bass(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  c.strokeStyle = danger ? '#ff5fd2' : '#ff8fc1'; c.globalAlpha = danger ? 0.95 : 0.3; c.lineWidth = danger ? 3 : 1.6;
+  for (let k = 0; k < (danger ? 3 : 1); k++) { c.beginPath(); c.ellipse(X + T / 2, Y + T / 2 + 2, 5 + k * 5, 3 + k * 3, 0, 0, Math.PI * 2); c.stroke(); }
+  c.globalAlpha = 1;
+}
+function fire(c: Ctx, P: Palette, X: number, Y: number, danger: boolean) {
+  rr0(c, X + T / 2 - 4, Y + T - 9, 8, 5); fillStroke(c, '#c9b06a', P.ink, 1.2);
+  const h = danger ? 18 : 6;
+  c.beginPath(); c.moveTo(X + T / 2, Y + T - 9 - h); c.quadraticCurveTo(X + T / 2 + (danger ? 9 : 4), Y + T - 12, X + T / 2, Y + T - 8); c.quadraticCurveTo(X + T / 2 - (danger ? 9 : 4), Y + T - 12, X + T / 2, Y + T - 9 - h);
+  fillStroke(c, danger ? '#ff7a2a' : '#ffb347', P.ink, 1.3);
+  if (danger) { c.globalAlpha = 0.25; circle(c, X + T / 2, Y + T / 2, 14); c.fillStyle = '#ff7a2a'; c.fill(); c.globalAlpha = 1; }
+}
+function rr0(c: Ctx, x: number, y: number, w: number, h: number) { c.beginPath(); c.rect(x, y, w, h); }
+/** ice: pale and glossy, with a gleam, so it reads as a floor you cannot stop on */
+function ice(c: Ctx, P: Palette, X: number, Y: number) {
+  c.fillStyle = '#d6f1ff'; c.globalAlpha = 0.85; c.fillRect(X, Y, T, T); c.globalAlpha = 1;
+  c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(X + 6, Y + 12); c.lineTo(X + 12, Y + 6); c.moveTo(X + 18, Y + 26); c.lineTo(X + 26, Y + 18); c.stroke();
+  c.strokeStyle = '#9fd3ee'; c.lineWidth = 1; c.strokeRect(X + 0.5, Y + 0.5, T - 1, T - 1);
+}
+/** a floor that gives way: cracked while it holds; a hole once it has fallen */
+function crumble(c: Ctx, P: Palette, X: number, Y: number, down: boolean) {
+  if (down) {
+    c.fillStyle = '#14101c'; c.beginPath(); c.moveTo(X + 3, Y + 6); c.lineTo(X + 12, Y + 2); c.lineTo(X + 26, Y + 4); c.lineTo(X + 30, Y + 16); c.lineTo(X + 26, Y + 29); c.lineTo(X + 10, Y + 30); c.lineTo(X + 2, Y + 20); c.closePath(); c.fill();
+    c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
+    c.fillStyle = '#3a3346'; c.fillRect(X + 6, Y + 6, T - 12, 4);
+    return;
+  }
+  c.strokeStyle = P.ink; c.globalAlpha = 0.75; c.lineWidth = 1.4; c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(X + 4, Y + 9); c.lineTo(X + 13, Y + 14); c.lineTo(X + 11, Y + 22); c.lineTo(X + 18, Y + 28); c.moveTo(X + 13, Y + 14); c.lineTo(X + 24, Y + 10); c.lineTo(X + 28, Y + 4); c.moveTo(X + 24, Y + 10); c.lineTo(X + 27, Y + 20); c.stroke();
+  c.globalAlpha = 1;
+}
 function rest(c: Ctx, P: Palette, X: number, Y: number) {
   c.fillStyle = P.lamp; c.beginPath(); c.moveTo(X + T / 2, Y + 7); c.quadraticCurveTo(X + 23, Y + 18, X + T / 2, Y + 24); c.quadraticCurveTo(X + 9, Y + 18, X + T / 2, Y + 7); c.fill();
   c.strokeStyle = P.ink; c.lineWidth = 1.6; c.stroke();
@@ -89,7 +134,9 @@ export function drawThings(c: Ctx, P: Palette, p: PlaceDef, flags: Record<string
     else if (t.k === 'gate') gate(c, P, X, Y, hueOf(P, p, t.flag), gateShut(t, flags));
     else if (t.k === 'slide') slide(c, P, X, Y, t.dir, now, reduced);
     else if (t.k === 'pad') pad(c, P, X, Y, now, reduced);
-    else if (t.k === 'beat') (t.look === 'rock' ? boulder : t.look === 'mist' ? iele : beat)(c, P, X, Y, beatOn(t, tick + 1));
+    else if (t.k === 'beat') (t.look === 'rock' ? boulder : t.look === 'mist' ? iele : t.look === 'laser' ? laser : t.look === 'ball' ? ball : t.look === 'bass' ? bass : t.look === 'fire' ? fire : beat)(c, P, X, Y, beatOn(t, tick + 1));
+    else if (t.k === 'ice') ice(c, P, X, Y);
+    else if (t.k === 'crumble') crumble(c, P, X, Y, !!flags[fallen(t.x, t.y)]);
     else if (t.k === 'rest') rest(c, P, X, Y);
     else mark(c, P, X, Y);
   });

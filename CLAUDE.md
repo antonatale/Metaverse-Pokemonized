@@ -13,12 +13,13 @@ TypeScript strict + Vite, DOM/SVG per lotte e interfaccia, canvas 2D per la mapp
 ## Regole essenziali
 
 - Mappa: 350×152 caselle (dal 17 novembre Castellone e il centro sono a scala doppia, `widened` in `save/story-progress.ts`). Tutte le coordinate stanno in `tools/formia/network.ts` e `formia-places.ts`, mai nel generatore; dopo ogni cambio `npx tsx tools/formia/build.ts` (zero problemi) e `density.ts`.
+- Covi a tre piani: i piani sopra il pianterreno sono piante di lettere in `data/maps/covi-floors.ts`, provate da `tests/unit/place.test.ts` (andata) e `floors.test.ts` (ritorno). Le creature dei sette stanno in `data/companions.ts`.
 - Motore in `src/battle/` puro: stato JSON e RNG con seme; niente DOM, `Date` o `Math.random`. La UI riproduce gli eventi; regole della storia in `src/story/`.
 - Salvataggi compatibili: non rinominare `lotte-tra-amici:*`; campi nuovi facoltativi, accesso a `localStorage` protetto. Cambiando le coordinate della mappa aggiungere una migrazione in `save/story-progress.ts` (l'ultima della mappa è `formia20`, seguita da `ambrosia`; `formia18` sta in testa alla lista perché sposta le colonne: le successive vanno in fondo).
 - Golden: rigenerarli solo per cambiamenti voluti e verificati. Le 2.040 lotte tra amici sono il riferimento esistente; non eliminarle prima che ci sia una copertura equivalente delle lotte di squadra.
 - Prima di cambiare numeri, misurare con i simulatori pertinenti. Nessun ritocco di bilanciamento solo per far combaciare la biografia.
 - Testi in italiano, commenti del codice in inglese, colori UI nei token CSS; ritratti e omini usano colori fissi. Stile quaderno a penna ed evidenziatori; niente migrazione a Phaser o al 3D.
-- Le persone sono reali: niente nuovi cognomi o numeri civici. Uniche eccezioni, chieste da Antonio: il Tabacchi Altieri con i nonni e zio Lele, e Barber May (`data/maps/botteghe.ts`). Fatti di Formia verificati e fonti in `docs/fonti-formia.md`.
+- Le persone sono reali: niente nuovi cognomi o numeri civici. Uniche eccezioni, chieste da Antonio: il Tabacchi Altieri con i nonni e zio Lele, Barber May (`data/maps/botteghe.ts`) e il nome della Scala Mazzarri (`data/mazzarri.ts`: solo il nome del meme, senza disegnare l'allenatore né fargli dire niente). Fatti di Formia verificati e fonti in `docs/fonti-formia.md`.
 - Preservare `window.claude.hot`. Effetti puramente ambientali in `render/atmosphere.ts`, senza dipendere dalla storia, fermi con movimento ridotto e spenti in Grafica Bassa.
 - PC principale, telefono funzionante. Il trailer vecchio è stato tolto. Commit e push solo se richiesti.
 

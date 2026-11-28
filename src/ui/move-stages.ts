@@ -3,6 +3,7 @@ import { sleep } from './common';
 import { animate, anchor, ring, sparks, flashAt, streaks } from './effects';
 import { sfx } from '../audio';
 import { SCENES } from './move-scenes';
+import { COMPANION_SCENES } from './companion-scenes';
 import { INK, type Ctx, type StageDef, type P, lerp, mid, tr, gone, size, body, beyond, curve, along, piece, pieceIn, layer, beam, trace, fade, wide, mv, way, tint, pc, burst, boom } from './spell-kit';
 
 /* The scenes of the moves (data/move-fx.ts): what happens, whatever the move is made of. A scene takes its colour and its
@@ -412,6 +413,7 @@ export const STAGES: Record<Stage, StageDef> = {
   ram: { run: ram, foe: 'recoil', quick: true, impact: true },
   dive: { run: dive, foe: 'squash', quick: true, impact: true },
   fall: { run: fall, foe: 'sink', impact: true },
-  /* the others, in ui/move-scenes.ts */
-  ...SCENES
+  /* the others, in ui/move-scenes.ts; the seven's creatures', in ui/companion-scenes.ts */
+  ...SCENES,
+  ...COMPANION_SCENES
 };

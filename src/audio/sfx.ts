@@ -109,6 +109,17 @@ const FX: Record<string, Fx> = {
   net(c, out, t) { hiss(c, out, t, 0.3, { freq: 900, to: 3200, q: 0.9, gain: 0.5 }); tone(c, out, 500, t + 0.25, 0.06, { type: 'triangle', gain: 0.12 }); },
   /* the creatures' spells (ui/spells.ts): thunder for the lightning, a heartbeat for the giant heart */
   thunder(c, out, t) { hiss(c, out, t, 0.55, { type: 'lowpass', freq: 1400, to: 160, gain: 0.85 }); tone(c, out, 80, t, 0.4, { type: 'sawtooth', to: 38, gain: 0.1, cutoff: 500, decay: 0.12, sustain: 0.4 }); },
+  /* a roar out of a big cat's chest (a small one's too, an octave up in the hiss of the caracal): a growl that rises and breaks */
+  roar(c, out, t) {
+    tone(c, out, 110, t, 0.55, { type: 'sawtooth', to: 190, gain: 0.12, cutoff: 900, attack: 0.04, decay: 0.2, sustain: 0.6, release: 0.15, vibrato: 18 });
+    tone(c, out, 220, t + 0.05, 0.45, { type: 'square', to: 150, gain: 0.04, cutoff: 1200, attack: 0.05, sustain: 0.5 });
+    hiss(c, out, t, 0.6, { type: 'bandpass', freq: 700, to: 300, q: 1.2, gain: 0.3 });
+  },
+  /* one beat of the freestyle: the kick and a hat */
+  thump(c, out, t) {
+    tone(c, out, 150, t, 0.2, { type: 'sine', to: 42, gain: 0.24, attack: 0.002, decay: 0.08, sustain: 0.4, release: 0.08 });
+    hiss(c, out, t + 0.02, 0.04, { type: 'highpass', freq: 7000, gain: 0.06 });
+  },
   heartbeat(c, out, t) { tone(c, out, 74, t, 0.13, { type: 'sine', to: 48, gain: 0.55, decay: 0.08, sustain: 0.25 }); tone(c, out, 66, t + 0.21, 0.13, { type: 'sine', to: 44, gain: 0.45, decay: 0.08, sustain: 0.25 }); },
   /* the net on the ground, shaking with the creature in it */
   shake(c, out, t) { tone(c, out, 260, t, 0.07, { type: 'triangle', to: 200, gain: 0.3, decay: 0.04, sustain: 0.3 }); hiss(c, out, t, 0.09, { freq: 1600, to: 900, q: 1.1, gain: 0.35 }); },
@@ -140,6 +151,42 @@ const FX: Record<string, Fx> = {
   badge(c, out, t) {
     arp(c, out, t, ['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], 0.07, { type: 'square', gain: 0.07, cutoff: 4000, decay: 0.03, sustain: 0.7 });
     tone(c, out, hz('C7'), t + 0.45, 0.5, { type: 'triangle', gain: 0.08, vibrato: 15, release: 0.3 });
+  },
+  /* ---------- the Scala Mazzarri (ui/scala.ts) ---------- */
+  /** a foot on a wooden rung */
+  rung(c, out, t) {
+    tone(c, out, 340 + wobble() * 40, t, 0.05, { type: 'triangle', to: 250, gain: 0.26, decay: 0.02, sustain: 0.3, release: 0.03 });
+    hiss(c, out, t, 0.03, { type: 'bandpass', freq: 1800, q: 1.5, gain: 0.14 });
+  },
+  /** the drum roll before Costanzo says his rung, and the cymbal */
+  drumroll(c, out, t) {
+    for (let k = 0; k < 16; k++) hiss(c, out, t + k * 0.045, 0.04, { type: 'bandpass', freq: 1900, q: 0.9, gain: 0.03 + k * 0.004 });
+    hiss(c, out, t + 0.74, 0.7, { type: 'highpass', freq: 5200, gain: 0.11 });
+    tone(c, out, 98, t + 0.74, 0.18, { type: 'sine', to: 52, gain: 0.2, decay: 0.05, sustain: 0.3 });
+  },
+  /* ---------- Valentin's «Stai inguaiatoooo» (ui/shout.ts) ---------- */
+  /** the air horn of a freestyle battle: two short blasts and a long one */
+  airhorn(c, out, t) {
+    [[0, 0.13], [0.17, 0.13], [0.34, 0.62]].forEach(function (b) {
+      [0, 7, -9].forEach(function (cents, i) {
+        tone(c, out, 466, t + b[0], b[1], { type: 'sawtooth', gain: i ? 0.06 : 0.09, cutoff: 2600, attack: 0.01, decay: 0.04, sustain: 0.85, release: 0.05, detune: cents, vibrato: 6 });
+        tone(c, out, 698, t + b[0], b[1], { type: 'sawtooth', gain: 0.04, cutoff: 3000, attack: 0.01, sustain: 0.8, release: 0.05, detune: cents });
+      });
+    });
+  },
+  /** a record scratched back and forth */
+  scratch(c, out, t) {
+    [[0, 500, 2600], [0.11, 2600, 400], [0.24, 600, 2900]].forEach(function (s) {
+      hiss(c, out, t + s[0], 0.1, { type: 'bandpass', freq: s[1], to: s[2], q: 3, gain: 0.34 });
+      tone(c, out, s[1] / 4, t + s[0], 0.1, { type: 'sawtooth', to: s[2] / 4, gain: 0.03, cutoff: 1500 });
+    });
+  },
+  /** one bar of boom-bap under the shout */
+  beat(c, out, t) {
+    const kick = (at: number) => tone(c, out, 150, t + at, 0.24, { type: 'sine', to: 42, gain: 0.2, attack: 0.002, decay: 0.08, sustain: 0.4, release: 0.08 });
+    const snare = (at: number) => { hiss(c, out, t + at, 0.16, { type: 'bandpass', freq: 2200, q: 0.8, gain: 0.16 }); tone(c, out, 190, t + at, 0.09, { type: 'triangle', to: 150, gain: 0.08 }); };
+    const hat = (at: number) => hiss(c, out, t + at, 0.035, { type: 'highpass', freq: 7000, gain: 0.05 });
+    kick(0); hat(0.18); snare(0.36); hat(0.54); kick(0.72); kick(0.9); snare(1.08); hat(1.26);
   }
 };
 

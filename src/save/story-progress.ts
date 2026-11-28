@@ -1,4 +1,5 @@
 import { MAPS } from '../data/maps';
+import type { ScalaMemory } from '../story/mazzarri';
 import type { Dir } from '../data/maps/types';
 import { LITORANEA_FLOODED, LITORANEA_REVISION, PINETA_COSTIERA_REVISION, PINETA_REVISION, VINDICIO_REVISION } from '../data/maps/formia-places';
 import { LEGEND } from '../data/maps/legend';
@@ -42,6 +43,8 @@ export interface StoryProgress {
   bag?: Record<string, number>;
   /** a secret a beaten trainer has told (story/trail.ts): followed with its own star until it is found */
   trail?: { id: string; by?: string };
+  /** the Scala Mazzarri (story/mazzarri.ts): which excuses have been heard, and how the votes went */
+  scala?: ScalaMemory;
   /** his creatures, in the order he got them (the first is the one he started with), and the names he gave them;
       the four moves each one knows (missing: the last four it learned), its bond with Antonio (0–100), its character,
       and home: true for one that waits at home instead of travelling with him (a team is six at most) */
@@ -71,7 +74,10 @@ export interface StoryProgress {
       story that had met him */
   rivalFriend?: FriendId;
   /** Chats remember the speakers and words as they appeared at the time. */
-  chats?: Record<string, { at: number; reply?: string; won?: boolean; lines?: [FriendId, string][] }>;
+  /** `fx`: which answer was chosen, for its consequence (data/replies.ts) */
+  chats?: Record<string, { at: number; reply?: string; won?: boolean; lines?: [FriendId, string][]; fx?: number }>;
+  /** how a keeper is after what the player wrote him in the group (story/replies.ts): fired up, or softened */
+  moods?: Record<string, 'carico' | 'tenero'>;
   /** how many manuals from the bookshop Antonio has read: a point for his abilities each */
   books?: number;
   /** the gifts of the covi (data/covo-places.ts): Valentin's mărțișor worn, the tune chosen with Zendavid's headphones */

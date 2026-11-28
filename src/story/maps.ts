@@ -14,7 +14,8 @@ import { rivalFriend, rivalSpeaker } from './rival-who';
 import { shutAt, thingsAt } from './place';
 import { LEGENDS } from '../data/legends';
 import { creaturesMissing } from './finale';
-import { firstHuman, homeMons, priceFor } from './growth';
+import { firstHuman, homeMons, priceFor, hasStarter } from './growth';
+import { hasMine, mineOf, mineLevel } from './mine';
 import { NET_IDS } from '../data/nets';
 import { SHOPS } from '../data/growth';
 import { QUIZZES } from '../data/quizzes';
@@ -53,6 +54,12 @@ export interface PreparedMap extends MapDef {
 export function key(x: number, y: number): string { return x + ',' + y; }
 /** the rival on the map is whoever the rival of this story is (story/rival-who.ts): a friend, drawn and named as such,
     or Tullio with his own look */
+/** the player's own creature on the map: whoever is played, his own, at a level a little below his first one */
+function mineNpc(n: Npc): Npc {
+  var o = Object.assign({}, n);
+  Object.defineProperty(o, 'wild', { get: function () { var l = mineLevel(); return { sp: mineOf(), lv: [l, l] }; }, enumerable: true, configurable: true });
+  return o;
+}
 function rivalNpc(n: Npc): Npc {
   var o = Object.assign({}, n);
   Object.defineProperties(o, {
@@ -89,7 +96,7 @@ export function prepare(id: string): PreparedMap {
   });
   (m.signs || []).forEach(function (s) { m.solid[s.y * m.w + s.x] = 1; m.at[key(s.x, s.y)] = { kind: 'sign', s: s }; });
   (m.warps || []).forEach(function (w) { m.at[key(w.x, w.y)] = { kind: 'warp', w: w }; });
-  m.people = (m.npcs || []).map(function (n) { var r = n.trainer && TRAINERS[n.trainer] && TRAINERS[n.trainer].rival ? rivalNpc(n) : n; return { n: r, x: n.x, y: n.y, dir: n.dir || 'down' }; });
+  m.people = (m.npcs || []).map(function (n) { var r = n.trainer && TRAINERS[n.trainer] && TRAINERS[n.trainer].rival ? rivalNpc(n) : n.mine ? mineNpc(n) : n; return { n: r, x: n.x, y: n.y, dir: n.dir || 'down' }; });
   /* Antonio's flat keeps the creatures that are not travelling with him: one on each of these tiles, if there */
   if (id === 'casa' || id.indexOf('casa-') === 0) (m.homeSpots || HOME_SPOTS).forEach(function (c, i) {
     m.people.push({ n: { id: 'pet-' + i, x: c[0], y: c[1], pet: i, dir: c[2] }, x: c[0], y: c[1], dir: c[2] });
@@ -124,13 +131,16 @@ export function allItems(): LostItem[] { var out: LostItem[] = []; Object.keys(M
 export function foundItems(): LostItem[] { return allItems().filter(function (it) { return st.found[it.id]; }); }
 /** the neighbourhood Antonio is in (the first area that contains him), if any */
 /* out in the open gulf, past the shallow water, the corner names the sea */
-const GULF: Area = { name: 'Il golfo di Gaeta', x: 0, y: 0, w: 0, h: 0, note: 'Il largo: da qui Formia si vede intera, dal porto a Gianola, sotto gli Aurunci.' };
+const GULF: Area = { name: 'Il golfo di Gaeta', town: 'Mar Tirreno', x: 0, y: 0, w: 0, h: 0, note: 'Il largo: da qui Formia si vede intera, dal porto a Gianola, sotto gli Aurunci.' };
 export function currentArea(): Area | null {
-  if (M.inside) return null;
-  if (M.id === 'formia' && M.cell(st.x, st.y).g === 'sea' && !isShallow(M, st.x, st.y)) return GULF;
+  return M.inside ? null : areaAt(st.x, st.y);
+}
+/** the neighbourhood of a tile of the map in use (the first area that contains it), the open gulf, or none */
+export function areaAt(x: number, y: number): Area | null {
+  if (M.id === 'formia' && M.cell(x, y).g === 'sea' && !isShallow(M, x, y)) return GULF;
   for (var i = 0; i < M.areas.length; i++) {
     var a = M.areas[i];
-    if (st.x >= a.x && st.x < a.x + a.w && st.y >= a.y && st.y < a.y + a.h && !(a.not && a.not.indexOf(M.cell(st.x, st.y).g) >= 0)) return a;
+    if (x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h && !(a.not && a.not.indexOf(M.cell(x, y).g) >= 0)) return a;
   }
   return null;
 }
@@ -139,12 +149,19 @@ export function areaName(): string {
   var a = currentArea();
   return a ? a.name : '';
 }
+/** the comune Antonio is in: the area's own (Scauri is Minturno) or else the map's town */
+export function areaTown(): string {
+  var a = M.inside ? null : currentArea();
+  return a && a.town ? a.town : MAPS[M.city].name;
+}
 /** is this person around now? some come and go with Antonio's squad */
 export function present(p: Person): boolean {
   if (p.engaged) return true;
   var w = p.n.when;
   if (p.leaving) return true;   /* a beaten rival, walking away */
   if (p.n.pet != null) return !!petAt(p.n.pet);
+  /* the player's own creature: after the first one, until it is with him */
+  if (p.n.mine) return hasStarter() && !hasMine();
   if (p.n.id === 'mamurra' && creaturesMissing()) return false;
   if (p.n.legend === 'lamo' && creaturesMissing() && (M.id === 'telepilo' || M.id === 'formia')) return true;
   if (p.n.person && p.n.person === firstHuman()) return false;
@@ -466,3 +483,6 @@ export function route(tx: number, ty: number): Dir[] | null {
   }
   return null;
 }
+/** the map a floor of a covo stands on (data/maps/covi-floors.ts): «covo-claudia-3» is in «covo-claudia», whose door is on
+    the street; any other map is its own */
+export function groundOf(id: string): string { return /-[23]$/.test(id) && MAPS[id.replace(/-[23]$/, '')] ? id.replace(/-[23]$/, '') : id; }

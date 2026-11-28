@@ -10,7 +10,8 @@ const TYPES: TypeName[] = ['Calma', 'Caos', 'Cervello', 'Chiacchiera', 'Cuore', 
 const GESTURES: Stage[] = ['slash', 'rain', 'orbit', 'beam', 'lob'];
 const OWN: Stage[] = ['tide', 'jaws', 'clamp', 'grasp', 'pod', 'volley', 'sting', 'jet', 'ram', 'dive', 'fall',
   'bolt', 'shade', 'omen', 'cone', 'haze', 'swarm', 'rise', 'twister', 'snatch', 'quake', 'sign', 'song', 'speech',
-  'scratch', 'curtain', 'topple', 'ambush', 'memory', 'peck', 'sparkle', 'hop'];
+  'scratch', 'curtain', 'topple', 'ambush', 'memory', 'peck', 'sparkle', 'hop',
+  'roar', 'ace', 'blade', 'meteor', 'triad', 'triumph', 'freestyle', 'enso', 'proof'];
 
 /** a move's type, as the battle shows it: its own, or the type of the creatures that learn it (a plain move too: it
     belongs to the line that learns it) */

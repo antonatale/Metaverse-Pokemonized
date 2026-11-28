@@ -149,7 +149,7 @@ export function giftsPane(): string {
     if (x.id === 'cuffie') act = '<select id="gift-cuffie" aria-label="Musica">' + RADIO.map(function (r) { return '<option value="' + r[0] + '"' + ((st.radio || '') === r[0] ? ' selected' : '') + '>' + esc(r[1]) + '</option>'; }).join('') + '</select>';
     return '<li class="got"><span class="ware-ico" aria-hidden="true">' + (wareSVG(x.id, 38) || '✦') + '</span><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span>' + act + '</li>';
   });
-  var keys = hasKeys() ? '' : '<li><span class="diary-n" aria-hidden="true">·</span><span><b>Le chiavi del Liberty</b><small>' + esc(keysLine()) + '</small></span></li>';
+  var keys = hasKeys() ? '' : '<li><span class="ware-ico ghost" aria-hidden="true">' + wareSVG('chiavi', 38) + '</span><span><b>Le chiavi del Liberty</b><small>' + esc(keysLine()) + '</small></span></li>';
   return '<div class="pickrow"><h3>I doni dei covi</h3><ul class="wbadge-list diary gifts">' + rows.join('') + keys + '</ul></div>';
 }
 function keysLine(): string { var c = keysCovo(); return c ? 'Le ha ' + CHARS[COVI[c].leader].name + ', chiuso nel suo covo.' : 'Chissà dove sono.'; }

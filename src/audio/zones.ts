@@ -15,10 +15,11 @@ export function worldMusic(map: string, area: string, night: boolean): string {
   return night ? base + ':night' : base;
 }
 
-/** Nicola breaks the suspense when he arrives; old saves can already have his board or his company. */
+/** The night is the mystery; the dawn melts it (ui/dawn.ts); Nicola's van brings the happy tune up the street, from its
+    radio, and it stays with him; old saves can already have his board or his company. */
 export function openingMusic(seen: Record<string, boolean>, withNicola = false): string {
   if (seen.starter) return '';
-  return seen['nicola-arrived'] || seen['ws-start'] || seen.tavola || withNicola ? 'nicola' : 'mistero';
+  return seen['nicola-arrived'] || seen['nicola-radio'] || seen['ws-start'] || seen.tavola || withNicola ? 'nicola' : seen.alba ? 'alba' : 'mistero';
 }
 
 /** what the map plays and what it has been asked for lately: a change counts only once the same new tune has been

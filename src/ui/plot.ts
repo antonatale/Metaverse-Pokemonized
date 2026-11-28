@@ -59,6 +59,7 @@ export function plotTalk(n: Npc, again: () => void): boolean {
 }
 /* ---------- the missions of each friend (data/missions.ts): they ask for one of them, and only that one can do it ---------- */
 function missionTalk(n: Npc, again: () => void): boolean {
+  if (n.id === 'barista' && festaInsieme(n, again)) return true;
   var m = missionOf(n.id), who = n.name || '';
   if (!m || tooEarly(m)) return false;
   if (!canDo(m)) {
@@ -71,6 +72,17 @@ function missionTalk(n: Npc, again: () => void): boolean {
   }
   var go = m.trainer ? function () { trainerFight(m!.trainer!, who); } : function () { quiz(m!, who); };
   say(m.trainer ? m.ask.concat([foesLine(m.trainer)]) : m.ask, who, [{ label: 'Ci sto', fn: go }, { label: 'Più tardi', fn: again }]);
+  return true;
+}
+/* the party at the Eclipse (27 November 2026): Valentin's own mission is his alone, but once he is out of his covo
+   the barista asks whoever is played to help him with the guastafeste: they fight together, Valentin first */
+function festaInsieme(n: Npc, again: () => void): boolean {
+  var me = firstHuman(), who = n.name || '';
+  if (me === 'valentin' || !friendFreed('valentin') || st.seen['festa-insieme'] || !(st.mons || []).length) return false;
+  say(['C\'è uno qui che dice che alle dieci si dorme. Ha già fatto spegnere la musica due volte.', 'Valentin è qui, ma da solo non ce la fa: gli dai una mano?'], who, [
+    { label: 'Con Valentin, sì!', fn: function () { trainerFight('guastafeste', who); } },
+    { label: 'Più tardi', fn: again }
+  ]);
   return true;
 }
 function quiz(m: Mission, who: string) {

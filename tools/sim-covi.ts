@@ -13,10 +13,13 @@ import { formAt, personKnows, withForm } from '../src/data/people';
 import type { FriendId } from '../src/data/characters';
 import { knownAt } from '../src/data/creatures';
 import { crewAt, grownAt } from '../src/story/covo-crew';
+import { MINE } from '../src/data/companions';
 
 export const HEROES: FriendId[] = ['antonio', 'costanzo', 'andrea', 'valentin', 'forchetta', 'zendavid'];
-/** the second and third creature of the player's team: common ones of the first places, of three different types */
+/** the second and third creature of the player's team: his own (data/companions.ts, the one born beside him at 3:12,
+    with him from the start since 27 November 2026), then a common one of the first places */
 export const MATES: SpeciesId[] = ['riccetto', 'cicalina'];
+const own = (h: FriendId): SpeciesId => MINE[h][0];
 
 function creature(sp: SpeciesId, lv: number) { const g = grownAt(sp, lv); return { id: g, stats: atLevel(SPECIES[g].stats, lv), lvl: lv, known: knownAt(g, lv) }; }
 function person(id: FriendId, lv: number, last: boolean) {
@@ -26,7 +29,7 @@ function person(id: FriendId, lv: number, last: boolean) {
 /** one covo: the share of battles the player wins */
 export function covoRate(hero: FriendId, starter: SpeciesId, covo: string, pins: number, n: number, gap = 0, tune?: number): number {
   const lv = COVI[covo].level + 3 * pins, me = lv - gap;
-  const mine = [creature(starter, me), creature(MATES[0], Math.max(3, me - 2))].concat(pins >= 2 ? [creature(MATES[1], Math.max(3, me - 2))] : []);
+  const mine = [creature(starter, me), creature(own(hero), Math.max(3, me - 2))].concat(pins >= 2 ? [creature(MATES[1], Math.max(3, me - 2))] : []);
   const crew = crewAt(covo, lv, pins, tune).map(function (c) { return creature(c.sp, c.lv); });
   const leader = COVI[covo].leader;
   let won = 0;

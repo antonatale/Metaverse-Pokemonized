@@ -358,6 +358,18 @@
 .fx.sp-wordp { z-index: 8; }
 .sp-word { display: block; font: 34px/1 var(--font-display); font-weight: normal; letter-spacing: .03em; white-space: nowrap; color: #ffffff;
   -webkit-text-stroke: 2px #1c2340; paint-order: stroke fill; text-shadow: 0 0 16px var(--mc), 0 3px 0 #1c2340; }
+/* the scenes of the seven's creatures (ui/companion-scenes.ts) */
+.sp-ball > svg, .sp-moonlet > svg { display: block; width: 100%; height: 100%; }
+.sp-moonlet > svg { filter: drop-shadow(0 0 10px #c9a6ff) drop-shadow(0 0 3px #ffffff); }
+.sp-meteor > svg { filter: drop-shadow(0 0 18px #ff9f1c) drop-shadow(0 0 5px #ffffff); }
+.sp-eagle > svg, .sp-laurel > svg { filter: drop-shadow(0 0 12px #e8c547); }
+.sp-roar > svg { filter: drop-shadow(0 0 8px var(--mc, #ffffff)); }
+.sp-word.sp-roman { font-family: Georgia, "Times New Roman", serif; font-weight: 700; letter-spacing: .12em; }
+.sp-word.sp-long { letter-spacing: .08em; text-shadow: 0 0 22px var(--mc), 0 0 6px #ffffff, 0 3px 0 #1c2340; }
+.sp-word.sp-math { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
+.sp-word.sp-purr { font: 26px/1 var(--font-hand); color: #ffffff; -webkit-text-stroke: 1.5px #1c2340; }
+.sp-ink { display: block; width: 9px; height: 9px; border-radius: 50% 50% 50% 0; background: #2b2b33; box-shadow: 0 0 0 1px #ffd27a; }
+.sp-fluff > svg { filter: drop-shadow(0 0 14px #8f8cf0); }
 .fx.sp-ribbon { z-index: 6; border-radius: 40% 40% 50% 50% / 6% 6% 18% 18%; mix-blend-mode: screen; filter: blur(2px);
   background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--mc) 70%, transparent) 22%, color-mix(in srgb, var(--mc) 85%, #ffffff) 62%, transparent); }
 .sp-tower > svg { filter: drop-shadow(0 4px 0 rgba(28, 35, 64, .35)); }

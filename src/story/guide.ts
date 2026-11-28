@@ -60,5 +60,31 @@ export function guide(x: number, y: number, tx: number, ty: number, ahead?: numb
   }
   return { x: cx, y: cy, left: left };
 }
+/** the way itself, tile by tile, from (x, y) toward the stop, at most `max` steps (the navigator draws it on its
+    little map); null when the streets do not lead there */
+export function pathTo(x: number, y: number, tx: number, ty: number, max: number): [number, number][] | null {
+  if (!guide(x, y, tx, ty, 0)) return null;
+  var f = field!, w = f.w, out: [number, number][] = [[x, y]], cx = x, cy = y;
+  for (var s = 0; s < max; s++) {
+    var bd = f.d[cy * w + cx], best = -1;
+    if (bd === 0) break;
+    var cand = [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]];
+    /* straight on first, so the line keeps to the streets instead of zigzagging across a square */
+    if (out.length > 1) {
+      var px = out[out.length - 2][0], py = out[out.length - 2][1], k = cand.findIndex(function (c) { return c[0] - cx === cx - px && c[1] - cy === cy - py; });
+      if (k > 0) cand.unshift(cand.splice(k, 1)[0]);
+    }
+    for (var i = 0; i < 4; i++) {
+      var nx = cand[i][0], ny = cand[i][1];
+      if (nx < 0 || ny < 0 || nx >= f.w || ny >= f.h) continue;
+      var v = f.d[ny * w + nx];
+      if (v < bd) { bd = v; best = i; }
+    }
+    if (best < 0) break;
+    cx = cand[best][0]; cy = cand[best][1];
+    out.push([cx, cy]);
+  }
+  return out;
+}
 /** forget the field (a map changed under it: a door opened, a wall fell) */
 export function forgetGuide() { field = null; }

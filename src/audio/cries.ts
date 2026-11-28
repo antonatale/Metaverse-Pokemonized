@@ -37,6 +37,31 @@ const BODY: Record<Body, { mid: number; say: Say }> = {
   cat: { mid: 700, say(c, out, t, p, l) { tone(c, out, 560 * p, t, 0.3 * l, { type: 'sawtooth', to: 760 * p, gain: 0.08, cutoff: 2200, attack: 0.03, decay: 0.1, sustain: 0.6, release: 0.1, vibrato: 12 }); } },
   janus: { mid: 160, say(c, out, t, p, l) { tone(c, out, 165 * p, t, 0.6 * l, { type: 'triangle', gain: 0.18, attack: 0.05, sustain: 0.7, release: 0.2 }); tone(c, out, 247 * p, t + 0.05 * l, 0.6 * l, { type: 'triangle', gain: 0.12, attack: 0.05, sustain: 0.7, release: 0.2 }); } },
   flame: { mid: 400, say(c, out, t, p, l) { hiss(c, out, t, 0.45 * l, { freq: 1200 * p, to: 3200 * p, q: 0.7, gain: 0.35 }); for (let k = 0; k < 4; k++) hiss(c, out, t + 0.1 * l + k * 0.07 * l, 0.02 * l, { freq: 5000, q: 3, gain: 0.3 }); } },
+  /* the creatures of the seven (data/companions.ts) */
+  /* the caracal: a hiss, then the scream of one left alone on the sofa */
+  caracal: { mid: 600, say(c, out, t, p, l) {
+    hiss(c, out, t, 0.22 * l, { freq: 4200 * p, q: 0.9, gain: 0.3 });
+    tone(c, out, 520 * p, t + 0.2 * l, 0.32 * l, { type: 'sawtooth', to: 820 * p, gain: 0.08, cutoff: 2600, attack: 0.03, decay: 0.08, sustain: 0.7, release: 0.1, vibrato: 18 });
+  } },
+  /* the long-haired black cat: a low trill, a short mrr */
+  blackcat: { mid: 500, say(c, out, t, p, l) { tone(c, out, 430 * p, t, 0.26 * l, { type: 'triangle', to: 560 * p, gain: 0.16, attack: 0.02, sustain: 0.6, release: 0.08, vibrato: 28 }); } },
+  /* the hairless dog: three yaps, each one higher */
+  xolo: { mid: 900, say(c, out, t, p, l) { [0, 0.12, 0.24].forEach(function (d, i) { tone(c, out, (760 + i * 90) * p, t + d * l, 0.07 * l, { type: 'square', to: (560 + i * 90) * p, gain: 0.08, cutoff: 2800, decay: 0.03, sustain: 0.5 }); }); } },
+  /* the swordfish: the swish of the blade through the water, a bubble */
+  swordfish: { mid: 800, say(c, out, t, p, l) { hiss(c, out, t, 0.18 * l, { freq: 1600 * p, to: 4200 * p, q: 1.6, gain: 0.3 }); tone(c, out, 600 * p, t + 0.14 * l, 0.06 * l, { type: 'sine', to: 1200 * p, gain: 0.18, decay: 0.03, sustain: 0.3 }); } },
+  /* the great owl: a hoot, and a bark («bau») */
+  eagleowl: { mid: 330, say(c, out, t, p, l) {
+    tone(c, out, 340 * p, t, 0.2 * l, { type: 'sine', to: 300 * p, gain: 0.22, attack: 0.03, sustain: 0.7, release: 0.08 });
+    tone(c, out, 420 * p, t + 0.28 * l, 0.1 * l, { type: 'sawtooth', to: 260 * p, gain: 0.1, cutoff: 1400, decay: 0.04, sustain: 0.4 });
+  } },
+  /* the lion: a roar that rises and falls, with a rumble and a crackle of sparks */
+  lion: { mid: 220, say(c, out, t, p, l) {
+    tone(c, out, 180 * p, t, 0.42 * l, { type: 'sawtooth', to: 120 * p, gain: 0.12, cutoff: 1100, attack: 0.04, decay: 0.12, sustain: 0.6, release: 0.12, vibrato: 35 });
+    hiss(c, out, t, 0.35 * l, { type: 'lowpass', freq: 900 * p, to: 300, gain: 0.25 });
+    for (let k = 0; k < 3; k++) hiss(c, out, t + 0.1 * l + k * 0.08 * l, 0.02 * l, { freq: 6000, q: 4, gain: 0.12 });
+  } },
+  /* the winged fox: a yip, and wings */
+  wingfox: { mid: 1400, say(c, out, t, p, l) { tone(c, out, 1300 * p, t, 0.08 * l, { type: 'triangle', to: 1800 * p, gain: 0.16, decay: 0.03, sustain: 0.5 }); for (let k = 0; k < 3; k++) hiss(c, out, t + 0.12 * l + k * 0.05 * l, 0.03 * l, { type: 'lowpass', freq: 1200, gain: 0.18 }); } },
   /* the king of the giants: a low roar, a rumble underneath, and the breath */
   giant: { mid: 90, say(c, out, t, p, l) {
     tone(c, out, 95 * p, t, 0.55 * l, { type: 'sawtooth', to: 55 * p, gain: 0.2, cutoff: 700, decay: 0.15, sustain: 0.6, release: 0.15, vibrato: 30 });

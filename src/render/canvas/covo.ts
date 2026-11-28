@@ -642,6 +642,17 @@ export function covoProp(c: Ctx, o: { x: number; y: number; w?: number; h?: numb
       c.beginPath(); c.moveTo(-8, -12); c.lineTo(8, -12); c.quadraticCurveTo(7, 0, 0, 2); c.quadraticCurveTo(-7, 0, -8, -12); c.closePath(); fillStroke(c, '#ffd166', INK, 1.4);
       rr(c, -2, 2, 4, 6, 1); fillStroke(c, '#ffd166', INK, 1); rr(c, -7, 8, 14, 4, 1); fillStroke(c, '#6b4a2e', INK, 1.1);
       break;
+    /* the floors of the covi (27 November 2026): a stone coffin of the crypt, a table of Valentin's party with its spritz */
+    case 'coffin':
+      poly(c, [[X + 6, -4], [X + 12, -12], [-X - 12, -12], [-X - 6, -4], [-X - 12, 6], [X + 12, 6]]); fillStroke(c, '#4a4555', INK, 1.6);
+      poly(c, [[X + 10, -6], [X + 14, -10], [-X - 14, -10], [-X - 10, -6], [-X - 14, 2], [X + 14, 2]]); fillStroke(c, '#5b5566', INK, 1);
+      c.strokeStyle = '#c9b06a'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-4, -4); c.lineTo(4, -4); c.moveTo(0, -8); c.lineTo(0, 1); c.stroke();
+      break;
+    case 'spritz':
+      ell(c, 0, 4, 12, 5); fillStroke(c, '#e9e0cf', INK, 1.4);
+      c.strokeStyle = INK; c.lineWidth = 2; c.beginPath(); c.moveTo(0, 8); c.lineTo(0, 13); c.stroke();
+      [[-5, -2], [5, -4]].forEach(function (g) { rr(c, g[0] - 3, g[1] - 6, 6, 8, 2); fillStroke(c, '#ff7a2a', INK, 1); c.fillStyle = '#ffffff'; c.globalAlpha = 0.7; c.fillRect(g[0] - 2, g[1] - 5, 1.4, 4); c.globalAlpha = 1; circle(c, g[0] + 2, g[1] - 6, 1.6); c.fillStyle = '#ff9a3d'; c.fill(); });
+      break;
     default:
       rr(c, -10, -10, 20, 20, 3); fillStroke(c, P['roof-b'], INK, 1.4);
   }

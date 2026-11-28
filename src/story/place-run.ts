@@ -17,7 +17,7 @@ export function placeNow(id: string): PlaceSave { return (st.places && st.places
 export function placeEntered() { const g = saved(M.id); g.tick = 0; g.rest = null; }
 /** Antonio has finished a step in a place: the step counts, the tile does what it does, the guards turn */
 export function placeArrived(p: PlaceDef): Arrival {
-  const g = saved(M.id), w: Walker = { x: st.x, y: st.y, tick: g.tick + 1, flags: g.flags, rest: g.rest }, a = arrive(p, w);
+  const g = saved(M.id), w: Walker = { x: st.x, y: st.y, tick: g.tick + 1, flags: g.flags, rest: g.rest }, a = arrive(p, w, st.dir);
   g.tick = a.w.tick; g.flags = a.w.flags; g.rest = a.w.rest;
   M.people.forEach(function (q) { if (q.n.patrol && !q.path) q.dir = q.n.patrol[g.tick % q.n.patrol.length]; });
   return a;

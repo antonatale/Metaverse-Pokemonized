@@ -159,12 +159,7 @@
 .toast-art { flex: none; display: grid; place-items: center; width: 38px; height: 38px; animation: loot-pop .6s cubic-bezier(.2,1.7,.4,1) both; }
 
 /* the secret a trainer told: a second line in the corner, blue */
-.wtrail { top: 100px; }
-.wtrail .wgoal-ic { background: var(--t-calma); }
-.whud .wgoal:not([hidden]) ~ .wtoast { top: 100px; }
-.whud .wtrail:not([hidden]) ~ .wtoast { top: 148px; }
-/* on an upright phone Cicero sits under the corner: one line lower when the secret has its line */
-@media (max-width: 560px) { .has-trail .wcic, .has-trail .wcic-say { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 152px); } }
+.wtrail { --dial: var(--t-calma); }
 
 @media (prefers-reduced-motion: reduce) {
   .bag-card, .ware, .gv-card, .loot-list li, .loot-main, .loot-rays, .spk, .it-art, .it-glow, .gv-src, .counter-art, .amb-strip svg, .toast-art, .popword { animation: none !important; }
@@ -215,3 +210,45 @@
 .wmoney-d.out { background: var(--t-calore); }
 @keyframes purse-bump { 40% { transform: scale(1.18) rotate(-3deg); } }
 @keyframes purse-d { 0% { opacity: 0; transform: translate(-50%, -6px); } 15% { opacity: 1; transform: translate(-50%, 4px); } 75% { opacity: 1; transform: translate(-50%, 8px); } 100% { opacity: 0; transform: translate(-50%, 14px); } }
+
+/* how many levels above or below the one in front (ui/level-gap.ts): in the battle boxes and in the choice of who goes in */
+.lv-gap { margin-left: 4px; padding: 0 5px; border-radius: 6px; font: 700 10.5px/1.5 var(--font-body); font-style: normal; letter-spacing: 0; }
+.lv.up { color: var(--good); }
+.lv.down { color: var(--red); }
+.pf-lv.up { background: var(--good); }
+.pf-lv.down { background: var(--red); }
+.pf-lv > .lv-gap { background: none !important; padding: 0 0 0 2px; margin-left: 2px; color: inherit; }
+.up > .lv-gap { background: color-mix(in srgb, var(--good) 18%, transparent); }
+.down > .lv-gap { background: color-mix(in srgb, var(--red) 16%, transparent); }
+.box-h .lv.down > .lv-gap { animation: gap-warn 1.6s ease-in-out 2; }
+@keyframes gap-warn { 50% { background: color-mix(in srgb, var(--red) 40%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .box-h .lv.down > .lv-gap { animation: none; } }
+
+/* the bag in battle: the things as in the menu's bag, a bigger picture on a soft circle of its drawer's colour */
+.bagrow .mv.bag { --bc: var(--t-calma); min-height: 58px; padding-left: 60px; border-radius: 14px; background: linear-gradient(90deg, color-mix(in srgb, var(--bc) 24%, var(--card)), var(--card) 65%); }
+.bagrow .mv.bag.k-fight { --bc: var(--t-calore); }
+.bagrow .mv.bag .mv-rune { left: 7px; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--bc) 50%, var(--card)) 30%, transparent 72%); }
+.bagrow .mv.bag .mv-rune svg { width: 42px; height: 42px; }
+.bagrow .mv.bag:not(:disabled):hover .mv-rune svg, .bagrow .mv.bag:not(:disabled):focus-visible .mv-rune svg { animation: bag-wiggle .5s ease-in-out; }
+.bagrow .mv.bag .cnt { right: -6px; bottom: -3px; min-width: 24px; font: 12px/15px var(--font-display); }
+.bagrow .mv.bag.ready .mv-rune::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 3px solid var(--good); animation: net-ready 1.2s ease-in-out infinite; }
+@keyframes net-ready { 50% { transform: scale(1.12); opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .bagrow .mv.bag.ready .mv-rune::after { animation: none; } }
+
+/* the awning ends in scallops, as the real ones do */
+.awning { position: relative; margin-bottom: 14px; }
+.awning::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 13px;
+  background: radial-gradient(circle at 17px 0, var(--aw) 15px, transparent 16px) 0 0 / 68px 13px repeat-x, radial-gradient(circle at 51px 0, var(--card) 15px, transparent 16px) 0 0 / 68px 13px repeat-x;
+  filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--line) 25%, transparent)); }
+.shop-sheet .sheet-h { flex-wrap: nowrap; gap: 8px; }
+.shop-sheet .sheet-h h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .shop-sheet .sheet-h h2 { font-size: 19px; } .shop-sheet .purse { padding-right: 8px; } }
+/* on a touch screen there is no hover: the next level shows on every card of who can drink the ambrosia */
+@media (hover: none) { .gv-lv i { opacity: 1; } }
+/* a thing not had yet: its shape, grey (as the creatures not met in the diary) */
+.ware-ico.ghost svg { filter: grayscale(1) opacity(.45); }
+.ware-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
+/* the numbers a level has just raised, on the page after the ambrosia */
+.mini-stats .up { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, var(--card)); animation: gv-up .8s cubic-bezier(.2,1.4,.4,1); }
+.st-up { margin-left: 5px; font: 700 12px/1 var(--font-body); font-style: normal; color: var(--good); }
+@media (prefers-reduced-motion: reduce) { .mini-stats .up { animation: none; } }

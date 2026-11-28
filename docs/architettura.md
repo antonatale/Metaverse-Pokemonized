@@ -20,7 +20,7 @@ Leggere i file della parte interessata; i numeri e gli elenchi completi restano 
 | Ritratti e forme | `src/render/svg/looks.ts`, `forms.ts`, `hair.ts`, `outfit.ts`, `face.ts`, `extras.ts`, `index.ts` |
 | Omini sulla mappa | `src/render/canvas/walkers.ts`: `PEOPLE`, `PEOPLE_FORMS`, `LOOKS`, `townsperson` |
 | Creature, rune e sfondi | `src/render/svg/creatures.ts`, `type-shapes.ts`; sfondi in `src/render/scenes.ts` e `src/assets/scenes/`; i disegni delle cose della borsa in `wares.ts`, i retini in `nets.ts` |
-| Titolo e storia a schermo | `src/ui/home.ts`, `story-screen.ts`, `plot.ts`, `team.ts`, `train.ts`, `activities.ts`; borsa, negozi, dare l'ambrosia e carte dei premi in `bag.ts` (stili `bag.css`) |
+| Titolo e storia a schermo | `src/ui/home.ts`, `story-screen.ts`, `plot.ts`, `team.ts`, `train.ts`, `activities.ts`; borsa, negozi, dare l'ambrosia e carte dei premi in `bag.ts` (stili `bag.css`); i segni ▲/▼ dei livelli in `level-gap.ts`; la Scala Mazzarri in `scala.ts` (scuse e voti in `data/mazzarri.ts`, regole in `story/mazzarri.ts`) e lo «Stai inguaiatoooo» di Valentin in `shout.ts`, stili in `scala.css`; l'angolo (posto, tappa, segreto) in `story-screen.ts` con gli stili in `story.css` |
 | Lotta a schermo | `src/ui/battle-screen.ts`, `coaches.ts`, `move-card.ts`, `person-scenes.ts`, `move-scenes.ts`, `self-scenes.ts`, `move-props.ts`, `safe-show.ts` |
 | Grafica, velocità, audio UI | `src/ui/gfx.ts`, `speed.ts`, `sound.ts`; stili in `src/styles/`, colori in `tokens.css` |
 | Audio sintetizzato | `src/audio/context.ts`, `synth.ts`, `music.ts`, `tracks.ts`, `zones.ts`, `sfx.ts`, `cues.ts`, `cries.ts` |
@@ -32,3 +32,12 @@ Leggere i file della parte interessata; i numeri e gli elenchi completi restano 
 Il motore conserva anche Esame e modalità storiche usate dai golden. La loro presenza non significa che siano percorsi attuali del titolo. Non rimuoverli durante una pulizia documentale.
 
 `design/` non è importato dall'applicazione. Contiene materiali di lavoro da integrare in futuro, non moduli attivi o file da caricare all'avvio.
+
+## 27 novembre 2026
+
+- `data/companions.ts` (le creature dei sette), `render/svg/companions.ts` (i loro disegni), `ui/companion-scenes.ts` (le scene delle loro mosse), `story/mine.ts` (la creatura propria all'inizio).
+- `data/maps/covi-floors.ts` (i piani dei covi, scritti come piante di lettere), `tests/unit/floors.test.ts`; ghiaccio e pavimento che cede in `story/place.ts`, disegnati in `render/canvas/place.ts`; le scale (`stairs`) e il buio (`void`) in `render/canvas/ground.ts`; `groundOf` in `story/maps.ts` dice su quale mappa sta un piano; `warpToward` in `story/goals.ts` guida da un piano all'altro.
+- `ui/navigator.ts` (la mappa nell'angolo) e `story/streets.ts` (i nomi delle vie, da `FORMIA_STREETS` scritto da `tools/formia/build.ts`); `pathTo` in `story/guide.ts`.
+- `ui/dawn.ts` (l'alba dopo il prologo), la traccia `alba`, `storyMorning` in `story/daytime.ts`.
+- `data/replies.ts` e `story/replies.ts` (le conseguenze delle risposte del telefono), `tests/unit/replies.test.ts`.
+

@@ -35,7 +35,12 @@ export function sunTimes(d: Date): [number, number] {
 }
 function hours(d: Date) { return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600; }
 /** how dark it is in Formia at d: 0 by day, 1 at night, in between at dawn and dusk */
+/* the morning after the night of 3:12 (27 November 2026): from the dawn of the prologue until the first creature it is
+   morning in Formia, whatever the clock says (ui/dawn.ts) */
+let morningNow = false;
+export function storyMorning(on: boolean) { morningNow = on; }
 export function darkness(d: Date): number {
+  if (morningNow) return 0;
   if (dayMode !== 'auto') return dayMode === 'notte' ? 1 : dayMode === 'tramonto' ? 0.45 : 0;
   var h = hours(d), t = sunTimes(d);
   var ramp = function (a: number, b: number) { return Math.max(0, Math.min(1, (h - a) / (b - a))); };
@@ -44,6 +49,7 @@ export function darkness(d: Date): number {
 }
 /** the warm light of sunset (and, less, of sunrise): strongest as the sun touches the sea */
 export function sunset(d: Date): number {
+  if (morningNow) return 0;
   if (dayMode !== 'auto') return dayMode === 'tramonto' ? 1 : 0;
   var h = hours(d), t = sunTimes(d);
   var bell = function (c: number) { return Math.max(0, 1 - Math.abs(h - c) / 0.9); };

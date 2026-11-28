@@ -8,7 +8,8 @@ import { FORMIA_AT, FORMIA_SPOT } from './maps/formia-ground';
 /** the start of a story: the van comes up the street; Nicola takes the player to the Eclipse, where his windsurfs
     are, because Gianola is reached by sea; on the way he tells what Formia is */
 export const PICKUP = {
-  come: ['In fondo alla strada spunta un furgone bianco, con una tavola da windsurf legata sul tetto. Rallenta, e suona il clacson.'],
+  come: ['In fondo alla strada si sente una musica a tutto volume, sempre più vicina: qualcuno ha la radio al massimo e canta sopra, stonato.',
+    'Spunta un furgone bianco, con una tavola da windsurf legata sul tetto e i finestrini abbassati. Rallenta, e suona il clacson.'],
   cheer: ['UAGLIÒ! Ma perché hai *’sto muso lungo*? *Su con la vita!* Oggi si va al mare, ahahah!'],
   hello: ['La guardaparco di Gianola m\'ha chiamato stamattina: oggi affida le creature ai ragazzi di Formia, e ha detto di portarti da lei.',
     'Per strada? Ma quale strada! A Gianola ci si arriva dal *mare*. Ti porto all\'Eclipse: lì ho i windsurf, e il vento oggi è quello giusto. Sali!'],

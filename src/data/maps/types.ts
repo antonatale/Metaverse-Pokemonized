@@ -109,6 +109,8 @@ export interface Npc {
   wild?: { sp: SpeciesId; lv: [number, number]; night?: { sp: SpeciesId; lv: [number, number] } };
   /** gives Antonio his first creature (the guardaparco of Gianola) */
   starter?: boolean;
+  /** the creature born beside whoever is played, the night of 3:12 (story/mine.ts): which one, and its level, are his */
+  mine?: boolean;
   /** sells things (data/growth.ts SHOPS) */
   shop?: string;
   /** has creatures and challenges Antonio (data/trainers.ts) */
@@ -149,6 +151,8 @@ export interface LostItem {
 }
 /** a neighbourhood, for the place name in the corner; its note says what it is, the first time Antonio walks in */
 export interface Area { name: string; x: number; y: number; w: number; h: number; note?: string;
+  /** the comune it belongs to, when it is not the map's own (Scauri is in Minturno, Arcella in Gaeta): the corner says it */
+  town?: string;
   /** the kinds of ground (legend.ts `g`) where it does not count: the next area takes over there */
   not?: string[] }
 export interface Warp { x: number; y: number; to: string; tx: number; ty: number; tdir: Dir }
@@ -167,7 +171,11 @@ export type Thing =
   | { k: 'pad'; x: number; y: number; tx: number; ty: number; tdir?: Dir }
   /** dangerous on some steps out of every so many: stepping on it then sends you back to the last rest. `rock`: what
       comes is a boulder, not the water; `mist`: the Iele dancing in the green mist of Valentin's tower */
-  | { k: 'beat'; x: number; y: number; every: number; on: number[]; look?: 'rock' | 'mist' }
+  | { k: 'beat'; x: number; y: number; every: number; on: number[]; look?: 'rock' | 'mist' | 'laser' | 'ball' | 'bass' | 'fire' }
+  /** ice: whoever steps on it slides on the way he was going, until something stops him (27 November 2026) */
+  | { k: 'ice'; x: number; y: number }
+  /** a floor that gives way: once crossed it falls, and nobody passes there again until a reset (27 November 2026) */
+  | { k: 'crumble'; x: number; y: number }
   /** where a fall brings you back to, once you have been there */
   | { k: 'rest'; x: number; y: number }
   /** clears every flag: the way out of anything */
@@ -178,8 +186,8 @@ export interface PlaceDef {
   /** what the place is about: the validator proves that from anywhere you can get next to it (or on it) */
   goal: [number, number];
   things: Thing[];
-  /** what is said at a rest, and when a beat sends you back */
-  words?: { rest: string; hit: string };
+  /** what is said at a rest, when a beat sends you back, and when a floor gives way under you */
+  words?: { rest: string; hit: string; fall?: string };
 }
 
 export interface MapDef {

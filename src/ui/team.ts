@@ -10,6 +10,7 @@ import { cardHtml, cardClass, cardColour, type MoveCard } from './move-card';
 import { TC } from './common';
 import { level, idOf, nameOf, setNick, creatureOf, gainXp, pointsLeft, takeSkill, skillOpen, grade, earn, has, ambrosiaFor, giveAmbrosia, addCreature, leadCreature, setLead, dexOf, movesOf, swapMove, addBond, hearts, teamMons, homeMons, sendHome, bringAlong, firstHuman, heldInBag, giveHeld, TEAM_MAX, dexPrizesDue, nextDexPrize, prizeText, anyMove, formNow, type Growth, type Mon } from '../story/growth';
 import { ico } from './icons';
+import { gapCls, gapMark } from './level-gap';
 import { art, giveSheet } from './bag';
 import { M } from '../story/maps';
 import { SPR } from '../render/svg';
@@ -67,7 +68,7 @@ export function chooseStarter(done: (uid: string) => void) {
 /* ---------- who goes into battle ---------- */
 /** one of a few of Antonio's team, from their pictures (with a mark on the ones that have the advantage) */
 /** who is on the other side, for the choice of who goes in: a creature or a person, and what is said of it */
-export interface PickFoe { sp?: SpeciesId; person?: string; name: string; who?: string }
+export interface PickFoe { sp?: SpeciesId; person?: string; name: string; who?: string; lv?: number }
 export interface PickOpts {
   /** a challenge that has started: no way back from the choice (a covo, a trainer); a wild one can still be left */
   must?: boolean;
@@ -91,7 +92,7 @@ function pickFrom(title: string, hint: string, keys: string[], go: (key: string)
       return '<button class="pick pf-card' + (good ? ' is-good' : bad ? ' is-bad' : '') + '" type="button" data-key="' + key + '" style="--tc:' + tcOf(key) + ';--d:' + (i * 70) + 'ms">' +
         (good ? '<span class="pf-ribbon">Vantaggio</span>' : bad ? '<span class="pf-ribbon bad">Svantaggio</span>' : '') +
         '<span class="face pf-art">' + portrait(key) + '</span>' +
-        '<span class="pf-name">' + esc(nameOf(key)) + '</span><span class="pf-meta"><span class="pf-lv">Lv ' + l.lv + '</span>' + mine.map(typeChip).join('') + '</span>' +
+        '<span class="pf-name">' + esc(nameOf(key)) + '</span><span class="pf-meta"><span class="pf-lv' + gapCls(l.lv, foe && foe.lv) + '">Lv ' + l.lv + gapMark(l.lv, foe && foe.lv) + '</span>' + mine.map(typeChip).join('') + '</span>' +
         '<span class="pf-xp" aria-hidden="true"><i style="width:' + pct + '%"></i></span></button>';
     }).join('') + '</div></div>', o2.must ? 'pass' : undefined);
   var x = document.getElementById('pf-x');
@@ -371,6 +372,17 @@ function heldRow(mon: Mon): string {
     bag.map(function (it) { return '<li><span class="ware-ico">' + art(it, 36) + '</span><span><b>' + esc(HELD[it].name) + '</b><small>' + esc(HELD[it].text) + ' Ne hai ' + has(it) + '.</small></span><button class="btn" type="button" data-held="' + it + '">' + (cur ? 'Scambia' : 'Dai') + '</button></li>'; }).join('') +
     '</ul>' + (cur || bag.length ? '' : '<p class="hint">Non porta niente. Le cose che può portare si comprano al forno di Castellone, al bar e dal pescatore di Mola; a volte le trova per terra la creatura che ti segue.</p>') + '</div>';
 }
+/* after the ambrosia given from a page, the page drawn again shows what the level brought, beside each number */
+var gained: { key: string; was: { hp: number; atk: number; def: number; spe: number } } | null = null;
+function miniStats(key: string, s: { hp: number; atk: number; def: number; spe: number }): string {
+  var g = gained && gained.key === key ? gained.was : null;
+  gained = null;
+  var box = function (label: string, k: 'hp' | 'atk' | 'def' | 'spe') {
+    var d = g ? s[k] - g[k] : 0;
+    return '<div' + (d > 0 ? ' class="up"' : '') + '><span>' + label + '</span><strong>' + s[k] + (d > 0 ? '<i class="st-up">+' + d + '</i>' : '') + '</strong></div>';
+  };
+  return '<div class="mini-stats">' + box('PS', 'hp') + box('Attacco', 'atk') + box('Difesa', 'def') + box('Velocità', 'spe') + '</div>';
+}
 /** on the page of someone who can drink it: the ambrosia in the bag, one touch for a level */
 function ambButton(key: string): string {
   return has('ambrosia') && ambrosiaFor().indexOf(key) >= 0 ? '<button class="amb-strip small" type="button" data-amb-one="' + key + '">' + art('ambrosia', 28) + '<span><b>Dagli l\'ambrosia</b><small>Ne hai ' + has('ambrosia') + ': +1 livello</small></span></button>' : '';
@@ -383,7 +395,9 @@ function wireAmb(key: string, back: () => void, again: () => void) {
 }
 /** one ampolla of ambrosia for someone, and what the level brings */
 export function giveOne(key: string, then: () => void) {
+  var lv0 = level(key).lv, was = statsAt(key, idOf(key), lv0);
   var g = giveAmbrosia(key, 1);
+  if (g) gained = { key: key, was: g.evolved ? statsAt(key, g.evolved.from, lv0) : was };
   if (!g) return;
   save(); renderHud(); sfx('magicUp');
   closeSheet();
@@ -403,7 +417,7 @@ function openPerson(key: string, back: () => void) {
   sheet('<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cr-t" style="--tc:var(--t-' + c.type.toLowerCase() + ')"><div class="sheet-h"><h2 id="cr-t">' + esc(c.name) + (f ? ', ' + esc(path.forms[f - 1].title) : '') + '</h2><button class="tb-btn" type="button" id="cr-x">Indietro</button></div>' +
     '<div class="cr-top"><span class="cr-art">' + SPR.personIn(key, f, 'grin', '', BUST) + '</span><div class="cr-info">' +
     '<p><span class="type t-' + c.type.toLowerCase() + '">' + c.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) + ambButton(key) +
-    '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
+    miniStats(key, s) + '</div></div>' +
     '<div class="pickrow"><h3>Mosse</h3><ul class="wares">' + known.map(function (m) { var x = anyMove(m); return '<li><span><b>' + esc(x.name) + '</b><small>' + esc(x.text) + '</small></span></li>'; }).join('') + '</ul>' +
     (next ? '<p class="hint">Al livello ' + next[0] + ' vorrà imparare ' + esc(anyMove(next[1]).name) + (known.length >= 4 ? ': sceglierai tu quale mossa dimenticare' : '') + '.</p>' : '') +
     (form ? '<p class="hint">Al livello ' + form.at + ' cambia forma.</p>' : '<p class="hint">È arrivato alla sua forma finale.</p>') + '</div></div>');
@@ -420,7 +434,7 @@ export function openCreature(key: string, back: () => void) {
     '<div class="cr-top"><span class="cr-art">' + creature(mon.sp, 'grin', '', '0 16 200 184', undefined, !!mon.gold) + '</span><div class="cr-info">' +
     '<p>' + (mon.nick ? esc(sp.name) + (mon.gold ? ' dorata' : '') + ' · ' : mon.gold ? 'Dorata · ' : '') + '<span class="type t-' + sp.type.toLowerCase() + '">' + sp.type + '</span> · Livello ' + l.lv + '</p>' + xpBar(key) +
     '<small>' + (l.lv >= MAX_LEVEL ? 'Livello massimo' : (toNext(l.lv) - l.xp) + ' punti al livello ' + (l.lv + 1)) + (leadCreature() === key ? ' · ti segue' : '') + '</small>' + ambButton(key) +
-    '<div class="mini-stats"><div><span>PS</span><strong>' + s.hp + '</strong></div><div><span>Attacco</span><strong>' + s.atk + '</strong></div><div><span>Difesa</span><strong>' + s.def + '</strong></div><div><span>Velocità</span><strong>' + s.spe + '</strong></div></div></div></div>' +
+    miniStats(key, s) + '</div></div>' +
     '<p class="bondline"><span class="hearts" aria-label="Legame: ' + h + ' cuori su 5">' + [0, 1, 2, 3, 4].map(function (k) { return '<i class="' + (k < h ? 'on' : '') + '">♥</i>'; }).join('') + '</span>' +
       '<small>' + esc(['Ancora diffidente', 'Comincia a fidarsi', 'Ti vuole bene', 'Non ti lascia mai', 'Inseparabili', 'Inseparabili'][h]) + (mon.nat ? ' · ' + esc(natureText(mon.nat)) : '') + '</small></p>' +
     '<p class="hint">' + esc(sp.text) + ' Dove vive: ' + esc(sp.where) + '.' + (sp.evolve && sp.evolve.bond ? ' Per cambiare forma, oltre al livello ' + sp.evolve.at + ', deve fidarsi di te (tre cuori).' : '') + '</p>' +

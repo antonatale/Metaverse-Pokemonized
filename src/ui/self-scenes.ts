@@ -347,7 +347,57 @@ function oil(x: SelfCtx): Promise<void> {
   }) as Promise<void>;
 }
 
+/* ---------- the purr (Pumbino's Fusa) ---------- */
+/** the caster closes its eyes and purrs: soft rings go out from it in time, little hearts and «rrr» float up, and the
+    life comes back on the fourth ring */
+function purr(x: SelfCtx): Promise<void> {
+  const k = x.k, a = at(x), m = mv(x.i), o = '50% 100%';
+  sfx('heal');
+  if (m) animate(m, [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (q) { return { transform: q % 2 ? 'scale(1.03,.97)' : 'none', transformOrigin: o }; }), { duration: 1300, easing: 'ease-in-out' });
+  for (let q = 0; q < 4; q++) sleep(q * 260).then(function () { ring(a.c[0], a.c[1], q % 2 ? '#ffffff' : x.mc, (150 + q * 30) * k, 620); });
+  ['rrr', 'rrr', 'rrrr'].forEach(function (w, q) {
+    const el = piece('<b class="sp-word sp-purr" style="--mc:' + x.mc + '">' + w + '</b>', 'sp-wordp'), px = a.c[0] + (q - 1) * 46 * k;
+    animate(el, [{ transform: tr([px, a.c[1]]) + ' scale(.3)', opacity: 0 }, { transform: tr([px, a.top[1]]) + ' scale(' + (0.55 * k).toFixed(2) + ') rotate(' + (q - 1) * 8 + 'deg)', opacity: 1, offset: 0.4 }, { transform: tr([px, a.top[1] - 50 * k]) + ' scale(' + (0.5 * k).toFixed(2) + ')', opacity: 0 }],
+      { duration: 1100, delay: 150 + q * 180, easing: 'ease-out', fill: 'both' }).then(gone(el));
+  });
+  return sleep(800).then(function () { shine(x, '#ff8fc1'); });
+}
+
+/* ---------- the black coat (Teduabolica's Pelo nero) ---------- */
+/** the caster's coat bristles: a dark cloud of fur puffs out round it, two golden eyes open in it, and it settles back,
+    thicker: the defence goes up */
+function fluff(x: SelfCtx): Promise<void> {
+  const k = x.k, a = at(x), w = 190 * k;
+  let puffs = '';
+  for (let q = 0; q < 12; q++) { const an = q / 12 * Math.PI * 2, r = 70 + (q % 2) * 10; puffs += '<circle cx="' + (100 + Math.cos(an) * r * 0.8).toFixed(1) + '" cy="' + (100 + Math.sin(an) * r * 0.7).toFixed(1) + '" r="' + (26 + (q % 3) * 4) + '"/>'; }
+  const svg = '<svg viewBox="0 0 200 200" aria-hidden="true"><g fill="' + INK + '" stroke="' + INK + '" stroke-width="10">' + puffs + '</g><g fill="#2e2838">' + puffs + '</g>' +
+    '<ellipse cx="82" cy="70" rx="9" ry="7" fill="#ffd34d"/><ellipse cx="118" cy="70" rx="9" ry="7" fill="#ffd34d"/><ellipse cx="82" cy="70" rx="2.6" ry="6" fill="' + INK + '"/><ellipse cx="118" cy="70" rx="2.6" ry="6" fill="' + INK + '"/></svg>';
+  const el = big(svg, 'sp-fluff', w, w);
+  sfx('hiss');
+  animate(el, [{ transform: tr(a.c) + ' scale(.3)', opacity: 0 }, { transform: tr(a.c) + ' scale(1.08)', opacity: 0.92, offset: 0.25 }, { transform: tr(a.c) + ' scale(1)', opacity: 0.92, offset: 0.6 }, { transform: tr(a.c) + ' scale(.7)', opacity: 0 }],
+    { duration: 1200, easing: 'ease-out', fill: 'both' }).then(gone(el));
+  return sleep(760).then(function () { const m = mv(x.i); if (m) pulse(m, 'shadowed', 700); shine(x, '#8f8cf0'); });
+}
+
+/* ---------- the headphones (Subgufo's Cuffione) ---------- */
+/** a huge pair of headphones comes down on the caster's head; the beat goes (the cups pump) and the world goes quiet
+    round it: the defence goes up */
+function phones(x: SelfCtx): Promise<void> {
+  const k = x.k, a = at(x), w = 150 * k, h = w * 0.7;
+  const svg = '<svg viewBox="0 0 150 105" aria-hidden="true"><path d="M20 80 Q20 8 75 8 Q130 8 130 80" fill="none" stroke="' + INK + '" stroke-width="16" stroke-linecap="round"/><path d="M20 80 Q20 8 75 8 Q130 8 130 80" fill="none" stroke="#2b2f3a" stroke-width="10" stroke-linecap="round"/>' +
+    '<rect x="4" y="58" width="32" height="44" rx="14" fill="' + x.mc + '" stroke="' + INK + '" stroke-width="4"/><rect x="114" y="58" width="32" height="44" rx="14" fill="' + x.mc + '" stroke="' + INK + '" stroke-width="4"/>' +
+    '<rect x="12" y="66" width="10" height="28" rx="5" fill="#2b2f3a"/><rect x="128" y="66" width="10" height="28" rx="5" fill="#2b2f3a"/></svg>';
+  const el = big(svg, 'sp-phones', w, h), p: P = [a.c[0], lerp(a.top[1], a.c[1], 0.35)];
+  sfx('headphones');
+  const fr: Keyframe[] = [{ transform: tr([p[0], p[1] - 120 * k]) + ' scale(.8)', opacity: 0 }, { transform: tr(p) + ' scale(1)', opacity: 1, offset: 0.2 }];
+  for (let q = 0; q < 4; q++) { fr.push({ transform: tr(p) + ' scale(1.06,.96)', opacity: 1, offset: 0.28 + q * 0.13 }); fr.push({ transform: tr(p) + ' scale(1)', opacity: 1, offset: 0.34 + q * 0.13 }); }
+  fr.push({ transform: tr([p[0], p[1] - 30 * k]) + ' scale(.9)', opacity: 0 });
+  animate(el, fr, { duration: 1500, easing: 'ease-out', fill: 'both' }).then(gone(el));
+  for (let q = 0; q < 4; q++) sleep(420 + q * 195).then(function () { sfx('thump'); ring(a.c[0], a.c[1], q % 2 ? '#ffffff' : x.mc, 200 * k, 420); });
+  return sleep(1100).then(function () { shine(x, x.mc); });
+}
+
 export const SELF: Record<SelfStage, (x: SelfCtx) => Promise<void>> = {
   shell: shell, walls: walls, scales: scales, sunbath: sunbath, bloom: bloom, calm: calm, veil: veil, idea: idea, tome: tome, regrow: regrow,
-  burrow: burrow, hourglass: hourglass, door: door, gates: gates, roots: roots, oil: oil
+  burrow: burrow, hourglass: hourglass, door: door, gates: gates, roots: roots, oil: oil, purr: purr, fluff: fluff, phones: phones
 };

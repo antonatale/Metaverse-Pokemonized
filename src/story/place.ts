@@ -19,6 +19,8 @@ export function gateShut(t: Extract<Thing, { k: 'gate' }>, flags: Record<string,
 export function shutAt(p: PlaceDef, flags: Record<string, boolean>, x: number, y: number): boolean {
   return thingsAt(p, x, y).some(function (t) { return t.k === 'gate' && gateShut(t, flags); });
 }
+/** the flag of a floor that has given way (a crumble at x, y) */
+export function fallen(x: number, y: number): string { return 'fell:' + x + ',' + y; }
 /** a beat at this step: dangerous or not */
 export function beatOn(t: Extract<Thing, { k: 'beat' }>, tick: number): boolean { return t.on.indexOf(tick % t.every) >= 0; }
 
@@ -38,8 +40,13 @@ export interface Arrival {
   pad?: { x: number; y: number; dir?: Dir };
   /** caught by a beat: back to the last rest */
   hit?: boolean;
+  /** stepped on a floor that will give way behind */
+  crack?: boolean;
+  /** stepped where the floor had already given way: down, and back to the last rest, with the floor whole again */
+  fell?: boolean;
 }
-export function arrive(p: PlaceDef, w: Walker): Arrival {
+/** `came`: the way the walker was going when it got here (ice carries it on that way) */
+export function arrive(p: PlaceDef, w: Walker, came?: Dir): Arrival {
   const out: Arrival = { w: w }, things = thingsAt(p, w.x, w.y);
   /* the tile may hold more than one thing: each works on what the one before has left */
   for (const t of things) {
@@ -47,6 +54,17 @@ export function arrive(p: PlaceDef, w: Walker): Arrival {
       const back = w.rest || [p.entry[0], p.entry[1]];
       out.hit = true;
       out.w = { x: back[0], y: back[1], tick: w.tick, flags: w.flags, rest: w.rest };
+      return out;
+    }
+  }
+  /* a floor that has given way: the walker falls, lands back at the last rest, and the floor is whole again (the flags of
+     what fell are cleared; the plates stay down) */
+  for (const t of things) {
+    if (t.k === 'crumble' && w.flags[fallen(t.x, t.y)]) {
+      const back = w.rest || [p.entry[0], p.entry[1]], flags: Record<string, boolean> = {};
+      Object.keys(w.flags).forEach(function (f) { if (f.indexOf('fell:') !== 0) flags[f] = true; });
+      out.hit = true; out.fell = true;
+      out.w = { x: back[0], y: back[1], tick: w.tick, flags: flags, rest: w.rest };
       return out;
     }
   }
@@ -63,6 +81,11 @@ export function arrive(p: PlaceDef, w: Walker): Arrival {
     } else if (t.k === 'rest') {
       if (!out.w.rest || out.w.rest[0] !== t.x || out.w.rest[1] !== t.y) { out.w = Object.assign({}, out.w, { rest: [t.x, t.y] }); out.rested = true; }
     } else if (t.k === 'slide') out.slide = t.dir;
+    else if (t.k === 'ice') { if (came) out.slide = came; }
+    else if (t.k === 'crumble') {
+      const f = fallen(t.x, t.y);
+      if (!out.w.flags[f]) { const flags = Object.assign({}, out.w.flags); flags[f] = true; out.w = Object.assign({}, out.w, { flags: flags }); out.crack = true; }
+    }
     else if (t.k === 'pad') {
       out.pad = { x: t.tx, y: t.ty, dir: t.tdir };
       out.w = Object.assign({}, out.w, { x: t.tx, y: t.ty });
@@ -79,15 +102,15 @@ export function stepTo(p: PlaceDef, solid: Solid, w: Walker, d: Dir): Walker | n
 /** a whole move from where the walker stands: the step, and everything the floor does after it, up to where it stops.
     Null if the way is blocked. `stuck`: a floor that carries round in a circle for ever, which is a mistake in the map */
 export function walk(p: PlaceDef, solid: Solid, w: Walker, d: Dir): { w: Walker; stuck?: boolean } | null {
-  let cur = stepTo(p, solid, w, d);
+  let cur = stepTo(p, solid, w, d), way: Dir = d;
   if (!cur) return null;
   for (let guard = 0; guard < 200; guard++) {
-    const a = arrive(p, cur);
+    const a = arrive(p, cur, way);
     cur = a.w;
     if (!a.slide) return { w: cur };
     const next = stepTo(p, solid, cur, a.slide);
     if (!next) return { w: cur };
-    cur = next;
+    way = a.slide; cur = next;
   }
   return { w: cur, stuck: true };
 }
@@ -135,8 +158,8 @@ export function prove(p: PlaceDef, solid: Solid): Proof {
       }
       if (r.stuck) { stuck.push(r.w); continue; }
       /* everything on the way counts as touched: tiles of a slide, and the beat that caught it */
-      let c = stepTo(p, solid, n, d);
-      for (let g = 0; c && g < 200; g++) { touch(c); const a = arrive(p, c); if (!a.slide) break; c = stepTo(p, solid, a.w, a.slide); }
+      let c = stepTo(p, solid, n, d), cw: Dir = d;
+      for (let g = 0; c && g < 200; g++) { touch(c); const a = arrive(p, c, cw); if (!a.slide) break; cw = a.slide; c = stepTo(p, solid, a.w, a.slide); }
       touch(r.w);
       const k = nodeKey(r.w, loop);
       let at = seen[k];

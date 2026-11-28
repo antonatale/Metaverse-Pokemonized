@@ -126,6 +126,17 @@ export const ABILITIES: Record<string, Passive> = {
   maggio: { id: 'maggio', name: 'Sole di maggio', text: 'Il primo colpo che mette a segno dà un colpo di sole.',
     on: [{ when: 'hit', if: { once: true }, do: { status: 'sole' } }] },
   casa: { id: 'casa', name: 'Casa sulle spalle', text: 'Subisce il 10% di danni in meno.', taken: 0.9 },
+  /* the creatures of the seven (data/companions.ts): each its own, out of its animal and its friend */
+  pennelli: { id: 'pennelli', name: 'Orecchie a pennello', text: 'Sente arrivare i colpi: il primo che subisce fa il 30% in meno.', taken: 0.7, if: { once: true } },
+  settevite: { id: 'settevite', name: 'Sette vite', text: 'Una volta a lotta, sotto il 30% dei PS, ne recupera il 15%.',
+    on: [{ when: 'hurt', if: { below: 0.3, once: true }, do: { heal: 0.15 } }] },
+  freestyle: { id: 'freestyle', name: 'Freestyle', text: 'La prima volta che scende sotto la metà dei PS, l\'Attacco sale per 3 turni.',
+    on: [{ when: 'hurt', if: { below: 0.5, once: true }, do: { self: 'atkUp', turns: 3 } }] },
+  affondo: { id: 'affondo', name: 'Affondo', text: 'Il primo colpo della lotta, di punta, fa il 20% in più.', dealt: 1.2, if: { once: true } },
+  bassi: { id: 'bassi', name: 'Bassi profondi', text: 'Quando entra in campo, l\'Attacco avversario cala per 2 turni.',
+    on: [{ when: 'enter', do: { foe: 'atkDown', turns: 2 } }] },
+  scudo: { id: 'scudo', name: 'Scudo termico', text: 'Il primo colpo che subisce fa il 30% in meno.', taken: 0.7, if: { once: true } },
+  probabile: { id: 'probabile', name: 'Calcolo delle probabilità', text: 'Se colpisce prima dell\'altro, fa il 15% in più.', dealt: 1.15, if: { first: true } },
   /* the legends */
   gigante: { id: 'gigante', name: 'Re dei giganti', text: 'Non cade negli stati alterati.', blocks: 'all' },
   leggenda: { id: 'leggenda', name: 'Leggenda di Formia', text: 'Non cade negli stati alterati.', blocks: 'all' }

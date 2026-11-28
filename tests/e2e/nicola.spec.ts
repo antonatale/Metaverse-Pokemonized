@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { play, goStory, fight } from './harness';
+import { play, goStory, fight, scalaThrough } from './harness';
 import { FORMIA_SPOT } from '../../src/data/maps/formia-ground';
 import { MIGRATIONS } from '../../src/save/story-progress';
 
@@ -61,6 +61,11 @@ test('Nicola cheers up the opening, then drives a full-size van clear of obstacl
       if (scooter.map === maps.M.id && space.overlaps(box, space.motoBody(scooter.x, scooter.y))) w.vanHits.push('motorino');
     }, 20);
   });
+  /* the radio comes up the street first (27 November 2026), then the van */
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#wtxt')).toContainText('Spunta un furgone');
+  /* the happy tune is already coming up the street with the van, from its radio */
+  expect((await seen())['nicola-radio']).toBe(true);
   await page.keyboard.press('Enter');
   await expect(page.locator('#wtxt')).toContainText('Su con la vita!', { timeout: 15_000 });
   await expect(page.locator('#wtxt .r-em', { hasText: 'Su con la vita!' })).toBeVisible();
@@ -95,6 +100,7 @@ async function dialogueUntil(p: Page, button: string) {
     if (await p.getByRole('button', { name: button, exact: true }).isVisible()) return;
     /* the card of something given (the guardaparco's nets): «Continua» */
     if (await p.locator('#lt-ok').isVisible()) { await p.locator('#lt-ok').click(); await p.clock.runFor(200); continue; }
+    if (await scalaThrough(p)) continue;
     if (await p.locator('#wdialog').isVisible()) await p.keyboard.press('Enter');
     await p.clock.runFor(200);
   }
@@ -148,6 +154,7 @@ for (const outcome of ['win', 'loss'] as const) test('creature chat before the r
       const here = await rival();
       expect([here.x, here.y, here.present, here.moving]).toEqual([waiting.x, waiting.y, true, false]);
       if (await p.locator('#lt-ok').isVisible()) await p.locator('#lt-ok').click();
+      else if (await scalaThrough(p)) { /* the excuse of whoever lost, voted or not */ }
       else if (await p.locator('#wopts button').first().isVisible()) await p.locator('#wopts button').first().click();
       else if (await p.locator('#wdialog').isVisible()) await p.keyboard.press('Enter');
       await p.clock.runFor(300);

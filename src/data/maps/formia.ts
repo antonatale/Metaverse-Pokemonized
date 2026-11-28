@@ -379,6 +379,9 @@ const npcs: Npc[] = [
   npc('tr-escursionista', { trainer: 'escursionista', name: 'Escursionista', seed: 76, dir: 'down', lines: ['La cima più alta degli Aurunci è il Petrella. Ma la più bella è quella del Redentore.'] }),
   /* the wild creatures of Formia hide in the tall grass and the rock pools (data/encounters.ts); only the legend is in
      sight: Lamo, at night, under the walls of Castellone */
+  /* the creature born beside whoever is played, the night of 3:12: frightened, it has followed him to Gianola and waits
+     by the guardaparco's house (story/mine.ts says which one, story/maps.ts draws it) */
+  npc('mia-creatura', { dir: 'left', mine: true, wild: { sp: 'leoncello', lv: [4, 4] } }),
   npc('selv-lamo', { dir: 'down', wild: { sp: 'lamo', lv: [35, 35] }, legend: 'lamo' }),
   npc('selv-giano', { dir: 'left', wild: { sp: 'giano', lv: [36, 36] }, legend: 'giano' }),
   npc('selv-elmo', { dir: 'down', wild: { sp: 'fuocelmo', lv: [32, 32] }, legend: 'elmo' }),
@@ -414,6 +417,8 @@ const items: LostItem[] = [
 
 /** neighbourhoods, for the place name in the corner: the first that contains Antonio wins. They lie on the tiles of
     the playable map (the streets of tools/formia/network.ts), and each one says what makes it itself */
+/* the roads of the coast that are already past the border of Formia: the lungomare Caboto is Gaeta's */
+const TOWN_OF_ROAD: Record<string, string> = { 'Lungomare Giovanni Caboto': 'Gaeta' };
 const clip = (name: string, x0: number, y0: number, x1: number, y1: number, note?: string): Area => {
   const x = Math.max(0, x0), y = Math.max(0, y0);
   return { name, x, y, w: Math.min(W - 1, x1) - x + 1, h: Math.min(H - 1, y1) - y + 1, note };
@@ -422,9 +427,9 @@ const near = (name: string, id: string, m: number, note?: string): Area => { con
 const areas: Area[] = [
   ...LITORANEA.flatMap(road => road.pts.slice(1).map(([x, y], i) => {
     const [px, py] = road.pts[i];
-    return clip(road.name, Math.min(px, x), Math.min(py, y), Math.max(px, x) + road.w - 1, Math.max(py, y) + road.w - 1);
+    return { ...clip(road.name, Math.min(px, x), Math.min(py, y), Math.max(px, x) + road.w - 1, Math.max(py, y) + road.w - 1), town: TOWN_OF_ROAD[road.name] };
   })),
-  near('Villa Irlanda · Gaeta', 'convento-irlanda', 2, 'Il vecchio Collegio Irlandese, in località Arcella.'),
+  { ...near('Villa Irlanda', 'convento-irlanda', 2, 'Il vecchio Collegio Irlandese, in località Arcella.'), town: 'Gaeta' },
   /* the places */
   near('Parco la Fontana', 'casa', 3, 'Casa di Antonio, al numero 1 di via Giovanni Amendola.'),
   near('Lido Oriente', 'oriente', 5, 'Lo stabilimento del lungomare Città di Ferrara, a Formia, verso Gianola: canoe, pedalò, beach volley e beach soccer.'),
@@ -475,7 +480,7 @@ const areas: Area[] = [
   clip('Castellone', 76, 65, 113, 85, 'Il borgo alto, nato contro i Saraceni sull\'acropoli romana: la torre ottagonale dei Caetani, Sant\'Erasmo, il teatro romano con le case dentro.'),
   clip('Mola', 156, 44, 182, 70, 'Il borgo marinaro: la torre del castello angioino, la chiesa di San Giovanni Battista, le barche dei pescatori.'),
   clip('Centro', 76, 60, 161, 92, 'Via Vitruvio, i negozi, il Comune con il Museo archeologico nazionale.'),
-  clip('Arcella · Gaeta', 0, 128, 32, 151, 'Il primo tratto di costa gaetana arrivando da Vindicio.'),
+  { ...clip('Arcella', 0, 128, 32, 151, 'Il primo tratto di costa gaetana arrivando da Vindicio.'), town: 'Gaeta' },
   clip('Caposele', 62, 90, 103, 104, 'Il porticciolo di Caposele, dove comincia la spiaggia di Vindicio.'),
   clip('Vindicio', 20, 84, 68, 127, 'Più di un chilometro di spiaggia, dal porto fino a Gaeta: i lidi, il lungomare, la Bandiera Blu.'),
   clip('Sopra la stazione', 86, 44, 152, 59, 'Le case sopra la ferrovia, sulla collina di Santa Maria la Noce.'),
@@ -486,7 +491,7 @@ const areas: Area[] = [
   clip('Bruno Zauli', 206, 31, 227, 46, 'Il centro di preparazione olimpica, nato nel 1955: la pista dove correva Mennea.'),
   clip('Via Amendola', 227, 31, 274, 46, 'Le palazzine di via Amendola, il Palamendola, Parco la Fontana.'),
   clip('Acqualonga', 188, 46, 266, 62, 'Lungo l\'Appia verso Napoli, tra la strada e il mare.'),
-  clip('Scauri', 316, 30, 349, 127, 'Scauri, frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'),
+  { ...clip('Scauri', 316, 30, 349, 127, 'Frazione di Minturno, subito dopo il Monte di Scauri: la stazione di Minturno-Scauri, sulla linea per Napoli.'), town: 'Minturno' },
   clip('Gianola', 274, 62, 316, 127, 'Il parco regionale, dal 1987: la villa di Mamurra, il porticciolo romano, la spiaggia dei Sassolini.'),
   clip('Santo Janni', 266, 30, 316, 62, 'Le ultime case di Formia, verso Gianola e Scauri.'),
   clip('Campagna', 0, 30, 87, 96, 'Gli uliveti a ovest della città, verso Itri: qui la ferrovia entra in galleria.')

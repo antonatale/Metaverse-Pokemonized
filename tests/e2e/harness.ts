@@ -210,3 +210,14 @@ export async function fight(r: Run, label: string, shots = 4) {
   await p.clock.runFor(600);
   await r.shot(label + '-result');
 }
+
+/** the Scala Mazzarri after a defeat of one of the seven (ui/scala.ts): a vote on a rung (or none), then «Continua»;
+    false when it is not on the screen */
+export async function scalaThrough(page: Page, vote?: number): Promise<boolean> {
+  if (!(await page.locator('.scala').count())) return false;
+  if (await page.locator('#sm-ok').isVisible()) { await page.click('#sm-ok'); await page.clock.runFor(200); return true; }
+  if (vote) await page.click('.sm-rung[data-v="' + vote + '"]'); else await page.click('#sm-skip');
+  await page.clock.runFor(vote ? 3500 : 300);
+  await page.click('#sm-ok'); await page.clock.runFor(200);
+  return true;
+}

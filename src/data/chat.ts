@@ -92,6 +92,25 @@ export const CHATS: Chat[] = [
     ['valentin', 'La mia ha svuotato la ciotola. Poi si è addormentata con la testa dentro. Weee, piano però.'],
     ['forchetta', 'stasera tengo il telefono acceso. nel dubbio.'],
     ['zendavid', 'Bau. Stavolta vi ho sentiti tutti.'] ] },
+  /* the Scala Mazzarri (27 November 2026): after the second excuse put on it, Costanzo makes it official */
+  { id: 'scala', label: 'La Scala Mazzarri', after: 'scala-2', replies: ['Io dico 7 😂', 'Costanzo, sei fissato', 'Rivoto tutto'], lines: [
+    ['costanzo', 'Comunicazione ufficiale: da oggi ogni scusa dopo una sconfitta passa dalla Scala Mazzarri. Da 1 a 10. Senza eccezioni.'],
+    ['andrea', 'Propongo una scala logaritmica. Certe vostre scuse sotto il 10 non ci stanno.'],
+    ['valentin', 'Weee, la mia di ieri era almeno un 11'],
+    ['zendavid', 'Bau. Io voto 7 a tutto, così non sbaglio mai di tanto.'],
+    ['forchetta', 'poteva andare peggio. poteva esserci una scala anche per i messaggi criptici.'],
+    ['claudia', 'Ho capito il tuo punto, Costanzo. Ma le tue scuse chi le giudica?'],
+    ['costanzo', 'Le mie sono tutte da 1. GIÀ LO SAI.'],
+    ['antonio', 'Crazy shit, ci faccio un modello che le predice. Il dataset ce l\'ho già: le vostre scuse.'] ] },
+  /* Valentin's «Stai inguaiatoooo!», the first time he shouts it (ui/shout.ts) */
+  { id: 'inguaiato', label: 'Stai inguaiato', after: 'inguaiato-1', replies: ['STAI INGUAIATOOOO', '🔥🎤', 'Rifallo'], lines: [
+    ['valentin', 'STAI INGUAIATOOOOOOO 🎤'],
+    ['zendavid', 'Ci ho già messo il beat sotto. Bau.'],
+    ['costanzo', 'Questa sulla Scala Mazzarri non si vota: è un classico.'],
+    ['andrea', 'Ho contato le O: otto. Statisticamente, la prossima volta nove.'],
+    ['claudia', 'Lo Spirito ha parlato.'],
+    ['forchetta', 'poteva andare peggio. per lui.'],
+    ['antonio', 'Crazy shit. Diventa la mia suoneria.'] ] },
   { id: 'ultima-spilla', label: 'Il caminetto si ritrova', badges: 6, replies: ['Ci vediamo alla villa', 'Io porto le Pietre', 'Restiamo in contatto'], lines: [
     ['rival', 'Mamurra vuole vedere tutte le Pietre insieme. Alla villa possiamo farlo uscire allo scoperto.'],
     ['claudia', 'Ci andiamo tutti. Se uno si ferma, ci fermiamo tutti.'],

@@ -228,8 +228,8 @@
 /* Cicero stands above the cross (--padh, story.css); on a phone held upright he comes in under the next stop, at the
    top, so that his words cover neither the cross nor the player in the middle; on a phone on its side, beside the cross */
 @media (max-width: 560px) and (orientation: portrait) {
-  .wcic { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 104px); bottom: auto; width: 52px; height: 60px; border-radius: 12px; }
-  .wcic-say { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 104px); bottom: auto; left: calc(max(12px, env(safe-area-inset-left, 0px)) + 66px); right: max(10px, env(safe-area-inset-right, 0px)); max-width: none; padding: 7px 11px; font-size: 13.5px; line-height: 1.35; }
+  .wcic { top: calc(var(--corner, 94px) + 10px); bottom: auto; width: 52px; height: 60px; border-radius: 12px; }
+  .wcic-say { top: calc(var(--corner, 94px) + 10px); bottom: auto; left: calc(max(12px, env(safe-area-inset-left, 0px)) + 66px); right: max(10px, env(safe-area-inset-right, 0px)); max-width: none; padding: 7px 11px; font-size: 13.5px; line-height: 1.35; }
   .wcic-say::before { top: 18px; bottom: auto; }
   /* a chapter is told in full a tap away: here five lines, so the player in the middle stays in sight */
   .wcic-say.more .wcic-t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; line-clamp: 5; overflow: hidden; }

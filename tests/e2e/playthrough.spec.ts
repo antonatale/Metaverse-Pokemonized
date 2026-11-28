@@ -1,5 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-import { play, until, toPrompt, battleOver, walk, goStory, fight, quietPhone, type Run } from './harness';
+import { test, expect, type Page, type Browser } from '@playwright/test';
+import { play, until, toPrompt, battleOver, walk, goStory, fight, quietPhone, scalaThrough, type Run } from './harness';
 import { FORMIA_SPOT } from '../../src/data/maps/formia-ground';
 import { cisterna } from '../../src/data/maps/cisterna';
 
@@ -24,6 +24,7 @@ async function overview(r: Run, id: string) {
   r.shots.push({ name: 'overview-' + id, png: Buffer.from(url.split(',')[1], 'base64') });
 }
 async function goTo(p: Page, kind: string, id: string) {
+  await quietPhone(p);
   const s = await p.evaluate(([k, i]) => window.WORLD._debug.spot(k, i), [kind, id]);
   if (!s) throw new Error('no spot for ' + kind + ' ' + id);
   const route = await p.evaluate(([x, y]) => window.WORLD._debug.route(x, y), [s.x, s.y]);
@@ -33,12 +34,14 @@ async function goTo(p: Page, kind: string, id: string) {
   const KEY: Record<string, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   await p.keyboard.down(KEY[s.dir]); await p.keyboard.up(KEY[s.dir]);
   await p.clock.runFor(200);
+  await quietPhone(p);
 }
 async function talkThrough(p: Page, max = 12) {
   for (let k = 0; k < max; k++) {
     await quietPhone(p);
     /* the card of something found or won (ui/bag.ts): «Continua», and the story goes on */
     if (await p.locator('#lt-ok').count()) { await p.click('#lt-ok'); await p.clock.runFor(200); continue; }
+    if (await scalaThrough(p)) continue;
     const d = await p.evaluate(() => window.WORLD._debug.pos());
     if (!d.dialog || d.opts) return;
     await p.keyboard.press('Enter');
@@ -131,7 +134,7 @@ test('the intro, and three stories at once', async ({ browser }) => {
 test('the passport detour leaves the investigation at Gianola active', async ({ browser }) => {
   const save = { v: 1, map: 'formia', x: 0, y: 0, dir: 'down', badges: [], squad: ['antonio'], beaten: {}, found: {},
     seen: { intro: true, starter: true, 'cap-starter': true, 'dono-retini': true },
-    mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'polpino' }] };
+    mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'polpino' }, { uid: 'c3', sp: 'leoncello' }] };
   await play(browser, 'passaporto', { seed: 3, gfx: 'bassa', storage: { 'lotte-tra-amici:storia:v1': JSON.stringify(save) } }, async (r) => {
     const p = r.page;
     await goStory(p); await p.clock.runFor(900);
@@ -488,6 +491,10 @@ test('activities around Formia', async ({ browser }) => {
     told.push(...await afterwards(p));
     /* a lettino from the bar of the lido */
     await talkTo(p, 'barista');
+    /* with Valentin out of his covo, the barista first asks to help him with the guastafeste (ui/plot.ts): later */
+    await expect(p.locator('#wopts button', { hasText: 'Con Valentin, sì!' })).toBeVisible();
+    await choose(p, 'Più tardi');
+    await talkThrough(p);
     await choose(p, 'Prendi un lettino');
     await talkThrough(p);
     await talkThrough(p);
@@ -635,7 +642,7 @@ test('the tour of Formia', async ({ browser }) => {
     r.keep('track', await r.page.locator('.track li').count());
     await r.shot('menu', { fullPage: true });
   });
-  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'riccetto' }] }) }, async (r) => {
+  const later = await play(browser, 'tour-later', { storage: story({ done: { padel: 1 }, beaten: { circolo: true, padel: true }, badges: ['peggio', 'calcolato'], squad: ['antonio'], seen: { intro: true, starter: true }, mons: [{ uid: 'c1', sp: 'ramarrino' }, { uid: 'c2', sp: 'riccetto' }, { uid: 'c3', sp: 'leoncello' }] }) }, async (r) => {
     r.keep('goal', await goal(r));
     await r.page.click('#wgoal'); await r.page.clock.runFor(300);
     await expect(r.page.locator('.nextcard')).toContainText('Chi scava tra le rovine di Gianola?');
@@ -952,45 +959,40 @@ test('a trainer too strong to challenge on sight', async ({ browser }) => {
   expect(v('pad') as number).toBeLessThanOrEqual(4);
 });
 
-/* the speed of a battle (ui/speed.ts): in Veloce a turn, from the move to the next choice, stays under 2.5 seconds of
-   the game's clock, with the animations on; the same turn at Normale takes longer */
-for (const vel of ['normale', 'veloce'] as const) {
-  test('a turn at speed ' + vel, async ({ browser }) => {
-    const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
-      seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
-      const p = r.page;
-      await goStory(p); await p.clock.runFor(1500);
-      await p.evaluate(() => window.WORLD._debug.wild('cicalina', 9)); await p.clock.runFor(300);
-      await talkThrough(p);
-      await choose(p, 'Lotta!');
-      await p.clock.runFor(300);
-      if (await p.locator('.pick[data-key="c1"]').count()) await p.locator('.pick[data-key="c1"]').click();
-      await toPrompt(p);
-      r.keep('button', await p.locator('.spd').innerText());
-      const turns: number[] = [];
-      for (let t = 0; t < 2; t++) {
-        const id = await p.evaluate(() => window.UI._debug.suggest());
-        await p.locator('#pad .mv[data-id="' + id + '"]').click();
-        let ms = 0;
-        const seen: string[] = [];
-        for (; ms < 20000; ms += 50) {
-          await p.clock.runFor(50);
-          const tx = await p.evaluate(() => (document.querySelector('#battle .dialog') as HTMLElement | null)?.innerText || '');
-          if (process.env.SPEEDLOG && seen[seen.length - 1] !== tx) { seen.push(tx); console.log(vel, t, ms, tx.slice(0, 70).replace(/\n/g, ' ')); }
-          if (await p.evaluate(() => { const ov = document.getElementById('overlay')!; return !ov.hidden || !document.getElementById('pad')!.classList.contains('off'); })) break;
-        }
-        turns.push(ms);
-        if (await battleOver(p)) break;
-      }
-      r.keep('turns', turns);
-    });
-    const turns = r.data.find((x) => x.name === 'turns')!.value as number[];
-    expect(r.data.find((x) => x.name === 'button')!.value).toBe(vel === 'veloce' ? 'Veloce' : 'Normale');
-    /* the first turn is two moves and a line: under 2.5 s in Veloce, more than twice that at Normale */
-    if (vel === 'veloce') expect(turns[0]).toBeLessThan(2500);
-    else expect(turns[0]).toBeGreaterThan(5000);
+/* the speed of a battle (ui/speed.ts): the same first turn (same seed, same moves) played at Normale and at Veloce, with
+   the animations on. Veloce takes at most 60% of the time of Normale. Before 26 November 2026 the test asked Veloce
+   for under 2.5 s, from when the turn had two moves and a line; since then the moves say more (super effective, a stat
+   down: five lines) and the bound was stale, not the speed */
+async function speedTurn(browser: Browser, vel: 'normale' | 'veloce'): Promise<{ button: string; ms: number }> {
+  const r = await play(browser, 'speed-' + vel, { seed: 21, reduced: false, storage: { ...inTown({ x: 131, y: 58, dir: 'up', mons: [{ uid: 'c1', sp: 'polpetto' }], lv: { c1: { lv: 12, xp: 0 } },
+    seen: { intro: true, starter: true, formia2: true, formia3: true, formia4: true, formia5: true, formia6: true, formia7: true, formia8: true, 'cic-wild': true, 'cic-power': true, 'cap-trama-scavi': true } }), 'lotte-tra-amici:velocita:v1': vel } }, async (r) => {
+    const p = r.page;
+    await goStory(p); await p.clock.runFor(1500);
+    await p.evaluate(() => window.WORLD._debug.wild('cicalina', 9)); await p.clock.runFor(300);
+    await talkThrough(p);
+    await choose(p, 'Lotta!');
+    await p.clock.runFor(300);
+    if (await p.locator('.pick[data-key="c1"]').count()) await p.locator('.pick[data-key="c1"]').click();
+    await toPrompt(p);
+    r.keep('button', await p.locator('.spd').innerText());
+    const id = await p.evaluate(() => window.UI._debug.suggest());
+    await p.locator('#pad .mv[data-id="' + id + '"]').click();
+    let ms = 0;
+    for (; ms < 20000; ms += 50) {
+      await p.clock.runFor(50);
+      if (await p.evaluate(() => { const ov = document.getElementById('overlay')!; return !ov.hidden || !document.getElementById('pad')!.classList.contains('off'); })) break;
+    }
+    r.keep('ms', ms);
   });
+  return { button: String(r.data.find((x) => x.name === 'button')!.value), ms: Number(r.data.find((x) => x.name === 'ms')!.value) };
 }
+test('a turn at speed veloce takes at most 60% of normale', async ({ browser }) => {
+  const slow = await speedTurn(browser, 'normale'), fast = await speedTurn(browser, 'veloce');
+  expect(slow.button).toBe('Normale');
+  expect(fast.button).toBe('Veloce');
+  expect(fast.ms).toBeLessThan(slow.ms * 0.6);
+  expect(slow.ms).toBeLessThan(20000);
+});
 
 /* R17: a click on the map walks there; a click on someone walks next to him and talks */
 /* he starts beside the student's column, out of his sight: the student is a trainer and would walk up to him */
@@ -1382,6 +1384,8 @@ test('the seven rescue their creatures at Telepilo and keep the stones', async (
     for (const command of ['guard', 'advance', 'guard', 'open', 'distract', 'open', 'guard', 'open', 'center', 'strike']) {
       if (command === 'open') await expect(p.locator('.finale-tell')).toContainText(cageClues[cage++]);
       await p.locator(`[data-command="${command}"]`).click(); await p.clock.runFor(120);
+      /* Valentin's diversion and the last blow come with «Stai inguaiatoooo!» (ui/shout.ts) before the fight goes on */
+      if (command === 'distract' || command === 'strike') await p.clock.runFor(command === 'strike' ? 5200 : 3600);
       if (command === 'center') await expect(p.locator('.finale-last')).toContainText('Incroci lo sguardo di Claudia');
     }
     const victory = p.locator('[data-scene="vittoria-telepilo"]');
@@ -1436,6 +1440,8 @@ test('Claudia leads the animated fight and her rival reaches for her hand', asyn
     await p.clock.fastForward(1500);
     for (const command of ['advance', 'guard', 'open', 'distract', 'open', 'guard', 'open', 'center']) {
       await p.locator(`[data-command="${command}"]`).click(); await p.clock.fastForward(1500);
+      /* Valentin's diversion: «Stai inguaiatoooo!» to Mamurra (ui/shout.ts), then the fight goes on */
+      if (command === 'distract') { await expect(p.locator('.shout')).toBeVisible(); await p.clock.runFor(4500); await expect(p.locator('.shout')).toHaveCount(0); }
     }
     await expect(p.locator('.finale-last')).toContainText('Andrea ti porge la mano');
     await expect(p.locator('[data-command="strike"]')).toBeEnabled();
@@ -1828,4 +1834,82 @@ test('opened again in the sea', async ({ browser }) => {
   expect(ashore.swim).toBe(false);
   expect(Math.abs(ashore.x - 279) + Math.abs(ashore.y - 99)).toBeGreaterThan(0);
   expect(Math.abs(ashore.x - 279) + Math.abs(ashore.y - 99)).toBeLessThan(6);
+});
+
+/* The Scala Mazzarri (27 November 2026): one of the seven has lost and says his excuse; the player puts it on a rung,
+   Costanzo says his, and the cassa of the caminetto pays by how close it was. An excuse true of the battle comes first
+   (Andrea, five levels under: an honest one, a 1), and the next one is another */
+test('the Scala Mazzarri: an excuse, a vote, the cassa pays', async ({ browser }) => {
+  const r = await play(browser, 'scala', { seed: 31, storage: inTown({ money: 0 }) }, async (r) => {
+    const p = r.page;
+    await goStory(p);
+    await p.clock.runFor(1500);
+    const open = (ctx: object) => p.evaluate((c) => (window.WORLD._debug as unknown as { scala(c: object): void }).scala(c), ctx);
+    await open({ loser: 'andrea', gap: 5, place: '', night: false });
+    await p.clock.runFor(3000);
+    await expect(p.locator('.scala')).toBeVisible();
+    r.keep('excuse', await p.locator('#sm-text').innerText());
+    r.keep('intro', await p.locator('#sm-word').innerText());
+    await r.shot('scala');
+    await p.click('.sm-rung[data-v="1"]');
+    await p.clock.runFor(3500);
+    r.keep('out', await p.locator('#sm-out').innerText());
+    r.keep('judge', await p.locator('#sm-word').innerText());
+    await r.shot('voted');
+    await p.click('#sm-ok'); await p.clock.runFor(300);
+    r.keep('after', await p.evaluate(() => { const s = window.WORLD.state() as unknown as { money: number; seen: Record<string, boolean>; scala: { n: number; exact: number; paid: number } }; return { money: s.money, seen: !!s.seen['scala-1'], n: s.scala.n, exact: s.scala.exact, paid: s.scala.paid }; }));
+    /* the keyboard: 0 is the tenth rung; and the same friend says something else */
+    await open({ loser: 'andrea', place: '', night: false });
+    await p.clock.runFor(3000);
+    r.keep('second', await p.locator('#sm-text').innerText());
+    await p.keyboard.press('0');
+    await p.clock.runFor(3500);
+    r.keep('mine', await p.locator('.sm-rung.mine b').innerText());
+    await p.click('#sm-ok'); await p.clock.runFor(300);
+    await expect(p.locator('.scala')).toHaveCount(0);
+    /* after the second excuse the caminetto talks about it: Costanzo makes the scale official */
+    for (let k = 0; k < 30 && !(await p.locator('.phone').count()); k++) await p.clock.runFor(500);
+    r.keep('chat', await p.locator('.phone').innerText());
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('excuse'))).toContain('5 livelli');
+  expect(String(get('intro'))).toContain('Scala Mazzarri');
+  expect(String(get('out'))).toContain('+30 sesterzi');
+  expect(get('after')).toEqual({ money: 30, seen: true, n: 1, exact: 1, paid: 30 });
+  expect(get('second')).not.toEqual(get('excuse'));
+  expect(String(get('chat'))).toContain('Scala Mazzarri');
+  expect(String(get('mine'))).toBe('10');
+});
+
+/* Valentin, once out of his covo, fights with the player against Mamurra's men: he goes in first, and the battle won
+   ends with «Stai inguaiatoooo!»; he takes nothing of what the battle pays */
+test('Valentin by your side against Mamurra\'s men: «Stai inguaiatoooo!»', async ({ browser }) => {
+  const strong = { lv: 34, xp: 0 };
+  const r = await play(browser, 'inguaiato', { seed: 22, storage: inTown({ beaten: { eclipse: true }, badges: ['weee'], lv: { antonio: strong, c1: strong } }) }, async (r) => {
+    const p = r.page;
+    await goStory(p);
+    await p.clock.runFor(1500);
+    await p.evaluate(() => {
+      const W = window as unknown as { __shouts: string[] };
+      W.__shouts = [];
+      new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { const el = n as HTMLElement; if (el.classList && el.classList.contains('shout')) W.__shouts.push(el.getAttribute('aria-label') || ''); }))).observe(document.body, { childList: true });
+    });
+    await p.evaluate(() => (window.WORLD._debug as unknown as { trainer(id: string): void }).trainer('mamurr-cisterna'));
+    await p.clock.runFor(400);
+    r.keep('hello', await p.locator('#wtxt').innerText());
+    await talkThrough(p);
+    await p.clock.runFor(800);
+    r.keep('lead', await p.evaluate(() => (window.UI._debug as unknown as { info(): { a: string } }).info().a));
+    await fight(r, 'ally', 1);
+    r.keep('line', await p.locator('.res .say').first().innerText());
+    await p.click('#st-go'); await p.clock.runFor(800);
+    await talkThrough(p, 20);
+    r.keep('shouts', await p.evaluate(() => (window as unknown as { __shouts: string[] }).__shouts));
+    r.keep('state', await p.evaluate(() => { const s = window.WORLD.state() as unknown as { seen: Record<string, boolean>; beaten: Record<string, boolean>; lv: Record<string, unknown> }; return { inguaiato: !!s.seen['inguaiato-1'], beaten: !!s.beaten['tr-mamurr-cisterna'], ally: Object.keys(s.lv).filter((k) => /ally|valentin/.test(k)) }; }));
+  });
+  const get = (n: string) => r.data.find((x) => x.name === n)!.value;
+  expect(String(get('hello'))).toContain('Cisternone');
+  expect(get('lead')).toBe('valentin');
+  expect((get('shouts') as string[]).some((s) => /inguaiato/i.test(s))).toBe(true);
+  expect(get('state')).toEqual({ inguaiato: true, beaten: true, ally: [] });
 });

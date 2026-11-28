@@ -26,6 +26,8 @@ import { recordChat } from './chat';
 import { finaleRide } from './nicola';
 import { askChoice, stoneSVG } from './plot';
 import { say, sheet, closeSheet, renderHud, refreshMusic } from './story-screen';
+import { shout } from './shout';
+import { SPR } from '../render/svg';
 
 const STRUCK = 'finale-colpo';
 const FAREWELL = 'finale-saluti';
@@ -319,13 +321,20 @@ function startFinaleBattle() {
       if (involved) actor.idle.replaceWith(actor.acting);
     }
     sfx(command === 'strike' ? 'finaleEcho' : result.success ? command === 'open' ? 'magic' : 'weak' : 'hit');
-    timer = setTimeout(() => {
-      resolving = false; battle = result.next; last = line;
-      if (battle.phase === 'won') {
-        st.seen[STRUCK] = true; save(); close(); victoryScene(); return;
-      }
-      render();
-    }, reduced ? 90 : command === 'strike' ? 1500 : 720);
+    const on = () => {
+      timer = setTimeout(() => {
+        resolving = false; battle = result.next; last = line;
+        if (battle.phase === 'won') {
+          st.seen[STRUCK] = true; save(); close(); victoryScene(); return;
+        }
+        render();
+      }, reduced ? 90 : command === 'strike' ? 1500 : 720);
+    };
+    /* Valentin's diversion works, and the last blow lands: «Stai inguaiatoooo!» to Mamurra (27 November 2026) */
+    if (result.success && (command === 'distract' || command === 'strike')) {
+      st.seen['inguaiato-1'] = true; save();
+      setTimeout(() => shout(SPR.personIn('valentin', formNow('valentin'), 'grin', '', SPR.thumb('valentin')), on), reduced ? 0 : 450);
+    } else on();
   }
   cancelBattle = close;
   lock(true); music('boss', { fade: 0.6 });
